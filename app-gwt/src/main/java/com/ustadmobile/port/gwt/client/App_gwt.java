@@ -4,30 +4,15 @@ import com.ustadmobile.port.gwt.client.impl.ClientFactory;
 import com.ustadmobile.port.gwt.client.impl.MyActivityMapper;
 import com.ustadmobile.port.gwt.client.impl.MyHistoryMapper;
 import com.ustadmobile.port.gwt.client.view.StartPlace;
-import com.ustadmobile.port.gwt.shared.FieldVerifier;
 import com.google.gwt.activity.shared.ActivityManager;
 import com.google.gwt.activity.shared.ActivityMapper;
 import com.google.gwt.core.client.EntryPoint;
 import com.google.gwt.core.client.GWT;
-import com.google.gwt.event.dom.client.ClickEvent;
-import com.google.gwt.event.dom.client.ClickHandler;
-import com.google.gwt.event.dom.client.KeyCodes;
-import com.google.gwt.event.dom.client.KeyUpEvent;
-import com.google.gwt.event.dom.client.KeyUpHandler;
-//import com.google.gwt.event.shared.EventBus;
 import com.google.web.bindery.event.shared.EventBus;
-import com.google.gwt.event.shared.HandlerManager;
 import com.google.gwt.place.shared.PlaceController;
 import com.google.gwt.place.shared.PlaceHistoryHandler;
-import com.google.gwt.user.client.rpc.AsyncCallback;
-import com.google.gwt.user.client.ui.Button;
-import com.google.gwt.user.client.ui.DialogBox;
-import com.google.gwt.user.client.ui.HTML;
-import com.google.gwt.user.client.ui.Label;
 import com.google.gwt.user.client.ui.RootPanel;
 import com.google.gwt.user.client.ui.SimplePanel;
-import com.google.gwt.user.client.ui.TextBox;
-import com.google.gwt.user.client.ui.VerticalPanel;
 
 /**
  * Entry point classes define <code>onModuleLoad()</code>.
@@ -48,7 +33,7 @@ public class App_gwt implements EntryPoint {
 			GWT.create(GreetingService.class);
 
 	
-	private StartPlace startPlace = new StartPlace("start");
+	private StartPlace startPlace = new StartPlace("StartedFromEntryPoint");
 	private SimplePanel appPanel = new SimplePanel();
 	
 	public void onModuleLoad(){
