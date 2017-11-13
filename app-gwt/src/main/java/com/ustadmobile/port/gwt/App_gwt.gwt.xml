@@ -16,9 +16,18 @@
   <!-- <inherits name='com.google.gwt.user.theme.standard.Standard'/> -->
   <!-- <inherits name='com.google.gwt.user.theme.chrome.Chrome'/> -->
   <!-- <inherits name='com.google.gwt.user.theme.dark.Dark'/>     -->
+  
+  <!--  MVP -->
+	<inherits name='com.google.gwt.place.Place'/>
+	<inherits name='com.google.gwt.activity.Activity' />
 
   <!-- Other module inherits                                      -->
 
+
+  <replace-with class="com.ustadmobile.port.gwt.client.impl.ClientFactoryImpl">
+		<when-type-is class="com.ustadmobile.port.gwt.client.impl.ClientFactory" />
+	</replace-with>
+	
   <!-- Specify the app entry point class.                         -->
   <entry-point class='com.ustadmobile.port.gwt.client.App_gwt'/>
 
