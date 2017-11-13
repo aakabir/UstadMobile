@@ -48,12 +48,12 @@ public class Start extends Composite implements ClickHandler{
 	public interface Presenter{
 	       public void goTo(Place place);
 	       public void setMessage(String message);
+	       public void handleClickButton();
 	}
 
 	@Override
 	public void onClick(ClickEvent event) {
-		presenter.goTo(new SecondPlace("I came from Start UiBinder"));
-		
+		presenter.handleClickButton();
 	}
 	
 	

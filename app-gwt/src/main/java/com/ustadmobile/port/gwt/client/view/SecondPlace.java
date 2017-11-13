@@ -5,11 +5,16 @@ import com.google.gwt.place.shared.PlaceTokenizer;
 
 public class SecondPlace extends Place{
 
-	String message;
+	String message = "second";
 	
 	public SecondPlace(String message){
 		this.message = message;
 	}
+	
+	public SecondPlace() {
+		
+	}
+	
 	public String getMessage(){
 		return message;
 	}

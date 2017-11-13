@@ -5,6 +5,7 @@ import com.google.gwt.event.shared.EventBus;
 import com.google.gwt.place.shared.Place;
 import com.google.gwt.user.client.ui.AcceptsOneWidget;
 import com.ustadmobile.port.gwt.client.impl.ClientFactory;
+import com.ustadmobile.port.gwt.client.impl.UstadMobileSystemImplGWT;
 
 public class StartActivity extends AbstractActivity implements Start.Presenter{
 
@@ -41,7 +42,14 @@ public class StartActivity extends AbstractActivity implements Start.Presenter{
 		
 		panel.setWidget(view.asWidget());
 		bindEvents();
-		
 	}
 
+	@Override
+	public void handleClickButton() {
+		// TODO Auto-generated method stub
+		UstadMobileSystemImplGWT.getInstance().go(clientFactory, "Second", null);
+	}
+
+	
+	
 }

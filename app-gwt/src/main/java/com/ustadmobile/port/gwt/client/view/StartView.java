@@ -9,6 +9,7 @@ import com.google.gwt.user.client.ui.HorizontalPanel;
 import com.google.gwt.user.client.ui.IsWidget;
 import com.google.gwt.user.client.ui.Label;
 import com.google.gwt.user.client.ui.Widget;
+import com.ustadmobile.port.gwt.client.impl.UstadMobileSystemImplGWT;
 
 public class StartView extends Composite implements IsWidget, ClickHandler {
 	
@@ -52,7 +53,7 @@ public class StartView extends Composite implements IsWidget, ClickHandler {
 
 	@Override
 	public void onClick(ClickEvent event) {
-		presenter.goTo(new SecondPlace("I came from start"));
+//		presenter.goTo(new SecondPlace("I came from start"));
 		
 	}
 

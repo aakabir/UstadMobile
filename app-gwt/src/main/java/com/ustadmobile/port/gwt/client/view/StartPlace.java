@@ -5,11 +5,16 @@ import com.google.gwt.place.shared.PlaceTokenizer;
 
 public class StartPlace extends Place{
 	
-	String message;
+	String message = "";
 	
 	public StartPlace(String message){
 		this.message = message;
 	}
+	
+	public StartPlace() {
+		
+	}
+	
 	public String getMessage(){
 		return message;
 	}
