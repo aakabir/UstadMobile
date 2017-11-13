@@ -6,7 +6,7 @@ import com.google.gwt.place.shared.Place;
 import com.google.gwt.user.client.ui.AcceptsOneWidget;
 import com.ustadmobile.port.gwt.client.impl.ClientFactory;
 
-public class StartActivity extends AbstractActivity implements StartView.Presenter{
+public class StartActivity extends AbstractActivity implements Start.Presenter{
 
 	ClientFactory clientFactory;
 	
@@ -34,7 +34,8 @@ public class StartActivity extends AbstractActivity implements StartView.Present
 
 	@Override
 	public void start(AcceptsOneWidget panel, EventBus arg1) {
-		StartView view = clientFactory.getStartView();
+		//StartView view = clientFactory.getStartView();
+		Start view = clientFactory.getStartUIBinder();
 		view.setPresenter(this);
 		view.setMessage(this.message);
 		

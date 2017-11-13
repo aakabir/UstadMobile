@@ -20,6 +20,9 @@
   <!--  MVP -->
 	<inherits name='com.google.gwt.place.Place'/>
 	<inherits name='com.google.gwt.activity.Activity' />
+	
+  <!-- Inherit the UiBinder module.                               -->
+   <inherits name = "com.google.gwt.uibinder.UiBinder"/>
 
   <!-- Other module inherits                                      -->
 

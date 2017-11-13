@@ -4,6 +4,7 @@ import com.google.gwt.place.shared.PlaceController;
 import com.google.web.bindery.event.shared.EventBus;
 import com.google.web.bindery.event.shared.SimpleEventBus;
 import com.ustadmobile.port.gwt.client.view.SecondView;
+import com.ustadmobile.port.gwt.client.view.Start;
 import com.ustadmobile.port.gwt.client.view.StartView;
 
 //Creates new views, eventBus and placeController.
@@ -17,6 +18,7 @@ public class ClientFactoryImpl implements ClientFactory {
 	PlaceController placeController = new PlaceController(eventBus);
 	StartView startView = new StartView();
 	SecondView secondView = new SecondView();
+	Start startUIBinder = new Start();
 	
 	@Override
 	public EventBus getEventBus() {
@@ -39,11 +41,16 @@ public class ClientFactoryImpl implements ClientFactory {
 	@Override
 	public StartView getStartView(){
 		return startView;
+		
 	}
 	
 	@Override
 	public SecondView getSecondView(){
 		return secondView;
+	}
+	@Override
+	public Start getStartUIBinder() {
+		return startUIBinder;
 	}
 
 }
