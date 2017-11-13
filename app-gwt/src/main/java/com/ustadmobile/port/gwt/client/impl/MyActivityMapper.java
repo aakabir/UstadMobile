@@ -3,6 +3,8 @@ package com.ustadmobile.port.gwt.client.impl;
 import com.google.gwt.activity.shared.Activity;
 import com.google.gwt.activity.shared.ActivityMapper;
 import com.google.gwt.place.shared.Place;
+import com.ustadmobile.port.gwt.client.view.SecondActivity;
+import com.ustadmobile.port.gwt.client.view.SecondPlace;
 import com.ustadmobile.port.gwt.client.view.StartActivity;
 import com.ustadmobile.port.gwt.client.view.StartPlace;
 
@@ -23,6 +25,9 @@ public class MyActivityMapper implements ActivityMapper {
 	public Activity getActivity(Place place) {
 		if(place instanceof StartPlace){
 			return new StartActivity((StartPlace) place, clientFactory);
+		}else
+		if(place instanceof SecondPlace){
+			return new SecondActivity((SecondPlace) place, clientFactory);
 		}
 		
 		return null;

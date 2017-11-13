@@ -11,7 +11,7 @@ public class SecondPlace extends Place{
 		this.message = message;
 	}
 	public String getMessage(){
-		return message
+		return message;
 	}
 	public static class Tokenizer implements PlaceTokenizer<SecondPlace>{
 

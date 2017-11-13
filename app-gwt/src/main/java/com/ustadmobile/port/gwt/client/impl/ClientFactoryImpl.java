@@ -3,6 +3,7 @@ package com.ustadmobile.port.gwt.client.impl;
 import com.google.gwt.place.shared.PlaceController;
 import com.google.web.bindery.event.shared.EventBus;
 import com.google.web.bindery.event.shared.SimpleEventBus;
+import com.ustadmobile.port.gwt.client.view.SecondView;
 import com.ustadmobile.port.gwt.client.view.StartView;
 
 //Creates new views, eventBus and placeController.
@@ -15,6 +16,7 @@ public class ClientFactoryImpl implements ClientFactory {
 	EventBus eventBus = new SimpleEventBus();
 	PlaceController placeController = new PlaceController(eventBus);
 	StartView startView = new StartView();
+	SecondView secondView = new SecondView();
 	
 	@Override
 	public EventBus getEventBus() {
@@ -39,5 +41,9 @@ public class ClientFactoryImpl implements ClientFactory {
 		return startView;
 	}
 	
+	@Override
+	public SecondView getSecondView(){
+		return secondView;
+	}
 
 }

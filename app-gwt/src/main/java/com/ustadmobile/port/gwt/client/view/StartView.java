@@ -1,5 +1,7 @@
 package com.ustadmobile.port.gwt.client.view;
 
+import com.google.gwt.event.dom.client.ClickEvent;
+import com.google.gwt.event.dom.client.ClickHandler;
 import com.google.gwt.place.shared.Place;
 import com.google.gwt.user.client.ui.Button;
 import com.google.gwt.user.client.ui.Composite;
@@ -8,7 +10,7 @@ import com.google.gwt.user.client.ui.IsWidget;
 import com.google.gwt.user.client.ui.Label;
 import com.google.gwt.user.client.ui.Widget;
 
-public class StartView extends Composite implements IsWidget{
+public class StartView extends Composite implements IsWidget, ClickHandler {
 	
 	
 	HorizontalPanel panelContainer;
@@ -23,6 +25,8 @@ public class StartView extends Composite implements IsWidget{
 		
 		panelContainer.add(label1);
 		panelContainer.add(gotoButton);
+		
+		gotoButton.addClickHandler(this);
 	}
 	
 	public Presenter getPresenter(){
@@ -44,6 +48,12 @@ public class StartView extends Composite implements IsWidget{
 	public interface Presenter{
 	       public void goTo(Place place);
 	       public void setMessage(String message);
+	}
+
+	@Override
+	public void onClick(ClickEvent event) {
+		presenter.goTo(new SecondPlace("I came from start"));
+		
 	}
 
 }
