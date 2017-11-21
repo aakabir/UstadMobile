@@ -14,6 +14,12 @@ import com.google.gwt.place.shared.PlaceHistoryHandler;
 import com.google.gwt.user.client.ui.RootPanel;
 import com.google.gwt.user.client.ui.SimplePanel;
 
+
+/**
+ * UPDATE: WE ARE GOING TO USE GWTP . THIS CAN BE REMOVED.
+ */
+
+
 /**
  * Entry point classes define <code>onModuleLoad()</code>.
  */
