@@ -17,19 +17,23 @@
  * limitations under the License.
  * #L%
  */
-package com.ustadmobile.port.gwt.client.place;
+package com.ustadmobile.port.gwt.client.application.login;
 
-import org.junit.Test;
-
-import static org.junit.Assert.assertEquals;
+import com.gwtplatform.mvp.client.gin.AbstractPresenterModule;
 
 /**
- * @author Randy May
- *         Date: 2016-04-11
+ * This is a sub Module (parent: ApplicationModule). 
+ * It is bound in its parent's (ApplicationModule) configure().
+ * @author varuna
+ *
  */
-public class NameTokensTest {
-    @Test
-    public void testHomeToken() {
-        assertEquals("/", NameTokens.HOME);
+public class LoginModule extends AbstractPresenterModule {
+	
+    @Override
+    protected void configure() {
+        bindPresenter(LoginPresenter.class, 
+        		LoginPresenter.MyView.class, 
+        		LoginView.class, 
+        		LoginPresenter.MyProxy.class);
     }
 }

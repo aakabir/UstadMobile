@@ -1,54 +1,48 @@
-<!--
-  #%L
-  GwtMaterial
-  %%
-  Copyright (C) 2015 - 2017 GwtMaterialDesign
-  %%
-  Licensed under the Apache License, Version 2.0 (the "License");
-  you may not use this file except in compliance with the License.
-  You may obtain a copy of the License at
-  
-       http://www.apache.org/licenses/LICENSE-2.0
-  
-  Unless required by applicable law or agreed to in writing, software
-  distributed under the License is distributed on an "AS IS" BASIS,
-  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-  See the License for the specific language governing permissions and
-  limitations under the License.
-  #L%
-  -->
+<?xml version="1.0" encoding="UTF-8"?>
 <project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
-         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
+         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/maven-v4_0_0.xsd">
     <modelVersion>4.0.0</modelVersion>
 
     <groupId>com.ustadmobile.port.gwt</groupId>
-    <artifactId>app-gwt</artifactId>
+    <artifactId>gwtp-basic-archetype</artifactId>
     <version>1.0-SNAPSHOT</version>
-    <packaging>war</packaging>
 
-    <name>Basic Template for using GWT Material Design</name>
-    <url>https://github.com/GwtMaterialDesign</url>
+    <packaging>war</packaging>
+    <name>GWTP with Material Design</name>
+    <url>https://github.com/UstadMobile/UstadMobile</url>
 
     <properties>
-        <app.id>app-gwt</app.id>
-        <app.version>1</app.version>
+    	<!-- App -->
+    	<app.id>gwtp-basic-archetype</app.id>
+    	<app.version>1</app.version>
+    	
+    	<!-- Encoding -->
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
+        
+        <!-- client -->
         <gwt.version>2.8.0</gwt.version>
-        <gwtp.version>1.5.3</gwtp.version>
+        <gwtp.version>1.5.3</gwtp.version> <!--  Update available is: 1.6 -->
         <gin.version>2.1.2</gin.version>
-        <gwt-material.version>2.0</gwt-material.version>
-        <gwt.style>OBF</gwt.style>
+        
 
+		<!-- GWT Material -->
+		<gwt-material.version>2.0-rc1</gwt-material.version>
+        <gwt-material-table.version>1.0-rc1</gwt-material-table.version>
+      
+      	<gwt.style>OBF</gwt.style>
+      	
         <!-- maven -->
         <maven-war-plugin.version>2.6</maven-war-plugin.version>
         <maven-compiler-plugin.version>3.3</maven-compiler-plugin.version>
 
+		<!-- JDK -->
         <target.jdk>1.8</target.jdk>
 
         <webappDirectory>${project.build.directory}/${project.build.finalName}</webappDirectory>
     </properties>
 
-    <repositories>
+	<!-- Repositories for Central and Sonatype Nexus for GWT Material? -->
+	<repositories>
         <repository>
             <id>central</id>
             <name>Central Repository</name>
@@ -71,6 +65,8 @@
         </resources>
 
         <plugins>
+        
+        	<!-- Maven -->
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-compiler-plugin</artifactId>
@@ -78,7 +74,7 @@
                 <configuration>
                     <source>${target.jdk}</source>
                     <target>${target.jdk}</target>
-                    <encoding>${project.build.sourceEncoding}</encoding>
+                    <encoding>UTF-8</encoding>
                 </configuration>
             </plugin>
 
@@ -97,7 +93,7 @@
                     <logLevel>INFO</logLevel>
 
                     <runTarget>index.html</runTarget>
-                    <module>com.ustadmobile.port.gwt.GwtMaterialBasic</module>
+                    <module>com.ustadmobile.port.gwt.gwtapp</module>
                 </configuration>
                 <executions>
                     <execution>
@@ -112,26 +108,30 @@
     </build>
 
     <dependencies>
-        <!-- GWT -->
-        <dependency>
-            <groupId>com.google.gwt</groupId>
-            <artifactId>gwt-servlet</artifactId>
-            <version>${gwt.version}</version>
-            <scope>runtime</scope>
-        </dependency>
+        <!-- GWT User-->
         <dependency>
             <groupId>com.google.gwt</groupId>
             <artifactId>gwt-user</artifactId>
             <version>${gwt.version}</version>
             <scope>provided</scope>
         </dependency>
+        
+        <!-- GWT Servlet -->
+        <dependency>
+            <groupId>com.google.gwt</groupId>
+            <artifactId>gwt-servlet</artifactId>
+            <version>${gwt.version}</version>
+            <scope>runtime</scope>
+        </dependency>
+        
+        <!-- GWT Dev -->
         <dependency>
             <groupId>com.google.gwt</groupId>
             <artifactId>gwt-dev</artifactId>
             <version>${gwt.version}</version>
             <scope>provided</scope>
         </dependency>
-
+        
         <!-- JDT -->
         <dependency>
             <groupId>javax.servlet</groupId>
@@ -147,7 +147,7 @@
             <version>${gwtp.version}</version>
             <scope>provided</scope>
         </dependency>
-
+        
         <!-- GwtMaterial -->
         <dependency>
             <groupId>com.github.gwtmaterialdesign</groupId>
@@ -167,7 +167,7 @@
         <dependency>
             <groupId>com.github.gwtmaterialdesign</groupId>
             <artifactId>gwt-material-table</artifactId>
-            <version>${gwt-material.version}</version>
+            <version>${gwt-material-table.version}</version>
         </dependency>
 
         <!-- DI -->
@@ -177,7 +177,7 @@
             <version>${gin.version}</version>
             <scope>provided</scope>
         </dependency>
-
+        
         <!-- JUnit -->
         <dependency>
             <groupId>junit</groupId>
