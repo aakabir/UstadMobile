@@ -1,0 +1,61 @@
+<ui:UiBinder xmlns:ui='urn:ui:com.google.gwt.uibinder'
+        xmlns:g='urn:import:com.google.gwt.user.client.ui'
+        xmlns:m="urn:import:gwt.material.design.client.ui">
+
+    <ui:with field="res" type="com.ustadmobile.port.gwt.client.resources.AppResources"/>
+    
+    <ui:import field="com.ustadmobile.port.gwt.client.place.NameTokens.HOME"/>
+	<ui:import field="com.ustadmobile.port.gwt.client.place.NameTokens.LOGIN"/>
+
+    <!-- 
+    <g:HTMLPanel>
+		Hello Application View!
+        <g:SimplePanel ui:field="main">
+        	<g:Label>Main Panel</g:Label>
+        	
+        </g:SimplePanel>
+        
+        <g:SimplePanel ui:field="login">
+        	<g:Label>Login Panel</g:Label>
+        </g:SimplePanel>
+        
+    </g:HTMLPanel>
+     -->
+    
+    
+    <m:MaterialPanel>
+        <m:MaterialHeader>
+            <m:MaterialNavBar activates="sidenav">
+                <m:MaterialNavBrand paddingLeft="60" text="App" />
+                <m:MaterialNavSection float="RIGHT">
+                    <m:MaterialLink text="Login" href='#{LOGIN}'/>
+                    <m:MaterialLink href= "#{HOME}" iconType="POLYMER" />
+                </m:MaterialNavSection>
+            </m:MaterialNavBar>
+            <m:MaterialSideNav m:id="sidenav" type="PUSH" width="280" alwaysShowActivator="true" showOnAttach="true">
+                <m:MaterialLink text="Login" href="#{LOGIN}" iconType="POLYMER"/>
+                <m:MaterialLink text="Home" href="#{HOME}" iconType="POLYMER"/>
+            </m:MaterialSideNav>
+        </m:MaterialHeader>
+
+        <m:MaterialContainer>
+        
+            <m:MaterialPanel textAlign="CENTER">
+                <m:MaterialIcon marginTop="120" textColor="BLUE_DARKEN_1" iconType="POLYMER" iconSize="LARGE"/>
+                <m:MaterialLabel text="GMD 2.0" textColor="BLUE" fontSize="2em"/>
+                <m:MaterialLabel text="UstadMobile GWTP Material" textColor="BLUE" fontSize="0.8em"/>
+            </m:MaterialPanel>
+            
+            <m:MaterialPanel ui:field="main">
+        		<m:MaterialLabel>Main Material Panel</m:MaterialLabel>
+        	</m:MaterialPanel>
+        	
+        	<m:MaterialPanel ui:field="login">
+        		<m:MaterialLabel>Login Material Panel</m:MaterialLabel>
+        	</m:MaterialPanel>
+        </m:MaterialContainer>
+
+    </m:MaterialPanel>
+    
+    
+</ui:UiBinder>
