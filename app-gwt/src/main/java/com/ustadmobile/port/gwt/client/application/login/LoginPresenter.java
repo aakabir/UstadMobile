@@ -69,14 +69,14 @@ public class LoginPresenter
             MyView view,
             MyProxy proxy
             //,String currentUser) {
-            //, PlaceManager placeManager
+            , PlaceManager placeManager
     		) {
         super(eventBus, view, proxy, 
         		//ApplicationPresenter.SLOT_MAIN
         		ApplicationPresenter.SLOT_LOGIN
         		);
         
-        //this.placeManager = placeManager;
+        this.placeManager = placeManager;
         getView().setUiHandlers(this);
         
     }

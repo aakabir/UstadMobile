@@ -35,17 +35,17 @@ extends Presenter<HomePresenter.MyView, HomePresenter.MyProxy> {
     }
     //A Presenter having a NameToken is a Place.
 
-    PlaceManager placeManager; 
+    private PlaceManager placeManager; 
     
     @Inject
     HomePresenter(
             EventBus eventBus,
             MyView view,
             MyProxy proxy
-            //,PlaceManager placeManager) {
+            ,PlaceManager placeManager
     		){
         super(eventBus, view, proxy, ApplicationPresenter.SLOT_MAIN);
-        //this.placeManager = placeManager;
+        this.placeManager = placeManager;
         
     }
 }

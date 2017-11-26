@@ -5,6 +5,7 @@ import com.google.web.bindery.event.shared.EventBus;
 import com.gwtplatform.mvp.client.Presenter;
 import com.gwtplatform.mvp.client.View;
 import com.gwtplatform.mvp.client.annotations.ProxyStandard;
+import com.gwtplatform.mvp.client.proxy.PlaceManager;
 import com.gwtplatform.mvp.client.proxy.Proxy;
 import com.gwtplatform.mvp.client.presenter.slots.NestedSlot;
 
@@ -21,6 +22,8 @@ public class ApplicationPresenter
 	//The Presenter's View
     interface MyView extends View {
     }
+    
+    private PlaceManager placeManager;
 
     @ProxyStandard
     interface MyProxy extends Proxy<ApplicationPresenter> {
@@ -36,7 +39,16 @@ public class ApplicationPresenter
     ApplicationPresenter(
             EventBus eventBus,
             MyView view,
-            MyProxy proxy) {
+            MyProxy proxy,
+            PlaceManager placeManager) {
         super(eventBus, view, proxy, RevealType.Root);
+        
+        this.placeManager = placeManager;
+        
+        //If you have, 
+        //view.setUiHanders(this);
     }
+    
+    //Seperate out reveal
+    
 }
