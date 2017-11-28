@@ -3,11 +3,7 @@
 
     <g:HTMLPanel>
         
-        <p>Hello Home Panel</p>
-        
-        <g:SimplePanel ui:field="contactPanel">
-        	<g:Label>Hello Control Panel</g:Label>
-       	</g:SimplePanel>
-        
+        <p>Hello Contacts Widget View Panel</p>
+        <g:Button ui:field="confirm" text="Confirm"/>
     </g:HTMLPanel>
 </ui:UiBinder>
