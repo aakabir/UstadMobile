@@ -44,4 +44,11 @@
 		<nature>org.eclipse.wst.common.project.facet.core.nature</nature>
 		<nature>com.gwtplugins.gwt.eclipse.core.gwtNature</nature>
 	</natures>
+	<linkedResources>
+		<link>
+			<name>src-core</name>
+			<type>2</type>
+			<location>C:/Users/lenovo/UstadMobile/GWT/Ustadmobile/core/src/main/java</location>
+		</link>
+	</linkedResources>
 </projectDescription>

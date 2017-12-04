@@ -4,16 +4,23 @@
     <modelVersion>4.0.0</modelVersion>
 
     <groupId>com.ustadmobile.port.gwt</groupId>
-    <artifactId>gwtp-basic-archetype</artifactId>
+    <artifactId>ustadmobile-gwtp</artifactId>
     <version>1.0-SNAPSHOT</version>
 
+	
+	<!-- 
+	<modules>
+        <module>json</module>
+	</modules>
+	 -->
+	 
     <packaging>war</packaging>
-    <name>GWTP with Material Design</name>
+    <name>UstadMobile GWTP with Material Design</name>
     <url>https://github.com/UstadMobile/UstadMobile</url>
 
     <properties>
     	<!-- App -->
-    	<app.id>gwtp-basic-archetype</app.id>
+    	<app.id>ustadmobile-gwtp</app.id>
     	<app.version>1</app.version>
     	
     	<!-- Encoding -->
@@ -54,7 +61,13 @@
             <url>https://oss.sonatype.org/content/repositories/snapshots</url>
         </repository>
     </repositories>
-
+    
+    <!-- 
+    <compileSourcesArtifacts>
+	  <compileSourcesArtifact>groupId:artifactId</compileSourcesArtifact>
+	<compileSourcesArtifacts>
+	 -->
+	 
     <build>
         <outputDirectory>${webappDirectory}/WEB-INF/classes</outputDirectory>
 
@@ -62,6 +75,21 @@
             <resource>
                 <directory>src/main/resources</directory>
             </resource>
+			 
+			<resource>
+		    	<directory>src-json/main/java</directory>
+			</resource>
+			
+			<resource>
+		    	<directory>src-jre/main/java</directory>
+			</resource>
+			
+			<!--  
+			<resource>
+				<directory>${project.basedir}/../core/src/main/java</directory>
+			</resource>
+			-->
+			
         </resources>
 
         <plugins>
@@ -104,6 +132,7 @@
                     </execution>
                 </executions>
             </plugin>
+            
         </plugins>
     </build>
 
@@ -185,5 +214,13 @@
             <version>4.12</version>
             <scope>test</scope>
         </dependency>
+        
+        <!-- JSON -->
+		<dependency>
+		    <groupId>org.json</groupId>
+		    <artifactId>json</artifactId>
+		    <version>20171018</version>
+		</dependency>
+		        
     </dependencies>
 </project>

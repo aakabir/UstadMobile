@@ -6,6 +6,9 @@
 			<attribute name="maven.pomderived" value="true"/>
 		</attributes>
 	</classpathentry>
+	<classpathentry kind="src" path="src-jre/main/java"/>
+	<classpathentry kind="src" path="src-json/main/java"/>
+	<classpathentry kind="src" path="src-core"/>
 	<classpathentry excluding="**" kind="src" output="target/gwtp-basic-archetype-1.0-SNAPSHOT/WEB-INF/classes" path="src/main/resources">
 		<attributes>
 			<attribute name="maven.pomderived" value="true"/>

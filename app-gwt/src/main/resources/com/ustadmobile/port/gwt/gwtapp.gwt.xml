@@ -1,24 +1,50 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <!DOCTYPE module PUBLIC "-//Google Inc.//DTD Google Web Toolkit 2.7.0//EN"
         "http://gwtproject.org/doctype/2.7.0/gwt-module.dtd">
+        
 <module rename-to='gwtapp'>
     <inherits name='com.google.gwt.user.User'/>
     <inherits name="com.gwtplatform.mvp.MvpWithEntryPoint"/>
 
     <extend-configuration-property name="gin.ginjector.modules"
-                                   value="com.ustadmobile.port.gwt.client.gin.ClientModule"/>
+       	value="com.ustadmobile.port.gwt.client.gin.ClientModule"/>
 
-    <!-- Specify the paths for translatable code                    -->
-    <source path='client'/>
-    <source path='shared'/>
+
+	<!-- Module Inheritance -->
+	
+	<!-- Formatting (NumberFormat or DateTimeFormat -->
+	<inherits name="com.google.gwt.i18n.I18N"/>
+	
+	<!-- Logging -->
+	<inherits name="com.google.gwt.logging.Logging"/>
+	
+	<!-- JSON GWT-->
+	<inherits name="org.JsonGWT"/>
+	
+	<!-- Core -->
+	<!-- <inherits name="com.ustadmobile.core.Core"/> -->
+	
+	<!-- Hashtable for GWT (Hashmap) -->
+	<inherits name="java.HashmapHashtable" />
     
     <!--GWT Material-->
-    
     <inherits name="gwt.material.design.GwtMaterialWithJQueryDebug"/>
     <inherits name="gwt.material.design.themes.ThemeBlue"/>
     <inherits name="gwt.material.design.addins.GwtMaterialAddinsDebug"/>
     <inherits name="gwt.material.design.GwtMaterialTableDebug"/>
-	
-	 
+  	
+	<!-- Specify the paths for translatable code on client-->
+    <source path='client'/>
+    <source path='shared'/>
+    <!-- <source path='org.json'/> Commenting because JsonGWT inherits already has it-->
+    
+    <!-- Replacement : Deferred Bindings -->
+  	<!-- Testing Deferred Binding with normal classes.
+  		 Update: Does not work -->
+  	<replace-with class="com.ustadmobile.port.gwt.client.test.ReplaceWithThis">
+    	<when-type-is class="com.ustadmobile.port.gwt.client.util.ReplaceWithThis"/>
+  	</replace-with>
+    
+    
     <set-configuration-property name="CssResource.enableGss" value="true"/>
 </module>
