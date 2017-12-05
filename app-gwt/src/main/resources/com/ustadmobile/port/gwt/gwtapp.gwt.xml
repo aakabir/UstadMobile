@@ -22,7 +22,7 @@
 	<inherits name="org.JsonGWT"/>
 	
 	<!-- Core -->
-	<!-- <inherits name="com.ustadmobile.core.Core"/> -->
+	<inherits name="com.ustadmobile.Core"/>
 	
 	<!-- Hashtable for GWT (Hashmap) -->
 	<inherits name="java.HashmapHashtable" />
