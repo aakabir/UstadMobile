@@ -1,14 +1,13 @@
 package com.ustadmobile.port.gwt.client.application;
 
-///*
 import org.json.JSONException;
 import org.json.JSONObject;
-//*/
 
 import java.util.Hashtable;
 
 //testing deferred binding
 import com.ustadmobile.port.gwt.client.util.ReplaceWithThis;
+
 import com.google.gwt.core.client.GWT;
 import com.google.inject.Inject;
 import com.google.web.bindery.event.shared.EventBus;
@@ -20,6 +19,9 @@ import com.gwtplatform.mvp.client.proxy.Proxy;
 import com.gwtplatform.mvp.shared.proxy.PlaceRequest;
 import com.ustadmobile.port.gwt.client.place.NameTokens;
 import com.gwtplatform.mvp.client.presenter.slots.NestedSlot;
+
+//import com.ustadmobile.core.impl.UstadMobileSystemImpl;
+import com.ustadmobile.core.test.TestThis;
 
 /**
  * This is the top level presenter of the hierarchy ApplicationPresenter. 
@@ -50,11 +52,8 @@ public class ApplicationPresenter
     //public static Logger logger = Logger.getLogger("NameOfYourLogger");
     
     //like so:
-    //private static final PopupImpl impl = GWT.create(PopupImpl.class);
     //private static ReplaceWithThis bindingTest = GWT.create(ReplaceWithThis.class);
-    
 
-    ///*
     @Inject
     ApplicationPresenter(
             EventBus eventBus,
@@ -66,8 +65,7 @@ public class ApplicationPresenter
         this.placeManager = placeManager;
         
         GWT.log("ApplicationPresenter");
-        //Testing this
-        ///*
+
         JSONObject jsonObject = new JSONObject();
         try {
 			jsonObject.put("key", "value");
@@ -84,11 +82,17 @@ public class ApplicationPresenter
         String hashTableValue = (String) hashtableObj.get(key);
         GWT.log("GWT Hashtable key's value: " + hashTableValue);
         GWT.log("Aloha");
-		//*/
         
         //Testing replace
         ReplaceWithThis bindingTest = new ReplaceWithThis();
         GWT.log(bindingTest.value);
+        
+        GWT.log("Testing some core stuff..");
+        
+        //UstadMobileSystemImpl impl = UstadMobileSystemImpl.getInstance();
+        TestThis testThis = new TestThis();
+        GWT.log("This value is from core:" + testThis.value);
+        GWT.log("Implemented.");
         
         //If you have, 
         //view.setUiHanders(this);

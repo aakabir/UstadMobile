@@ -9,7 +9,6 @@
     <extend-configuration-property name="gin.ginjector.modules"
        	value="com.ustadmobile.port.gwt.client.gin.ClientModule"/>
 
-
 	<!-- Module Inheritance -->
 	
 	<!-- Formatting (NumberFormat or DateTimeFormat -->
@@ -21,7 +20,11 @@
 	<!-- JSON GWT-->
 	<inherits name="org.JsonGWT"/>
 	
+	<!-- XML GWT -->
+	<inherits name="org.XmlPullGWT" />
+	
 	<!-- Core -->
+	<!-- <inherits name="com.ustadmobile.core.Core"/>-->
 	<inherits name="com.ustadmobile.Core"/>
 	
 	<!-- Hashtable for GWT (Hashmap) -->

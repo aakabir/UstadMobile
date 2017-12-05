@@ -7,9 +7,10 @@
   "http://gwtproject.org/doctype/2.7.0/gwt-module.dtd">
 <module >
 
-<source path='core'/>
+	<source path='core'/>
+	
 
-  
+  	
   <!-- allow Super Dev Mode -->
   <add-linker name="xsiframe"/>
 </module>
