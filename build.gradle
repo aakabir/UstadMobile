@@ -5,7 +5,7 @@ buildscript {
         jcenter()
     }
     dependencies {
-        classpath 'com.android.tools.build:gradle:2.3.1'
+        classpath 'com.android.tools.build:gradle:2.3.3'
         // NOTE: Do not place your application dependencies here; they belong
         // in the individual module build.gradle files
     }
@@ -19,6 +19,13 @@ plugins {
 allprojects {
     repositories {
         jcenter()
+        maven {
+            url "http://devserver2.ustadmobile.com/repo-mvn"
+        }
+
+        maven {
+            url "https://maven.google.com"
+        }
     }
 }
 
@@ -26,10 +33,11 @@ task clean(type: Delete) {
     delete rootProject.buildDir
 }
 
-version = "0.2.4.21"
+version = "0.2.4.68"
 ext {
     ustadVersion = project.version
-    ustadVersionCode = 90
+    ustadVersionCode = 148
+    nanoLrsVersion = "0.2.409"
 }
 
 ext.buildConfigProperties = new Properties()
@@ -52,6 +60,7 @@ task copyLocalConfigToRepoDir(type: Copy) {
 
         include "app-android/src/localconfig/**"
         include "app-j2me/res-local/**"
+        include "core/src/localconfig/**"
     }
 
     into project.hasProperty("configDst") ? configDst : "../UstadMobile-config-" + project.ext.buildConfigProperties["localConfigId"]
@@ -152,6 +161,3 @@ task pullLocalConfig() {
         tasks.copyLocalConfigFromRepoDir.execute()
     }
 }
-
-
-

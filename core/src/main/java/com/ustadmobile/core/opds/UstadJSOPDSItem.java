@@ -30,17 +30,23 @@
  */
 package com.ustadmobile.core.opds;
 
+import com.ustadmobile.core.impl.HTTPResult;
 import com.ustadmobile.core.impl.UMLog;
 import com.ustadmobile.core.impl.UstadMobileSystemImpl;
-
-import java.io.ByteArrayInputStream;
-import java.io.ByteArrayOutputStream;
-import java.io.IOException;
-import java.util.Vector;
+import com.ustadmobile.core.util.UMIOUtils;
+import com.ustadmobile.core.util.UMUtil;
 
 import org.xmlpull.v1.XmlPullParser;
 import org.xmlpull.v1.XmlPullParserException;
 import org.xmlpull.v1.XmlSerializer;
+
+import java.io.ByteArrayInputStream;
+import java.io.ByteArrayOutputStream;
+import java.io.IOException;
+import java.io.InputStream;
+import java.util.Hashtable;
+import java.util.List;
+import java.util.Vector;
 
 /**
  * Abstract class that represents an OPDS Item - this can be a feed itself or an entry within a feed.
@@ -48,15 +54,21 @@ import org.xmlpull.v1.XmlSerializer;
  * Items can be serialized to Xml using the XmlSerializer class and the serialize method
  * Items can be loaded from Xml using the XmlPullParser and the method loadFromXpp
  *
+ * The href property represents where the item was loaded from. When an item is serialized it using
+ * the serialize method it is possible to instruct the serializer to add an absolute self link, so
+ * that the original href can be determined when the feed is deserialized and used to resolve links.
+ *
  * @author varuna
  */
-public abstract class UstadJSOPDSItem {
+public abstract class UstadJSOPDSItem implements Runnable {
     
     public String title;
     
     public String id;
     
     protected Vector linkVector;
+
+    protected String language;
 
     public static final String NS_ATOM = "http://www.w3.org/2005/Atom";
 
@@ -76,6 +88,8 @@ public abstract class UstadJSOPDSItem {
     public static final int ATTR_UPDATED = 9;
     public static final int ATTR_LINK = 10;
     public static final int ATTR_ENTRY = 11;
+    public static final int ATTR_CONTENT = 12;
+    public static final int ATTR_TYPE = 13;
     
     public static final String[] ATTR_NAMES = {
         "rel", //ATTR_REL 
@@ -83,15 +97,32 @@ public abstract class UstadJSOPDSItem {
         "href", //ATTR_HREF
         "length", //ATTR_LENGTH
         "title",  //ATTR_TITLE
-        "hreflang", //AtTR_HREFLANG
+        "hreflang", //ATTR_HREFLANG
         "id", //ATTR_ID
         "summary",//ATTR_SUMMARY
         "publisher", //ATTR_PUBLISHER
         "updated", //ATTR_UPDATED
         "link", //ATTR_LINK
-        "entry"
+        "entry", //ATTR_ENTRY
+        "content", // ATTR_CONTENT
+        "type" //ATTR_TYPE
     };
-    
+
+    /**
+     * Entry content type - text
+     */
+    public static final String CONTENT_TYPE_TEXT = "text";
+
+    /**
+     * Entry content type - html
+     */
+    public static final String CONTENT_TYPE_XHTML = "xhtml";
+
+    /**
+     * The type attribute of the content tag.
+     */
+    protected String contentType;
+
     /**
      * ATTR_NAMES from 0 to LINK_ATTRS_END are those that are stored in the 
      * String array returned by UstadJSOPDSFeed to represent a link
@@ -108,12 +139,20 @@ public abstract class UstadJSOPDSItem {
     public String updated;
     
     public String summary;
+
+    public String content;
+
     public Vector authors;    
     public String publisher;
     
     public String bgColor;
     
     public String textColor;
+
+    /**
+     * The url from which this item was loaded, if applicable.
+     */
+    protected transient String href;
     
     /**
     * Atom/XML feed mime type constant
@@ -141,6 +180,34 @@ public abstract class UstadJSOPDSItem {
     public static String LINK_ACQUIRE_OPENACCESS = 
            "http://opds-spec.org/acquisition/open-access";
 
+    public static final String LINK_REL_SELF = "self";
+
+    /**
+     * Sometimes we need to know where a feed came from in order to resolve a link contained in that
+     * feed. The self link itself might be relative. The feed might be serialized along the way.
+     * Therefor we need to embed an absolute link to the feed itself.
+     *
+     * We do this by adding a link with the rel attribute set
+     */
+    public static final String LINK_REL_SELF_ABSOLUTE = "http://www.ustadmobile.com/namespace/self-absolute";
+
+    /**
+     * The alternate links as per the Atom spec
+     */
+    public static final String LINK_REL_ALTERNATE = "alternate";
+
+
+    /**
+     * The related links as per the Atom spec
+     */
+    public static final String LINK_REL_RELATED = "related";
+
+
+    /**
+     * The subsection link as per the Atom spec
+     */
+    public static final String LINK_REL_SUBSECTION = "subsection";
+
     /**
     * Type to be used for a catalog link of an acquisition feed as per OPDS spec
     * 
@@ -159,6 +226,14 @@ public abstract class UstadJSOPDSItem {
           "application/atom+xml;profile=opds-catalog;kind=navigation";
 
     /**
+     * Type to be used to represent an OPDS entry as per the opds spec
+     *
+     * @type String
+     */
+    public static final String TYPE_ENTRY_OPDS =
+            "application/atom+xml;type=entry;profile=opds-catalog";
+
+    /**
     * The type of link used for an epub file itself
     * 
     * @type String
@@ -175,16 +250,71 @@ public abstract class UstadJSOPDSItem {
     * OPDS constnat for the thumbnail
     * @type String
     */
-    public static String LINK_THUMBNAIL = "http://opds-spec.org/image/thumbnail";
-    
-    
+    public static String LINK_REL_THUMBNAIL = "http://opds-spec.org/image/thumbnail";
+
+    /**
+     * Ustad Mobile's own cover image
+     * @type String
+     */
+    public static String LINK_COVER_IMAGE = "http://www.ustadmobile.com/ns/opds/cover-image";
+
+
+    public interface OpdsItemLoadCallback {
+
+        void onEntryLoaded(UstadJSOPDSItem item, int position, UstadJSOPDSEntry entryLoaded);
+
+        void onDone(UstadJSOPDSItem item);
+
+        void onError(UstadJSOPDSItem item, Throwable cause);
+    }
+
+    private String asyncLoadUrl;
+
+    private OpdsItemLoadCallback asyncLoadCallback;
+
+    private Hashtable asyncHttpheaders;
+
+    private Object asyncContext;
 
     public UstadJSOPDSItem() {
         this.linkVector = new Vector();
     }
-    
-    public void addLink(String rel, String mimeType, String href) {
-        linkVector.addElement(new String[]{rel, mimeType, href, null, null, null});
+
+//    @Override
+//    public boolean equals(Object o) {
+//        if(o == this) {
+//            return true;
+//        }else if(o != null && o instanceof UstadJSOPDSItem) {
+//            UstadJSOPDSItem otherItem = (UstadJSOPDSItem)o;
+//            if(otherItem.id != null && otherItem.id.equals(id)){
+//                //go through all properties
+//
+//            }
+//        }
+//    }
+
+    /**
+     * The language of this item as specified by the dublin core dc:language tag if present
+     *
+     * @return Language specified by dc language tag, or null if not present
+     */
+    public String getLanguage() {
+        return language;
+    }
+
+    /**
+     * The language of this item as specified by the dublin core dc:language tag
+     *
+     * @param language The langauge for this item
+     */
+    public void setLanguage(String language) {
+        this.language = language;
+    }
+
+    public String[] addLink(String rel, String mimeType, String href) {
+        String[] newLink = new String[]{rel, mimeType, href, null, null, null};
+        linkVector.addElement(newLink);
+        return newLink;
     }
     
     /**
@@ -219,23 +349,28 @@ public abstract class UstadJSOPDSItem {
     }
     
     /**
-     * Search through the links of this opds item
+     * Search through the links of this opds item - return any matching links
      * 
      * @param linkRel
      * @param mimeType
+     * @param href
      * @param relByPrefix
      * @param mimeTypeByPrefix
-     * @return 
+     * @param hrefByPrefix
+     * @param limit maximum number of results to find - stop looking and return when hit. 0 = unlimited
+     *
+     * @return Vector of links string arrays that match the given parameters.
      */
-    public Vector getLinks(String linkRel, String mimeType, boolean relByPrefix,
-            boolean mimeTypeByPrefix) {
+    public Vector getLinks(String linkRel, String mimeType, String href, boolean relByPrefix,
+            boolean mimeTypeByPrefix, boolean hrefByPrefix, int limit) {
         Vector result = new Vector();
-        boolean matchRel = false;
-        boolean matchType = false;
-        
+        boolean matchRel, matchType, matchHref;
+
+        int matches = 0;
         for(int i = 0; i < linkVector.size(); i++) {
             matchRel = true;
             matchType = true;
+            matchHref = true;
             
             String[] thisLink = (String[])linkVector.elementAt(i);
             if(linkRel != null && thisLink[ATTR_REL] != null) {
@@ -253,14 +388,53 @@ public abstract class UstadJSOPDSItem {
             }else if(mimeType != null && thisLink[ATTR_MIMETYPE] == null) {
                 matchType = false;
             }
+
+            if(href != null && thisLink[ATTR_HREF] != null) {
+                matchHref = hrefByPrefix ?
+                        thisLink[ATTR_HREF].startsWith(href)
+                        : thisLink[ATTR_HREF].equals(href);
+            }else if(href != null && thisLink[ATTR_HREF] == null){
+                matchHref = false;
+            }
             
-            if(matchRel && matchType) {
+            if(matchRel && matchType && matchHref) {
                 result.addElement(thisLink);
+                matches++;
+                if(limit > 0 && matches == limit)
+                    return result;
             }
         }
         
         return result;
     }
+
+    public Vector getLinks(String linkRel, String mimeType, boolean relByPrefix, boolean mimeTypeByPrefix) {
+        return getLinks(linkRel, mimeType, null, relByPrefix, mimeTypeByPrefix, false, 0);
+    }
+
+    /**
+     * As per the OPDS spec available translations are given in the form of:
+     * link rel='alternate' hreflang='en' href=''
+     *
+     * @return a vector of link string arrays
+     */
+    public Vector getAlternativeTranslationLinks() {
+        Vector alternateLinks = getLinks(LINK_REL_ALTERNATE, null);
+        Vector translations = new Vector();
+        final String itemLang = getLanguage();
+
+        String[] currentLink;
+        for(int i = 0; i < alternateLinks.size(); i++) {
+            currentLink = (String[])alternateLinks.elementAt(i);
+            if(currentLink[ATTR_HREFLANG] != null
+                    && !UMUtil.isSameLanguage(currentLink[ATTR_HREFLANG], itemLang))
+                translations.addElement(currentLink);
+        }
+
+        return translations;
+    }
+
+
 
     /**
      * Returns the String of attributes for the first link matching the given criteria. Convenience
@@ -273,8 +447,8 @@ public abstract class UstadJSOPDSItem {
      *
      * @return
      */
-    public String[] getFirstLink(String linkRel, String mimeType, boolean relByPrefix, boolean mimeTypeByPrefix ){
-        Vector result = getLinks(linkRel, mimeType, relByPrefix, mimeTypeByPrefix);
+    public String[] getFirstLink(String linkRel, String mimeType, String href, boolean relByPrefix, boolean mimeTypeByPrefix, boolean hrefByPrefix){
+        Vector result = getLinks(linkRel, mimeType, href, relByPrefix, mimeTypeByPrefix, hrefByPrefix, 1);
         if(result.size() == 0) {
             return null;
         }else {
@@ -282,8 +456,12 @@ public abstract class UstadJSOPDSItem {
         }
     }
 
+    public String[] getFirstLink(String linkRel, String mimeType, boolean relByPrefix, boolean mimeTypeByPrefix) {
+        return getFirstLink(linkRel, mimeType, null, relByPrefix, mimeTypeByPrefix, false);
+    }
+
     public String[] getFirstLink(String linkRel, String mimeType) {
-        return getFirstLink(linkRel, mimeType, false, false);
+        return getFirstLink(linkRel, mimeType, null, false, false, false);
     }
 
     
@@ -295,7 +473,7 @@ public abstract class UstadJSOPDSItem {
      * @return String][ array of link items as per getLinks or null if not found on this item
      */
     public String[] getThumbnailLink(boolean imgFallback) {
-        Vector results = getLinks(LINK_THUMBNAIL, null);
+        Vector results = getLinks(LINK_REL_THUMBNAIL, null);
         if(results.size() > 0) {
             return ((String[])results.elementAt(0));
         }
@@ -319,9 +497,26 @@ public abstract class UstadJSOPDSItem {
      * spaces and then create a root item.
      *
      * @param xs XmlSerializer to use
+     * @param addAbsoluteSelfHref If true and the href property is not null, a link will be added to
+     *                            this item with a relationship as per the absolute self cnostant
+     *                            with the value of the href.
+     *
      * @throws IOException If an IOException is thrown by the underlying output stream
      */
-    public abstract void serialize(XmlSerializer xs) throws IOException;
+    public abstract void serialize(XmlSerializer xs, boolean addAbsoluteSelfHref) throws IOException;
+
+    /**
+     * Serialize this item to an XmlSerializer. This will create a new Xml Document, set the name
+     * spaces and then create a root item.
+     *
+     * This method will not add an absolute self link and is equivelent to calling serialize(xs, false)
+     *
+     * @param xs XmlSerializer to use
+     * @throws IOException If an IOException is thrown by the underlying output stream
+     */
+    public void serialize(XmlSerializer xs) throws IOException{
+        serialize(xs, false);
+    }
 
     /**
      * Serialize the attributes of this item. This will generate the idm title, summary tags etc.
@@ -334,21 +529,46 @@ public abstract class UstadJSOPDSItem {
         serializeStringToTag(xs, UstadJSOPDSFeed.NS_ATOM, ATTR_NAMES[ATTR_TITLE], title);
         serializeStringToTag(xs, UstadJSOPDSFeed.NS_ATOM, ATTR_NAMES[ATTR_ID], id);
         serializeStringToTag(xs, UstadJSOPDSFeed.NS_ATOM, ATTR_NAMES[ATTR_SUMMARY], summary);
+
+
+        if(content != null) {
+            if(getContentType() == null || getContentType().equals(CONTENT_TYPE_TEXT)) {
+                xs.startTag(UstadJSOPDSFeed.NS_ATOM, ATTR_NAMES[ATTR_CONTENT]);
+                if(getContentType() != null)
+                    xs.attribute(null, ATTR_NAMES[ATTR_TYPE], getContentType());
+
+                xs.text(content);
+                xs.endTag(NS_ATOM, ATTR_NAMES[ATTR_CONTENT]);
+            }else {
+                try {
+                    XmlPullParser parser = UstadMobileSystemImpl.getInstance().newPullParser();
+                    parser.setInput(new ByteArrayInputStream(content.getBytes("UTF-8")), "UTF-8");
+                    UMUtil.passXmlThrough(parser, xs);
+                }catch(XmlPullParserException e) {
+                    e.printStackTrace();
+                }
+            }
+        }
+
         serializeStringToTag(xs, UstadJSOPDSFeed.NS_ATOM, ATTR_NAMES[ATTR_UPDATED], updated);
         serializeStringToTag(xs, UstadJSOPDSFeed.NS_DC, ATTR_NAMES[ATTR_PUBLISHER], publisher);
-        
-        for(int i = 0; i < linkVector.size(); i++) {
+        serializeStringToTag(xs, UstadJSOPDSFeed.NS_DC, "language", language);
+
+        int i, j;
+        for(i = 0; i < linkVector.size(); i++) {
             String[] thisLink = (String[])linkVector.elementAt(i);
             xs.startTag(UstadJSOPDSFeed.NS_ATOM, ATTR_NAMES[ATTR_LINK]);
-            xs.attribute(null, ATTR_NAMES[ATTR_HREF], thisLink[ATTR_HREF]);
-            if(thisLink[ATTR_REL] != null) {
-                xs.attribute(null, ATTR_NAMES[ATTR_REL], thisLink[ATTR_REL]);
-            }
-            if(thisLink[ATTR_MIMETYPE] != null) {
-                xs.attribute(null, ATTR_NAMES[ATTR_MIMETYPE], thisLink[ATTR_MIMETYPE]);
+
+            for(j = 0; j < thisLink.length; j++) {
+                if(thisLink[j] != null) {
+                    xs.attribute(null, ATTR_NAMES[j], thisLink[j]);
+                }
             }
             xs.endTag(UstadJSOPDSFeed.NS_ATOM, ATTR_NAMES[ATTR_LINK]);
         }
+
+
+
     }
     
     
@@ -360,13 +580,15 @@ public abstract class UstadJSOPDSItem {
      * @param ns
      * @param tagName
      * @param tagValue
-     * @throws IOException 
+     * @throws IOException
      */
     private void serializeStringToTag(XmlSerializer xs, String ns, String tagName, String tagValue) throws IOException {
         if(tagValue != null) {
             xs.startTag(ns, tagName).text(tagValue).endTag(ns, tagName);
         }
     }
+
+
 
     protected void serializeStartDoc(XmlSerializer xs) throws IOException {
         xs.startDocument("UTF-8", Boolean.FALSE);
@@ -382,12 +604,13 @@ public abstract class UstadJSOPDSItem {
      *
      * @return
      */
-    public String serializeToString()  {
+    public String serializeToString(boolean addAbsoluteSelfLink, boolean indent)  {
         try {
             XmlSerializer serializer = UstadMobileSystemImpl.getInstance().newXMLSerializer();
             ByteArrayOutputStream bout = new ByteArrayOutputStream();
             serializer.setOutput(bout, "UTF-8");
-            serialize(serializer);
+            serializer.setFeature("http://xmlpull.org/v1/doc/features.html#indent-output", true);
+            serialize(serializer, addAbsoluteSelfLink);
             bout.flush();
             return new String(bout.toByteArray(), "UTF-8");
         }catch(IOException e) {
@@ -396,6 +619,14 @@ public abstract class UstadJSOPDSItem {
         }
 
         return null;
+    }
+
+    public String serializeToString(boolean addAbsoluteSelfLink){
+        return serializeToString(addAbsoluteSelfLink, false);
+    }
+
+    public String serializeToString() {
+        return serializeToString(false, false);
     }
 
     /**
@@ -407,22 +638,25 @@ public abstract class UstadJSOPDSItem {
      * @throws XmlPullParserException If there's an XML parsing exception
      * @throws IOException If there's an underlying IO exception
      */
-    public void loadFromXpp(XmlPullParser xpp, UstadJSOPDSFeed parentFeed) throws XmlPullParserException, IOException{
+    public void loadFromXpp(XmlPullParser xpp, UstadJSOPDSFeed parentFeed, OpdsItemLoadCallback callback) throws XmlPullParserException, IOException{
         int evtType;
         String name;
         String[] linkAttrs;
-        int i;
-        String content = null;
-        boolean isFeed = this instanceof UstadJSOPDSFeed;
-        Vector entriesFound = isFeed? new Vector() : null;
+        int i, entryCount = 0;
+        UstadJSOPDSFeed thisFeed = this instanceof UstadJSOPDSFeed ? (UstadJSOPDSFeed)this: null;
 
         while((evtType = xpp.next()) != XmlPullParser.END_DOCUMENT) {
             if(evtType == XmlPullParser.START_TAG) {
                 name = xpp.getName();
-                if(isFeed && name.equals(ATTR_NAMES[ATTR_ENTRY])) {
+                if(thisFeed != null && name.equals(ATTR_NAMES[ATTR_ENTRY])) {
                     UstadJSOPDSEntry newEntry = new UstadJSOPDSEntry(parentFeed);
-                    newEntry.loadFromXpp(xpp, parentFeed);
-                    entriesFound.addElement(newEntry);
+                    newEntry.loadFromXpp(xpp, parentFeed, callback);
+                    thisFeed.setEntryAt(entryCount, newEntry);
+                    entryCount++;
+
+                    if(callback != null) {
+                        callback.onEntryLoaded(this, entryCount, newEntry);
+                    }
                 }else if(name.equals(ATTR_NAMES[ATTR_TITLE]) && xpp.next() == XmlPullParser.TEXT) {
                     this.title = xpp.getText();
                 }else if(name.equals("id") && xpp.next() == XmlPullParser.TEXT) {
@@ -432,17 +666,29 @@ public abstract class UstadJSOPDSItem {
                     for(i = 0; i < UstadJSOPDSItem.LINK_ATTRS_END; i++) {
                         linkAttrs[i] = xpp.getAttributeValue(null, ATTR_NAMES[i]);
                     }
-                    this.addLink(linkAttrs);
+
+                    if(!linkAttrs[ATTR_REL].equals(LINK_REL_SELF_ABSOLUTE)) {
+                        this.addLink(linkAttrs);
+                    }else {
+                        this.href = linkAttrs[ATTR_HREF];
+                    }
                 }else if(name.equals("updated") && xpp.next() == XmlPullParser.TEXT){
                     this.updated = xpp.getText();
                 }else if(name.equals(ATTR_NAMES[ATTR_SUMMARY]) && xpp.next() == XmlPullParser.TEXT) {
                     this.summary = xpp.getText();
-                }else if(name.equals("content") && xpp.next() == XmlPullParser.TEXT) {
-                    content = xpp.getText();
-                }else if(name.equals("dc:publisher") && xpp.next() == XmlPullParser.TEXT){ // Fix this
+                }else if(name.equals("content")) {
+                    contentType = xpp.getAttributeValue(null, ATTR_NAMES[ATTR_TYPE]);
+                    if(contentType != null && contentType.equals(CONTENT_TYPE_XHTML)) {
+                        this.content = UMUtil.passXmlThroughToString(xpp, ATTR_NAMES[ATTR_CONTENT]);
+                    }else if(xpp.next() == XmlPullParser.TEXT){
+                        this.content = xpp.getText();
+                    }
+                }else if(name.equals("dc:publisher") && xpp.next() == XmlPullParser.TEXT){
                     this.publisher = xpp.getText();
                 }else if(name.equals("dcterms:publisher") && xpp.next() == XmlPullParser.TEXT){
                     this.publisher = xpp.getText();
+                }else if(name.equals("dc:language") && xpp.next() == XmlPullParser.TEXT) {
+                    this.language = xpp.getText();
                 }else if(name.equals("author")){
                     UstadJSOPDSAuthor currentAuthor = new UstadJSOPDSAuthor();
                     do {
@@ -471,19 +717,12 @@ public abstract class UstadJSOPDSItem {
                 }
             }else if(evtType == XmlPullParser.END_TAG) {
                 if(xpp.getName().equals("entry")) {
-                    if(this.summary == null && content != null) {
-                        this.summary = content;
-                    }
                     return;
                 }
             }
         }
 
-        if(isFeed) {
-            UstadJSOPDSFeed feed = (UstadJSOPDSFeed)this;
-            feed.entries = new UstadJSOPDSEntry[entriesFound.size()];
-            entriesFound.copyInto(feed.entries);
-        }
+        //TODO: Trim any other entries in case of refresh - we may have fewer entries
     }
 
     /**
@@ -493,8 +732,8 @@ public abstract class UstadJSOPDSItem {
      * @throws XmlPullParserException
      * @throws IOException
      */
-    public void loadFromXpp(XmlPullParser xpp) throws XmlPullParserException, IOException{
-        loadFromXpp(xpp, null);
+    public void loadFromXpp(XmlPullParser xpp, OpdsItemLoadCallback callback) throws XmlPullParserException, IOException{
+        loadFromXpp(xpp, null, callback);
     }
 
 
@@ -505,11 +744,100 @@ public abstract class UstadJSOPDSItem {
      * @throws XmlPullParserException
      * @throws IOException
      */
-    public void loadFromString(String str) throws XmlPullParserException, IOException{
+    public void loadFromString(String str, OpdsItemLoadCallback callback) throws XmlPullParserException, IOException{
         XmlPullParser parser = UstadMobileSystemImpl.getInstance().newPullParser();
         ByteArrayInputStream bin = new ByteArrayInputStream(str.getBytes("UTF-8"));
         parser.setInput(bin, "UTF-8");
-        loadFromXpp(parser);
+        loadFromXpp(parser, callback);
+    }
+
+    public void loadFromString(String str) throws XmlPullParserException, IOException{
+        loadFromString(str, null);
+    }
+
+
+
+    /**
+     * Load this OPDS item from the given URL asynchronously.
+     *
+     * @param url
+     * @param httpHeaders
+     * @param callback
+     */
+    public void loadFromUrlAsync(String url, Hashtable httpHeaders, Object context, OpdsItemLoadCallback callback) {
+        this.asyncLoadCallback = callback;
+        this.asyncLoadUrl = url;
+        this.asyncHttpheaders = httpHeaders;
+        this.asyncContext = context;
+        this.href = url;
+        new Thread(this).start();
+    }
+
+    public void run() {
+        InputStream in = null;
+        XmlPullParser xpp = null;
+        Throwable err = null;
+
+        try {
+            if(!asyncLoadUrl.startsWith(OpdsEndpoint.OPDS_PROTOCOL)) {
+                HTTPResult[] resultBuf = new HTTPResult[1];
+                UstadMobileSystemImpl.getInstance().getHTTPCacheDir(asyncContext).get(asyncLoadUrl,
+                        null, asyncHttpheaders, resultBuf);
+                if(resultBuf[0] == null || resultBuf[0].getStatus() >= 300)
+                    throw new IOException("Http status: " +
+                            (resultBuf[0] != null ? resultBuf[0].getStatus() : "-1"));
+
+                in = new ByteArrayInputStream(resultBuf[0].getResponse());
+                xpp = UstadMobileSystemImpl.getInstance().newPullParser(in);
+                UstadJSOPDSFeed parentFeed = this instanceof UstadJSOPDSFeed ? (UstadJSOPDSFeed) this : null;
+                loadFromXpp(xpp, parentFeed, asyncLoadCallback);
+            }else {
+                OpdsEndpoint.getInstance().loadItem(asyncLoadUrl, this, asyncContext, asyncLoadCallback);
+            }
+        }catch(IOException e) {
+            err = e;
+        }catch(XmlPullParserException x) {
+            err = x;
+        }finally {
+            UMIOUtils.closeInputStream(in);
+        }
+
+        if(!hasRequiredElements(false)){
+            err = new IllegalArgumentException("Not a valid OPDS item: missing title and/or id");
+        }
+
+        if(err == null) {
+            asyncLoadCallback.onDone(this);
+        }else {
+            asyncLoadCallback.onError(this, err);
+        }
+    }
+
+    /**
+     * Find a list of the languages a link is available in. If no language is specified on hreflang
+     * then we assume that link is in the language of the item it came from.
+     *
+     * @param links Vector of String[] arrays representing links
+     * @param languageList (can be null) The vector into which we will add new languages found.
+     *
+     * @return Vector containing all distinct languages found
+     */
+    public Vector getHrefLanguagesFromLinks(Vector links, Vector languageList) {
+        if(languageList == null)
+            languageList = new Vector();
+
+        int numLinks = links.size();
+        String lang;
+        for(int i = 0; i < numLinks; i++) {
+            lang = ((String[])links.elementAt(i))[ATTR_HREFLANG];
+            if(lang == null)
+                lang = getLanguage();
+
+            if(languageList.indexOf(lang) == -1)
+                languageList.addElement(lang);
+        }
+
+        return languageList;
     }
 
 
@@ -528,6 +856,35 @@ public abstract class UstadJSOPDSItem {
         return -2;
     }
 
+    public String getContentType() {
+        return contentType != null ? contentType: CONTENT_TYPE_TEXT;
+    }
+
+    public void setContentType(String contentType) {
+        this.contentType = contentType;
+    }
+
+    public String getContent() {
+        return content;
+    }
+
+    public void setContent(String content) {
+        this.content = content;
+    }
+
+    /**
+     * Return a summary for this item. If the summary node is set, that will be returned. Otherwise
+     * the content text will be returned.
+     *
+     * TODO: Maybe auto shorten content, when summary is not present
+     *
+     * @return Summary for this item as outlined
+     */
+    public String getSummary(){
+        return summary != null ? summary : content;
+    }
+
+
     public int getBgColor() {
         return parseColorString(bgColor);
     }
@@ -535,5 +892,72 @@ public abstract class UstadJSOPDSItem {
     public int getTextColor() {
         return parseColorString(textColor);
     }
+
+    /**
+     * Get the href that this item was loaded from, if applicable. Applies to feeds and items loaded
+     * from http using async http load, and those where it was manually set. Does not apply to entries
+     * that were not loaded over http but are part of a feed.
+     *
+     * This can be serialized with the feed when using the serialize method as the absolute self link.
+     *
+     * @return The url this item was loaded from, if applicable, as above.
+     */
+    public String getHref() {
+        return href;
+    }
+
+
+
+    public static int indexOfEntryInArray(String entryId, UstadJSOPDSItem[] items) {
+        for (int i = 0;i < items.length; i++){
+            if (items[i] != null && items[i].id.equals(entryId)){
+                return i;
+            }
+        }
+
+        return -1;
+    }
+
+    public static int indexOfItemInVector(String entryId, Vector items) {
+        UstadJSOPDSItem item;
+        for(int i = 0; i < items.size(); i++) {
+            if(items.elementAt(i) == null)
+                continue;
+            item = (UstadJSOPDSItem)items.elementAt(i);
+            if(item.id != null && entryId.equals(item.id))
+                return i;
+        }
+
+        return -1;
+    }
+
+    /**
+     * Check if this item has the elements that are required of an OPDS entry or feed. As per the
+     * spec this is id, title and updated. In reality we can work with just the title and the id.
+     *
+     * @param strict If true, require the title, id and update timestamp to be present to return true
+     *
+     * @return True if this item has the required elements as outlined above
+     */
+    public boolean hasRequiredElements(boolean strict) {
+        boolean hasTitleAndId = title != null && id != null;
+        if(!strict) {
+            return hasTitleAndId;
+        }else {
+            return hasTitleAndId && this.updated != null;
+        }
+    }
+
+
+    /* $if umplatform != 2  $ */
+    public static int indexOfEntryInList(String entryId, List<? extends UstadJSOPDSItem> list) {
+        for(int i = 0; i < list.size(); i++) {
+            if(list.get(i) != null && entryId.equals(list.get(i).id))
+                return i;
+        }
+
+        return -1;
+    }
+    /* $endif$ */
 
 }

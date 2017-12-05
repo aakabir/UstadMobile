@@ -39,10 +39,13 @@ $endif$ */
 /* $if umplatform == 2  $
     import j2meunit.framework.TestCase;
  $else$ */
-    import junit.framework.TestCase;
-/* $endif$ */
-import com.ustadmobile.test.core.buildconfig.TestConstants;
+
 import com.ustadmobile.core.util.TestUtils;
+import com.ustadmobile.test.core.buildconfig.TestConstants;
+
+import junit.framework.TestCase;
+
+/* $endif$ */
 
 
 /**
@@ -56,7 +59,7 @@ import com.ustadmobile.core.util.TestUtils;
 /* $if umplatform == 1  $
 public class TestCatalogView extends ActivityInstrumentationTestCase2<CatalogActivity>{
  $else$ */
-public class TestCatalogView extends TestCase {
+public abstract class TestCatalogView extends TestCase {
 /* $endif */    
     
     public static final int VIEWSHOWTIMEOUT = 10000;
@@ -90,7 +93,7 @@ public class TestCatalogView extends TestCase {
     
     
     public void testCatalogView() throws Exception{
-//        Object context = UMContextGetter.getContext(this);
+//        Object context = UMContextGetter.getTargetContext(this);
 //        UstadMobileSystemImpl impl = UstadMobileSystemImpl.getInstance();
 //        impl.setActiveUser(TestConstants.LOGIN_USER, context);
 //        

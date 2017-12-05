@@ -62,19 +62,43 @@ public class UstadJSOPDSEntry extends UstadJSOPDSItem {
      * 
      * All other properties will be copied by reference.
      * 
-     * @param parentFeed
-     * @param srcItem 
+     * @param parentFeed Parent feed that this entry is linked to.
+     *                   Note: this constructor does *NOT* add itself to the parent feed. The feed's
+     *                   addItem method must be used to do this
+     * @param srcItem UstadJSOPDSEntry item to copy from
+     * @param copyLinks If true copy all links for this item.
      */
-    public UstadJSOPDSEntry(UstadJSOPDSFeed parentFeed, UstadJSOPDSEntry srcItem) {
+    public UstadJSOPDSEntry(UstadJSOPDSFeed parentFeed, UstadJSOPDSEntry srcItem, boolean copyLinks) {
         this(parentFeed);
         
         setEntryFromSrcItem(srcItem);
         
         this.linkVector = new Vector();
-        for(int i = 0; i < srcItem.linkVector.size(); i++) {
-            this.linkVector.addElement(srcItem.linkVector.elementAt(i));
+        if(copyLinks) {
+            for(int i = 0; i < srcItem.linkVector.size(); i++) {
+                this.linkVector.addElement(srcItem.linkVector.elementAt(i));
+            }
         }
     }
+
+    /**
+     * Constructor that will copy the given srcItem.  The vectors used to store
+     * links, authors etc. will be new vectors but their content will be
+     * references to the same items.
+     *
+     * All other properties will be copied by reference.
+     *
+     * This method is simply a synonym for UstadJSOPDSEntry(parentFeed, srcItem, true)
+     *
+     * @param parentFeed Parent feed that this entry is linked to.
+     *                   Note: this constructor does *NOT* add itself to the parent feed. The feed's
+     *                   addItem method must be used to do this
+     * @param srcItem UstadJSOPDSEntry item to copy from
+     */
+    public UstadJSOPDSEntry(UstadJSOPDSFeed parentFeed, UstadJSOPDSEntry srcItem) {
+        this(parentFeed, srcItem, true);
+    }
+
     
     /**
      * Create a new entry for a given OPF
@@ -87,6 +111,10 @@ public class UstadJSOPDSEntry extends UstadJSOPDSItem {
         this.linkVector = new Vector();
         this.title = opf.title;
         this.id = opf.id;
+        if(opf.description != null) {
+            this.content = opf.description;
+            this.contentType = CONTENT_TYPE_TEXT;
+        }
         
         this.addLink(UstadJSOPDSEntry.LINK_ACQUIRE, mimeType, containerHREF);
     }
@@ -133,7 +161,10 @@ public class UstadJSOPDSEntry extends UstadJSOPDSItem {
         this.id = srcItem.id;
         this.updated = srcItem.updated;
         this.summary = srcItem.summary;
+        this.content = srcItem.content;
+        this.contentType = srcItem.getContentType();
         this.authors = new Vector();
+        this.language = srcItem.language;
         if(srcItem.authors != null) {
             for(int i = 0; i < srcItem.authors.size(); i++) {
                 this.authors.addElement(srcItem.authors.elementAt(i));
@@ -163,14 +194,33 @@ public class UstadJSOPDSEntry extends UstadJSOPDSItem {
         return this.getFirstLink(LINK_ACQUIRE, mimeType, true, false);
     }
 
-    
+
+    /**
+     * Find the best acquisition link by mime type. If none matches any of the preferred mime types
+     * the first acquisition link is returned.
+     *
+     * @param preferredMimeTypes Preferred mime types in order of most preferred to least preferred
+     *
+     * @return
+     */
+    public String[] getBestAcquisitionLink(final String[] preferredMimeTypes) {
+        String[] link;
+        for(int i = 0; i < preferredMimeTypes.length; i++) {
+            link = getFirstAcquisitionLink(preferredMimeTypes[i]);
+            if(link != null)
+                return link;
+        }
+
+        return getFirstAcquisitionLink(null);
+    }
+
     public Vector getNavigationLinks(){
         return this.getLinks(null, TYPE_ATOMFEED, false, true);
     }
     
     public Vector getThumbnails(){
         Vector tentries = new Vector();
-        tentries = this.getLinks(LINK_THUMBNAIL, null);
+        tentries = this.getLinks(LINK_REL_THUMBNAIL, null);
         if (tentries.size() > 0){
             return tentries;
         }
@@ -191,7 +241,7 @@ public class UstadJSOPDSEntry extends UstadJSOPDSItem {
         }
         
         Vector tentries = new Vector();
-        tentries = this.getLinks(LINK_THUMBNAIL, null);
+        tentries = this.getLinks(LINK_REL_THUMBNAIL, null);
         if (tentries.size() > 0){
             return tentries;
         }
@@ -207,10 +257,27 @@ public class UstadJSOPDSEntry extends UstadJSOPDSItem {
      * @param xs XmlSerializer to use
      * @throws IOException
      */
-    public void serialize(XmlSerializer xs) throws IOException{
+    public void serialize(XmlSerializer xs, boolean addAbsoluteSelfHref) throws IOException{
         serializeStartDoc(xs);
-        serializeEntryTag(xs);
+        serializeEntryTag(xs, addAbsoluteSelfHref);
         xs.endDocument();
+    }
+
+    /**
+     * Serialize this entry as a tag the given XmlSerializer. This will *NOT* start and end the document.
+     * It is used both by the serialize method and UstadJSOPDSFeed,
+     *
+     * @param xs XmlSerialize to serialize to
+     * @param addAbsoluteSelfLink if true, and href is not null, add an absolute self link
+     * @throws IOException
+     */
+    protected void serializeEntryTag(XmlSerializer xs, boolean addAbsoluteSelfLink) throws IOException{
+        xs.startTag(UstadJSOPDSFeed.NS_ATOM, ATTR_NAMES[ATTR_ENTRY]);
+        if(addAbsoluteSelfLink && href != null) {
+            addLink(LINK_REL_SELF_ABSOLUTE, "application/xml", href);
+        }
+        serializeAttrs(xs);
+        xs.endTag(UstadJSOPDSFeed.NS_ATOM, ATTR_NAMES[ATTR_ENTRY]);
     }
 
     /**
@@ -221,9 +288,53 @@ public class UstadJSOPDSEntry extends UstadJSOPDSItem {
      * @throws IOException
      */
     protected void serializeEntryTag(XmlSerializer xs) throws IOException{
-        xs.startTag(UstadJSOPDSFeed.NS_ATOM, ATTR_NAMES[ATTR_ENTRY]);
-        serializeAttrs(xs);
-        xs.endTag(UstadJSOPDSFeed.NS_ATOM, ATTR_NAMES[ATTR_ENTRY]);
+        serializeEntryTag(xs, false);
     }
 
+    /**
+     * Create an OPDS Entry Feed from this entry item.
+     *
+     * @return UstadJSOPDSFeed with one entry 
+     */
+    public UstadJSOPDSFeed getEntryFeed() {
+        String feedHref = this.parentFeed != null ? this.parentFeed.href : null;
+        UstadJSOPDSFeed feed = new UstadJSOPDSFeed(feedHref,this.title, this.id + "-um-entry");
+        feed.addEntry(new UstadJSOPDSEntry(this.parentFeed, this));
+        feed.addLink(LINK_REL_SELF, UstadJSOPDSFeed.TYPE_ACQUISITIONFEED, feedHref);
+        return feed;
+    }
+
+    /**
+     * Get the entry ids of translated versions of this resource. Looks at the alternative translation
+     * links, and then goes through the parent feed to find those entries.
+     *
+     * @return String array of translated versions of this resource
+     */
+    public String[] getAlternativeTranslationEntryIds() {
+        Vector translationLinks = getAlternativeTranslationLinks();
+        Vector translatedIds = new Vector();
+        String[] currentLink;
+        UstadJSOPDSEntry translatedEntry;
+        for(int i = 0; i < translationLinks.size(); i++) {
+            currentLink = (String[])translationLinks.elementAt(i);
+            translatedEntry = parentFeed.findEntryByAlternateHref(
+                    currentLink[ATTR_HREF]);
+            if(translatedEntry != null)
+                translatedIds.addElement(translatedEntry.id);
+        }
+
+        String[] alternativeEntryIds = new String[translatedIds.size()];
+        translatedIds.copyInto(alternativeEntryIds);
+        return alternativeEntryIds;
+    }
+
+    @Override
+    public String getHref() {
+        if(this.href != null)
+            return href;
+        else if(this.parentFeed != null)
+            return this.parentFeed.getHref();
+        else
+            return null;
+    }
 }

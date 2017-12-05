@@ -34,18 +34,24 @@ package com.ustadmobile.port.android.view;
 import android.content.Context;
 import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
-import android.graphics.Canvas;
-import android.graphics.drawable.Drawable;
+import android.support.v4.content.ContextCompat;
 import android.util.AttributeSet;
+import android.util.Log;
 import android.view.View;
 import android.widget.ImageView;
-import android.widget.ProgressBar;
 import android.widget.TextView;
 
 import com.toughra.ustadmobile.R;
-import com.ustadmobile.core.controller.CatalogController;
-import com.ustadmobile.core.controller.CatalogEntryInfo;
+import com.ustadmobile.core.controller.CatalogPresenter;
+import com.ustadmobile.core.controller.UstadBaseController;
+import com.ustadmobile.core.generated.locale.MessageID;
+import com.ustadmobile.core.model.CourseProgress;
 import com.ustadmobile.core.opds.UstadJSOPDSEntry;
+import com.ustadmobile.core.util.UMFileUtil;
+import com.ustadmobile.core.view.ImageLoader;
+import com.ustadmobile.core.view.UstadView;
+
+import java.util.HashMap;
 
 /**
  * Created by mike on 08/08/15.
@@ -54,15 +60,20 @@ public class OPDSEntryCard extends android.support.v7.widget.CardView {
 
     private UstadJSOPDSEntry entry;
 
+    private static final HashMap<Integer, Integer> STATUS_TO_COLOR_MAP = new HashMap<>();
+
+    static {
+        STATUS_TO_COLOR_MAP.put(MessageID.in_progress, R.color.entry_learner_progress_in_progress);
+        STATUS_TO_COLOR_MAP.put(MessageID.failed_message, R.color.entry_learner_progresss_failed);
+        STATUS_TO_COLOR_MAP.put(MessageID.passed, R.color.entry_learner_progress_passed);
+    }
+
     /**
      * The 100% amount of the progress bar; defined as 100
      */
     public static final int PROGRESS_ENTRY_MAX = 100;
 
-    /**
-     * A drawable that represents the status of the entry (e.g. acquired, not acquired, etc)
-     */
-    private Drawable opdsStatusOverlay;
+    private DownloadProgressView mDownloadProgressView;
 
 
     public OPDSEntryCard(Context ctx) {
@@ -80,11 +91,25 @@ public class OPDSEntryCard extends android.support.v7.widget.CardView {
 
     public void setOPDSEntry(UstadJSOPDSEntry entry) {
         this.entry = entry;
+        String summary = entry.getSummary();
         ((TextView)findViewById(R.id.opdsitem_title_text)).setText(entry.title);
+        ((TextView)findViewById(R.id.opds_item_detail_text)).setText(summary != null ? summary : "");
+        mDownloadProgressView = findViewById(R.id.opds_item_download_progress_view);
     }
 
     public UstadJSOPDSEntry getEntry() {
         return this.entry;
+    }
+
+    /**
+     * set the status on whether a file can be downloaded locally or not
+     * @param isAvailable
+     */
+
+    public void setLocalAvailableFile(boolean isAvailable){
+        ((TextView)findViewById(R.id.opds_item_detail_text)).setText(
+                isAvailable? R.string.file_available_locally : R.string.file_unavailable_locally);
+
     }
 
 
@@ -97,25 +122,57 @@ public class OPDSEntryCard extends android.support.v7.widget.CardView {
 
     public void setProgressBarVisible(boolean visible) {
         int visibility = visible ? View.VISIBLE : View.INVISIBLE;
-        ((ProgressBar)findViewById(R.id.opds_item_progressbar)).setVisibility(visibility);
+        findViewById(R.id.opds_item_download_progress_view).setVisibility(visibility);
     }
 
     /**
-     * Set the current progress amount on the entry - where PROGRESS_ENTRY_MAX is 100%
+     * Set the current progress amount on the entry - a float between 0 and 1
      *
      * @param loaded
      */
-    public void setDownloadProgressBarProgress(int loaded) {
-        ((ProgressBar)findViewById(R.id.opds_item_progressbar)).setProgress(loaded);
+    public void setDownloadProgressBarProgress(float loaded) {
+        mDownloadProgressView.setProgress(loaded);
+    }
+
+    public void setDownloadProgressStatusText(String statusText) {
+        mDownloadProgressView.setStatusText(statusText);
+    }
+
+    /**
+     * Set visibility of the caption view - Available Locally/Unavailable Locally
+     * @param visible
+     */
+    public void setFileAvailabilityTextVisibility(boolean visible){
+        Log.d("File Availability",String.valueOf(visible));
+        int visibility=visible ? View.VISIBLE : View.INVISIBLE;
+        findViewById(R.id.opds_item_detail_text).setVisibility(visibility);
+
     }
 
     public void setOPDSEntryOverlay(int overlay) {
-        if(overlay == CatalogEntryInfo.ACQUISITION_STATUS_ACQUIRED) {
-            opdsStatusOverlay = getResources().getDrawable(R.drawable.opds_item_overlay_acquired);
-        }else {
-            opdsStatusOverlay = null;
+        ImageView statusIconView = (ImageView)findViewById(R.id.opds_item_status_icon);
+        TextView statusText = (TextView)findViewById(R.id.opds_item_status_text);
+        switch(overlay) {
+            case CatalogPresenter.STATUS_ACQUIRED:
+                findViewById(R.id.opds_item_download_progress_view).setVisibility(View.GONE);
+                findViewById(R.id.opds_item_status_layout).setVisibility(View.VISIBLE);
+                statusIconView.setImageDrawable(ContextCompat.getDrawable(getContext(),
+                        R.drawable.ic_done_black_16dp));
+                statusText.setText(R.string.downloaded);
+                break;
+            case CatalogPresenter.STATUS_AVAILABLE_LOCALLY:
+                findViewById(R.id.opds_item_download_progress_view).setVisibility(View.GONE);
+                findViewById(R.id.opds_item_status_layout).setVisibility(View.VISIBLE);
+                statusIconView.setImageDrawable(ContextCompat.getDrawable(getContext(),
+                        R.drawable.ic_nearby_black_24px));
+                statusText.setText(R.string.file_available_locally);
+                break;
+            case CatalogPresenter.STATUS_ACQUISITION_IN_PROGRESS:
+            case CatalogPresenter.STATUS_NOT_ACQUIRED:
+                findViewById(R.id.opds_item_status_layout).setVisibility(View.GONE);
+                break;
+
         }
-        invalidate();
     }
 
     /**
@@ -127,14 +184,35 @@ public class OPDSEntryCard extends android.support.v7.widget.CardView {
         ((ImageView)findViewById(R.id.opds_item_thumbnail)).setImageBitmap(bitmap);
     }
 
-    @Override
-    protected void dispatchDraw(Canvas canvas) {
-        super.dispatchDraw(canvas);
-        if(opdsStatusOverlay != null) {
-            int width = canvas.getWidth();
-            int height = canvas.getHeight();
-            opdsStatusOverlay.setBounds(getLeft(), getTop(), getWidth(), getHeight());
-            opdsStatusOverlay.draw(canvas);
+    public void setThumbnailUrl(final String url, final UstadBaseController controller, final UstadView view) {
+        ImageLoader.getInstance().loadImage(url, new ImageLoader.ImageLoadTarget() {
+            @Override
+            public void setImageFromFile(String filePath) {
+                String fileUri = UMFileUtil.stripPrefixIfPresent("file://", filePath);
+                final Bitmap imgBitmap = BitmapFactory.decodeFile(fileUri);
+                view.runOnUiThread(new Runnable() {
+                    @Override
+                    public void run() {
+                        setThumbnail(imgBitmap);
+                    }
+                });
+            }
+        }, controller);
+    }
+
+
+    public void setProgress(CourseProgress progress) {
+        LearnerProgressView progressViewHolder = (LearnerProgressView)findViewById(R.id.opds_item_learner_progress_holder);
+        switch(progress.getStatus()) {
+            case CourseProgress.STATUS_NOT_STARTED:
+                progressViewHolder.setVisibility(View.GONE);
+                break;
+
+            default:
+                progressViewHolder.setVisibility(View.VISIBLE);
+                progressViewHolder.setProgress(progress);
+                break;
         }
     }
+
 }

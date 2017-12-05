@@ -1,5 +1,6 @@
 package com.ustadmobile.core.controller;
 
+import com.ustadmobile.core.buildconfig.CoreBuildConfig;
 import com.ustadmobile.core.impl.UstadMobileSystemImpl;
 import com.ustadmobile.core.util.HTTPCacheDir;
 import com.ustadmobile.core.view.AboutView;
@@ -27,7 +28,7 @@ public class AboutController extends UstadBaseController implements AsyncLoadabl
     public UstadController loadController(Hashtable args, Object context) throws Exception {
         AboutController controller = new AboutController(context);
         InputStream aboutIn = UstadMobileSystemImpl.getInstance().openResourceInputStream(
-            "about.html", context);
+            "com/ustadmobile/core/about.html", context);
         ByteArrayOutputStream bout = new ByteArrayOutputStream();
         byte[] buf = new byte[1024];
         int bytesRead;
@@ -44,7 +45,7 @@ public class AboutController extends UstadBaseController implements AsyncLoadabl
     public void setUIStrings() {
         UstadMobileSystemImpl impl = UstadMobileSystemImpl.getInstance();
         aboutView.setVersionInfo(impl.getVersion(context) + " - " +
-                HTTPCacheDir.makeHTTPDate(impl.getBuildTime()));
+                HTTPCacheDir.makeHTTPDate(CoreBuildConfig.BUILD_TIME_MILLIS));
         aboutView.setAboutHTML(aboutHTMLStr);
     }
 

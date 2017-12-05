@@ -1,10 +1,10 @@
 package com.ustadmobile.port.sharedse.controller;
 
+import com.ustadmobile.core.buildconfig.CoreBuildConfig;
 import com.ustadmobile.core.controller.ControllerReadyListener;
 import com.ustadmobile.core.controller.LoadControllerThread;
 import com.ustadmobile.core.controller.LoginController;
 import com.ustadmobile.core.controller.UstadController;
-import com.ustadmobile.core.impl.UstadMobileDefaults;
 import com.ustadmobile.core.impl.UstadMobileSystemImpl;
 import com.ustadmobile.port.sharedse.model.AttendanceClassStudent;
 import com.ustadmobile.port.sharedse.view.PersonListView;
@@ -59,7 +59,7 @@ public class PersonListController extends EntityListController implements Runnab
         try {
             UstadMobileSystemImpl impl = UstadMobileSystemImpl.getInstance();
             LoginController.loadClassListToPrefs(classId, impl.getAppPref(
-                    UstadMobileSystemImpl.PREFKEY_XAPISERVER, UstadMobileDefaults.DEFAULT_XAPI_SERVER,
+                    UstadMobileSystemImpl.PREFKEY_XAPISERVER, CoreBuildConfig.DEFAULT_XAPI_SERVER,
                     context),context);
             loadStudentsByClassId(classId);
         }catch(Exception e) {

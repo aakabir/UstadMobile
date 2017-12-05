@@ -30,11 +30,16 @@
  */
 package com.ustadmobile.core.util;
 
+import com.ustadmobile.core.buildconfig.CoreBuildConfig;
 import com.ustadmobile.core.controller.LoginController;
 import com.ustadmobile.core.impl.UMLog;
-import com.ustadmobile.core.impl.UstadMobileDefaults;
 import com.ustadmobile.core.impl.UstadMobileSystemImpl;
 import com.ustadmobile.core.tincan.TinCanStatement;
+
+import org.json.JSONArray;
+import org.json.JSONException;
+import org.json.JSONObject;
+
 import java.util.Calendar;
 import java.util.Hashtable;
 import java.util.Vector;
@@ -42,7 +47,6 @@ import java.util.Vector;
 /* $if umplatform == 2  $
     import org.json.me.*;
  $else$ */
-    import org.json.*;
 /* $endif$ */
 
 
@@ -52,7 +56,16 @@ import java.util.Vector;
  * @author mike
  */
 public class UMTinCanUtil {
-    
+
+    public static final String ADL_PREFIX_VERB = "http://adlnet.gov/expapi/verbs/";
+
+    public static final String VERB_PASSED = ADL_PREFIX_VERB + "passed";
+
+    public static final String VERB_FAILED = ADL_PREFIX_VERB + "failed";
+
+    public static final String VERB_ANSWERED = ADL_PREFIX_VERB + "answered";
+
+
     /**
      * Generate a JSON Object representing a TinCan statement for 'experience' a 
      * given page.
@@ -217,10 +230,16 @@ public class UMTinCanUtil {
     public static JSONObject makeActorFromActiveUser(Object context) {
         return UMTinCanUtil.makeActorFromUserAccount(
                 UstadMobileSystemImpl.getInstance().getActiveUser(context), 
-                UstadMobileSystemImpl.getInstance().getAppPref(
-                    UstadMobileSystemImpl.PREFKEY_XAPISERVER,
-                    UstadMobileDefaults.DEFAULT_XAPI_SERVER, context));
+                getXapiServer(context));
     }
+
+    public static String getXapiServer(Object context) {
+        return UstadMobileSystemImpl.getInstance().getAppPref(
+                UstadMobileSystemImpl.PREFKEY_XAPISERVER,
+                CoreBuildConfig.DEFAULT_XAPI_SERVER, context);
+    }
+
+
     
     /**
      * Make a JSON object representing the verb in the form of:

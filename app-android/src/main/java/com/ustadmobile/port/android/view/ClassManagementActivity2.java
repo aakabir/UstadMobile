@@ -1,18 +1,18 @@
 package com.ustadmobile.port.android.view;
 
+import android.os.Bundle;
 import android.support.design.widget.TabLayout;
 import android.support.v4.app.Fragment;
 import android.support.v4.app.FragmentManager;
 import android.support.v4.app.FragmentStatePagerAdapter;
 import android.support.v4.view.ViewPager;
-import android.os.Bundle;
 
 import com.toughra.ustadmobile.R;
-import com.ustadmobile.core.MessageIDConstants;
-import com.ustadmobile.port.sharedse.controller.ClassManagementController2;
+import com.ustadmobile.core.generated.locale.MessageID;
 import com.ustadmobile.core.impl.UstadMobileSystemImpl;
-import com.ustadmobile.port.sharedse.view.ClassManagementView2;
 import com.ustadmobile.port.android.util.UMAndroidUtil;
+import com.ustadmobile.port.sharedse.controller.ClassManagementController2;
+import com.ustadmobile.port.sharedse.view.ClassManagementView2;
 
 import java.util.Hashtable;
 import java.util.WeakHashMap;
@@ -37,7 +37,7 @@ public class ClassManagementActivity2 extends UstadBaseActivity implements Class
         mController = ClassManagementController2.makeControllerForView(baseArgs, this);
         mController.setView(this);
         setBaseController(mController);
-        setUMToolbar();
+        setUMToolbar(R.id.um_toolbar);
 
         mPagerAdapter = new ClassManagementPagerAdapter2(getSupportFragmentManager());
         mViewPager = (ViewPager)findViewById(R.id.activity_class_management_pager);
@@ -55,7 +55,7 @@ public class ClassManagementActivity2 extends UstadBaseActivity implements Class
 
     public class ClassManagementPagerAdapter2 extends FragmentStatePagerAdapter {
 
-        private int[] tabTitles = new int[]{MessageIDConstants.students, MessageIDConstants.attendance};
+        private int[] tabTitles = new int[]{MessageID.students, MessageID.attendance};
 
         private WeakHashMap<Integer, Fragment> fragmentMap;
 
@@ -75,7 +75,8 @@ public class ClassManagementActivity2 extends UstadBaseActivity implements Class
 
         @Override
         public CharSequence getPageTitle(int position) {
-            return UstadMobileSystemImpl.getInstance().getString(tabTitles[position]);
+            return UstadMobileSystemImpl.getInstance().getString(tabTitles[position],
+                    ClassManagementActivity2.this);
         }
     }
 }

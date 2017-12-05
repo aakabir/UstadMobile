@@ -1,0 +1,23 @@
+apply plugin: 'java'
+
+task runOrmLiteGeneration(type: JavaExec) {
+    classpath sourceSets.main.runtimeClasspath
+}
+
+dependencies {
+    compile project(":core")
+    compile project(":sharedse")
+    compile "org.json:json:20160212"
+    compile "net.sf.kxml:kxml2:2.3.0"
+}
+
+task fatJar(type: Jar) {
+    baseName = project.name + '-all'
+    from { configurations.compile.collect { it.isDirectory() ? it : zipTree(it) } }
+    with jar
+}
+
+sourceCompatibility = "1.7"
+targetCompatibility = "1.7"
+
+

@@ -33,6 +33,13 @@ package com.ustadmobile.core.util;
 import com.ustadmobile.core.impl.HTTPResult;
 import com.ustadmobile.core.impl.UMLog;
 import com.ustadmobile.core.impl.UstadMobileSystemImpl;
+
+import org.json.JSONObject;
+import org.xmlpull.v1.XmlPullParser;
+import org.xmlpull.v1.XmlPullParserException;
+import org.xmlpull.v1.XmlSerializer;
+
+import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.util.Enumeration;
 import java.util.Hashtable;
@@ -41,7 +48,7 @@ import java.util.Vector;
 /* $if umplatform == 2  $
     import org.json.me.*;
  $else$ */
-    import org.json.*;
+
 /* $endif$ */
 
 /**
@@ -56,6 +63,11 @@ public class UMUtil {
     public static final int PORT_ALLOC_SECURITY_ERR = -2;
     
     public static final int PORT_ALLOC_OTHER_ERR = 3;
+
+    /**
+     * A list of elements that must have their own end tag
+     */
+    public static final String[] SEPARATE_END_TAG_REQUIRED_ELEMENTS = new String[] {"script", "style"};
     
     /**
      * Gets the index of a particular item in an array
@@ -341,8 +353,286 @@ public class UMUtil {
         public int compare(Object o1, Object o2);
         
     }
-    
-    
-    
+
+    /**
+     * Get the index of an item in an array. Filler method because this doesn't existing on J2ME.
+     *
+     * @param haystack Array to search in
+     * @param needle Value to search for
+     * @param from Index to start searching from (inclusive)
+     * @param to Index to search until (exclusive)
+     * @return Index of needle in haystack, -1 if not found
+     */
+    public static int indexInArray(Object[] haystack, Object needle, int from, int to) {
+        for(int i = from; i < to; i++) {
+            if(haystack[i] == null && needle == null) {
+                return i;
+            }else if(haystack[i] != null && haystack[i].equals(needle)) {
+                return i;
+            }
+        }
+
+        return -1;
+    }
+
+    /**
+     * Get the index of an item in an array. Filler method because this doesn't existing on J2ME.
+     *
+     * @param haystack Array to search in
+     * @param needle Value to search for
+     */
+    public static int indexInArray(Object[] haystack, Object needle) {
+        return indexInArray(haystack, needle, 0, haystack.length);
+    }
+
+    /**
+     * Pass XML through from an XmlPullParser to an XmlSerializer.
+     *
+     * @param parser XmlPullParser XML is coming from
+     * @param serializer XmlSerializer XML is being written to
+     * @param seperateEndTagRequiredElements An array of elements where separate closing tags are
+     *                                       required e.g. script, style etc. using &lt;/script&gt; instead
+     *                                       of &lt;script ... /&gt;
+     *
+     * @throws XmlPullParserException
+     * @throws IOException
+     */
+    public static void passXmlThrough(XmlPullParser parser, XmlSerializer serializer,
+                                      String[] seperateEndTagRequiredElements)
+            throws XmlPullParserException, IOException{
+        PassXmlThroughFilter filter = null;
+        passXmlThrough(parser, serializer, seperateEndTagRequiredElements, filter);
+    }
+
+    /**
+     * Pass XML through from an XmlPullParser to an XmlSerializer.
+     *
+     * @param parser XmlPullParser XML is coming from
+     * @param serializer XmlSerializer XML is being written to
+     *
+     * @throws XmlPullParserException
+     * @throws IOException
+     */
+    public static void passXmlThrough(XmlPullParser parser, XmlSerializer serializer)
+            throws XmlPullParserException, IOException{
+        PassXmlThroughFilter filter = null;
+        passXmlThrough(parser, serializer, null, filter);
+    }
+
+    /**
+     * Pass XML through from an XmlPullParser to an XmlSerializer.
+     *
+     * @param xpp XmlPullParser XML is coming from
+     * @param xs XmlSerializer XML is being written to
+     * @param separateHtmlEndTagRequiredElements if true then use the default list of html elements
+     *                                           that require a separate ending tag e.g. use
+     *                                           &lt;/script&gt; instead of &lt;script ... /&gt;
+     *
+     * @throws XmlPullParserException
+     * @throws IOException
+     */
+    public static void passXmlThrough(XmlPullParser xpp, XmlSerializer xs,
+                                      boolean separateHtmlEndTagRequiredElements,
+                                      PassXmlThroughFilter filter)
+            throws XmlPullParserException, IOException{
+        passXmlThrough(xpp, xs,
+                separateHtmlEndTagRequiredElements ? SEPARATE_END_TAG_REQUIRED_ELEMENTS : null, filter);
+    }
+
+    /**
+     * Pass XML through from an XmlPullParser to an XmlSerializer. This will not call startDocument
+     * or endDocument - that must be called separately. This allows different documents to be merged.
+     *
+     * @param xpp XmlPullParser XML is coming from
+     * @param xs XmlSerializer XML is being written to
+     * @param seperateEndTagRequiredElements An array of elements where separate closing tags are
+     *                                       required e.g. script, style etc. using &lt;/script&gt; instead
+     *                                       of &lt;script ... /&gt;
+     * @param filter XmlPassThroughFilter that can be used to add to output or interrupt processing
+     * @throws XmlPullParserException
+     * @throws IOException
+     */
+    public static void passXmlThrough(XmlPullParser xpp, XmlSerializer xs,
+                                      String[] seperateEndTagRequiredElements,
+                                      PassXmlThroughFilter filter)
+            throws XmlPullParserException, IOException {
+
+        int evtType = xpp.getEventType();
+        int lastEvent = -1;
+        String tagName;
+        while(evtType != XmlPullParser.END_DOCUMENT) {
+            if(filter != null && !filter.beforePassthrough(evtType, xpp, xs))
+                return;
+
+            switch(evtType) {
+                case XmlPullParser.START_TAG:
+                    xs.startTag(xpp.getNamespace(), xpp.getName());
+                    for(int i = 0; i < xpp.getAttributeCount(); i++) {
+                        xs.attribute(xpp.getAttributeNamespace(i),
+                                xpp.getAttributeName(i), xpp.getAttributeValue(i));
+                    }
+                    break;
+                case XmlPullParser.TEXT:
+                    xs.text(xpp.getText());
+                    break;
+                case XmlPullParser.END_TAG:
+                    tagName = xpp.getName();
+
+                    if(lastEvent == XmlPullParser.START_TAG
+                            && seperateEndTagRequiredElements != null
+                            && UMUtil.indexInArray(seperateEndTagRequiredElements, tagName) != -1) {
+                        xs.text(" ");
+                    }
+
+                    xs.endTag(xpp.getNamespace(), tagName);
+
+
+                    break;
+            }
+            if(filter != null && !filter.afterPassthrough(evtType, xpp, xs))
+                return;
+
+            lastEvent = evtType;
+            evtType = xpp.next();
+        }
+    }
+
+    /**
+     *
+     * @param xpp XmlPullParser XML is coming from
+     * @param xs XmlSerializer XML is being written to
+     * @param seperateEndTagRequiredElements An array of elements where separate closing tags are
+     *                                       required e.g. script, style etc. using &lt;/script&gt; instead
+     *                                       of &lt;script ... /&gt;
+     * @param endTagName If the given endTagName is encountered processing will stop. The endTag
+     *                   for this tag will not be sent to the serializer.
+     * @throws XmlPullParserException
+     * @throws IOException
+     */
+    public static void passXmlThrough(XmlPullParser xpp, XmlSerializer xs,
+                                      String[] seperateEndTagRequiredElements,
+                                      final String endTagName) throws XmlPullParserException, IOException {
+        passXmlThrough(xpp, xs,seperateEndTagRequiredElements, new PassXmlThroughFilter() {
+            @Override
+            public boolean beforePassthrough(int evtType, XmlPullParser parser, XmlSerializer serializer)
+                    throws IOException, XmlPullParserException {
+                if(evtType == XmlPullParser.END_TAG && parser.getName() != null
+                        && parser.getName().equals(endTagName))
+                    return false;
+                else
+                    return true;
+            }
+
+            @Override
+            public boolean afterPassthrough(int evtType, XmlPullParser parser, XmlSerializer serializer)
+                    throws IOException, XmlPullParserException {
+                return true;
+            }
+        });
+    }
+
+    /**
+     * Implement this interface to control some of the passXmlThrough methods .  This can be used
+     * to add extra output to be serialized or to stop processing.
+     */
+    public interface PassXmlThroughFilter {
+
+        /**
+         * Called before the given event is passed through to the XmlSerializer.
+         *
+         * @param evtType The event type from the parser
+         * @param parser The XmlPullParser being used
+         * @param serializer The XmlSerializer being used
+         *
+         * @return true to continue processing, false to end processing
+         * @throws IOException
+         * @throws XmlPullParserException
+         */
+        boolean beforePassthrough(int evtType, XmlPullParser parser, XmlSerializer serializer)
+                throws IOException, XmlPullParserException;
+
+        /**
+         * Called after the given event was passed through to the XmlSerializer.
+         *
+         * @param evtType The event type from the parser
+         * @param parser The XmlPullParser being used
+         * @param serializer The XmlSerializer being used
+         *
+         * @return true to continue processing, false to end processing
+         * @throws IOException
+         * @throws XmlPullParserException
+         */
+        boolean afterPassthrough(int evtType, XmlPullParser parser, XmlSerializer serializer)
+                throws IOException, XmlPullParserException;
+
+    }
+
+
+    public static String passXmlThroughToString(XmlPullParser xpp, String endTagName) throws XmlPullParserException, IOException{
+        ByteArrayOutputStream bout = new ByteArrayOutputStream();
+        XmlSerializer xs = UstadMobileSystemImpl.getInstance().newXMLSerializer();
+        xs.setOutput(bout, "UTF-8");
+        xs.startDocument("UTF-8", Boolean.FALSE);
+        passXmlThrough(xpp, xs, null, endTagName);
+        xs.endDocument();
+        bout.flush();
+        String retVal = new String(bout.toByteArray());
+        return retVal;
+    }
+
+    /**
+     * Determine if the two given locales are the same as far as what the user will see.
+     *
+     * @param oldLocale
+     *
+     * @return
+     */
+    public static boolean hasDisplayedLocaleChanged(String oldLocale, Object context) {
+        String currentlyDisplayedLocale = UstadMobileSystemImpl.getInstance().getDisplayedLocale(context);
+        if(currentlyDisplayedLocale != null && oldLocale != null
+                && oldLocale.substring(0, 2).equals(currentlyDisplayedLocale.substring(0,2))) {
+            return false;
+        }else {
+            return true;
+        }
+    }
+
+    /**
+     * Determine if the two given locales are the same language - e.g. en, en-US, en-GB etc.
+     *
+     * @param locale1
+     * @param locale2
+     *
+     * @return True if the given locales are the same language, false otherwise
+     */
+    public static boolean isSameLanguage(String locale1, String locale2) {
+        if(locale1 == null && locale2 == null) {
+            return true;//no language to compare
+        }else if(locale1 == null || locale2 == null){
+            return false;//one is null
+        }else {
+            return locale1.substring(0,2).equals(locale2.substring(0, 2));
+        }
+    }
+
+    /**
+     * Generate a new hashtable which is 'flipped' - e.g. where the keys of the input hashtable become
+     * the values in the output hashtable, and vice versa.
+     *
+     * @return Flip hashtable
+     */
+    public static Hashtable flipHashtable(Hashtable table) {
+        Hashtable out = new Hashtable();
+        Object key;
+
+        Enumeration keys = table.keys();
+        while(keys.hasMoreElements()) {
+            key = keys.nextElement();
+            out.put(table.get(key), key);
+        }
+
+        return table;
+    }
+
     
 }

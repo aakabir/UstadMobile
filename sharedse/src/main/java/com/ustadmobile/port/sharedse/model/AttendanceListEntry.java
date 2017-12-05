@@ -1,7 +1,6 @@
 package com.ustadmobile.port.sharedse.model;
 
-import com.ustadmobile.core.MessageIDConstants;
-import com.ustadmobile.port.sharedse.controller.AttendanceController;
+import com.ustadmobile.core.generated.locale.MessageID;
 import com.ustadmobile.core.impl.UstadMobileSystemImpl;
 import com.ustadmobile.core.model.ListableEntity;
 import com.ustadmobile.core.util.UMUtil;
@@ -10,6 +9,7 @@ import com.ustadmobile.nanolrs.core.manager.XapiForwardingStatementManager;
 import com.ustadmobile.nanolrs.core.model.XapiForwardingStatement;
 import com.ustadmobile.nanolrs.core.model.XapiStatement;
 import com.ustadmobile.nanolrs.core.persistence.PersistenceManager;
+import com.ustadmobile.port.sharedse.controller.AttendanceController;
 
 import java.util.Calendar;
 import java.util.Iterator;
@@ -39,7 +39,7 @@ public class AttendanceListEntry implements ListableEntity {
     }
 
     public void loadDetail() {
-        XapiForwardingStatementManager forwardingMgr = PersistenceManager.getInstance().getForwardingStatementManager();
+        XapiForwardingStatementManager forwardingMgr = PersistenceManager.getInstance().getManager(XapiForwardingStatementManager.class);
         if(forwardingMgr.findStatusByXapiStatement(context, hostedStatement) == XapiForwardingStatement.STATUS_SENT) {
             syncStatus = ListableEntity.STATUSICON_SENT;
         }else {
@@ -101,10 +101,10 @@ public class AttendanceListEntry implements ListableEntity {
     }
 
     @Override
-    public String getStatusText() {
+    public String getStatusText(Object context) {
         UstadMobileSystemImpl impl = UstadMobileSystemImpl.getInstance();
         return syncStatus == ListableEntity.STATUSICON_SENT ?
-                impl.getString(MessageIDConstants.sent) : impl.getString(MessageIDConstants.sending);
+                impl.getString(MessageID.sent, context) : impl.getString(MessageID.sending, context);
     }
 
     @Override

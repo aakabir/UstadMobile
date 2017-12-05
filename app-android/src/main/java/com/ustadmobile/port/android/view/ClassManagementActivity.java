@@ -3,13 +3,13 @@ package com.ustadmobile.port.android.view;
 import android.os.Bundle;
 import android.support.design.widget.FloatingActionButton;
 import android.view.View;
+import android.widget.Button;
 
 import com.toughra.ustadmobile.R;
+import com.ustadmobile.port.android.util.UMAndroidUtil;
 import com.ustadmobile.port.sharedse.controller.ClassManagementController;
 import com.ustadmobile.port.sharedse.model.AttendanceClassStudent;
 import com.ustadmobile.port.sharedse.view.ClassManagementView;
-import com.ustadmobile.port.android.util.UMAndroidUtil;
-import android.widget.Button;
 
 public class ClassManagementActivity extends UstadBaseActivity implements ClassManagementView,
         View.OnClickListener {
@@ -24,7 +24,7 @@ public class ClassManagementActivity extends UstadBaseActivity implements ClassM
         mController = ClassManagementController.makeControllerForView(this,
                 UMAndroidUtil.bundleToHashtable(getIntent().getExtras()));
         setBaseController(mController);
-        setUMToolbar();
+        setUMToolbar(R.id.um_toolbar);
         getSupportActionBar().setDisplayHomeAsUpEnabled(true);
         ((Button)findViewById(R.id.class_management_attendance_button)).setOnClickListener(this);
         ((FloatingActionButton)findViewById(R.id.class_management_new_student_fab)
@@ -72,13 +72,10 @@ public class ClassManagementActivity extends UstadBaseActivity implements ClassM
 
     @Override
     public void onClick(View v) {
-        switch(v.getId()) {
-            case R.id.class_management_attendance_button:
-                mController.handleClickAttendanceButton();
-                break;
-            case R.id.class_management_new_student_fab:
-                mController.handleShowEnrollForm();
-                break;
+        if(v.getId() == R.id.class_management_attendance_button) {
+            mController.handleClickAttendanceButton();
+        }else if(v.getId() == R.id.class_management_new_student_fab){
+            mController.handleShowEnrollForm();
         }
     }
 }

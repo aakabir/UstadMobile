@@ -30,26 +30,31 @@
  */
 package com.ustadmobile.port.sharedse.controller;
 
-import com.ustadmobile.core.MessageIDConstants;
+import com.ustadmobile.core.buildconfig.CoreBuildConfig;
 import com.ustadmobile.core.controller.LoginController;
 import com.ustadmobile.core.controller.UstadBaseController;
+import com.ustadmobile.core.generated.locale.MessageID;
 import com.ustadmobile.core.impl.UMLog;
 import com.ustadmobile.core.impl.UstadMobileConstants;
 import com.ustadmobile.core.impl.UstadMobileDefaults;
 import com.ustadmobile.core.impl.UstadMobileSystemImpl;
-import com.ustadmobile.port.sharedse.model.AttendanceClass;
-import com.ustadmobile.port.sharedse.model.AttendanceClassStudent;
-import com.ustadmobile.port.sharedse.model.AttendanceRowModel;
-import com.ustadmobile.port.sharedse.omr.AttendanceSheetImage;
 import com.ustadmobile.core.util.UMFileUtil;
 import com.ustadmobile.core.util.UMTinCanUtil;
-import com.ustadmobile.port.sharedse.view.AttendanceView;
 import com.ustadmobile.core.view.UstadView;
 import com.ustadmobile.nanolrs.core.endpoints.XapiStatementsEndpoint;
 import com.ustadmobile.nanolrs.core.manager.XapiForwardingStatementManager;
 import com.ustadmobile.nanolrs.core.model.XapiForwardingStatement;
 import com.ustadmobile.nanolrs.core.model.XapiStatement;
 import com.ustadmobile.nanolrs.core.persistence.PersistenceManager;
+import com.ustadmobile.port.sharedse.model.AttendanceClass;
+import com.ustadmobile.port.sharedse.model.AttendanceClassStudent;
+import com.ustadmobile.port.sharedse.model.AttendanceRowModel;
+import com.ustadmobile.port.sharedse.omr.AttendanceSheetImage;
+import com.ustadmobile.port.sharedse.view.AttendanceView;
+
+import org.json.JSONArray;
+import org.json.JSONException;
+import org.json.JSONObject;
 
 import java.io.IOException;
 import java.util.Calendar;
@@ -61,7 +66,6 @@ import jp.sourceforge.qrcode.util.DebugCanvas;
 /* $if umplatform == 2  $
     import org.json.me.*;
  $else$ */
-    import org.json.*;
 /* $endif$ */
 
 
@@ -92,7 +96,7 @@ public class AttendanceController extends UstadBaseController {
 
 
     public static final int[] ATTENDANCE_MESSAGES = new int[] {
-            MessageIDConstants.not_taken, MessageIDConstants.sending, MessageIDConstants.sent
+            MessageID.not_taken, MessageID.sending, MessageID.sent
     };
 
     //areas in which optical marks are to be found on the paper
@@ -271,7 +275,7 @@ public class AttendanceController extends UstadBaseController {
         }
 
         boolean statementsPending = false;
-        XapiForwardingStatementManager manager = PersistenceManager.getInstance().getForwardingStatementManager();
+        XapiForwardingStatementManager manager = PersistenceManager.getInstance().getManager(XapiForwardingStatementManager.class);
         for(int i = 0; i < statementList.size(); i++) {
             if(manager.findStatusByXapiStatement(context, statementList.get(i)) != XapiForwardingStatement.STATUS_SENT)
                 return STATUS_ATTENDANCE_TAKEN;
@@ -291,7 +295,7 @@ public class AttendanceController extends UstadBaseController {
                 String username = impl.getActiveUser(context);
                 String password = impl.getActiveUserAuth(context);
                 String classURL = UMFileUtil.resolveLink(
-                    UstadMobileDefaults.DEFAULT_XAPI_SERVER,
+                    CoreBuildConfig.DEFAULT_XAPI_SERVER,
                     UstadMobileDefaults.DEFAULT_STUDENTLIST_ENDPOINT)
                         + classID;
 
@@ -437,7 +441,7 @@ public class AttendanceController extends UstadBaseController {
                 final UstadMobileSystemImpl impl = UstadMobileSystemImpl.getInstance();
                 String xAPIServer = impl.getAppPref(
                         UstadMobileSystemImpl.PREFKEY_XAPISERVER,
-                        UstadMobileDefaults.DEFAULT_XAPI_SERVER, context);
+                        CoreBuildConfig.DEFAULT_XAPI_SERVER, context);
                 String registrationUUID = UMTinCanUtil.generateUUID();
 
 

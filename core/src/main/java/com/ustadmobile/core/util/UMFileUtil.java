@@ -30,6 +30,9 @@
  */
 package com.ustadmobile.core.util;
 
+import com.ustadmobile.core.impl.UMLog;
+import com.ustadmobile.core.impl.UstadMobileSystemImpl;
+
 import java.util.Enumeration;
 import java.util.Hashtable;
 import java.util.Vector;
@@ -268,7 +271,32 @@ public class UMFileUtil {
         
         return url;
     }
-    
+
+    /**
+     * Ensure that the given filename has the correct extension on it. If the filename given already
+     * includes the correct file extension for the given mime type it will be returned as is. Otherewise
+     * the correct extension will be added. If the appropriate extension is unknown, the filename
+     * will not be changed.
+     *
+     * @param filename The filename as given
+     * @param mimeType The mimetype of the file
+     *
+     * @return The filename with the correct extension for the mime type as above.
+     */
+    public static String appendExtensionToFilenameIfNeeded(String filename, String mimeType) {
+        String expectedExtension = UstadMobileSystemImpl.getInstance().getExtensionFromMimeType(
+            mimeType);
+
+        if(expectedExtension == null)
+            return filename;
+
+        if(!filename.endsWith('.' + expectedExtension)) {
+            filename += '.' + expectedExtension;
+        }
+
+        return filename;
+    }
+
     /**
      * Parse a deliminated string with keys and values like Content-Type parameters
      * and cache-control headers.  Keys can be present on their own e.g.
@@ -386,7 +414,11 @@ public class UMFileUtil {
     
     
     /**
-     * Parse type with params header fields (Content-Disposition; Content-Type etc)
+     * Parse type with params header fields (Content-Disposition; Content-Type etc). E.g. given
+     *  application/atom+xml;type=entry;profile=opds-catalog
+     *
+     *  It will return an object with the mime type "application/atom+xml" and a hashtable of parameters
+     *  with type=entry and profile=opds-catalog .
      * 
      * TODO: Support params with *paramname and encoding e.g. http://tools.ietf.org/html/rfc6266 section 5 example 2
      * 
@@ -470,27 +502,7 @@ public class UMFileUtil {
             return false;
         }
     }
-    
-    /**
-     * Return a String formatted to show the file size in a user friendly format
-     * 
-     * If < 1024 (kb) : size 'bytes'
-     * if 1024 < size < 1024^2 : size/1024 kB
-     * if 1024^ < size < 1023^3 : size/1024^2 MB
-     * 
-     * @param size Size of the file in bytes
-     * 
-     * @return Formatted string as above
-     */
-    public static String formatFileSize(int size) {
-        if(size < 1024) {
-            return size + " bytes";
-        }else if(size < 1048576) {
-            return (size/1024) + " kB";
-        }else {
-            return (size/1048576) + " MB";
-        }
-    }
+
     
     /**
      * Returns the parent filename of a given string uri 
@@ -528,6 +540,24 @@ public class UMFileUtil {
             return filename.substring(lastDot+1);
         }else {
             return null;
+        }
+    }
+
+    /**
+     * Remove the extension from a filename. The input filename is expected to be only a filename,
+     * e.g. without the path or url query strings. This can be obtained using getFilename if needed.
+     *
+     * @param filename Input filename without path or query string components e.g. file.txt
+     *
+     * @return filename without the extension, e.g. file
+     */
+    public static String removeExtension(String filename) {
+        int lastDot = filename.lastIndexOf('.');
+
+        if(lastDot != -1 && lastDot != filename.length() -1) {
+            return filename.substring(0, lastDot);
+        }else {
+            return filename;
         }
     }
     
@@ -601,6 +631,88 @@ public class UMFileUtil {
         int i = mimeType.indexOf(';');
         return i != -1 ? mimeType.substring(0, i).trim() : mimeType;
     }
+
+
+    private static final long UNIT_GB = (long)Math.pow(1024, 3);
+
+    private static final long UNIT_MB = (long)Math.pow(1024, 2);
+
+    private static final long UNIT_KB = 1024;
+
+    /**
+     * Return a String formatted to show the file size in a user friendly format
+     *
+     * If < 1024 (kb) : size 'bytes'
+     * if 1024 < size < 1024^2 : size/1024 kB
+     * if 1024^ < size < 1023^3 : size/1024^2 MB
+     *
+     * @param fileSize Size of the file in bytes
+     *
+     * @return Formatted string as above
+     */
+    public static String formatFileSize(long fileSize) {
+        String unit;
+        long factor;
+        if(fileSize > UNIT_GB){
+            factor = UNIT_GB;
+            unit = "GB";
+        }else if(fileSize > UNIT_MB){
+            factor = UNIT_MB;
+            unit = "MB";
+        }else if (fileSize > UNIT_KB){
+            factor = UNIT_KB;
+            unit = "kB";
+        }else {
+            factor = 1;
+            unit = "bytes";
+        }
+
+        double unitSize = (double)fileSize / (double)factor;
+        unitSize = Math.round(unitSize * 100) / 100d;
+        return unitSize + " " + unit;
+    }
+
+    /**
+     *
+     * @param args
+     * @param prefix
+     * @return
+     */
+    public static Vector splitCombinedViewArguments(Hashtable args, String prefix, char argDelmininator) {
+        Vector result = new Vector();
+        Enumeration allArgsKeys = args.keys();
+
+        String currentKey, argName;
+        int index, indexStart, indexEnd;
+        Hashtable indexArgs;
+        while(allArgsKeys.hasMoreElements()) {
+            currentKey = (String)allArgsKeys.nextElement();
+            if(currentKey.startsWith(prefix)) {
+                indexStart = currentKey.indexOf(argDelmininator) + 1;
+                indexEnd = currentKey.indexOf(argDelmininator, indexStart + 1);
+                try {
+                    index = Integer.parseInt(currentKey.substring(indexStart, indexEnd));
+                    if(result.size() < index + 1)
+                        result.setSize(index + 1);
+
+                    argName = currentKey.substring(indexEnd + 1);
+                    if(result.elementAt(index) != null) {
+                        indexArgs = (Hashtable)result.elementAt(index);
+                    }else {
+                        indexArgs = new Hashtable();
+                        result.setElementAt(indexArgs, index);
+                    }
+
+                    indexArgs.put(argName, args.get(currentKey));
+                }catch(NumberFormatException e) {
+                    UstadMobileSystemImpl.l(UMLog.ERROR, 680, currentKey, e);
+                }
+            }
+        }
+
+        return result;
+    }
+
     
     
 }

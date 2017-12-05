@@ -39,26 +39,17 @@ $endif$ */
 /* $if umplatform == 2  $
     import j2meunit.framework.TestCase;
  $else$ */
-    import junit.framework.TestCase;
-/* $endif$ */
+
 import com.ustadmobile.core.util.TestUtils;
-import com.ustadmobile.core.controller.CatalogController;
-import com.ustadmobile.core.controller.CatalogEntryInfo;
-import com.ustadmobile.core.controller.ContainerController;
-import com.ustadmobile.core.controller.ControllerReadyListener;
-import com.ustadmobile.core.controller.UstadController;
-import com.ustadmobile.core.impl.UstadMobileSystemImpl;
-import com.ustadmobile.core.ocf.UstadOCF;
-import com.ustadmobile.core.opds.UstadJSOPDSEntry;
-import com.ustadmobile.core.opds.UstadJSOPDSFeed;
-import com.ustadmobile.core.opf.UstadJSOPF;
-import com.ustadmobile.core.util.UMFileUtil;
-import com.ustadmobile.core.impl.UMLog;
-import com.ustadmobile.core.impl.UMStorageDir;
+
+import junit.framework.TestCase;
+
+import org.xmlpull.v1.XmlPullParserException;
 
 import java.io.IOException;
 import java.util.Hashtable;
-import org.xmlpull.v1.XmlPullParserException;
+
+/* $endif$ */
 
 
 /**
@@ -68,7 +59,7 @@ import org.xmlpull.v1.XmlPullParserException;
 /* $if umplatform == 1  $
 public class TestContainerController extends ActivityInstrumentationTestCase2<UstadMobileActivity>{
  $else$ */
-public class TestContainerController extends TestCase  {
+public abstract class TestContainerController extends TestCase  {
 /* $endif */
 
      /**
@@ -103,7 +94,7 @@ public class TestContainerController extends TestCase  {
         
         //TODO: Update me for the new ViewFirst model
 //        final Hashtable loadedVals = new Hashtable();
-//        final Object context = UMContextGetter.getContext(this);
+//        final Object context = UMContextGetter.getTargetContext(this);
 //        final String acquireOPDSURL = UMFileUtil.joinPaths(new String[] {
 //            httpRoot, "acquire.opds"});
 //        

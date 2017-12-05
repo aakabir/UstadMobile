@@ -3,18 +3,20 @@
  */
 package com.ustadmobile.port.sharedse.controller;
 
-import com.ustadmobile.core.MessageIDConstants;
+import com.ustadmobile.core.buildconfig.CoreBuildConfig;
 import com.ustadmobile.core.controller.LoginController;
 import com.ustadmobile.core.controller.UstadBaseController;
+import com.ustadmobile.core.generated.locale.MessageID;
 import com.ustadmobile.core.impl.UstadMobileDefaults;
 import com.ustadmobile.core.impl.UstadMobileSystemImpl;
+import com.ustadmobile.core.util.UMFileUtil;
+import com.ustadmobile.core.view.UstadView;
 import com.ustadmobile.port.sharedse.model.AttendanceClass;
 import com.ustadmobile.port.sharedse.model.AttendanceClassStudent;
-import com.ustadmobile.core.util.UMFileUtil;
 import com.ustadmobile.port.sharedse.view.AttendanceView;
 import com.ustadmobile.port.sharedse.view.ClassManagementView;
 import com.ustadmobile.port.sharedse.view.EnrollStudentView;
-import com.ustadmobile.core.view.UstadView;
+
 import java.io.IOException;
 import java.util.Hashtable;
 
@@ -87,9 +89,9 @@ public class ClassManagementController extends UstadBaseController {
      
     public void setUIStrings() {
         UstadMobileSystemImpl impl = UstadMobileSystemImpl.getInstance();
-        classView.setAttendanceLabel(impl.getString(MessageIDConstants.attendance));
-        classView.setReportsLabel(impl.getString(MessageIDConstants.reports));
-        classView.setExamsLabel(impl.getString(MessageIDConstants.exams));
+        classView.setAttendanceLabel(impl.getString(MessageID.attendance, getContext()));
+        classView.setReportsLabel(impl.getString(MessageID.reports, getContext()));
+        classView.setExamsLabel(impl.getString(MessageID.exams, getContext()));
         classView.setClassName(mClass.name);
     }
     
@@ -104,7 +106,7 @@ public class ClassManagementController extends UstadBaseController {
                 String username = impl.getActiveUser(context);
                 String password = impl.getActiveUserAuth(context);
                 String classURL = UMFileUtil.resolveLink(
-                    UstadMobileDefaults.DEFAULT_XAPI_SERVER,
+                    CoreBuildConfig.DEFAULT_XAPI_SERVER,
                     UstadMobileDefaults.DEFAULT_STUDENTLIST_ENDPOINT)
                         + classID;
 
@@ -146,7 +148,7 @@ public class ClassManagementController extends UstadBaseController {
        ClassManagementController ctrl = new ClassManagementController(view.getContext(), 
             (String)args.get(KEY_CLASSID));
        if (args.containsKey(KEY_UPDATE_STUDENT_LIST)){
-            //ctrl.students = loadClassStudentListFromNet(classID, view.getContext(), view);
+            //ctrl.students = loadClassStudentListFromNet(classID, view.getTargetContext(), view);
             loadClassStudentListFromNet(classID, view.getContext(), view);   
        }
        ctrl.setView(view);

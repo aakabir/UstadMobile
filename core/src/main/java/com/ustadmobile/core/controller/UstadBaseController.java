@@ -30,15 +30,14 @@
  */
 package com.ustadmobile.core.controller;
 
-import com.ustadmobile.core.MessageIDConstants;
-import com.ustadmobile.core.impl.TinCanQueueEvent;
-import com.ustadmobile.core.impl.TinCanQueueListener;
-import com.ustadmobile.core.impl.UstadMobileConstants;
+import com.ustadmobile.core.generated.locale.MessageID;
 import com.ustadmobile.core.impl.UstadMobileSystemImpl;
 import com.ustadmobile.core.view.AboutView;
+import com.ustadmobile.core.view.UserSettingsView2;
 import com.ustadmobile.core.view.UstadView;
-import com.ustadmobile.core.view.UserSettingsView;
+
 import java.util.Hashtable;
+import java.util.Vector;
 
 /**
  * Base Controller that provides key functionality for any view :
@@ -54,6 +53,8 @@ public abstract class UstadBaseController implements UstadController {
     protected Object context;
     
     protected boolean isDestroyed = false;
+
+    protected Vector controllerLifecycleListeners;
     
     public static final int CMD_ABOUT = 1001;
     
@@ -62,12 +63,12 @@ public abstract class UstadBaseController implements UstadController {
     public static final int CMD_LOGOUT = 1003;
     
     public static final int CMD_HOME = 1004;
-    
+
     public static final int[] STANDARD_APPEMNU_CMDS = new int[]{CMD_HOME, 
         CMD_ABOUT, CMD_SETTINGS, CMD_LOGOUT};
     
-    public static final int[] STANDARD_APPMENU_STRIDS = new int[]{MessageIDConstants.home,
-        MessageIDConstants.about, MessageIDConstants.settings, MessageIDConstants.logout};
+    public static final int[] STANDARD_APPMENU_STRIDS = new int[]{MessageID.home,
+        MessageID.about, MessageID.settings,MessageID.logout};
 
 
     /**
@@ -120,6 +121,27 @@ public abstract class UstadBaseController implements UstadController {
      * locale is changed
      */
     public abstract void setUIStrings();
+
+    /**
+     * Called when the view is destroyed and removed from memory. onDestroy in Android, when the form
+     * is navigated away from in J2ME
+     */
+    public void onDestroy() {
+        if(controllerLifecycleListeners == null)
+            return;
+
+        for(int i = 0; i < controllerLifecycleListeners.size(); i++) {
+            ((ControllerLifecycleListener)controllerLifecycleListeners.elementAt(i)).onDestroyed(this);
+        }
+    }
+
+    public void onStop() {
+
+    }
+
+    public void onStart() {
+
+    }
 
 
     /**
@@ -182,8 +204,7 @@ public abstract class UstadBaseController implements UstadController {
                 UstadMobileSystemImpl.getInstance().go(AboutView.VIEW_NAME, new Hashtable(), context);
                 return true;
             case CMD_SETTINGS:
-                UstadMobileSystemImpl.getInstance().go(UserSettingsView.VIEW_NAME,
-                    new Hashtable(), context);
+                UstadMobileSystemImpl.getInstance().go(UserSettingsView2.VIEW_NAME,null, context);
                 return true;
             case CMD_LOGOUT:
                 LoginController.handleLogout(context);
@@ -208,7 +229,7 @@ public abstract class UstadBaseController implements UstadController {
         UstadMobileSystemImpl impl = UstadMobileSystemImpl.getInstance();
         for(int i = offset; i < STANDARD_APPEMNU_CMDS.length + offset; i++) {
             cmds[i] = STANDARD_APPEMNU_CMDS[i - offset];
-            labels[i] = impl.getString(STANDARD_APPMENU_STRIDS[i - offset]);
+            labels[i] = impl.getString(STANDARD_APPMENU_STRIDS[i - offset], getContext());
         }
     }
     
@@ -218,5 +239,40 @@ public abstract class UstadBaseController implements UstadController {
         fillStandardMenuOptions(new int[labels.length], labels, 0);
         view.setAppMenuCommands(labels, STANDARD_APPEMNU_CMDS);
     }
+
+    /**
+     * Method which is responsible for initiating UstadMobile application setup sharing
+     * @param context System context
+     */
+//    public static void handleClickShareAppSetupFile(final Object context){
+//        final UstadMobileSystemImpl impl=UstadMobileSystemImpl.getInstance();
+//        impl.getAppView(context).showProgressDialog(impl.getString(MessageID.loading, context));
+//        new Thread(new Runnable() {
+//            @Override
+//            public void run() {
+//                String appSetupFile = impl.getAppSetupFile(context);
+//                impl.getNetworkManager().shareAppSetupFile(appSetupFile,
+//                        impl.getString(MessageID.share_via, context));
+//                impl.getAppView(context).dismissProgressDialog();
+//            }
+//        }).start();
+//    }
+
+    public void addLifecycleListener(ControllerLifecycleListener listener) {
+        if(controllerLifecycleListeners == null)
+            controllerLifecycleListeners = new Vector();
+
+        controllerLifecycleListeners.addElement(listener);
+    }
+
+    public void removeLifecycleListener(ControllerLifecycleListener listener) {
+        controllerLifecycleListeners.removeElement(listener);
+    }
+
+
+
+
+
+
 
 }

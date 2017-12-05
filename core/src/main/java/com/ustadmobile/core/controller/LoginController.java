@@ -30,7 +30,8 @@
  */
 package com.ustadmobile.core.controller;
 
-import com.ustadmobile.core.MessageIDConstants;
+import com.ustadmobile.core.buildconfig.CoreBuildConfig;
+import com.ustadmobile.core.generated.locale.MessageID;
 import com.ustadmobile.core.impl.HTTPResult;
 import com.ustadmobile.core.impl.UMLog;
 import com.ustadmobile.core.impl.UstadMobileConstants;
@@ -38,21 +39,24 @@ import com.ustadmobile.core.impl.UstadMobileDefaults;
 import com.ustadmobile.core.impl.UstadMobileSystemImpl;
 import com.ustadmobile.core.util.Base64Coder;
 import com.ustadmobile.core.util.HTTPCacheDir;
+import com.ustadmobile.core.util.UMFileUtil;
+import com.ustadmobile.core.view.BasePointView;
 import com.ustadmobile.core.view.DialogResultListener;
 import com.ustadmobile.core.view.DismissableDialog;
 import com.ustadmobile.core.view.LoginView;
-import com.ustadmobile.core.util.UMFileUtil;
-import com.ustadmobile.core.view.AppView;
-import com.ustadmobile.core.view.BasePointView;
+import com.ustadmobile.core.view.RegistrationView;
 import com.ustadmobile.core.view.UstadView;
+
+import org.json.JSONArray;
+import org.json.JSONException;
+import org.json.JSONObject;
+
 import java.io.IOException;
 import java.util.Hashtable;
-
 
 /* $if umplatform == 2  $
     import org.json.me.*;
  $else$ */
-    import org.json.*;
 /* $endif$ */
 
 
@@ -241,6 +245,7 @@ public class LoginController extends UstadBaseController{
         //delete the active user
         UstadMobileSystemImpl.getInstance().setActiveUser(null, context);
         UstadMobileSystemImpl.getInstance().setActiveUserAuth(null, context);
+
         UstadMobileSystemImpl.getInstance().go(destAfterLogout, context);
     }
 
@@ -325,95 +330,19 @@ public class LoginController extends UstadBaseController{
     public void handleAdvanceCheckboxToggled(boolean checked) {
         view.setAdvancedSettingsVisible(checked);
     }
-    
-    /**
-     * Handle when the user clicks the registration button - register a new 
-     * account, then bring them into the app
-     * 
-     * @param userInfoParams Hashtable with
-     *  LoginController.REGISTER_COUNTRY - Integer object with country code
-     *  LoginController.REGISTER_PHONENUM - String with phone number not including country code
-     *  LoginController.REGISTER_NAME - String containing name
-     *  LoginController.REGISTER_GENDER - String with 'm' or 'f'
-     *  UstadMobileSystemImpl.PREFKEY_XAPISERVER - The URL of the xAPI server: 
-     *  regserver can be relative to this.
-     */
-    public void handleClickRegister(final Hashtable userInfoParams) {
-        final String xAPIServer = (String)userInfoParams.get(
-            UstadMobileSystemImpl.PREFKEY_XAPISERVER);
-        updateXAPIServer(xAPIServer);
 
-
-        UstadMobileSystemImpl impl = UstadMobileSystemImpl.getInstance();
-
-        if(!userInfoParams.containsKey(LoginController.REGISTER_PHONENUM) || userInfoParams.get(LoginController.REGISTER_PHONENUM).equals("")) {
-            impl.getAppView(getContext()).showAlertDialog(impl.getString(MessageIDConstants.error),
-                    impl.getString(MessageIDConstants.enter_phone_num));
-            return;
+    public void handleClickRegister() {
+        UstadMobileSystemImpl.getInstance().go(RegistrationView.VIEW_NAME, getContext());
+        if(view != null && view instanceof DismissableDialog){
+            ((DismissableDialog)view).dismiss();
         }
-
-        if(!userInfoParams.containsKey(LoginController.REGISTER_NAME) || userInfoParams.get(LoginController.REGISTER_NAME).equals("")) {
-            impl.getAppView(getContext()).showAlertDialog(impl.getString(MessageIDConstants.error),
-                    impl.getString(MessageIDConstants.enter_name));
-            return;
-        }
-
-        final LoginController thisCtrl = this;
-        final Object ctx = context;
-        Thread registerThread = new Thread() {
-            public void run() {
-                String serverURL = UstadMobileSystemImpl.getInstance().getAppPref("regserver",
-                        UstadMobileDefaults.DEFAULT_REGISTER_SERVER, context);
-                serverURL = UMFileUtil.resolveLink(xAPIServer, serverURL);
-                
-                StringBuffer phoneNumSB = new StringBuffer().append('+').append(
-                    userInfoParams.get(LoginController.REGISTER_COUNTRY));
-                
-                String userPhoneNum = userInfoParams.get(
-                        LoginController.REGISTER_PHONENUM).toString();
-                
-                //chop off leading zeros from the supplied phone number
-                int phoneNumStart = 0;
-                char currentChar;
-                for(; phoneNumStart < userPhoneNum.length(); phoneNumStart++) {
-                    currentChar = userPhoneNum.charAt(phoneNumStart);
-                    if(!(currentChar == '0' || currentChar == ' ')) {
-                        break;
-                    }
-                }
-                
-                phoneNumStart = Math.min(phoneNumStart, userPhoneNum.length()-2);
-                
-                phoneNumSB.append(userPhoneNum.substring(phoneNumStart)+1);
-                userInfoParams.put(LoginController.REGISTER_PHONENUM, 
-                    phoneNumSB.toString());
-                
-                try {
-                    String serverResponse = registerNewUser(userInfoParams, serverURL);
-                    JSONObject obj = new JSONObject(serverResponse);
-                    String newUsername = obj.getString("username");
-                    String newPassword = obj.getString("password");
-                    UstadMobileSystemImpl.getInstance().getAppView(ctx).dismissProgressDialog();
-                    thisCtrl.handleUserLoginAuthComplete(newUsername, newPassword);
-                }catch(Exception e) {
-                    UstadMobileSystemImpl.getInstance().getAppView(ctx).dismissProgressDialog();
-                    UstadMobileSystemImpl.getInstance().getAppView(ctx).showNotification(
-                        UstadMobileSystemImpl.getInstance().getString(MessageIDConstants.err_registering_new_user)
-                        + e.toString(), AppView.LENGTH_LONG);
-                    e.printStackTrace();
-                }
-                
-            }
-        };
-        impl.getAppView(ctx).showProgressDialog(impl.getString(MessageIDConstants.registering));
-        registerThread.start();
     }
     
     protected void updateXAPIServer(String newServer) {
         final UstadMobileSystemImpl impl = UstadMobileSystemImpl.getInstance();
         String currentServer = impl.getAppPref(
                 UstadMobileSystemImpl.PREFKEY_XAPISERVER,
-                UstadMobileDefaults.DEFAULT_XAPI_SERVER, context);
+                CoreBuildConfig.DEFAULT_XAPI_SERVER, context);
         
         //See if the user has changed hte xAPI Server
         if(!currentServer.equals(newServer)) {
@@ -422,7 +351,24 @@ public class LoginController extends UstadBaseController{
         }
     }
 
-
+    /**
+     * Authenticates login locally and proceeds with the next Activity
+     * @param username
+     * @param password
+     * @param dbContext
+     * @return
+     */
+    public boolean handleLoginLocally(String username, String password, Object dbContext){
+        boolean result = UstadMobileSystemImpl.getInstance().handleLoginLocally(username, password, dbContext);
+        if(result) {
+            if (resultListener != null) {
+                resultListener.onDialogResult(RESULT_LOGIN_SUCCESSFUL, (DismissableDialog) view, null);
+            } else {
+                UstadMobileSystemImpl.getInstance().go(CoreBuildConfig.FIRST_DESTINATION, context);
+            }
+        }
+        return result;
+    }
     /**
      * Handles what happens when in the app the login button is clicked.
      * @param username
@@ -459,6 +405,9 @@ public class LoginController extends UstadBaseController{
                     //encrypt and cache the authentication result
                     String authHashed = impl.hashAuth(getContext(), password);
                     impl.setAppPref(PREFKEY_AUTHCACHE_PREFIX + username, authHashed, getContext());
+
+                    impl.setActiveUser(username, getContext());
+                    impl.setActiveUserAuth(password, getContext());
                 }
 
                 if(result == 0 || result >= 500) {
@@ -474,15 +423,21 @@ public class LoginController extends UstadBaseController{
 
                 if(result == 401 | result == 403) {
                     impl.getAppView(context).dismissProgressDialog();
-                    impl.getAppView(context).showAlertDialog(impl.getString(MessageIDConstants.error),
-                        impl.getString(MessageIDConstants.wrong_user_pass_combo));
+                    impl.getAppView(context).showAlertDialog(
+                            impl.getString(MessageID.error, getContext()),
+                            impl.getString(MessageID.wrong_user_pass_combo, getContext()));
                 }else if(!authPassed) {
                     impl.getAppView(context).dismissProgressDialog();
                     UstadMobileSystemImpl.getInstance().getAppView(context).showAlertDialog(
-                        impl.getString(MessageIDConstants.error), impl.getString(MessageIDConstants.login_network_error));
+                            impl.getString(MessageID.error, getContext()),
+                            impl.getString(MessageID.login_network_error, getContext()));
                 }else {
                     impl.setActiveUser(username, context);
                     impl.setActiveUserAuth(password, context);
+
+                    //Added by Varuna:
+                    //create a user locally:
+                    impl.createUserLocally(username, password, null, getContext());
 
                     impl.getAppView(context).setProgressDialogTitle("Checking user role");
                     // try and find the role
@@ -532,14 +487,15 @@ public class LoginController extends UstadBaseController{
                     if(resultListener != null) {
                         resultListener.onDialogResult(RESULT_LOGIN_SUCCESSFUL, (DismissableDialog)view, null);
                     }else {
-                        UstadMobileSystemImpl.getInstance().go(BasePointView.VIEW_NAME,
-                                BasePointController.makeDefaultBasePointArgs(context), context);
+                        UstadMobileSystemImpl.getInstance().go(CoreBuildConfig.FIRST_DESTINATION,
+                                context);
                     }
                 }
             }
         };
         UstadMobileSystemImpl.getInstance().getLogger().l(UMLog.DEBUG, 302, null);
-        impl.getAppView(context).showProgressDialog(impl.getString(MessageIDConstants.authenticating));
+        impl.getAppView(context).showProgressDialog(
+                impl.getString(MessageID.authenticating, getContext()));
         loginThread.start();
     }
 
@@ -563,8 +519,7 @@ public class LoginController extends UstadBaseController{
     private void handleUserLoginAuthComplete(final String username, final String password) {
         UstadMobileSystemImpl.getInstance().setActiveUser(username, context);
         UstadMobileSystemImpl.getInstance().setActiveUserAuth(password, context);
-        UstadMobileSystemImpl.getInstance().go(BasePointView.VIEW_NAME,
-            BasePointController.makeDefaultBasePointArgs(context), context);
+        UstadMobileSystemImpl.getInstance().go(CoreBuildConfig.FIRST_DESTINATION, context);
     }    
     
     /**
@@ -588,13 +543,13 @@ public class LoginController extends UstadBaseController{
     public void setUIStrings() {
         UstadMobileSystemImpl impl = UstadMobileSystemImpl.getInstance();
         view.setVersionLabel(impl.getVersion(context) + " - " +
-                HTTPCacheDir.makeHTTPDate(impl.getBuildTime()));
+                HTTPCacheDir.makeHTTPDate(CoreBuildConfig.BUILD_TIME_MILLIS));
         String xAPIURL = impl.getAppPref(
                     UstadMobileSystemImpl.PREFKEY_XAPISERVER,
-                    impl.isHttpsSupported() ? UstadMobileDefaults.DEFAULT_XAPI_SERVER : UstadMobileDefaults.DEFAULT_XAPI_SERVER_NOSSL,
+                    impl.isHttpsSupported() ? CoreBuildConfig.DEFAULT_XAPI_SERVER : CoreBuildConfig.DEFAULT_XAPI_SERVER_NOSSL,
                     context);
-        if(xAPIURL.equals(UstadMobileDefaults.DEFAULT_XAPI_SERVER_NOSSL) && impl.isHttpsSupported())
-            xAPIURL = UstadMobileDefaults.DEFAULT_XAPI_SERVER;
+        if(xAPIURL.equals(CoreBuildConfig.DEFAULT_XAPI_SERVER_NOSSL) && impl.isHttpsSupported())
+            xAPIURL = CoreBuildConfig.DEFAULT_XAPI_SERVER;
         view.setXAPIServerURL(xAPIURL);
     }
 

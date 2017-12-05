@@ -32,45 +32,22 @@
 package com.ustadmobile.port.android.impl;
 
 import android.app.Activity;
-import android.support.v4.app.DialogFragment;
-import android.app.DownloadManager;
-import android.content.*;
+import android.content.BroadcastReceiver;
+import android.content.ComponentName;
+import android.content.Context;
+import android.content.Intent;
+import android.content.ServiceConnection;
+import android.content.SharedPreferences;
+import android.content.pm.ApplicationInfo;
 import android.content.pm.PackageInfo;
 import android.content.pm.PackageManager;
-import android.database.Cursor;
-import android.net.Uri;
+import android.os.AsyncTask;
+import android.os.Build;
 import android.os.Bundle;
 import android.os.Environment;
-
-import java.io.*;
-import java.net.URLConnection;
-import java.util.*;
-import java.net.URL;
-
-import com.toughra.ustadmobile.BuildConfig;
-import com.ustadmobile.core.impl.*;
-import com.ustadmobile.core.tincan.TinCanResultListener;
-import com.ustadmobile.core.view.AboutView;
-import com.ustadmobile.core.view.AppView;
-import com.ustadmobile.port.android.util.UMAndroidUtil;
-import com.ustadmobile.port.sharedse.view.AttendanceView;
-import com.ustadmobile.core.view.BasePointView;
-import com.ustadmobile.core.view.CatalogView;
-import com.ustadmobile.port.sharedse.view.ClassManagementView;
-import com.ustadmobile.port.sharedse.view.ClassManagementView2;
-import com.ustadmobile.core.view.ContainerView;
-import com.ustadmobile.port.sharedse.view.EnrollStudentView;
-import com.ustadmobile.core.view.LoginView;
-import com.ustadmobile.core.view.UserSettingsView;
-import com.ustadmobile.port.android.impl.http.HTTPService;
-import com.ustadmobile.port.android.view.*;
-import com.ustadmobile.nanolrs.core.endpoints.*;
-
-import com.ustadmobile.port.sharedse.impl.UstadMobileSystemImplSE;
-
-
-import android.os.Build;
 import android.os.IBinder;
+import android.preference.PreferenceManager;
+import android.support.v4.app.DialogFragment;
 import android.support.v7.app.AppCompatActivity;
 import android.util.Log;
 import android.util.Xml;
@@ -78,8 +55,95 @@ import android.webkit.MimeTypeMap;
 import android.webkit.WebView;
 import android.widget.Toast;
 
+import com.ustadmobile.core.buildconfig.CoreBuildConfig;
+import com.ustadmobile.core.catalog.contenttype.EPUBTypePlugin;
+import com.ustadmobile.core.catalog.contenttype.XapiPackageTypePlugin;
+import com.ustadmobile.core.controller.CatalogPresenter;
+import com.ustadmobile.core.controller.UserSettingsController;
+import com.ustadmobile.core.impl.ContainerMountRequest;
+import com.ustadmobile.core.impl.TinCanQueueListener;
+import com.ustadmobile.core.impl.UMDownloadCompleteReceiver;
+import com.ustadmobile.core.impl.UMLog;
+import com.ustadmobile.core.impl.UmCallback;
+import com.ustadmobile.core.impl.UstadMobileSystemImpl;
+import com.ustadmobile.core.tincan.TinCanResultListener;
+import com.ustadmobile.core.util.UMFileUtil;
+import com.ustadmobile.core.util.UMIOUtils;
+import com.ustadmobile.core.util.UMTinCanUtil;
+import com.ustadmobile.core.view.AboutView;
+import com.ustadmobile.core.view.AddFeedDialogView;
+import com.ustadmobile.core.view.AppView;
+import com.ustadmobile.core.view.BasePointView;
+import com.ustadmobile.core.view.CatalogEntryView;
+import com.ustadmobile.core.view.CatalogView;
+import com.ustadmobile.core.view.ContainerView;
+import com.ustadmobile.core.view.LoginView;
+import com.ustadmobile.core.view.RegistrationView;
+import com.ustadmobile.core.view.SettingsDataUsageView;
+import com.ustadmobile.core.view.UserSettingsView;
+import com.ustadmobile.core.view.UserSettingsView2;
+import com.ustadmobile.core.view.WelcomeView;
+import com.ustadmobile.core.view.XapiPackageView;
+import com.ustadmobile.nanolrs.core.endpoints.XapiAgentEndpoint;
+import com.ustadmobile.nanolrs.core.endpoints.XapiStatementsForwardingEndpoint;
+import com.ustadmobile.nanolrs.core.endpoints.XapiStatementsForwardingListener;
+import com.ustadmobile.nanolrs.core.manager.UserCustomFieldsManager;
+import com.ustadmobile.nanolrs.core.manager.UserManager;
+import com.ustadmobile.nanolrs.core.model.User;
+import com.ustadmobile.nanolrs.core.persistence.PersistenceManager;
+import com.ustadmobile.port.android.generated.MessageIDMap;
+import com.ustadmobile.port.android.netwokmanager.NetworkManagerAndroid;
+import com.ustadmobile.port.android.netwokmanager.NetworkServiceAndroid;
+import com.ustadmobile.port.android.util.UMAndroidUtil;
+import com.ustadmobile.port.android.view.AboutActivity;
+import com.ustadmobile.port.android.view.AddFeedDialogFragment;
+import com.ustadmobile.port.android.view.AppViewAndroid;
+import com.ustadmobile.port.android.view.AttendanceActivity;
+import com.ustadmobile.port.android.view.BasePointActivity;
+import com.ustadmobile.port.android.view.CatalogActivity;
+import com.ustadmobile.port.android.view.CatalogEntryActivity;
+import com.ustadmobile.port.android.view.ClassManagementActivity;
+import com.ustadmobile.port.android.view.ClassManagementActivity2;
+import com.ustadmobile.port.android.view.ContainerActivity;
+import com.ustadmobile.port.android.view.EnrollStudentActivity;
+import com.ustadmobile.port.android.view.LoginDialogFragment;
+import com.ustadmobile.port.android.view.ReceiveCourseDialogFragment;
+import com.ustadmobile.port.android.view.RegistrationDialogFragment;
+import com.ustadmobile.port.android.view.SendCourseDialogFragment;
+import com.ustadmobile.port.android.view.SettingsDataUsageActivity;
+import com.ustadmobile.port.android.view.UserSettingsActivity;
+import com.ustadmobile.port.android.view.UserSettingsActivity2;
+import com.ustadmobile.port.android.view.UstadBaseActivity;
+import com.ustadmobile.port.android.view.WelcomeDialogFragment;
+import com.ustadmobile.port.android.view.XapiPackageActivity;
+import com.ustadmobile.port.sharedse.impl.UstadMobileSystemImplSE;
+import com.ustadmobile.port.sharedse.networkmanager.NetworkManager;
+import com.ustadmobile.port.sharedse.view.AttendanceView;
+import com.ustadmobile.port.sharedse.view.ClassManagementView;
+import com.ustadmobile.port.sharedse.view.ClassManagementView2;
+import com.ustadmobile.port.sharedse.view.EnrollStudentView;
+import com.ustadmobile.port.sharedse.view.ReceiveCourseView;
+import com.ustadmobile.port.sharedse.view.SendCourseView;
+
 import org.json.JSONObject;
-import org.xmlpull.v1.*;
+import org.xmlpull.v1.XmlSerializer;
+
+import java.io.File;
+import java.io.FileInputStream;
+import java.io.FileOutputStream;
+import java.io.IOException;
+import java.io.InputStream;
+import java.net.URL;
+import java.net.URLConnection;
+import java.sql.SQLException;
+import java.util.HashMap;
+import java.util.Hashtable;
+import java.util.Map;
+import java.util.Set;
+import java.util.Timer;
+import java.util.WeakHashMap;
+import java.util.zip.ZipEntry;
+import java.util.zip.ZipOutputStream;
 
 
 /**
@@ -101,6 +165,8 @@ public class UstadMobileSystemImplAndroid extends UstadMobileSystemImplSE {
 
     public static final String TAG_DIALOG_FRAGMENT = "UMDialogFrag";
 
+    public static final String ACTION_LOCALE_CHANGE = "com.ustadmobile.locale_change";
+
     /**
      * Map of view names to the activity class that is implementing them on Android
      *
@@ -109,17 +175,28 @@ public class UstadMobileSystemImplAndroid extends UstadMobileSystemImplSE {
     public static final HashMap<String, Class> viewNameToAndroidImplMap = new HashMap<>();
 
     static {
+
         viewNameToAndroidImplMap.put(LoginView.VIEW_NAME, LoginDialogFragment.class);
         viewNameToAndroidImplMap.put(ContainerView.VIEW_NAME, ContainerActivity.class);
         viewNameToAndroidImplMap.put(CatalogView.VIEW_NAME, CatalogActivity.class);
         viewNameToAndroidImplMap.put(UserSettingsView.VIEW_NAME, UserSettingsActivity.class);
+        viewNameToAndroidImplMap.put(SettingsDataUsageView.VIEW_NAME, SettingsDataUsageActivity.class);
+        //Account settings:
+        //viewNameToAndroidImplMap.put(AccountSettingsView.VIEW_NAME, AccountSettingsActivity.class);
         viewNameToAndroidImplMap.put(BasePointView.VIEW_NAME, BasePointActivity.class);
         viewNameToAndroidImplMap.put(ClassManagementView.VIEW_NAME, ClassManagementActivity.class);
         viewNameToAndroidImplMap.put(EnrollStudentView.VIEW_NAME, EnrollStudentActivity.class);
         viewNameToAndroidImplMap.put(ClassManagementView2.VIEW_NAME, ClassManagementActivity2.class);
         viewNameToAndroidImplMap.put(AboutView.VIEW_NAME, AboutActivity.class);
         viewNameToAndroidImplMap.put(AttendanceView.VIEW_NAME, AttendanceActivity.class);
-
+        viewNameToAndroidImplMap.put(CatalogEntryView.VIEW_NAME, CatalogEntryActivity.class);
+        viewNameToAndroidImplMap.put(UserSettingsView2.VIEW_NAME, UserSettingsActivity2.class);
+        viewNameToAndroidImplMap.put(WelcomeView.VIEW_NAME, WelcomeDialogFragment.class);
+        viewNameToAndroidImplMap.put(RegistrationView.VIEW_NAME, RegistrationDialogFragment.class);
+        viewNameToAndroidImplMap.put(SendCourseView.VIEW_NAME, SendCourseDialogFragment.class);
+        viewNameToAndroidImplMap.put(ReceiveCourseView.VIEW_NAME, ReceiveCourseDialogFragment.class);
+        viewNameToAndroidImplMap.put(XapiPackageView.VIEW_NAME, XapiPackageActivity.class);
+        viewNameToAndroidImplMap.put(AddFeedDialogView.VIEW_NAME, AddFeedDialogFragment.class);
     }
 
 
@@ -135,13 +212,11 @@ public class UstadMobileSystemImplAndroid extends UstadMobileSystemImplSE {
 
     private UMLogAndroid logger;
 
-    private HashMap<Object, HTTPService> activityToHttpServiceMap;
-
     public static final String START_USERNAME = "START_USERNAME";
 
     public static final String START_AUTH = "START_AUTH";
 
-    private WeakHashMap<Activity, AppViewAndroid> appViews;
+    private WeakHashMap<Context, AppViewAndroid> appViews;
 
     private HashMap<UMDownloadCompleteReceiver, BroadcastReceiver> downloadCompleteReceivers;
 
@@ -151,12 +226,6 @@ public class UstadMobileSystemImplAndroid extends UstadMobileSystemImplSE {
      * Map of TinCanQueueListeners to the XapiQueueStatusListeners used by NanoLRS
      */
     private HashMap<TinCanQueueListener, XapiStatementsForwardingListener> queueStatusListeners;
-
-    /**
-     * Some mime types that the Android OS does not know about but we do...
-     * Mapped: Mime type -> extension
-     */
-    private HashMap<String, String> knownMimeToExtensionMap;
 
     /**
      * Base ServiceConnection class used to bind any given context to shared services: notably
@@ -169,7 +238,7 @@ public class UstadMobileSystemImplAndroid extends UstadMobileSystemImplSE {
 
         private Map<Context, ServiceConnection> contextToBinderMap;
 
-        private BaseServiceConnection(Context context, Map<Context, ServiceConnection> contextToBinderMap) {
+        public BaseServiceConnection(Context context, Map<Context, ServiceConnection> contextToBinderMap) {
             this.context = context;
             this.contextToBinderMap = contextToBinderMap;
             contextToBinderMap.put(context, this);
@@ -179,6 +248,23 @@ public class UstadMobileSystemImplAndroid extends UstadMobileSystemImplSE {
         @Override
         public void onServiceConnected(ComponentName name, IBinder iBinder) {
             this.iBinder = iBinder;
+
+            /*
+             * NetworkServiceAndroid will register itself using the Application to receive lifecycle
+             * callbacks. That however happens when the service is created, by which point an activity
+             * might have already started. This check happens when the NetworkService is bound to
+             * each activity.
+             */
+            if(context instanceof UstadBaseActivity
+                    && name.getClassName().equals(NetworkServiceAndroid.class.getName())) {
+                UstadBaseActivity activity = (UstadBaseActivity)context;
+                if(activity.isStarted()) {
+                    NetworkServiceAndroid networkService = ((NetworkServiceAndroid.LocalServiceBinder)iBinder)
+                            .getService();
+                    networkService.getNetworkManager().onActivityStarted(activity);
+                }
+            }
+
             if(context instanceof ServiceConnection) {
                 ((ServiceConnection)context).onServiceConnected(name, iBinder);
             }
@@ -198,19 +284,21 @@ public class UstadMobileSystemImplAndroid extends UstadMobileSystemImplSE {
         }
     }
 
-    private HashMap<Context, ServiceConnection> httpServiceConnections = new HashMap<>();
+
+    protected HashMap<Context, ServiceConnection> networkServiceConnections = new HashMap<>();
+
+    protected NetworkManagerAndroid networkManagerAndroid;
 
     /**
      @deprecated
      */
     public UstadMobileSystemImplAndroid() {
         logger = new UMLogAndroid();
-        activityToHttpServiceMap = new HashMap<>();
         appViews = new WeakHashMap<>();
         downloadCompleteReceivers = new HashMap<>();
         queueStatusListeners = new HashMap<>();
-        knownMimeToExtensionMap = new HashMap<>();
-        knownMimeToExtensionMap.put("application/epub+zip", "epub");
+        networkManagerAndroid = new NetworkManagerAndroid();
+        networkManagerAndroid.setServiceConnectionMap(networkServiceConnections);
     }
 
     /**
@@ -237,10 +325,43 @@ public class UstadMobileSystemImplAndroid extends UstadMobileSystemImplSE {
     }
 
     @Override
+    public void setLocale(String locale, Object context) {
+        super.setLocale(locale, context);
+        SharedPreferences prefs = PreferenceManager.getDefaultSharedPreferences((Context)context);
+        prefs.edit().putString(UserSettingsController.PREFKEY_LANG, locale).apply();
+    }
+
+    @Override
+    public String getLocale(Object context) {
+        String locale = super.getLocale(context);
+        if(locale == null) {
+            locale = PreferenceManager.getDefaultSharedPreferences((Context)context).getString(
+                    UserSettingsController.PREFKEY_LANG, "");
+            super.setLocale(locale, context);
+        }
+
+        return locale;
+    }
+
+    @Override
+    public String getString(int messageCode, Object context) {
+        Integer androidId = MessageIDMap.ID_MAP.get(messageCode);
+        if(androidId != null) {
+            return ((Context)context).getResources().getString(androidId);
+        }else {
+            return null;
+        }
+    }
+
+    @Override
     public boolean loadActiveUserInfo(Object context) {
         SharedPreferences appPrefs = getAppSharedPreferences((Context)context);
         currentUsername = appPrefs.getString(KEY_CURRENTUSER, null);
         currentAuth = appPrefs.getString(KEY_CURRENTAUTH, null);
+        if(currentUsername != null) {
+            xapiAgent = XapiAgentEndpoint.createOrUpdate(context, null, currentUsername,
+                    UMTinCanUtil.getXapiServer(context));
+        }
         this.userPreferences = null;
         return true;
     }
@@ -258,7 +379,7 @@ public class UstadMobileSystemImplAndroid extends UstadMobileSystemImplSE {
         //String xapiServer = "http://umcloud1.ustadmobile.com/umlrs/";
         String xapiServer = getAppPref(
                 UstadMobileSystemImpl.PREFKEY_XAPISERVER,
-                UstadMobileDefaults.DEFAULT_XAPI_SERVER, context);
+                CoreBuildConfig.DEFAULT_XAPI_SERVER, context);
 
         XapiStatementsForwardingEndpoint.putAndQueueStatement(context, stmtObj,
                 xapiServer, getActiveUser(context), getActiveUserAuth(context));
@@ -273,14 +394,7 @@ public class UstadMobileSystemImplAndroid extends UstadMobileSystemImplSE {
      */
     @Override
     public void addTinCanQueueStatusListener(final TinCanQueueListener listener) {
-        /*
-        queueStatusListeners.put(listener, new XapiStatementsForwardingListener() {
-            @Override
-            public void queueStatusUpdated(XapiQueueStatusEvent event) {
-                listener.statusUpdated(new TinCanQueueEvent(event.getStatementsRemaining()));
-            }
-        });
-        */
+
     }
 
     /**
@@ -298,32 +412,41 @@ public class UstadMobileSystemImplAndroid extends UstadMobileSystemImplSE {
      *
      * TODO: This should really be handleContextCreate : This should be used by background services as well
      *
-     * @param activity
+     * @param mContext
      */
-    public void handleActivityCreate(Activity activity, Bundle savedInstanceState) {
-        init(activity);
-        Intent intent = new Intent(activity, HTTPService.class);
-        BaseServiceConnection connection = new BaseServiceConnection(activity, httpServiceConnections);
-        activity.bindService(intent, connection, Context.BIND_AUTO_CREATE);
+    public void handleActivityCreate(Activity mContext, Bundle savedInstanceState) {
+        init(mContext);
+        Intent networkIntent = new Intent(mContext, NetworkServiceAndroid.class);
+        BaseServiceConnection connection = new BaseServiceConnection(mContext, networkServiceConnections);
+        mContext.bindService(networkIntent, connection, Context.BIND_AUTO_CREATE|Context.BIND_ADJUST_WITH_ACTIVITY);
     }
 
-    public void handleActivityStart(Activity activity) {
+    /**
+     *
+     * @param mContext
+     */
+    public void handleActivityStart(Activity mContext) {
 
     }
 
 
-    public void handleActivityStop(Activity activity) {
+    public void handleActivityStop(Activity mContext) {
 
     }
 
-    public void handleActivityDestroy(Activity activity) {
-        activity.unbindService(httpServiceConnections.get(activity));
+    public void handleActivityDestroy(Activity mContext) {
+        mContext.unbindService(networkServiceConnections.get(mContext));
+        networkServiceConnections.remove(mContext);
+        if(appViews.containsKey(mContext)) {
+            appViews.remove(mContext);
+        }
     }
 
-    @Override
+
     public void go(String viewName, Hashtable args, Object context) {
         Class androidImplClass = viewNameToAndroidImplMap.get(viewName);
         Context ctx = (Context)context;
+        Bundle argsBundle = UMAndroidUtil.hashtableToBundle(args);
 
         if(androidImplClass == null) {
             Log.wtf(UMLogAndroid.LOGTAG, "No activity for " + viewName + " found");
@@ -336,6 +459,8 @@ public class UstadMobileSystemImplAndroid extends UstadMobileSystemImplSE {
             String toastMsg = null;
             try {
                 DialogFragment dialog = (DialogFragment)androidImplClass.newInstance();
+                if(args != null)
+                    dialog.setArguments(argsBundle);
                 AppCompatActivity activity = (AppCompatActivity)context;
                 dialog.show(activity.getSupportFragmentManager(),TAG_DIALOG_FRAGMENT);
             }catch(InstantiationException e) {
@@ -352,17 +477,27 @@ public class UstadMobileSystemImplAndroid extends UstadMobileSystemImplSE {
         }else {
             Intent startIntent = new Intent(ctx, androidImplClass);
             if(args != null)
-                startIntent.putExtras(UMAndroidUtil.hashtableToBundle(args));
+                startIntent.putExtras(argsBundle);
 
             ctx.startActivity(startIntent);
         }
     }
 
     @Override
-    protected String getSystemBaseDir() {
+    protected String getSystemBaseDir(Object context) {
         return new File(Environment.getExternalStorageDirectory(), "ustadmobileContent").getAbsolutePath();
     }
 
+    @Override
+    public String getCacheDir(int mode, Object context) {
+        Context ctx = (Context)context;
+        File cacheDir = ctx.getCacheDir();
+        if(mode == CatalogPresenter.SHARED_RESOURCE) {
+            return cacheDir.getAbsolutePath();
+        }else {
+            return new File(cacheDir, "user-" + getActiveUser(context)).getAbsolutePath();
+        }
+    }
 
     /**
      * Method to accomplish the surprisingly tricky task of finding the external SD card (if this
@@ -400,7 +535,7 @@ public class UstadMobileSystemImplAndroid extends UstadMobileSystemImplSE {
     @Override
     public String getUserContentDirectory(String username) {
         File userDir = new File(Environment.getExternalStorageDirectory(),
-            "ustadmobileContent/user-" + username);
+                "ustadmobileContent/user-" + username);
         return userDir.getAbsolutePath();
     }
 
@@ -434,79 +569,30 @@ public class UstadMobileSystemImplAndroid extends UstadMobileSystemImplSE {
         }
         */
     }
-    
-    /** 
-     * Use Android assets instead 
+
+    /**
+     * Use Android assets instead
      */
     @Override
     public InputStream openResourceInputStream(String resURI, Object context) throws IOException {
+        if(resURI.charAt(0) == '/')
+            resURI = resURI.substring(1);
+
         return ((Context)context).getAssets().open(resURI);
     }
 
-    @Override
-    public String queueFileDownload(String url, String destFileURI, Hashtable headers, Object context) {
-        Context aContext = (Context)context;
-        DownloadManager mgr = (DownloadManager)aContext.getSystemService(Context.DOWNLOAD_SERVICE);
-        DownloadManager.Request request = new DownloadManager.Request(Uri.parse(url));
 
-        File destFile = new File(destFileURI);
-        String destStr = destFile.getAbsolutePath();
-        request.setDestinationUri(Uri.fromFile(destFile));
-
-        return String.valueOf(mgr.enqueue(request));
-    }
 
     @Override
     public int[] getFileDownloadStatus(String downloadID, Object context) {
-        //TODO: surround with try catch - sometimes this can go wrong with android SQL errors: in which case return null
-        Context ctx = (Context)context;
-        DownloadManager mgr = (DownloadManager)ctx.getSystemService(
-                Context.DOWNLOAD_SERVICE);
-        DownloadManager.Query query = new DownloadManager.Query();
-        query.setFilterById(Long.valueOf(downloadID));
-
-        Cursor cursor = mgr.query(query);
-        cursor.moveToFirst();
-
-        int[] retVal = new int[3];
-        retVal[IDX_DOWNLOADED_SO_FAR] = cursor.getInt(cursor.getColumnIndex(
-                DownloadManager.COLUMN_BYTES_DOWNLOADED_SO_FAR));
-        retVal[IDX_BYTES_TOTAL] = cursor.getInt(cursor.getColumnIndex(
-                DownloadManager.COLUMN_TOTAL_SIZE_BYTES));
-        retVal[IDX_STATUS] = cursor.getInt(cursor.getColumnIndex(
-                DownloadManager.COLUMN_STATUS));
-        return retVal;
+        return new int[3];
     }
-
-    @Override
-    public void registerDownloadCompleteReceiver(final UMDownloadCompleteReceiver receiver, final Object context) {
-        IntentFilter downloadCompleteIntentFilter =
-                new IntentFilter(DownloadManager.ACTION_DOWNLOAD_COMPLETE);
-        BroadcastReceiver completeReceiver = new BroadcastReceiver() {
-            @Override
-            public void onReceive(Context context, Intent intent) {
-                String downloadID = String.valueOf(intent.getLongExtra(DownloadManager.EXTRA_DOWNLOAD_ID, 0L));
-                receiver.downloadStatusUpdated(new UMDownloadCompleteEvent(downloadID,
-                        getFileDownloadStatus(downloadID, context)));
-            }
-        };
-
-        downloadCompleteReceivers.put(receiver, completeReceiver);
-        ((Context)context).registerReceiver(completeReceiver, downloadCompleteIntentFilter);
-    }
-
-    @Override
-    public void unregisterDownloadCompleteReceiver(UMDownloadCompleteReceiver receiver, Object context) {
-        ((Context)context).unregisterReceiver(downloadCompleteReceivers.get(receiver));
-        downloadCompleteReceivers.remove(receiver);
-    }
-
 
 
     private SharedPreferences getAppSharedPreferences(Context context) {
         if(appPreferences == null) {
             appPreferences = context.getSharedPreferences(APP_PREFERENCES_NAME,
-                Context.MODE_PRIVATE);
+                    Context.MODE_PRIVATE);
         }
         return appPreferences;
     }
@@ -541,6 +627,7 @@ public class UstadMobileSystemImplAndroid extends UstadMobileSystemImplSE {
 
 
         this.userPreferences = null;
+
     }
 
     @Override
@@ -640,11 +727,11 @@ public class UstadMobileSystemImplAndroid extends UstadMobileSystemImplSE {
 
     @Override
     public AppView getAppView(Object context) {
-        Activity activity = (Activity)context;
-        AppViewAndroid view = appViews.get(activity);
+        Context ctx = (Context)context;
+        AppViewAndroid view = appViews.get(ctx);
         if(view == null) {
-            view = new AppViewAndroid(this, activity);
-            appViews.put(activity, view);
+            view = new AppViewAndroid(this, ctx);
+            appViews.put(ctx, view);
         }
 
         return view;
@@ -669,28 +756,28 @@ public class UstadMobileSystemImplAndroid extends UstadMobileSystemImplSE {
 
     @Override
     public String getMimeTypeFromExtension(String extension) {
-        return MimeTypeMap.getSingleton().getMimeTypeFromExtension(extension);
+        String mimeType = MimeTypeMap.getSingleton().getMimeTypeFromExtension(extension);
+        if(mimeType != null) {
+            return mimeType;
+        }else {
+            return super.getMimeTypeFromExtension(extension);
+        }
     }
 
     @Override
     public String getExtensionFromMimeType(String mimeType) {
         String extension =MimeTypeMap.getSingleton().getExtensionFromMimeType(mimeType);
-        if(extension == null) {
-            extension = knownMimeToExtensionMap.get(mimeType);
+        if(extension != null) {
+            return extension;
+        }else {
+            return super.getExtensionFromMimeType(mimeType);
         }
-
-        return extension;
     }
 
     @Override
     public void getResumableRegistrations(final String activityId, final Object context, final TinCanResultListener listener)  {
         //removed
         listener.resultReady(null);
-    }
-
-    @Override
-    public long getBuildTime() {
-        return BuildConfig.TIMESTAMP;
     }
 
     @Override
@@ -704,5 +791,132 @@ public class UstadMobileSystemImplAndroid extends UstadMobileSystemImplSE {
             l(UMLog.ERROR, 90, null, e);
         }
         return versionInfo;
+    }
+
+    @Override
+    public boolean isWiFiP2PSupported() {
+        //TODO: Use android specific code here to determine if this device supports wifi p2p
+        return true;
+    }
+
+    @Override
+    public NetworkManager getNetworkManager() {
+        return networkManagerAndroid;
+    }
+
+    @Override
+    public String getAppSetupFile(Object context, boolean zip) {
+        File apkFile = new File(((Context)context).getApplicationInfo().sourceDir);
+        String baseName = CoreBuildConfig.BASE_NAME + "-" + CoreBuildConfig.VERSION;
+        FileInputStream apkFileIn = null;
+        Context ctx = (Context)context;
+        File outDir = new File(ctx.getFilesDir(), "shared");
+        if(!outDir.isDirectory())
+            outDir.mkdirs();
+
+        if(zip) {
+            ZipOutputStream zipOut = null;
+            File outZipFile = new File(outDir, baseName + ".zip");
+            try {
+                zipOut = new ZipOutputStream(new FileOutputStream(outZipFile));
+                zipOut.putNextEntry(new ZipEntry(baseName + ".apk"));
+                apkFileIn = new FileInputStream(apkFile);
+                UMIOUtils.readFully(apkFileIn, zipOut, 1024);
+                zipOut.closeEntry();
+            }catch(IOException e) {
+                e.printStackTrace();
+            }finally {
+                UMIOUtils.closeOutputStream(zipOut);
+                UMIOUtils.closeInputStream(apkFileIn);
+            }
+
+            return outZipFile.getAbsolutePath();
+        }else {
+            FileOutputStream fout = null;
+            File outApkFile = new File(outDir, baseName + ".apk");
+            try {
+                apkFileIn = new FileInputStream(apkFile);
+                fout = new FileOutputStream(outApkFile);
+                UMIOUtils.readFully(apkFileIn, fout, 1024);
+            }catch(IOException e) {
+                e.printStackTrace();
+            }finally {
+                UMIOUtils.closeInputStream(apkFileIn);
+                UMIOUtils.closeOutputStream(fout);
+            }
+
+            return outApkFile.getAbsolutePath();
+        }
+    }
+
+    @Override
+    public Class[] getSupportedContentTypePlugins() {
+        return new Class[]{
+                EPUBTypePlugin.class,
+                XapiPackageTypePlugin.class
+        };
+    }
+
+    @Override
+    public String getManifestPreference(String key, Object context) {
+        try {
+            Context ctx = (Context)context;
+            ApplicationInfo ai2 = ctx.getPackageManager().getApplicationInfo(ctx.getPackageName(),
+                    PackageManager.GET_META_DATA);
+            Bundle metaData = ai2.metaData;
+            if(metaData != null) {
+                return metaData.getString(key);
+            }
+        }catch(PackageManager.NameNotFoundException e) {
+            UstadMobileSystemImpl.l(UMLog.ERROR, UMLog.ERROR, key, e);
+        }
+
+        return null;
+    }
+
+    @Override
+    public String getUserDetail(String username, int field, Object dbContext){
+
+        try {
+            UserCustomFieldsManager customFieldsManager =
+                    PersistenceManager.getInstance().getManager(UserCustomFieldsManager.class);
+            UserManager userManager =
+                    PersistenceManager.getInstance().getManager(UserManager.class);
+            User user = userManager.findByUsername(dbContext, username);
+            String value = customFieldsManager.getUserField(user, field, dbContext);
+            if (value == null) {
+                return "";
+            }
+            return value;
+        }catch(SQLException s){
+            s.printStackTrace();
+            System.out.println("Unable to get user detail: " + field +
+                " for user: " + username);
+            return "";
+        }
+
+
+    }
+
+    @Override
+    public void mountContainer(final ContainerMountRequest request, final int id,
+                               final UmCallback callback) {
+
+        final String scriptPath = UMFileUtil.joinPaths(new String[] {
+                networkManagerAndroid.getHttpAndroidAssetsUrl(), "epub-paginate.js"});
+        new AsyncTask<Void, Void, String>() {
+            @Override
+            protected String doInBackground(Void... voids) {
+                String mountedPath = networkManagerAndroid.mountZipOnHttp(request.getContainerUri(),
+                        null, request.isEpubMode(), scriptPath);
+                return UMFileUtil.joinPaths(new String[]{networkManagerAndroid.getLocalHttpUrl(),
+                    mountedPath});
+            }
+
+            @Override
+            protected void onPostExecute(String mountedPath) {
+                callback.onSuccess(id, mountedPath);
+            }
+        }.execute();
     }
 }

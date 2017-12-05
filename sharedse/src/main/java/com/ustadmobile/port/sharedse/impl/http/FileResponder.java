@@ -1,6 +1,7 @@
 package com.ustadmobile.port.sharedse.impl.http;
 import com.ustadmobile.core.util.UMFileUtil;
 
+import java.io.BufferedInputStream;
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.IOException;
@@ -92,7 +93,7 @@ public abstract class FileResponder {
 
         @Override
         public InputStream getInputStream() throws IOException{
-            return new FileInputStream(src);
+            return new BufferedInputStream(new FileInputStream(src));
         }
 
         @Override
@@ -159,9 +160,10 @@ public abstract class FileResponder {
      * @param uriResource uriResource from the request
      * @param session session from the request
      * @param file Interface representing the file or file like source
+     * @param cacheControlHeader The cache control header to put on the response. Optional: can be null for no cache-control header
      * @return An appropriate NanoHTTPD.Response as above for the request
      */
-    public static NanoHTTPD.Response newResponseFromFile(NanoHTTPD.Method method, RouterNanoHTTPD.UriResource uriResource, NanoHTTPD.IHTTPSession session, IFileSource file) {
+    public static NanoHTTPD.Response newResponseFromFile(NanoHTTPD.Method method, RouterNanoHTTPD.UriResource uriResource, NanoHTTPD.IHTTPSession session, IFileSource file, String cacheControlHeader) {
         boolean isHeadRequest = method.equals(NanoHTTPD.Method.HEAD);
         try {
             long range[];
@@ -221,14 +223,15 @@ public abstract class FileResponder {
             }else {
                 //Workaround : NanoHTTPD is using the InputStream.available method incorrectly
                 // see RangeInputStream.available
-                retInputStream = isHeadRequest ? null : new RangeInputStream(retInputStream, 0, totalLength);
+                retInputStream = isHeadRequest ? null : retInputStream;
                 NanoHTTPD.Response r = NanoHTTPD.newFixedLengthResponse(NanoHTTPD.Response.Status.OK,
                     EmbeddedHTTPD.getMimeType(fileName), retInputStream, totalLength);
 
                 r.addHeader("ETag", etag);
                 r.addHeader("Content-Length", String.valueOf(totalLength));
                 r.addHeader("Connection", "close");
-                r.addHeader("Cache-Control", "cache, max-age=86400");
+                if(cacheControlHeader != null)
+                    r.addHeader("Cache-Control", cacheControlHeader);
                 return r;
             }
         }catch(IOException e) {
@@ -236,6 +239,10 @@ public abstract class FileResponder {
             return NanoHTTPD.newFixedLengthResponse(NanoHTTPD.Response.Status.INTERNAL_ERROR,
                     "text/plain", isHeadRequest ? null : "Internal exception: " + e.toString());
         }
+    }
+
+    public static NanoHTTPD.Response newResponseFromFile(NanoHTTPD.Method method, RouterNanoHTTPD.UriResource uriResource, NanoHTTPD.IHTTPSession session, IFileSource file) {
+        return newResponseFromFile(method, uriResource, session, file, "cache, max-age=86400");
     }
 
     public static NanoHTTPD.Response newResponseFromFile(RouterNanoHTTPD.UriResource uriResource, NanoHTTPD.IHTTPSession session, IFileSource file) {
