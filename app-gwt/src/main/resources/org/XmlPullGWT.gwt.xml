@@ -7,11 +7,6 @@
   "http://gwtproject.org/doctype/2.7.0/gwt-module.dtd">
   
 <module >
-	<!--  
-	<source path='v1'/>
-	<source path='mxp1'/>
-	<source path='mxp1_serializer'/>
-  	-->
   	
   	<source path="xmlpull" />
   	

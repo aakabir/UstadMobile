@@ -92,13 +92,10 @@
 			<resource>
 			    <directory>src-core/main/java</directory>
 			</resource>
-			
-		
-			<!--  			  
+								  
 			<resource>
 				<directory>${project.basedir}/../core/src/main/java</directory>
 			</resource>
-			-->
 			
         </resources>
 
@@ -116,7 +113,7 @@
                 </configuration>
             </plugin>
             
-            <!-- Addng additional source : core to this maven  -->
+            <!-- Adding additional source : core to this maven  -->
             <plugin>
                <groupId>org.apache.maven.plugins</groupId>
                   <artifactId>maven-compiler-plugin</artifactId>
@@ -124,6 +121,21 @@
                     	<source>src-core/main/java</source>
                        <includes>
                       <include>src-core/main/java</include>
+                    </includes>
+                    
+                    </configuration>
+             </plugin>
+             
+             
+             
+             <!-- Adding additional source : xmlpull gwt to this maven  -->
+            <plugin>
+               <groupId>org.apache.maven.plugins</groupId>
+                  <artifactId>maven-compiler-plugin</artifactId>
+                    <configuration>
+                    	<source>src-xpp/main/java</source>
+                       <includes>
+                      <include>src-xpp/main/java</include>
                     </includes>
                     
                     </configuration>

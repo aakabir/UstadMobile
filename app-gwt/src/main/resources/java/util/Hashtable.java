@@ -46,4 +46,8 @@ public class Hashtable<K,V> {
 		this.map.remove(key);
 		return previousValue;		
 	}
+	
+	public boolean containsKey(Object key){
+		return this.map.containsKey(key);
+	}
 }

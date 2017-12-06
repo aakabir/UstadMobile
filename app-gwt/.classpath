@@ -6,7 +6,7 @@
 			<attribute name="maven.pomderived" value="true"/>
 		</attributes>
 	</classpathentry>
-	<classpathentry kind="src" path="src-core/main/java"/>
+	<classpathentry kind="src" path="src-core"/>
 	<classpathentry kind="src" path="src-xpp/main/java"/>
 	<classpathentry kind="src" path="src-jre/main/java"/>
 	<classpathentry kind="src" path="src-json/main/java"/>
