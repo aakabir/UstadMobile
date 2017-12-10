@@ -20,12 +20,15 @@
 	<!-- JSON GWT-->
 	<inherits name="org.JsonGWT"/>
 	
-	<!-- XML GWT -->
+	<!-- XML Wrapper -->
 	<inherits name="org.XmlPullGWT" />
+	
+	<!-- GWT's XML -->
+	<inherits name="com.google.gwt.xml.XML"/>
 	
 	<!-- Core -->
 	<!-- <inherits name="com.ustadmobile.core.Core"/>-->
-	<inherits name="com.ustadmobile.Core"/>
+	<!--  <inherits name="com.ustadmobile.Core"/> -->
 	
 	<!-- Hashtable for GWT (Hashmap) -->
 	<inherits name="java.HashmapHashtable" />
@@ -39,6 +42,7 @@
 	<!-- Specify the paths for translatable code on client-->
     <source path='client'/>
     <source path='shared'/>
+    <source path='xmlpull'/>
     <!-- <source path='org.json'/> Commenting because JsonGWT inherits already has it-->
     
     <!-- Replacement : Deferred Bindings -->
