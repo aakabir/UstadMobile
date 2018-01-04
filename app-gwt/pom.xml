@@ -88,14 +88,16 @@
 		    	<directory>src-xpp/main/java</directory>
 			</resource>
 			
-			
+			<!-- Add Core source as per linked in Java build paths-->
 			<resource>
 			    <directory>src-core/main/java</directory>
 			</resource>
-								  
+				  		
+			<!-- Add Core source relative to project directory -->	  
 			<resource>
 				<directory>${project.basedir}/../core/src/main/java</directory>
 			</resource>
+		
 			
         </resources>
 

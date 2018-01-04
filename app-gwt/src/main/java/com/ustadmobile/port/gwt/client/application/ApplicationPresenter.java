@@ -27,7 +27,7 @@ import com.gwtplatform.mvp.client.proxy.Proxy;
 import com.gwtplatform.mvp.shared.proxy.PlaceRequest;
 import com.ustadmobile.port.gwt.client.place.NameTokens;
 import com.gwtplatform.mvp.client.presenter.slots.NestedSlot;
-
+import com.ustadmobile.core.controller.LoginController;
 //import com.ustadmobile.core.impl.UstadMobileSystemImpl;
 import com.ustadmobile.core.test.TestThis;
 
@@ -154,6 +154,24 @@ public class ApplicationPresenter
 			e1.printStackTrace();
 			GWT.log("Unable to loop thorugh XML.");
 		}
+        
+        GWT.log("Testing core..");
+        
+        String serverURL = "https://umcloud1.ustadmobile.com:8086/syncendpoint/";
+        String username = "ram.narayan";
+        String password = "varuna";
+        
+        LoginController.authenticate(username, password, serverURL, new UmCallback() {
+            @Override
+            public void onSuccess(Object result) {
+                GWT.log("SUCCESS");
+            }
+
+            @Override
+            public void onFailure(Throwable exception) {
+                GWT.log("FAIL");
+            }
+        });
         
         
         //If you have, 

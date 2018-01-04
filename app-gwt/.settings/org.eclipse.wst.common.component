@@ -1,5 +1,5 @@
 <?xml version="1.0" encoding="UTF-8"?><project-modules id="moduleCoreId" project-version="1.5.0">
-    <wb-module deploy-name="gwtp-basic-archetype-1.0-SNAPSHOT">
+    <wb-module deploy-name="ustadmobile-gwtp-1.0-SNAPSHOT">
         <wb-resource deploy-path="/" source-path="/target/m2e-wtp/web-resources"/>
         <wb-resource deploy-path="/" source-path="/src/main/webapp" tag="defaultRootSource"/>
         <wb-resource deploy-path="/WEB-INF/classes" source-path="/src/main/java"/>
@@ -8,7 +8,7 @@
         <wb-resource deploy-path="/WEB-INF/classes" source-path="/src-jre/main/java"/>
         <wb-resource deploy-path="/WEB-INF/classes" source-path="/src-xpp/main/java"/>
         <wb-resource deploy-path="/WEB-INF/classes" source-path="/src-core"/>
-        <property name="context-root" value="gwtp-basic-archetype"/>
         <property name="java-output-path" value="/gwtp-basic-archetype/coding/projects/arcbees/archetypes/target/checkout/gwtp-basic/target/gwtp-basic-archetype-1.5.3/WEB-INF/classes"/>
+        <property name="context-root" value="ustadmobile-gwtp"/>
     </wb-module>
 </project-modules>
