@@ -11,13 +11,14 @@ import org.junit.runners.Suite;
  */
 @RunWith(Suite.class)
 @Suite.SuiteClasses({
-        TestHTTPCacheDir.class,
         TestImageLoader.class,
         TestDirectoryScanner.class,
         TestXapiPackageTypePlugin.class,
         TestUstadJSOPDSFeed.class,
+        TestUstadJSOPDSEntry.class,
         TestUMFileUtil.class,
-        TestUstadJSOPF.class
+        TestUstadJSOPF.class,
+        TestUmCalendarUtil.class
 })
 public abstract class CoreTestSuite {
 }

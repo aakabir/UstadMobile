@@ -32,6 +32,7 @@ package com.ustadmobile.core.opf;
 
 import com.ustadmobile.core.impl.UMLog;
 import com.ustadmobile.core.impl.UstadMobileSystemImpl;
+import com.ustadmobile.core.opds.UstadJSOPDSItem;
 
 import org.xmlpull.v1.XmlPullParser;
 import org.xmlpull.v1.XmlPullParserException;
@@ -69,6 +70,13 @@ public class UstadJSOPF {
     public String description;
 
     private Vector links;
+
+    private Vector creators;
+
+    //As per the OPF spec a dc:language tag is required
+    private Vector languages = new Vector();
+
+
     
     /**
      * Flag value to indicate we should parse the metadata (e.g. title, identifier, description)
@@ -232,6 +240,8 @@ public class UstadJSOPF {
             isLinear = true;
             isLinearStrVal = null;
             String tagName;
+            UstadJSOPFCreator creator;
+            String tagVal;
             
                         
             
@@ -261,7 +271,10 @@ public class UstadJSOPF {
                         item2.mimeType = itemMime;
                         item2.properties = properties;
                         item2.id = id;
-                        
+
+                        /*
+                         * As per the EPUB spec only one item should have this property
+                         */
                         if(properties != null && properties.indexOf("nav") != -1) {
                             navItem = item2;
                         }
@@ -328,6 +341,21 @@ public class UstadJSOPF {
                                 links = new Vector();
 
                             links.addElement(linkEl);
+                        }else if(xpp.getName().equals("dc:creator")) {
+                            creator = new UstadJSOPFCreator();
+                            creator.setId(xpp.getAttributeValue(null, LinkElement.ATTR_ID));
+                            if(xpp.next() == XmlPullParser.TEXT)
+                                creator.setCreator(xpp.getText());
+
+                            if(creators == null)
+                                creators = new Vector();
+
+                            creators.addElement(creator);
+                        }else if(xpp.getName().equals("dc:language")) {
+                            if(xpp.next() == XmlPullParser.TEXT) {
+                                tagVal = xpp.getText();
+                                languages.addElement(tagVal);
+                            }
                         }
                     }
                 }else if(evtType == XmlPullParser.END_TAG) {
@@ -435,5 +463,39 @@ public class UstadJSOPF {
     public Vector getLinks() {
         return links;
     }
+
+
+    /**
+     * Return the opf item that represents the navigation document. This is the OPF item that
+     * contains properties="nav". As per the spec, only one item is allowed to have this property.
+     *
+     * @return
+     */
+    public UstadJSOPFItem getNavItem() {
+        return navItem;
+    }
+
+    public Vector getCreators() {
+        return creators;
+    }
+
+    public UstadJSOPFCreator getCreator(int index) {
+        return (UstadJSOPFCreator)creators.elementAt(index);
+    }
+
+    public int getNumCreators() {
+        return creators != null ? creators.size() : 0;
+    }
+
+    /**
+     * Return a Vector of String objects containing the languages as per dc:language tags that were
+     * found on this OPF, in the order they appeared in the declaration.
+     *
+     * @return Vector of language codes as Strings.
+     */
+    public Vector getLanguages() {
+        return languages;
+    }
+
 
 }

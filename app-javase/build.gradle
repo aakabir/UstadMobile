@@ -1,4 +1,5 @@
 apply plugin: 'java'
+apply plugin: "maven-publish"
 
 task runOrmLiteGeneration(type: JavaExec) {
     classpath sourceSets.main.runtimeClasspath
@@ -7,6 +8,12 @@ task runOrmLiteGeneration(type: JavaExec) {
 dependencies {
     compile project(":core")
     compile project(":sharedse")
+    compile project(":lib-core-fs")
+    compile project(':lib-core-fs-jcommon')
+
+    compile "com.j256.ormlite:ormlite-core:5.0"
+    compile "com.j256.ormlite:ormlite-jdbc:5.0"
+
     compile "org.json:json:20160212"
     compile "net.sf.kxml:kxml2:2.3.0"
 }
@@ -17,7 +24,31 @@ task fatJar(type: Jar) {
     with jar
 }
 
+task sourceJar(type: Jar) {
+    from sourceSets.main.allJava
+}
+
 sourceCompatibility = "1.7"
 targetCompatibility = "1.7"
 
+publishing {
+    publications {
+        nanolrscore(MavenPublication) {
+            groupId 'com.ustadmobile.app'
+            artifactId 'app-javase'
+            version rootProject.version
 
+            from components.java
+
+            artifact sourceJar {
+                classifier = 'sources'
+            }
+        }
+    }
+
+    repositories {
+        maven {
+            url rootProject.ext.buildConfigProperties['repo.dir']
+        }
+    }
+}

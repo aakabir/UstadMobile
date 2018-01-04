@@ -79,6 +79,7 @@ import com.ustadmobile.core.view.CatalogView;
 import com.ustadmobile.core.view.ContainerView;
 import com.ustadmobile.core.view.LoginView;
 import com.ustadmobile.core.view.RegistrationView;
+import com.ustadmobile.core.view.SettingsDataSyncListView;
 import com.ustadmobile.core.view.SettingsDataUsageView;
 import com.ustadmobile.core.view.UserSettingsView;
 import com.ustadmobile.core.view.UserSettingsView2;
@@ -110,6 +111,7 @@ import com.ustadmobile.port.android.view.LoginDialogFragment;
 import com.ustadmobile.port.android.view.ReceiveCourseDialogFragment;
 import com.ustadmobile.port.android.view.RegistrationDialogFragment;
 import com.ustadmobile.port.android.view.SendCourseDialogFragment;
+import com.ustadmobile.port.android.view.SettingsDataSyncListActivity;
 import com.ustadmobile.port.android.view.SettingsDataUsageActivity;
 import com.ustadmobile.port.android.view.UserSettingsActivity;
 import com.ustadmobile.port.android.view.UserSettingsActivity2;
@@ -181,6 +183,7 @@ public class UstadMobileSystemImplAndroid extends UstadMobileSystemImplSE {
         viewNameToAndroidImplMap.put(CatalogView.VIEW_NAME, CatalogActivity.class);
         viewNameToAndroidImplMap.put(UserSettingsView.VIEW_NAME, UserSettingsActivity.class);
         viewNameToAndroidImplMap.put(SettingsDataUsageView.VIEW_NAME, SettingsDataUsageActivity.class);
+        viewNameToAndroidImplMap.put(SettingsDataSyncListView.VIEW_NAME, SettingsDataSyncListActivity.class);
         //Account settings:
         //viewNameToAndroidImplMap.put(AccountSettingsView.VIEW_NAME, AccountSettingsActivity.class);
         viewNameToAndroidImplMap.put(BasePointView.VIEW_NAME, BasePointActivity.class);
@@ -281,6 +284,72 @@ public class UstadMobileSystemImplAndroid extends UstadMobileSystemImplSE {
 
         public IBinder getBinder() {
             return iBinder;
+        }
+    }
+
+    /**
+     * Simple async task to handle getting the setup file
+     * Param 0 = boolean - true to zip, false otherwise
+     */
+    private static class GetSetupFileAsyncTask extends AsyncTask<Boolean, Void, String> {
+
+        private Context context;
+
+        private UmCallback doneCallback;
+
+        private GetSetupFileAsyncTask(UmCallback doneCallback, Context context) {
+            this.context = context;
+            this.doneCallback = doneCallback;
+        }
+
+        @Override
+        protected String doInBackground(Boolean... booleans) {
+            File apkFile = new File(((Context)context).getApplicationInfo().sourceDir);
+            String baseName = CoreBuildConfig.BASE_NAME + "-" + CoreBuildConfig.VERSION;
+            FileInputStream apkFileIn = null;
+            Context ctx = (Context)context;
+            File outDir = new File(ctx.getFilesDir(), "shared");
+            if(!outDir.isDirectory())
+                outDir.mkdirs();
+
+            if(booleans[0]) {
+                ZipOutputStream zipOut = null;
+                File outZipFile = new File(outDir, baseName + ".zip");
+                try {
+                    zipOut = new ZipOutputStream(new FileOutputStream(outZipFile));
+                    zipOut.putNextEntry(new ZipEntry(baseName + ".apk"));
+                    apkFileIn = new FileInputStream(apkFile);
+                    UMIOUtils.readFully(apkFileIn, zipOut, 1024);
+                    zipOut.closeEntry();
+                }catch(IOException e) {
+                    e.printStackTrace();
+                }finally {
+                    UMIOUtils.closeOutputStream(zipOut);
+                    UMIOUtils.closeInputStream(apkFileIn);
+                }
+
+                return outZipFile.getAbsolutePath();
+            }else {
+                FileOutputStream fout = null;
+                File outApkFile = new File(outDir, baseName + ".apk");
+                try {
+                    apkFileIn = new FileInputStream(apkFile);
+                    fout = new FileOutputStream(outApkFile);
+                    UMIOUtils.readFully(apkFileIn, fout, 1024);
+                }catch(IOException e) {
+                    e.printStackTrace();
+                }finally {
+                    UMIOUtils.closeInputStream(apkFileIn);
+                    UMIOUtils.closeOutputStream(fout);
+                }
+
+                return outApkFile.getAbsolutePath();
+            }
+        }
+
+        @Override
+        protected void onPostExecute(String filePath) {
+            doneCallback.onSuccess(filePath);
         }
     }
 
@@ -805,48 +874,10 @@ public class UstadMobileSystemImplAndroid extends UstadMobileSystemImplSE {
     }
 
     @Override
-    public String getAppSetupFile(Object context, boolean zip) {
-        File apkFile = new File(((Context)context).getApplicationInfo().sourceDir);
-        String baseName = CoreBuildConfig.BASE_NAME + "-" + CoreBuildConfig.VERSION;
-        FileInputStream apkFileIn = null;
-        Context ctx = (Context)context;
-        File outDir = new File(ctx.getFilesDir(), "shared");
-        if(!outDir.isDirectory())
-            outDir.mkdirs();
-
-        if(zip) {
-            ZipOutputStream zipOut = null;
-            File outZipFile = new File(outDir, baseName + ".zip");
-            try {
-                zipOut = new ZipOutputStream(new FileOutputStream(outZipFile));
-                zipOut.putNextEntry(new ZipEntry(baseName + ".apk"));
-                apkFileIn = new FileInputStream(apkFile);
-                UMIOUtils.readFully(apkFileIn, zipOut, 1024);
-                zipOut.closeEntry();
-            }catch(IOException e) {
-                e.printStackTrace();
-            }finally {
-                UMIOUtils.closeOutputStream(zipOut);
-                UMIOUtils.closeInputStream(apkFileIn);
-            }
-
-            return outZipFile.getAbsolutePath();
-        }else {
-            FileOutputStream fout = null;
-            File outApkFile = new File(outDir, baseName + ".apk");
-            try {
-                apkFileIn = new FileInputStream(apkFile);
-                fout = new FileOutputStream(outApkFile);
-                UMIOUtils.readFully(apkFileIn, fout, 1024);
-            }catch(IOException e) {
-                e.printStackTrace();
-            }finally {
-                UMIOUtils.closeInputStream(apkFileIn);
-                UMIOUtils.closeOutputStream(fout);
-            }
-
-            return outApkFile.getAbsolutePath();
-        }
+    public void getAppSetupFile(Object context, boolean zip, UmCallback callback) {
+        GetSetupFileAsyncTask setupFileAsyncTask = new GetSetupFileAsyncTask(callback,
+                (Context)context);
+        setupFileAsyncTask.execute(zip);
     }
 
     @Override
@@ -915,7 +946,7 @@ public class UstadMobileSystemImplAndroid extends UstadMobileSystemImplSE {
 
             @Override
             protected void onPostExecute(String mountedPath) {
-                callback.onSuccess(id, mountedPath);
+                callback.onSuccess(mountedPath);
             }
         }.execute();
     }

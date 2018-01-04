@@ -60,7 +60,7 @@ import java.util.Vector;
  *
  * @author varuna
  */
-public abstract class UstadJSOPDSItem implements Runnable {
+public abstract class UstadJSOPDSItem {
     
     public String title;
     
@@ -268,30 +268,18 @@ public abstract class UstadJSOPDSItem implements Runnable {
         void onError(UstadJSOPDSItem item, Throwable cause);
     }
 
-    private String asyncLoadUrl;
+    protected String asyncLoadUrl;
 
-    private OpdsItemLoadCallback asyncLoadCallback;
+    protected OpdsItemLoadCallback asyncLoadCallback;
 
-    private Hashtable asyncHttpheaders;
+    protected Hashtable asyncHttpheaders;
 
-    private Object asyncContext;
+    protected Object asyncContext;
 
     public UstadJSOPDSItem() {
         this.linkVector = new Vector();
     }
 
-//    @Override
-//    public boolean equals(Object o) {
-//        if(o == this) {
-//            return true;
-//        }else if(o != null && o instanceof UstadJSOPDSItem) {
-//            UstadJSOPDSItem otherItem = (UstadJSOPDSItem)o;
-//            if(otherItem.id != null && otherItem.id.equals(id)){
-//                //go through all properties
-//
-//            }
-//        }
-//    }
 
     /**
      * The language of this item as specified by the dublin core dc:language tag if present
@@ -328,6 +316,10 @@ public abstract class UstadJSOPDSItem implements Runnable {
     
     public String[] getLink(int index) {
         return (String[])linkVector.elementAt(index);
+    }
+
+    public void setLinkAt(String[] linkVals, int index) {
+        linkVector.setElementAt(linkVals, index);
     }
     
     /**
@@ -554,6 +546,25 @@ public abstract class UstadJSOPDSItem implements Runnable {
         serializeStringToTag(xs, UstadJSOPDSFeed.NS_DC, ATTR_NAMES[ATTR_PUBLISHER], publisher);
         serializeStringToTag(xs, UstadJSOPDSFeed.NS_DC, "language", language);
 
+        if(authors != null) {
+            UstadJSOPDSAuthor author;
+            for(int i = 0; i < authors.size(); i++) {
+                author = getAuthor(i);
+                xs.startTag(UstadJSOPDSFeed.NS_ATOM, "author");
+                if(author.getName() != null){
+                    serializeStringToTag(xs, UstadJSOPDSFeed.NS_ATOM, "name",
+                            author.getName());
+                }
+
+                if(author.getUri() != null) {
+                    serializeStringToTag(xs, UstadJSOPDSFeed.NS_ATOM, "uri",
+                            author.getUri());
+                }
+
+                xs.endTag(UstadJSOPDSFeed.NS_ATOM, "author");
+            }
+        }
+
         int i, j;
         for(i = 0; i < linkVector.size(); i++) {
             String[] thisLink = (String[])linkVector.elementAt(i);
@@ -566,6 +577,7 @@ public abstract class UstadJSOPDSItem implements Runnable {
             }
             xs.endTag(UstadJSOPDSFeed.NS_ATOM, ATTR_NAMES[ATTR_LINK]);
         }
+
 
 
 
@@ -770,36 +782,20 @@ public abstract class UstadJSOPDSItem implements Runnable {
         this.asyncHttpheaders = httpHeaders;
         this.asyncContext = context;
         this.href = url;
-        new Thread(this).start();
+        new UstadJSOPDSItemAsyncHelper(this).load();
     }
 
-    public void run() {
-        InputStream in = null;
+    public void loadFromInputStream(InputStream in) {
         XmlPullParser xpp = null;
         Throwable err = null;
-
         try {
-            if(!asyncLoadUrl.startsWith(OpdsEndpoint.OPDS_PROTOCOL)) {
-                HTTPResult[] resultBuf = new HTTPResult[1];
-                UstadMobileSystemImpl.getInstance().getHTTPCacheDir(asyncContext).get(asyncLoadUrl,
-                        null, asyncHttpheaders, resultBuf);
-                if(resultBuf[0] == null || resultBuf[0].getStatus() >= 300)
-                    throw new IOException("Http status: " +
-                            (resultBuf[0] != null ? resultBuf[0].getStatus() : "-1"));
-
-                in = new ByteArrayInputStream(resultBuf[0].getResponse());
-                xpp = UstadMobileSystemImpl.getInstance().newPullParser(in);
-                UstadJSOPDSFeed parentFeed = this instanceof UstadJSOPDSFeed ? (UstadJSOPDSFeed) this : null;
-                loadFromXpp(xpp, parentFeed, asyncLoadCallback);
-            }else {
-                OpdsEndpoint.getInstance().loadItem(asyncLoadUrl, this, asyncContext, asyncLoadCallback);
-            }
-        }catch(IOException e) {
-            err = e;
+            xpp = UstadMobileSystemImpl.getInstance().newPullParser(in);
+            UstadJSOPDSFeed parentFeed = this instanceof UstadJSOPDSFeed ? (UstadJSOPDSFeed) this : null;
+            loadFromXpp(xpp, parentFeed, asyncLoadCallback);
         }catch(XmlPullParserException x) {
             err = x;
-        }finally {
-            UMIOUtils.closeInputStream(in);
+        }catch(IOException e) {
+            err = e;
         }
 
         if(!hasRequiredElements(false)){
@@ -959,5 +955,37 @@ public abstract class UstadJSOPDSItem implements Runnable {
         return -1;
     }
     /* $endif$ */
+
+
+    /**
+     * Get the number of authors as per the number of author tags on this opds item.
+     *
+     * @return Number of authors as per the number of author tags on this opds item.
+     */
+    public int getNumAuthors() {
+        return authors != null ? authors.size() : 0;
+    }
+
+    /**
+     * Get an UstadJSOPDSAuthor object representing an author. One item can have multiple authors
+     * as per the atom author tags present.
+     *
+     * @see UstadJSOPDSItem#getNumAuthors()
+     * @param index Index of author to retrieve
+     *
+     * @return UstadJSOPDSAuthor object representing the author as per the given index
+     */
+    public UstadJSOPDSAuthor getAuthor(int index) {
+        return ((UstadJSOPDSAuthor)authors.elementAt(index));
+    }
+
+    /**
+     * Gets a list of all authors that are on this OPDS item.
+     *
+     * @return Vector containing UstadJSOPDSAuthor objects, possibly null if there are none
+     */
+    public Vector getAuthors() {
+        return authors;
+    }
 
 }

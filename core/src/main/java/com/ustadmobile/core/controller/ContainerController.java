@@ -60,6 +60,8 @@
  */
 package com.ustadmobile.core.controller;
 
+import com.ustadmobile.core.epubnav.EPUBNavDocument;
+import com.ustadmobile.core.epubnav.EPUBNavItem;
 import com.ustadmobile.core.impl.ContainerMountRequest;
 import com.ustadmobile.core.impl.UMLog;
 import com.ustadmobile.core.impl.UstadMobileSystemImpl;
@@ -70,9 +72,11 @@ import com.ustadmobile.core.impl.http.UmHttpResponseCallback;
 import com.ustadmobile.core.ocf.UstadOCF;
 import com.ustadmobile.core.opds.UstadJSOPDSEntry;
 import com.ustadmobile.core.opf.UstadJSOPF;
+import com.ustadmobile.core.opf.UstadJSOPFItem;
 import com.ustadmobile.core.tincan.TinCanXML;
 import com.ustadmobile.core.util.UMFileUtil;
 import com.ustadmobile.core.util.UMTinCanUtil;
+import com.ustadmobile.core.util.UMUtil;
 import com.ustadmobile.core.util.URLTextUtil;
 import com.ustadmobile.core.view.ContainerView;
 import com.ustadmobile.core.view.UstadView;
@@ -158,15 +162,15 @@ public class ContainerController extends UstadBaseController {
     private UmCallback mountedCallbackHandler = new UmCallback() {
 
         @Override
-        public void onSuccess(int requestId, Object result) {
+        public void onSuccess(Object result) {
             mountedUrl = (String) result;
             String containerUri = UMFileUtil.joinPaths(new String[]{mountedUrl, OCF_CONTAINER_PATH});
-            containerXmlCall = UstadMobileSystemImpl.getInstance().makeRequestAsync(new UmHttpRequest(containerUri),
-                    containerHttpCallbackHandler);
+            containerXmlCall = UstadMobileSystemImpl.getInstance().makeRequestAsync(
+                    new UmHttpRequest(getContext(), containerUri), containerHttpCallbackHandler);
         }
 
         @Override
-        public void onFailure(int requestId, Object reason, Throwable exception) {
+        public void onFailure(Throwable exception) {
 
         }
     };
@@ -185,8 +189,8 @@ public class ContainerController extends UstadBaseController {
                     //get and parse the first publication
                     String opfUrl = UMFileUtil.joinPaths(new String[]{mountedUrl,
                             ocf.rootFiles[0].fullPath});
-                    UstadMobileSystemImpl.getInstance().makeRequestAsync(new UmHttpRequest(opfUrl),
-                            opfHttpCallbackHandler);
+                    UstadMobileSystemImpl.getInstance().makeRequestAsync(
+                            new UmHttpRequest(getContext(), opfUrl), opfHttpCallbackHandler);
 
                 }catch(IOException e) {
                     e.printStackTrace();
@@ -214,11 +218,61 @@ public class ContainerController extends UstadBaseController {
                 final String baseUrl = UMFileUtil.getParentFilename(UMFileUtil.joinPaths(new String[] {
                         mountedUrl, ocf.rootFiles[0].fullPath}));
                 final String xapiQuery = getXAPIQuery(UMFileUtil.resolveLink(mountedUrl, "/xapi/"));
+                final String containerTitle = opf.title;
+                final UstadJSOPFItem opfCoverImageItem = opf.getCoverImage(null);
+                final String authorNames = opf.getNumCreators() > 0 ?
+                        UMUtil.joinStrings(opf.getCreators(), ", ") : null;
 
                 containerView.runOnUiThread(new Runnable() {
                     @Override
                     public void run() {
+                        containerView.setContainerTitle(containerTitle);
                         containerView.setSpineUrls(baseUrl, linearSpineHrefs, xapiQuery);
+                        if(opfCoverImageItem != null) {
+                            containerView.setCoverImage(UMFileUtil.resolveLink(baseUrl,
+                                    opfCoverImageItem.href));
+                        }
+
+                        if(authorNames != null) {
+                            containerView.setAuthorName(authorNames);
+                        }
+                    }
+                });
+
+                if(opf.getNavItem() == null)
+                    return;
+
+                String navXhtmlUrl = UMFileUtil.resolveLink(UMFileUtil.joinPaths(new String[]{
+                        mountedUrl, ocf.rootFiles[0].fullPath}), opf.getNavItem().href);
+
+                UstadMobileSystemImpl.getInstance().makeRequestAsync(new UmHttpRequest(
+                        getContext(), navXhtmlUrl), navCallbackHandler);
+            }catch(IOException e) {
+                e.printStackTrace();
+            }catch(XmlPullParserException x) {
+                x.printStackTrace();
+            }
+        }
+
+        @Override
+        public void onFailure(UmHttpCall call, IOException exception) {
+
+        }
+    };
+
+    private UmHttpResponseCallback navCallbackHandler = new UmHttpResponseCallback() {
+        @Override
+        public void onComplete(UmHttpCall call, UmHttpResponse response) {
+            final EPUBNavDocument navDocument = new EPUBNavDocument();
+            try {
+//                XmlPullParser xpp = UstadMobileSystemImpl.getInstance().newPullParser();
+//                xpp.setFeature(XmlPullParser.FEATURE_PROCESS_NAMESPACES, true);
+//                xpp.setInput(new ByteArrayInputStream(response.getResponseBody()), "UTF-8");
+                navDocument.load(new ByteArrayInputStream(response.getResponseBody()));
+                containerView.runOnUiThread(new Runnable() {
+                    @Override
+                    public void run() {
+                        containerView.setTableOfContents(navDocument.getToc());
                     }
                 });
             }catch(IOException e) {
