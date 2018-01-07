@@ -8,7 +8,12 @@
 
 <module >
 	<!-- Add all of core to source path -->
-	<source path='core'/>
+	<source path='core'>
+		<exclude name="**/UMCalendarUtil.*" />
+		<exclude name="**/OpdsEndpointAsyncHelper.*" />
+		<exclude name="**/UstadJSOPDSItemAsyncHelper.*" />
+		
+	</source>
 
 	<!-- allow Super Dev Mode -->
 	<add-linker name="xsiframe"/>

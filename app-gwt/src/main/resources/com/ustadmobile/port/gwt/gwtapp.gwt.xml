@@ -27,7 +27,6 @@
 	<inherits name="com.google.gwt.xml.XML"/>
 	
 	<!-- Core -->
-	<!-- <inherits name="com.ustadmobile.core.Core"/>-->
 	<inherits name="com.ustadmobile.Core"/>
 	
 	<!-- Hashtable for GWT (Hashmap) -->
@@ -44,18 +43,18 @@
     <source path='shared'/>
     <source path='xmlpull'/>
     <!-- <source path='org.json'/> Commenting because JsonGWT inherits already has it-->
-    <!-- <source path='org.json' /> --> <!-- Using it because JsonGWT doens't have JSONException -->
     
     <!-- Replacement : Deferred Bindings -->
-  	<!-- Testing Deferred Binding with normal classes.
-  		 Update: Does not work -->
+  	<!-- Testing Deferred Binding with normal classes. -->
   	<replace-with class="com.ustadmobile.port.gwt.client.test.ReplaceWithThis">
     	<when-type-is class="com.ustadmobile.port.gwt.client.util.ReplaceWithThis"/>
   	</replace-with>
   	
-  	<replace-with class="com.ustadmobile.port.gwt.client.util.UMCalendarUtil">
+  	<!-- 
+  	<replace-with class="com.ustadmobile.core.util.UMCalendarUtil">
     	<when-type-is class="com.ustadmobile.core.util.UMCalendarUtil"/>
   	</replace-with>
+    -->
     
     <set-configuration-property name="CssResource.enableGss" value="true"/>
 </module>
