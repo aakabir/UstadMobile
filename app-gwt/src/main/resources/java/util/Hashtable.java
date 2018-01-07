@@ -50,4 +50,8 @@ public class Hashtable<K,V> {
 	public boolean containsKey(Object key){
 		return this.map.containsKey(key);
 	}
+	
+	public boolean contains(String value){
+		retutn this.map.containsValue(value);
+	}
 }

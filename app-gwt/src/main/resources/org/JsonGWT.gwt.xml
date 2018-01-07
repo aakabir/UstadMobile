@@ -9,7 +9,7 @@
 <module>
 
 	<!-- Client facing sources -->
-	<!-- <source path='/' /> -->
+	<source path='/' />
 	<source path='json'/>
 
 	<!-- allow Super Dev Mode -->

@@ -50,6 +50,7 @@ import com.ustadmobile.core.view.LoginView;
 import com.ustadmobile.core.view.RegistrationView;
 import com.ustadmobile.core.view.UstadView;
 
+import org.json.JSONException;
 import org.json.JSONObject;
 
 import java.io.IOException;
@@ -210,9 +211,13 @@ public class LoginController extends UstadBaseController{
             public void onComplete(UmHttpCall call, UmHttpResponse response) {
                 if(response.isSuccessful()) {
                     try {
-                        JSONObject jsonResp = new JSONObject(new String(response.getResponseBody(),
+                    	try{
+                    		JSONObject jsonResp = new JSONObject(new String(response.getResponseBody(),
                                 "UTF-8"));
-                        callback.onSuccess(jsonResp.getString("country_code"));
+                        	callback.onSuccess(jsonResp.getString("country_code"));
+                        }catch(JSONException je){
+                        	callback.onFailure(je);
+                        }
                     }catch(IOException e) {
                         callback.onFailure(e);
                     }

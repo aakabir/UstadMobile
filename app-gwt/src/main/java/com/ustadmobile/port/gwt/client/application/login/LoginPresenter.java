@@ -19,6 +19,7 @@
  */
 package com.ustadmobile.port.gwt.client.application.login;
 
+import com.ustadmobile.core.view.LoginView;
 import com.ustadmobile.port.gwt.client.application.ApplicationPresenter;
 import com.ustadmobile.port.gwt.client.place.NameTokens;
 import com.google.inject.Inject;

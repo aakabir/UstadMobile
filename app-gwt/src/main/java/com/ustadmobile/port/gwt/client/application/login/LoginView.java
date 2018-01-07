@@ -20,6 +20,8 @@
 package com.ustadmobile.port.gwt.client.application.login;
 
 import javax.inject.Inject;
+
+import com.google.gwt.core.client.GWT;
 import com.google.gwt.event.dom.client.ClickEvent;
 import com.google.gwt.uibinder.client.UiBinder;
 import com.google.gwt.uibinder.client.UiField;
@@ -57,5 +59,9 @@ public class LoginView extends ViewWithUiHandlers<LoginUiHandlers>
     void onConfirm(ClickEvent event) {
     	System.out.println("Confirming..");
         getUiHandlers().confirm(username.getText(), password.getText());
+    }
+    
+    public void doNothing(){
+    	GWT.log("hi");
     }
 }
