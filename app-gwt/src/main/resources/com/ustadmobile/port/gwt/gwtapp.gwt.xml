@@ -54,7 +54,7 @@
   	</replace-with>
   	
   	<replace-with class="com.ustadmobile.port.gwt.client.util.UMCalendarUtil">
-    	<when-type-is class="com.ustadmobile.port.core.util.UMCalendarUtil"/>
+    	<when-type-is class="com.ustadmobile.core.util.UMCalendarUtil"/>
   	</replace-with>
     
     <set-configuration-property name="CssResource.enableGss" value="true"/>

@@ -156,7 +156,7 @@ public class ApplicationPresenter
 		}
         
         GWT.log("Testing core..");
-        
+        /*
         String serverURL = "https://umcloud1.ustadmobile.com:8086/syncendpoint/";
         String username = "ram.narayan";
         String password = "varuna";
@@ -172,7 +172,7 @@ public class ApplicationPresenter
                 GWT.log("FAIL");
             }
         });
-        
+        */
         
         //If you have, 
         //view.setUiHanders(this);

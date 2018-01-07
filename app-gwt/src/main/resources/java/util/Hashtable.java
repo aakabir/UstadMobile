@@ -52,6 +52,6 @@ public class Hashtable<K,V> {
 	}
 	
 	public boolean contains(String value){
-		retutn this.map.containsValue(value);
+		return this.map.containsValue(value);
 	}
 }
