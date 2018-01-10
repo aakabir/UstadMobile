@@ -169,9 +169,34 @@ public class UstadMobileSystemImplGWT extends UstadMobileSystemImpl{
 	}
 
 	@Override
-	public void getAsset(Object context, String path, UmCallback<InputStream> callback) {
+	public void getAsset(Object context, String path, final UmCallback<InputStream> callback) {
 		// TODO Auto-generated method stub
-		
+		GWT.log("Getting Asset from path in GWT will lookup to a known url and fetch it via http");
+		UmHttpRequest request = new UmHttpRequest(path);
+		//request.setMethod(RequestBuilder.GET.toString());
+		makeRequestAsync(request, new UmHttpResponseCallback() {
+			
+			@Override
+			public void onFailure(UmHttpCall call, IOException exception) {
+				// TODO Auto-generated method stub
+				GWT.log("getAsset:makeRequestAsync: FAIL");
+			}
+			
+			@Override
+			public void onComplete(UmHttpCall call, UmHttpResponse response) {
+				// TODO Auto-generated method stub
+				GWT.log("getAsset:makeRequestAsync: SUCCESS");
+				//TODO: Add method to UmHttpCall to read contents of the query
+				try {
+					callback.onSuccess(response.getResponseAsStream());
+				} catch (IOException e) {
+					// TODO Auto-generated catch block
+					e.printStackTrace();
+					GWT.log("EXCEPTION : getAsset:makeRequestAsync:onComplete:response->Stream");
+				}
+				
+			}
+		});
 	}
 
 	@Override
@@ -303,22 +328,6 @@ public class UstadMobileSystemImplGWT extends UstadMobileSystemImpl{
 	@Override
 	public UmHttpCall makeRequestAsync(UmHttpRequest request, UmHttpResponseCallback responseListener) {
 		// TODO Auto-generated method stub
-		/*
-		  RequestBuilder builder = new RequestBuilder(...);
-		    try {
-		      builder.sendRequest(null, new RequestCallback() {  
-		        @Override  
-		        public void onResponseReceived(Request request, Response response) {
-		          callback.onSuccess(response.getText());  
-		        }  
-		        @Override  
-		        public void onError(Request request, Throwable exception) {}
-		          callback.onFailure(exception.getMessage());  
-		        });
-		    } catch (RequestException e) {
-		        callback.onFailure(exception.getMessage());  
-		    }  
-		 */
 		Hashtable headers = request.getHeaders();
 		String url = request.getUrl();
 		Method httpMethod = RequestBuilder.GET;
@@ -334,6 +343,7 @@ public class UstadMobileSystemImplGWT extends UstadMobileSystemImpl{
 					// TODO Auto-generated method stub
 					GWT.log("sendRequest Succes");
 					//responseListener.onComplete(call, response);
+					//UmHttpCall call = null;
 					
 				}
 				
