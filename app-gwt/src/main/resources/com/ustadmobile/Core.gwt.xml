@@ -9,10 +9,7 @@
 <module >
 	<!-- Add all of core to source path -->
 	<source path='core'>
-		<exclude name="**/UMCalendarUtil.*" />
-		<exclude name="**/OpdsEndpointAsyncHelper.*" />
-		<exclude name="**/UstadJSOPDSItemAsyncHelper.*" />
-		
+		<!-- <exclude name="**/UstadMobileSystemImplFactory.*" /> -->  <!-- Update: removed all occurences in classpath irrespective of source dir -->		
 	</source>
 
 	<!-- allow Super Dev Mode -->

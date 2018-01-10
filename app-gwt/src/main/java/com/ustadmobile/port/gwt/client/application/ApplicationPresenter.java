@@ -28,9 +28,10 @@ import com.gwtplatform.mvp.shared.proxy.PlaceRequest;
 import com.ustadmobile.port.gwt.client.place.NameTokens;
 import com.gwtplatform.mvp.client.presenter.slots.NestedSlot;
 import com.ustadmobile.core.controller.LoginController;
-//import com.ustadmobile.core.impl.UstadMobileSystemImpl;
 import com.ustadmobile.core.test.TestThis;
+import com.ustadmobile.port.gwt.client.test.TestInterface;
 
+import com.ustadmobile.core.impl.UmCallback;
 /**
  * This is the top level presenter of the hierarchy ApplicationPresenter. 
  * Other presenters reveal themselves within this Presenter. 
@@ -155,8 +156,12 @@ public class ApplicationPresenter
 			GWT.log("Unable to loop thorugh XML.");
 		}
         
+        GWT.log("Testing lonely interfaces..");
+        TestInterface testInterface;
+        
+        
         GWT.log("Testing core..");
-        /*
+        
         String serverURL = "https://umcloud1.ustadmobile.com:8086/syncendpoint/";
         String username = "ram.narayan";
         String password = "varuna";
@@ -172,7 +177,7 @@ public class ApplicationPresenter
                 GWT.log("FAIL");
             }
         });
-        */
+        
         
         //If you have, 
         //view.setUiHanders(this);

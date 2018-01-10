@@ -39,6 +39,7 @@
     <inherits name="gwt.material.design.GwtMaterialTableDebug"/>
   	
 	<!-- Specify the paths for translatable code on client-->
+	<source path='../../core/' />
     <source path='client'/>
     <source path='shared'/>
     <source path='xmlpull'/>
@@ -55,6 +56,9 @@
     	<when-type-is class="com.ustadmobile.core.util.UMCalendarUtil"/>
   	</replace-with>
     -->
+    
+    <define-configuration-property name="line.separator" is-multi-valued='false'/>
+	<set-configuration-property name="line.separator" value='\n'/>
     
     <set-configuration-property name="CssResource.enableGss" value="true"/>
 </module>

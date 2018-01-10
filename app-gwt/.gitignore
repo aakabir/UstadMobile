@@ -1,2 +1,5 @@
 /target/
 core/
+src-core/
+core-src/
+*.test

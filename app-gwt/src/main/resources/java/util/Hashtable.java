@@ -27,8 +27,8 @@ public class Hashtable<K,V> {
 	}
 	
 	public Enumeration keys(){
-		//tODO
-		return null;
+		Enumeration enu = java.util.Collections.enumeration(this.map.keySet());
+		return enu;
 	}
 	
 	public Object get(Object key){
@@ -54,4 +54,5 @@ public class Hashtable<K,V> {
 	public boolean contains(String value){
 		return this.map.containsValue(value);
 	}
+	
 }
