@@ -17,6 +17,9 @@
 	<!-- Logging -->
 	<inherits name="com.google.gwt.logging.Logging"/>
 	
+	<!-- HTTP -->
+	<inherits name="com.google.gwt.http.HTTP"/>
+	
 	<!-- JSON GWT-->
 	<inherits name="org.JsonGWT"/>
 	

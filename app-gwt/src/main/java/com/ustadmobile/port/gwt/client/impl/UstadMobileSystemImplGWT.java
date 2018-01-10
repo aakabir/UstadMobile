@@ -11,6 +11,13 @@ import org.xmlpull.v1.XmlPullParser;
 import org.xmlpull.v1.XmlPullParserException;
 import org.xmlpull.v1.XmlSerializer;
 
+import com.google.gwt.core.client.GWT;
+import com.google.gwt.http.client.Request;
+import com.google.gwt.http.client.RequestBuilder;
+import com.google.gwt.http.client.RequestCallback;
+import com.google.gwt.http.client.RequestException;
+import com.google.gwt.http.client.Response;
+import com.google.gwt.http.client.RequestBuilder.Method;
 import com.gwtplatform.mvp.client.proxy.PlaceManager;
 import com.gwtplatform.mvp.shared.proxy.PlaceRequest;
 import com.ustadmobile.port.gwt.client.place.NameTokens;
@@ -296,6 +303,64 @@ public class UstadMobileSystemImplGWT extends UstadMobileSystemImpl{
 	@Override
 	public UmHttpCall makeRequestAsync(UmHttpRequest request, UmHttpResponseCallback responseListener) {
 		// TODO Auto-generated method stub
+		/*
+		  RequestBuilder builder = new RequestBuilder(...);
+		    try {
+		      builder.sendRequest(null, new RequestCallback() {  
+		        @Override  
+		        public void onResponseReceived(Request request, Response response) {
+		          callback.onSuccess(response.getText());  
+		        }  
+		        @Override  
+		        public void onError(Request request, Throwable exception) {}
+		          callback.onFailure(exception.getMessage());  
+		        });
+		    } catch (RequestException e) {
+		        callback.onFailure(exception.getMessage());  
+		    }  
+		 */
+		Hashtable headers = request.getHeaders();
+		String url = request.getUrl();
+		Method httpMethod = RequestBuilder.GET;
+		String requestData="";
+		
+		RequestBuilder requestBuilder = new RequestBuilder(httpMethod, url);
+		try{
+			
+			requestBuilder.sendRequest(requestData, new RequestCallback() {
+				
+				@Override
+				public void onResponseReceived(Request request, Response response) {
+					// TODO Auto-generated method stub
+					GWT.log("sendRequest Succes");
+					//responseListener.onComplete(call, response);
+					
+				}
+				
+				@Override
+				public void onError(Request request, Throwable exception) {
+					// TODO Auto-generated method stub
+					GWT.log("sendRequest FAIL");
+				}
+			});
+		} catch (RequestException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+			UmHttpCall call = new UmHttpCall() {
+				
+				@Override
+				public void cancel() {
+					// TODO Auto-generated method stub
+					GWT.log("PLEASE CHECK ME");
+					
+				}
+			};
+			
+			IOException ie = new IOException(e.getMessage());
+			ie.setStackTrace(e.getStackTrace());
+			responseListener.onFailure(call, ie);
+		}
+		
 		return null;
 	}
 
