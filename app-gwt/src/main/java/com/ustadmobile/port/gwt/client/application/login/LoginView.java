@@ -61,6 +61,12 @@ public class LoginView extends ViewWithUiHandlers<LoginUiHandlers>
         getUiHandlers().confirm(username.getText(), password.getText());
     }
     
+    @UiHandler("about")
+    void onAbout(ClickEvent event){
+    	GWT.log("LoginView:onAbout(): About button clicked..Calling Override in LoginPresenter via UiHandler()..");
+    	getUiHandlers().aboutClicked();
+    }
+    
     public void doNothing(){
     	GWT.log("hi");
     }

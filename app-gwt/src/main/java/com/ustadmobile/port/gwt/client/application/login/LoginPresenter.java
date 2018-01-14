@@ -19,9 +19,10 @@
  */
 package com.ustadmobile.port.gwt.client.application.login;
 
-import com.ustadmobile.core.view.LoginView;
+//import com.ustadmobile.core.view.LoginView;
 import com.ustadmobile.port.gwt.client.application.ApplicationPresenter;
 import com.ustadmobile.port.gwt.client.place.NameTokens;
+import com.google.gwt.core.client.GWT;
 import com.google.inject.Inject;
 import com.google.web.bindery.event.shared.EventBus;
 import com.gwtplatform.mvp.client.HasUiHandlers;
@@ -107,4 +108,17 @@ public class LoginPresenter
 	private boolean validateCredentials(String username, String password) {
         return username.equals("test") && password.equals("test");
     }
+
+
+	@Override
+	public void aboutClicked() {
+		GWT.log("LoginPresenter:aboutClicked(): Going to About page.");
+		//  Navigate to the AboutPresenter
+		 System.out.println("Going home..");
+		 PlaceRequest placeRequest = new PlaceRequest.Builder()
+	                .nameToken(NameTokens.ABOUT)
+	                .build();
+		 placeManager.revealPlace(placeRequest);
+		
+	}
 }
