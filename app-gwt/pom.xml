@@ -128,8 +128,6 @@
                     </configuration>
              </plugin>
              
-             
-             
              <!-- Adding additional source : xmlpull gwt to this maven  -->
              
             <plugin>

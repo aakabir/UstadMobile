@@ -20,6 +20,7 @@ import com.google.gwt.http.client.Response;
 import com.google.gwt.http.client.RequestBuilder.Method;
 import com.gwtplatform.mvp.client.proxy.PlaceManager;
 import com.gwtplatform.mvp.shared.proxy.PlaceRequest;
+import com.ustadmobile.port.gwt.client.impl.http.UmHttpResponseGWT;
 import com.ustadmobile.port.gwt.client.place.NameTokens;
 import com.ustadmobile.core.catalog.contenttype.ContentTypePlugin;
 import com.ustadmobile.core.impl.ContainerMountRequest;
@@ -326,7 +327,8 @@ public class UstadMobileSystemImplGWT extends UstadMobileSystemImpl{
 	}
 
 	@Override
-	public UmHttpCall makeRequestAsync(UmHttpRequest request, UmHttpResponseCallback responseListener) {
+	public UmHttpCall makeRequestAsync(UmHttpRequest request, 
+			final UmHttpResponseCallback responseListener) {
 		// TODO Auto-generated method stub
 		Hashtable headers = request.getHeaders();
 		String url = request.getUrl();
@@ -344,6 +346,9 @@ public class UstadMobileSystemImplGWT extends UstadMobileSystemImpl{
 					GWT.log("sendRequest Succes");
 					//responseListener.onComplete(call, response);
 					//UmHttpCall call = null;
+					UmHttpResponseGWT responseGWT = new UmHttpResponseGWT(response);
+					//UmHttpCall never used as far as I can see, so returning null - Varuna
+					responseListener.onComplete(null, responseGWT);
 					
 				}
 				
