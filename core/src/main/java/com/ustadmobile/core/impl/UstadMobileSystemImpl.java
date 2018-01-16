@@ -32,14 +32,20 @@
 package com.ustadmobile.core.impl;
 
 import com.ustadmobile.core.buildconfig.CoreBuildConfig;
+import com.ustadmobile.core.catalog.contenttype.ContentTypePlugin;
 import com.ustadmobile.core.controller.CatalogPresenter;
+import com.ustadmobile.core.impl.http.UmHttpCall;
+import com.ustadmobile.core.impl.http.UmHttpRequest;
+import com.ustadmobile.core.impl.http.UmHttpResponse;
+import com.ustadmobile.core.impl.http.UmHttpResponseCallback;
 import com.ustadmobile.core.model.CourseProgress;
 import com.ustadmobile.core.networkmanager.NetworkManagerCore;
+import com.ustadmobile.core.opds.db.UmOpdsDbManager;
 import com.ustadmobile.core.tincan.TinCanResultListener;
-import com.ustadmobile.core.util.HTTPCacheDir;
 import com.ustadmobile.core.util.MessagesHashtable;
 import com.ustadmobile.core.util.UMFileUtil;
 import com.ustadmobile.core.util.UMIOUtils;
+import com.ustadmobile.core.util.UMUtil;
 import com.ustadmobile.core.view.AppView;
 import com.ustadmobile.core.view.LoginView;
 
@@ -53,7 +59,9 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
 import java.util.Hashtable;
+import java.util.LinkedHashMap;
 import java.util.Properties;
+import java.util.Vector;
 
 /* $if umplatform == 2  $
     import org.json.me.*;
@@ -72,7 +80,6 @@ import java.util.Properties;
 public abstract class UstadMobileSystemImpl {
 
     protected static UstadMobileSystemImpl mainInstance;
-
 
     /**
      * Default behaviour - any existing content is overwritten
@@ -186,11 +193,6 @@ public abstract class UstadMobileSystemImpl {
     public static final int DLSTATUS_PAUSED = 4;
 
     /**
-     * The shared HTTPCacheDir
-     */
-    protected HTTPCacheDir httpCacheDir;
-
-    /**
      * The maximum number of sessions to show for the user to be able to resume
      * This is limited both for usability and performance.
      */
@@ -201,7 +203,22 @@ public abstract class UstadMobileSystemImpl {
      */
     public static final String LOCALE_USE_SYSTEM = "";
 
-    private Properties appConfig;
+
+
+    protected static Hashtable MIME_TYPES = new Hashtable();
+
+    protected static Hashtable MIME_TYPES_REVERSE = new Hashtable();
+
+    static {
+        MIME_TYPES.put("image/jpg", "jpg");
+        MIME_TYPES.put("image/jpeg", "jpg");
+        MIME_TYPES.put("image/png", "png");
+        MIME_TYPES.put("image/gif", "gif");
+        MIME_TYPES.put("image/svg", "svg");
+        MIME_TYPES.put("application/epub+zip", "epub");
+
+        MIME_TYPES_REVERSE = UMUtil.flipHashtable(MIME_TYPES);
+    }
 
     /**
      * Get an instance of the system implementation - relies on the platform
@@ -255,31 +272,9 @@ public abstract class UstadMobileSystemImpl {
             return;
         }
 
-        try {
-            checkCacheDir(context);
-            loadActiveUserInfo(context);
-            if(getActiveUser(context) != null) {
-                getHTTPCacheDir(context).setPrivateCacheDir(
-                    getCacheDir(CatalogPresenter.USER_RESOURCE, context));
-            }
-            getHTTPCacheDir(context).primeCache(context);
+        loadActiveUserInfo(context);
 
-            initRan = true;
-        }catch(IOException e) {
-            mainInstance.getLogger().l(UMLog.CRITICAL, 5, null, e);
-        }
-    }
-
-    public void checkCacheDir(Object context) throws IOException{
-        boolean sharedDirOK = false;
-        String sharedContentDir = mainInstance.getSharedContentDir();
-        sharedDirOK = mainInstance.makeDirectory(sharedContentDir);
-        String sharedCacheDir = mainInstance.getCacheDir(
-                CatalogPresenter.SHARED_RESOURCE, context);
-        boolean sharedCacheDirOK = mainInstance.makeDirectory(sharedCacheDir);
-        StringBuffer initMsg = new StringBuffer(sharedContentDir).append(':').append(sharedDirOK);
-        initMsg.append(" cache -").append(sharedCacheDir).append(':').append(sharedCacheDirOK);
-        mainInstance.getLogger().l(UMLog.VERBOSE, 411, initMsg.toString());
+        initRan = true;
     }
 
     /**
@@ -385,9 +380,7 @@ public abstract class UstadMobileSystemImpl {
      * Save anything that should be written to disk
      */
     public synchronized void handleSave() {
-        if(httpCacheDir != null) {
-            httpCacheDir.saveIndexAsync();
-        }
+
     }
 
     /**
@@ -573,17 +566,12 @@ public abstract class UstadMobileSystemImpl {
      */
     public abstract InputStream openFileInputStream(String fileURI) throws IOException, SecurityException;
 
-
     /**
-     * Get an input stream for an item in the resources - this should be the path
-     * without a leading slash for files that get copied from the res directory
-     * of the source.
+     * Get an asset (from files that are in core/src/flavorName/assets)
      *
-     * @param resURI the path to the resource; e.g. locale/en.properties
      */
-    public InputStream openResourceInputStream(String resURI, Object context) throws IOException {
-        return getClass().getResourceAsStream("/res/" + resURI);
-    }
+    public abstract void getAsset(Object context, String path, UmCallback<InputStream> callback);
+
 
     /**
      * Write the given string to the given file URI.  Create the file if it does
@@ -711,7 +699,6 @@ public abstract class UstadMobileSystemImpl {
             String userCachePath = getCacheDir(CatalogPresenter.USER_RESOURCE,
                     context);
             String userCacheParent = UMFileUtil.getParentFilename(userCachePath);
-            getHTTPCacheDir(context).setPrivateCacheDir(userCachePath);
             try {
                 boolean dirOK = makeDirectory(userCacheParent) && makeDirectory(userCachePath);
                 getLogger().l(UMLog.VERBOSE, 404, username + ":" + userCachePath
@@ -838,59 +825,56 @@ public abstract class UstadMobileSystemImpl {
         }
     }
 
-
     /**
-     * Do a basic HTTP Request
+     * Make an asynchronous http request. This can (on platforms with a filesystem) rely on the
+     * caching directory.
      *
-     * @param url URL to request e.g. http://www.somewhere.com/some/thing.php?param1=blah
-     * @param headers Hashtable of extra headers to add (can be null)
-     * @param postParameters Parameters to be put in HTTP Request (can be null)
-     *  only applicable when method = POST
-     * @param method e.g. GET, POST, PUT
-     * @throws IOException if something goes wrong with the request
-     * @return HTTPResult object containing the server response
+     * @param request request to make
+     * @param responseListener response listener to receive response when ready
      */
-    public abstract HTTPResult makeRequest(String url, Hashtable headers, Hashtable postParameters, String method, byte[] postBody) throws IOException;
+    public abstract UmHttpCall makeRequestAsync(UmHttpRequest request,
+                                                UmHttpResponseCallback responseListener);
 
 
     /**
-     * Do an HTTP request using the default method (GET)
-     */
-    public HTTPResult makeRequest(String url, Hashtable headers, Hashtable postParameters) throws IOException{
-        return makeRequest(url, headers, postParameters, HTTPResult.GET, null);
-    }
-
-    /**
-    * Do an HTTP request with no PostBody given
-    */
-    public HTTPResult makeRequest(String url, Hashtable headers, Hashtable postParameters, String method) throws IOException{
-        return makeRequest(url, headers, postParameters, method, null);
-    }
-
-    /**
-     * Reads a URL to String: this can be a file:/// url in which case the contents
-     * will be read from the filesystem or an HTTP url
+     * Directly send an asynchronous http request. This must *NOT* rely on the httpcachedir, as it
+     * will be used by HttpCacheDir as the underlying implementation to retrieve data from the network.
      *
-     * @param url file:/// url or http:// url
-     * @param headers headers to send when an HTTP request (ignored in case of file:///)
-     *
-     * @return HTTPResult with byte contents, status code if an HTTP request was made
-     * @throws IOException
+     * @param request
+     * @param responseListener
+     * @return
      */
-    public HTTPResult readURLToString(String url, Hashtable headers) throws IOException {
-        l(UMLog.DEBUG, 521, url);
-        String urlLower = url.toLowerCase();
-        if(urlLower.startsWith("http://") || urlLower.startsWith("https://")) {
-            return makeRequest(url, headers, null, "GET");
-        }else if(urlLower.startsWith("file:///")) {
-            String contents = readFileAsText(url);
-            return new HTTPResult(contents.getBytes(), 200, null);
-        }else {
-            IOException e = new IOException("Unrecognized protocol: " + url);
-            l(UMLog.ERROR, 127, url, e);
-            throw e;
-        }
-    }
+    public abstract UmHttpCall sendRequestAsync(UmHttpRequest request,
+                                                   UmHttpResponseCallback responseListener);
+
+    /**
+     * Directly send a synchronous request. THIS IS NOT FOR NORMAL USAGE. It is intended only to be
+     * used by the cache so requests can be pumped through the system http library, if present on
+     * that implementation. As http libraries like okhttp
+     *
+     * It must *NOT* be used directly by presenters etc.
+     *
+     * @param request
+     * @return
+     */
+    protected abstract UmHttpResponse sendRequestSync(UmHttpRequest request) throws IOException;
+
+
+    public abstract UmHttpResponse makeRequestSync(UmHttpRequest request) throws IOException;
+
+
+    /**
+     * Mount a container (e.g. epub, xapi package, etc) so it can be accessed using makeRequest. This
+     * normally means making the contents of a zip file accessible over http , e.g.
+     * mount /path/file.zip will provide a base url, e.g. http://127.0.0.1:65000/file.zip and contents
+     * can be accessed (e.g. http://127.0.0.1:65000/file.zip/some/file.xhtml )
+     *
+     * @param request The request to make
+     * @param id The id used provided when the callback is called
+     * @param callback Callback to call when the mount is completed or failed
+     */
+    public abstract void mountContainer(ContainerMountRequest request, int id, UmCallback callback);
+
 
     /**
      * Make a new instance of an XmlPullParser (e.g. Kxml).  This is added as a
@@ -973,27 +957,18 @@ public abstract class UstadMobileSystemImpl {
     public abstract String getUMProfileName();
 
     /**
-     *
-     * @param context
-     * @return
-     */
-    public HTTPCacheDir getHTTPCacheDir(Object context) {
-        if(httpCacheDir == null) {
-            httpCacheDir = new HTTPCacheDir(getCacheDir(CatalogPresenter.SHARED_RESOURCE, context),
-                    getCacheDir(CatalogPresenter.USER_RESOURCE, context));
-        }
-
-        return httpCacheDir;
-    }
-
-    /**
      * Return the mime type for the given extension
      *
      * @param extension the extension without the leading .
      *
      * @return The mime type if none; or null if it's not known
      */
-    public abstract String getMimeTypeFromExtension(String extension);
+    public String getMimeTypeFromExtension(String extension) {
+        if(MIME_TYPES_REVERSE.containsKey(extension))
+            return (String)MIME_TYPES_REVERSE.get(extension);
+
+        return null;
+    }
 
     /**
      * Return the extension of the given mime type
@@ -1002,7 +977,13 @@ public abstract class UstadMobileSystemImpl {
      *
      * @return File extension for the mime type without the leading .
      */
-    public abstract String getExtensionFromMimeType(String mimeType);
+    public String getExtensionFromMimeType(String mimeType) {
+        if(MIME_TYPES.containsKey(mimeType)) {
+            return (String)MIME_TYPES.get(mimeType);
+        }
+
+        return null;
+    }
 
 
     /**
@@ -1055,12 +1036,14 @@ public abstract class UstadMobileSystemImpl {
     }
 
     /**
-     * Return absolute path of the application setup file.
+     * Return absolute path of the application setup file. Asynchronous.
+     *
      * @param context System context
-     * @param zip
+     * @param zip if true, the app setup file should be delivered within a zip.
+     * @param callback callback to call when complete or if any error occurs.
      * @return String: file absolute path
      */
-    public abstract String getAppSetupFile(Object context, boolean zip);
+    public abstract void getAppSetupFile(Object context, boolean zip, UmCallback callback);
 
 
     /**
@@ -1113,7 +1096,7 @@ public abstract class UstadMobileSystemImpl {
      *
      * @return Array of Class objects representing the ContentTypePlugin
      */
-    public abstract Class[] getSupportedContentTypePlugins();
+    public abstract ContentTypePlugin[] getSupportedContentTypePlugins();
 
     /**
      * Format the given integer to use , seperators as per the locale in use
@@ -1170,25 +1153,7 @@ public abstract class UstadMobileSystemImpl {
      *
      * @return The value of the key if found, if not, the default value provided
      */
-    public String getAppConfigString(String key, String defaultVal, Object context) {
-        if(appConfig == null) {
-            String appPrefResource = getManifestPreference("com.ustadmobile.core.appconfig",
-                    "/com/ustadmobile/core/appconfig.properties", context);
-            appConfig = new Properties();
-            InputStream prefIn = null;
-
-            try {
-                prefIn = openResourceInputStream(appPrefResource, context);
-                appConfig.load(prefIn);
-            }catch(IOException e) {
-                UstadMobileSystemImpl.l(UMLog.ERROR, 685, appPrefResource, e);
-            }finally {
-                UMIOUtils.closeInputStream(prefIn);
-            }
-        }
-
-        return appConfig.getProperty(key, defaultVal);
-    }
+    public abstract String getAppConfigString(String key, String defaultVal, Object context);
 
     /**
      * Get a boolean from the app configuration. App config is stored as a string, so this is
@@ -1219,9 +1184,31 @@ public abstract class UstadMobileSystemImpl {
         return getAppConfigBoolean(key, false, context);
     }
 
+    /**
+     * Get an integer from the app configuration.
+     *
+     * @param key The preference key to lookup
+     * @param defaultVal The default value if the preference key is not found
+     * @param context System context object
+     * @return The integer value of the value if found, otherwise the default value
+     */
+    public int getAppConfigInt(String key, int defaultVal, Object context) {
+        return Integer.parseInt(getAppConfigString(key, ""+defaultVal, context));
+    }
 
+    public abstract String getUserDetail(String username, int field, Object dbContext);
 
+    public abstract UmOpdsDbManager getOpdsDbManager();
 
+    public abstract LinkedHashMap<String, String> getSyncHistory(Object node, Object context);
+
+    public abstract LinkedHashMap<String, String> getMainNodeSyncHistory(Object context);
+
+    public abstract long getMainNodeLastSyncDate(Object context);
+
+    public abstract void triggerSync(Object context) throws Exception;
+
+    public abstract String convertTimeToReadableTime(long time);
 }
 
 

@@ -138,7 +138,16 @@ public class UMFileUtil {
         //remove the filename component if present in base path
         //if the base path ends with a /, remove that, because it will be joined to the path using a /
         charFoundIndex = base.lastIndexOf(FILE_SEP);
+
+        //Check if this is not a relative link but has no actual folder structure in the base. E.g.
+        // base = somefile.txt href=path/to/somewhere.text . As there is no folder structure there is
+        // nothing to resolve against
+        if(charFoundIndex == -1) {
+            return link;
+        }
+
         base = base.substring(0, charFoundIndex);
+
         
         
         String[] baseParts = splitString(base, FILE_SEP);
@@ -540,6 +549,40 @@ public class UMFileUtil {
             return filename.substring(lastDot+1);
         }else {
             return null;
+        }
+    }
+
+    /**
+     * Split a filename into it's basename and extension.
+     *
+     * @param filename e.g. file.jpg
+     * @return A two component String array e.g. {"file", "jpg"}
+     */
+    public static String[] splitFilename(String filename) {
+        int dotIndex = filename.lastIndexOf('.');
+        if(dotIndex != -1)
+            return new String[]{filename.substring(0, dotIndex),
+                filename.substring(dotIndex+1)};
+        else
+            return new String[]{filename, null};
+    }
+
+
+    /**
+     * Remove the extension from a filename. The input filename is expected to be only a filename,
+     * e.g. without the path or url query strings. This can be obtained using getFilename if needed.
+     *
+     * @param filename Input filename without path or query string components e.g. file.txt
+     *
+     * @return filename without the extension, e.g. file
+     */
+    public static String removeExtension(String filename) {
+        int lastDot = filename.lastIndexOf('.');
+
+        if(lastDot != -1 && lastDot != filename.length() -1) {
+            return filename.substring(0, lastDot);
+        }else {
+            return filename;
         }
     }
     

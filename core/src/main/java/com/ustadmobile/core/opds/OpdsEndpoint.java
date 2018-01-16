@@ -5,6 +5,7 @@ import com.ustadmobile.core.controller.CatalogPresenter;
 import com.ustadmobile.core.generated.locale.MessageID;
 import com.ustadmobile.core.impl.UMLog;
 import com.ustadmobile.core.impl.UMStorageDir;
+import com.ustadmobile.core.impl.UmCallback;
 import com.ustadmobile.core.impl.UstadMobileSystemImpl;
 import com.ustadmobile.core.util.UMFileUtil;
 import com.ustadmobile.core.util.UMIOUtils;
@@ -62,17 +63,22 @@ public class OpdsEndpoint {
     public static final int LINK_HREF_MODE_ID = 1;
 
 
-
-    public static OpdsEndpoint getInstance() {
-        return instance;
-    }
-
-
     private static final String PREF_KEY_FEED_LIST = "mylibrary_feeds";
 
     public static final String OPDS_USERFEED_ID_PREFIX = "com.ustadmobile.userfeed.";
 
     private Vector opdsChangeListeners = new Vector();
+
+    private OpdsEndpointAsyncHelper asyncHelper;
+
+    public static OpdsEndpoint getInstance() {
+        return instance;
+    }
+
+    public OpdsEndpoint() {
+        asyncHelper = new OpdsEndpointAsyncHelper(this);
+    }
+
 
     /**
      * Used to notify of when a feed is changed.
@@ -96,7 +102,8 @@ public class OpdsEndpoint {
      * @return
      * @throws IOException
      */
-    public UstadJSOPDSItem loadItem(String opdsUri, UstadJSOPDSItem item, Object context, UstadJSOPDSItem.OpdsItemLoadCallback callback) throws IOException {
+    public UstadJSOPDSItem loadItem(String opdsUri, UstadJSOPDSItem item, Object context,
+                                    UstadJSOPDSItem.OpdsItemLoadCallback callback) throws IOException {
         final UstadMobileSystemImpl impl = UstadMobileSystemImpl.getInstance();
         UstadMobileSystemImpl.l(UMLog.DEBUG, 678, "OpdsEndpoint: load " + opdsUri);
         UstadJSOPDSFeed destFeed = item != null ? (UstadJSOPDSFeed)item : null;
@@ -119,15 +126,21 @@ public class OpdsEndpoint {
             int linkMode = args.containsKey(ARG_LINK_HREF_MODE) ?
                     ((Integer)args.get(ARG_LINK_HREF_MODE)).intValue() : LINK_HREF_MODE_FILE;
 
-
             UMStorageDir[] dirs = impl.getStorageDirs(resourceMode, context);
-            return makeDeviceFeed(dirs, baseHref, linkMode, destFeed, context, callback);
+            UstadJSOPDSFeed feed = makeDeviceFeed(dirs, baseHref, linkMode, destFeed, context, callback);
+            feed.title = impl.getString(MessageID.downloaded, context);
+            return feed;
         }else if(opdsUri.startsWith(OPDS_PROTO_PREFKEY_FEEDS)) {
             return getFeedFromPreferenceKey(UMFileUtil.getFilename(opdsUri), opdsUri, destFeed, callback,
                     context);
         }else {
             return null;
         }
+    }
+
+    public void loadItemAsync(final String opdsUri, final UstadJSOPDSItem item, final Object context,
+                              final UstadJSOPDSItem.OpdsItemLoadCallback callback) {
+        asyncHelper.loadItemAsync(opdsUri, item, context, callback);
     }
 
     /**
@@ -151,8 +164,8 @@ public class OpdsEndpoint {
      *
      * @return UstadJSOPDSFeed populated from the string stored in the given preference key
      */
-    protected UstadJSOPDSFeed getFeedFromPreferenceKey(String prefKey, String url, UstadJSOPDSFeed destFeed,
-                                                       UstadJSOPDSItem.OpdsItemLoadCallback callback, Object context) {
+    protected UstadJSOPDSFeed getFeedFromPreferenceKey(final String prefKey, String url, UstadJSOPDSFeed destFeed,
+                                                       final UstadJSOPDSItem.OpdsItemLoadCallback callback, Object context) {
         final UstadMobileSystemImpl impl = UstadMobileSystemImpl.getInstance();
         String activeUser = impl.getActiveUser(context);
         String opdsFeedStr;
@@ -171,30 +184,40 @@ public class OpdsEndpoint {
         if(opdsFeedStr != null) {
             try {
                 destFeed.loadFromString(opdsFeedStr, callback);
+                if(callback != null)
+                    callback.onDone(destFeed);
             }catch(IOException e) {
                 UstadMobileSystemImpl.l(UMLog.ERROR, 684, opdsFeedStr, e);
             }catch(XmlPullParserException x) {
                 UstadMobileSystemImpl.l(UMLog.ERROR, 684, opdsFeedStr, x);
             }
         }else {
-            //it's a new feed - just add the prefkey link so the view knows it can add
-            InputStream assetIn = null;
-            try {
-                assetIn = impl.openResourceInputStream(
-                        "/com/ustadmobile/core/feed-defaults/" + prefKey + ".opds", context);
-                XmlPullParser xpp = impl.newPullParser(assetIn);
-                destFeed.loadFromXpp(xpp, callback);
-            }catch(IOException e) {
-                UstadMobileSystemImpl.l(UMLog.ERROR, 684, opdsFeedStr, e);
-            }catch(XmlPullParserException x) {
-                UstadMobileSystemImpl.l(UMLog.ERROR, 685, opdsFeedStr, x);
-            }finally {
-                UMIOUtils.closeInputStream(assetIn);
-            }
+            final UstadJSOPDSFeed assetLoadFeed = destFeed;
+            impl.getAsset(context, "/com/ustadmobile/core/feed-defaults/" + prefKey + ".opds",
+                    new UmCallback<InputStream>() {
+                @Override
+                public void onSuccess(InputStream result) {
+                    try {
+                        XmlPullParser xpp = impl.newPullParser(result);
+                        assetLoadFeed.loadFromXpp(xpp, callback);
+                        assetLoadFeed.addLink(USTAD_PREFKEY_FEED_LINK_REL,
+                                UstadJSOPDSItem.TYPE_NAVIGATIONFEED, prefKey);
+                        if(callback != null) {
+                            callback.onDone(assetLoadFeed);
+                        }
+                    }catch(XmlPullParserException| IOException e) {
+                        e.printStackTrace();
+                        if(callback != null)
+                            callback.onError(assetLoadFeed, e);
+                    }
+                }
 
-            destFeed.addLink(USTAD_PREFKEY_FEED_LINK_REL, UstadJSOPDSItem.TYPE_NAVIGATIONFEED, prefKey);
-            if(callback != null)
-                callback.onDone(destFeed);
+                @Override
+                public void onFailure(Throwable exception) {
+                    if(callback != null)
+                        callback.onError(assetLoadFeed, exception);
+                }
+            });
         }
 
         return destFeed;
@@ -210,7 +233,7 @@ public class OpdsEndpoint {
         }
 
         DirectoryScanner scanner = new DirectoryScanner();
-        scanner.setHrefModeBaseHref(baseHREF);
+        scanner.setAcquisitionLinkHrefPrefix(baseHREF);
         scanner.setLinkHrefMode(linkHrefMode);
 
         int dirMode;
@@ -218,9 +241,12 @@ public class OpdsEndpoint {
             dirMode = dirs[i].isUserSpecific()
                     ? CatalogPresenter.USER_RESOURCE
                     : CatalogPresenter.SHARED_RESOURCE;
-            scanner.scanDirectory(dirs[i].getDirURI(), null, "scandir", "scandir",
-                    dirMode, callback, deviceFeed, context);
+            scanner.scanDirectory(dirs[i].getDirURI(), impl.getCacheDir(dirMode, context), "scandir",
+                    "scandir", dirMode, callback, deviceFeed, context);
         }
+
+        if(callback != null)
+            callback.onDone(deviceFeed);
 
         return deviceFeed;
     }

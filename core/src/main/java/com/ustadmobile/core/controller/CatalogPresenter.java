@@ -6,9 +6,12 @@ import com.ustadmobile.core.impl.UstadMobileSystemImpl;
 import com.ustadmobile.core.networkmanager.AcquisitionListener;
 import com.ustadmobile.core.networkmanager.AcquisitionTaskStatus;
 import com.ustadmobile.core.opds.OpdsEndpoint;
+import com.ustadmobile.core.opds.OpdsFilterOptionField;
+import com.ustadmobile.core.opds.OpdsFilterOptions;
 import com.ustadmobile.core.opds.UstadJSOPDSEntry;
 import com.ustadmobile.core.opds.UstadJSOPDSFeed;
 import com.ustadmobile.core.opds.UstadJSOPDSItem;
+import com.ustadmobile.core.opds.entities.UmOpdsLink;
 import com.ustadmobile.core.util.UMFileUtil;
 import com.ustadmobile.core.view.AddFeedDialogView;
 import com.ustadmobile.core.view.AppView;
@@ -97,6 +100,7 @@ public class CatalogPresenter extends BaseCatalogPresenter implements UstadJSOPD
 
     private Vector selectedEntries;
 
+
     public CatalogPresenter(Object context, CatalogView view) {
         super(context);
         this.mView = view;
@@ -108,6 +112,9 @@ public class CatalogPresenter extends BaseCatalogPresenter implements UstadJSOPD
 
         this.args = args;
         opdsUri = (String)args.get(ARG_URL);
+        if(opdsUri.indexOf("$USERLANG$") != -1)
+            opdsUri = opdsUri.replace("$USERLANG$", impl.getDisplayedLocale(getContext()).substring(0, 2));
+
         selectedEntries = new Vector();
 
         if(args.containsKey(ARG_RESMOD)){
@@ -139,45 +146,56 @@ public class CatalogPresenter extends BaseCatalogPresenter implements UstadJSOPD
     }
 
     public void onDestroy() {
+        super.onDestroy();
         if(opdsChangeListenerRegistered) {
             OpdsEndpoint.getInstance().removeOpdsChangeListener(this);
         }
+        UstadMobileSystemImpl.getInstance().getNetworkManager().removeAcquisitionTaskListener(this);
     }
 
 
     public void initEntryStatusCheck(final boolean httpCacheMustRevalidate) {
-        Thread initEntryCheckThread = new Thread(new Runnable() {
+        String lastCheckedDir = UstadMobileSystemImpl.getInstance().getAppPref(PREFKEY_STORAGE_DIR_CHECKTIME,
+                getContext());
+        long timeNow = new Date().getTime();
+
+        UstadJSOPDSItem.OpdsItemLoadCallback feedCheckLoadedCallbackHandler = new UstadJSOPDSItem.OpdsItemLoadCallback() {
             @Override
-            public void run() {
-                String lastCheckedDir = UstadMobileSystemImpl.getInstance().getAppPref(PREFKEY_STORAGE_DIR_CHECKTIME,
-                        getContext());
-                long timeNow = new Date().getTime();
-                UstadMobileSystemImpl impl = UstadMobileSystemImpl.getInstance();
-                if(lastCheckedDir == null || timeNow - Long.parseLong(lastCheckedDir) > 500) {
-                    try {
-                        UstadJSOPDSFeed deviceFeed = (UstadJSOPDSFeed) OpdsEndpoint.getInstance().loadItem(
-                                OpdsEndpoint.OPDS_PROTO_DEVICE, null, context, null);
-                    } catch (IOException e) {
-                        UstadMobileSystemImpl.l(UMLog.ERROR, 79, null, e);
-                    }
-                }
-
-                Hashtable feedLoadHeaders = new Hashtable();
-                if(httpCacheMustRevalidate) {
-                    feedLoadHeaders.put("cache-control", "must-revalidate");
-                }
-
-
-
-                feed.loadFromUrlAsync(opdsUri, feedLoadHeaders, getContext(), CatalogPresenter.this);
+            public void onEntryLoaded(UstadJSOPDSItem item, int position, UstadJSOPDSEntry entryLoaded) {
 
             }
-        });
-        initEntryCheckThread.start();
+
+            @Override
+            public void onDone(UstadJSOPDSItem item) {
+                loadFeed(httpCacheMustRevalidate);
+            }
+
+            @Override
+            public void onError(UstadJSOPDSItem item, Throwable cause) {
+                loadFeed(httpCacheMustRevalidate);
+            }
+        };
+
+        if(lastCheckedDir == null || timeNow - Long.parseLong(lastCheckedDir) > 500) {
+            OpdsEndpoint.getInstance().loadItemAsync(OpdsEndpoint.OPDS_PROTO_DEVICE, null, context,
+                    feedCheckLoadedCallbackHandler);
+        }else {
+            feedCheckLoadedCallbackHandler.onDone(null);
+        }
     }
 
     public void initEntryStatusCheck() {
         initEntryStatusCheck(false);
+    }
+
+    private void loadFeed(boolean httpCacheMustRevalidate) {
+        Hashtable feedLoadHeaders = new Hashtable();
+
+        if(httpCacheMustRevalidate) {
+            feedLoadHeaders.put("cache-control", "must-revalidate");
+        }
+
+        feed.loadFromUrlAsync(opdsUri, feedLoadHeaders, getContext(), CatalogPresenter.this);
     }
 
     @Override
@@ -185,11 +203,11 @@ public class CatalogPresenter extends BaseCatalogPresenter implements UstadJSOPD
         mView.runOnUiThread(new Runnable() {
             @Override
             public void run() {
-                int currentIndex = mView.indexOfEntry(entry.id);
+                int currentIndex = mView.indexOfEntry(entry.getItemId());
 
                 if(currentIndex == -1) {
                     mView.addEntry(entry);
-                }else if(currentIndex != -1 && mView.indexOfEntry(entry.id) == currentIndex){
+                }else if(currentIndex != -1 && mView.indexOfEntry(entry.getItemId()) == currentIndex){
                     //same position - just refresh it
                     mView.setEntryAt(currentIndex, entry);
                 }else {
@@ -197,17 +215,17 @@ public class CatalogPresenter extends BaseCatalogPresenter implements UstadJSOPD
                     mView.addEntry(currentIndex, entry);
                 }
 
-                String[] thumbnailLinks = entry.getThumbnailLink(false);
+                UmOpdsLink thumbnailLinks = entry.getThumbnailLink(false);
                 if(thumbnailLinks != null)
-                    mView.setEntrythumbnail(entry.id, UMFileUtil.resolveLink(entry.getHref(),
-                            thumbnailLinks[UstadJSOPDSItem.ATTR_HREF]));
+                    mView.setEntrythumbnail(entry.getItemId(), UMFileUtil.resolveLink(entry.getHref(),
+                            thumbnailLinks.getHref()));
 
-                CatalogEntryInfo entryInfo = CatalogPresenter.getEntryInfo(entry.id,
+                CatalogEntryInfo entryInfo = CatalogPresenter.getEntryInfo(entry.getItemId(),
                         CatalogPresenter.SHARED_RESOURCE | CatalogPresenter.USER_RESOURCE,
                         getContext());
                 if(entryInfo != null) {
-                    mView.setEntryStatus(entry.id, entryInfo.acquisitionStatus);
-                    mView.setDownloadEntryProgressVisible(entry.id,
+                    mView.setEntryStatus(entry.getItemId(), entryInfo.acquisitionStatus);
+                    mView.setDownloadEntryProgressVisible(entry.getItemId(),
                             entryInfo.acquisitionStatus == STATUS_ACQUISITION_IN_PROGRESS);
                 }
             }
@@ -216,10 +234,10 @@ public class CatalogPresenter extends BaseCatalogPresenter implements UstadJSOPD
 
     @Override
     public void onDone(final UstadJSOPDSItem item) {
-        String[] prefKeyLink = item.getFirstLink(OpdsEndpoint.USTAD_PREFKEY_FEED_LINK_REL,
+        UmOpdsLink prefKeyLink = item.getFirstLink(OpdsEndpoint.USTAD_PREFKEY_FEED_LINK_REL,
                 null);
         if(prefKeyLink != null)
-            this.feedPrefKey = prefKeyLink[UstadJSOPDSItem.ATTR_HREF];
+            this.feedPrefKey = prefKeyLink.getHref();
         else
             this.feedPrefKey = null;
 
@@ -236,6 +254,15 @@ public class CatalogPresenter extends BaseCatalogPresenter implements UstadJSOPD
                 }
 
                 mView.setRefreshing(false);
+
+                OpdsFilterOptions filterOptions = new OpdsFilterOptions();
+                OpdsFilterOptionField langField = new OpdsFilterOptionField();
+                langField.setFilterName("Language");
+                langField.setFilterOptions(new String[]{"English", "Dari"});
+                filterOptions.addFilter(langField);
+                mView.setFilterOptions(filterOptions);
+
+
                 alternativeTranslationLinks = feed.getAlternativeTranslationLinks();
                 if(alternativeTranslationLinks.size() > 0) {
                     String feedLang = feed.getLanguage();
@@ -317,19 +344,19 @@ public class CatalogPresenter extends BaseCatalogPresenter implements UstadJSOPD
     public void handleClickEntry(final String entryId) {
         UstadJSOPDSEntry entry = feed.getEntryById(entryId);
         final UstadMobileSystemImpl impl = UstadMobileSystemImpl.getInstance();
-        if(!entry.parentFeed.isAcquisitionFeed()) {
+        if(!entry.getParentFeed().isAcquisitionFeed()) {
             //we are loading another opds catalog
             Vector entryLinks = entry.getLinks(null, UstadJSOPDSItem.TYPE_ATOMFEED,
                     true, true);
 
             if(entryLinks.size() > 0) {
-                String[] firstLink = (String[])entryLinks.elementAt(0);
-                handleCatalogSelected(UMFileUtil.resolveLink(entry.parentFeed.getHref(),
-                        firstLink[UstadJSOPDSItem.ATTR_HREF]));
+                UmOpdsLink firstLink = (UmOpdsLink) entryLinks.elementAt(0);
+                handleCatalogSelected(UMFileUtil.resolveLink(entry.getParentFeed().getHref(),
+                        firstLink.getHref()));
             }
         }else {
             //Go to the entry view
-            handleOpenEntryView(entry);
+            handleOpenEntryView(entry, entry.getParentFeed().getTitle());
         }
     }
 
@@ -397,6 +424,35 @@ public class CatalogPresenter extends BaseCatalogPresenter implements UstadJSOPD
                 );
             }
         }
+    }
+
+    /**
+     * To be called by the view when the user clicks the share button the catalog. Used to send
+     * acquired entries using wifi direct sharing.
+     */
+    public void handleClickShare() {
+        //share all those in catalog that have been acquired
+        Vector acquiredEntryIds = new Vector();
+        CatalogEntryInfo entryInfo;
+        for(int i = 0; i < feed.size(); i++) {
+            entryInfo = getEntryInfo(feed.getEntry(i).getItemId(), CatalogPresenter.ALL_RESOURCES,
+                    getContext());
+            if(entryInfo != null && entryInfo.acquisitionStatus == CatalogPresenter.STATUS_ACQUIRED) {
+                acquiredEntryIds.addElement(feed.getEntry(i).getItemId());
+            }
+        }
+
+        if(acquiredEntryIds.size() == 0) {
+            //nothing downloaded...
+            return;
+        }
+
+        String[] idsToShare = new String[acquiredEntryIds.size()];
+        acquiredEntryIds.copyInto(idsToShare);
+        Hashtable shareArgs = new Hashtable();
+        shareArgs.put("entries", idsToShare);
+        shareArgs.put("title", feed.getTitle());
+        UstadMobileSystemImpl.getInstance().go("SendCourse", shareArgs, getContext());
     }
 
 

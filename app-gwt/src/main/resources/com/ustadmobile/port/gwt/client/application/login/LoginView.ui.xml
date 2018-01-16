@@ -5,6 +5,7 @@
     
     <g:HTMLPanel>
     	<p>Hello Login Panel</p>
+    	<g:Button ui:field="about" text="About"/>
         <g:TextBox ui:field="username"/><br/>
         <g:PasswordTextBox ui:field="password"/><br/>
         <g:Button ui:field="confirm" text="Login"/>

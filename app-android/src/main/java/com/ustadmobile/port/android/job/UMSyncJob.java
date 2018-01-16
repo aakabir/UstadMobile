@@ -12,9 +12,13 @@ import com.ustadmobile.nanolrs.core.model.Node;
 import com.ustadmobile.nanolrs.core.model.User;
 import com.ustadmobile.nanolrs.core.persistence.PersistenceManager;
 import com.ustadmobile.nanolrs.core.sync.UMSyncEndpoint;
+import com.ustadmobile.nanolrs.core.sync.UMSyncResult;
+import com.ustadmobile.port.sharedse.impl.UstadMobileSystemImplSE;
 
 import java.io.IOException;
 import java.sql.SQLException;
+
+import static com.ustadmobile.port.android.impl.UstadMobileSystemImplAndroid.KEY_CURRENTAUTH;
 
 /**
  * This is using evernote's andoid-job to run, umsync process in the background.
@@ -83,10 +87,17 @@ public class UMSyncJob extends Job {
             e.printStackTrace();
         }
 
+        String loggedInUserCred = appPrefs.getString(KEY_CURRENTAUTH, null);
+
         try {
             if(loggedInUser != null && endNode != null) {
                 System.out.println("  UMSyncJob: Logged in user and end node is NOT null. Syncing..");
-                UMSyncEndpoint.startSync(loggedInUser, endNode, getContext());
+                //TODO: Test it.
+                UstadMobileSystemImplSE.getInstanceSE().fireSetSyncHappeningEvent(true, getContext());
+                UMSyncResult result = UMSyncEndpoint.startSync(loggedInUser, loggedInUserCred, endNode, getContext());
+                if(result.getStatus() != -1){
+                    UstadMobileSystemImplSE.getInstanceSE().fireSetSyncHappeningEvent(false, getContext());
+                }
             }else{
                 System.out.println("  !UMSyncJob: Logged in user and end node is null, skipping..!");
             }

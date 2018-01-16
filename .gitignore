@@ -227,7 +227,9 @@ buildconfig.local.properties
 
 #local variant source files
 app-android/src/localconfig
+app-android-launcher/src/localconfig
 core/src/localconfig
+
 
 #language localconfig section
 core/locale/localconfig
@@ -250,3 +252,12 @@ ustadmobile-ormlite/src/main/java/com/ustadmobile/port/ormlite/persistence/gener
 
 #Assets
 app-android/src/main/assets/cache
+
+#GWT (moved to gwtdev branch)
+#app-gwt/*
+
+#Eclipse gradle plugin files
+.project
+.classpath
+.settings
+

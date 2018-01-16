@@ -34,8 +34,15 @@ public class UserSettingsController2 extends  UstadBaseController implements App
         if(impl.getActiveUser(context) != null)
             view.setUserDisplayName(impl.getActiveUser(context));
 
-    }
+        long lastSyncDate = impl.getMainNodeLastSyncDate(context);
+        if(lastSyncDate > 0){
+            String lastSyncDateString = impl.convertTimeToReadableTime(lastSyncDate);
+            view.setLastSyncText("Last Sync: " + lastSyncDateString);
+        }else{
+            view.setLastSyncText("Unable to get Last sync.");
+        }
 
+    }
     public void handleClickAccount() {
         //UstadMobileSystemImpl.getInstance().go(AccountSettingsView.VIEW_NAME, getContext());
         UstadMobileSystemImpl.getInstance().go(RegistrationView.VIEW_NAME, getContext());

@@ -1,4 +1,5 @@
 eclipse.preferences.version=1
-lastWarOutDir=C\:/Users/lenovo/UstadMobile/GWT/Ustadmobile/app-gwt/target/gwtp-basic-archetype-1.0-SNAPSHOT
+jarsExcludedFromWebInfLib=
+lastWarOutDir=C\:/Users/lenovo/UstadMobile/GWT/Ustadmobile/app-gwt/target/ustadmobile-gwtp-1.0-SNAPSHOT
 warSrcDir=src/main/webapp
 warSrcDirIsOutput=false

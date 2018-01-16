@@ -30,6 +30,7 @@
  */
 package com.ustadmobile.core.opds;
 
+import com.ustadmobile.core.opds.entities.UmOpdsLink;
 import com.ustadmobile.core.opf.UstadJSOPF;
 
 import org.xmlpull.v1.XmlSerializer;
@@ -43,7 +44,7 @@ import java.util.Vector;
  * @author varuna
  */
 public class UstadJSOPDSEntry extends UstadJSOPDSItem {
-    public UstadJSOPDSFeed parentFeed;
+    protected UstadJSOPDSFeed parentFeed;
     
     public static int LINK_REL = 0;
     public static int LINK_MIMETYPE = 1;
@@ -111,8 +112,27 @@ public class UstadJSOPDSEntry extends UstadJSOPDSItem {
         this.linkVector = new Vector();
         this.title = opf.title;
         this.id = opf.id;
-        
-        this.addLink(UstadJSOPDSEntry.LINK_ACQUIRE, mimeType, containerHREF);
+        if(opf.description != null) {
+            this.content = opf.description;
+            this.contentType = CONTENT_TYPE_TEXT;
+        }
+
+        int numAuthors = opf.getNumCreators();
+        if(numAuthors > 0) {
+            authors = new Vector();
+            for(int i = 0; i < opf.getNumCreators(); i++) {
+                authors.addElement(new UstadJSOPDSAuthor(opf.getCreator(i).getCreator(), null));
+            }
+        }
+
+        //TODO: modeling language as a single string is wrong, as per the dublin core spec there can
+        // be one or more language elements.
+        if(opf.getLanguages().size() > 0) {
+            language = (String)opf.getLanguages().elementAt(0);
+        }
+
+        if(containerHREF != null)
+            this.addLink(UstadJSOPDSEntry.LINK_ACQUIRE, mimeType, containerHREF);
     }
     
     /**
@@ -186,7 +206,7 @@ public class UstadJSOPDSEntry extends UstadJSOPDSItem {
      * @param mimeType Required mime type. Can be null to indicate any mime type
      * @return String[] array of link attributes or null if there is no matching acquisition link
      */
-    public String[] getFirstAcquisitionLink(String mimeType) {
+    public UmOpdsLink getFirstAcquisitionLink(String mimeType) {
         return this.getFirstLink(LINK_ACQUIRE, mimeType, true, false);
     }
 
@@ -199,8 +219,8 @@ public class UstadJSOPDSEntry extends UstadJSOPDSItem {
      *
      * @return
      */
-    public String[] getBestAcquisitionLink(final String[] preferredMimeTypes) {
-        String[] link;
+    public UmOpdsLink getBestAcquisitionLink(final String[] preferredMimeTypes) {
+        UmOpdsLink link;
         for(int i = 0; i < preferredMimeTypes.length; i++) {
             link = getFirstAcquisitionLink(preferredMimeTypes[i]);
             if(link != null)
@@ -216,7 +236,7 @@ public class UstadJSOPDSEntry extends UstadJSOPDSItem {
     
     public Vector getThumbnails(){
         Vector tentries = new Vector();
-        tentries = this.getLinks(LINK_THUMBNAIL, null);
+        tentries = this.getLinks(LINK_REL_THUMBNAIL, null);
         if (tentries.size() > 0){
             return tentries;
         }
@@ -237,7 +257,7 @@ public class UstadJSOPDSEntry extends UstadJSOPDSItem {
         }
         
         Vector tentries = new Vector();
-        tentries = this.getLinks(LINK_THUMBNAIL, null);
+        tentries = this.getLinks(LINK_REL_THUMBNAIL, null);
         if (tentries.size() > 0){
             return tentries;
         }
@@ -332,5 +352,13 @@ public class UstadJSOPDSEntry extends UstadJSOPDSItem {
             return this.parentFeed.getHref();
         else
             return null;
+    }
+
+    public UstadJSOPDSFeed getParentFeed() {
+        return parentFeed;
+    }
+
+    public void setParentFeed(UstadJSOPDSFeed parentFeed) {
+        this.parentFeed = parentFeed;
     }
 }

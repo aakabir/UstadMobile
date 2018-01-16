@@ -6,6 +6,7 @@ import com.ustadmobile.core.impl.AppConfig;
 import com.ustadmobile.core.impl.UMLog;
 import com.ustadmobile.core.impl.UstadMobileConstants;
 import com.ustadmobile.core.impl.UstadMobileSystemImpl;
+import com.ustadmobile.core.model.CourseProgress;
 import com.ustadmobile.core.networkmanager.AcquisitionListener;
 import com.ustadmobile.core.networkmanager.AcquisitionTaskStatus;
 import com.ustadmobile.core.networkmanager.AvailabilityMonitorRequest;
@@ -17,6 +18,7 @@ import com.ustadmobile.core.networkmanager.NetworkTask;
 import com.ustadmobile.core.opds.UstadJSOPDSEntry;
 import com.ustadmobile.core.opds.UstadJSOPDSFeed;
 import com.ustadmobile.core.opds.UstadJSOPDSItem;
+import com.ustadmobile.core.opds.entities.UmOpdsLink;
 import com.ustadmobile.core.util.UMFileUtil;
 import com.ustadmobile.core.util.UMUtil;
 import com.ustadmobile.core.view.AppView;
@@ -48,6 +50,16 @@ public class CatalogEntryPresenter extends BaseCatalogPresenter implements Acqui
 
     public static final String ARG_ENTRY_ID = "entry_id";
 
+    /**
+     * Where the dislpay mode is "normal" - e.g. DISPLAY_MODE_THUMBNAIL the title bar will collapse
+     * and show the title header. This should normally come from the OPDS feed from which this item
+     * was navigated to.
+     */
+    public static final String ARG_TITLEBAR_TEXT = "bar_title";
+
+    public static final String APP_CONFIG_DISPLAY_MODE = "catalog_entry_display_mode";
+
+
     private UstadJSOPDSEntry entry;
 
     private UstadJSOPDSFeed entryFeed;
@@ -71,6 +83,10 @@ public class CatalogEntryPresenter extends BaseCatalogPresenter implements Acqui
     private RelatedItemLoader seeAlsoLoader = new RelatedItemLoader();
 
     private boolean openAfterLoginOrRegister = false;
+
+    private boolean entryLoaded = false;
+
+    private boolean seeAlsoVisible = false;
 
 
     /**
@@ -201,6 +217,10 @@ public class CatalogEntryPresenter extends BaseCatalogPresenter implements Acqui
             entry = new UstadJSOPDSEntry(null);
             entry.loadFromUrlAsync((String)args.get(ARG_URL), null, getContext(), this);
         }
+
+        if(this.args.containsKey(ARG_TITLEBAR_TEXT))
+            catalogEntryView.setTitlebarText((String)this.args.get(ARG_TITLEBAR_TEXT));
+
         UstadMobileSystemImpl.getInstance().getNetworkManager().addAcquisitionTaskListener(this);
     }
 
@@ -226,19 +246,23 @@ public class CatalogEntryPresenter extends BaseCatalogPresenter implements Acqui
     }
 
     public void handleEntryReady() {
+        entryLoaded = true;
         final UstadMobileSystemImpl impl = UstadMobileSystemImpl.getInstance();
-        catalogEntryView.setTitle(entry.title);
+        catalogEntryView.setEntryTitle(entry.getTitle());
 
-        CatalogEntryInfo entryInfo = CatalogPresenter.getEntryInfo(entry.id,
+        if(entry.getNumAuthors() > 0) {
+            catalogEntryView.setEntryAuthors(UMUtil.joinStrings(entry.getAuthors(), ", "));
+        }
+
+        CatalogEntryInfo entryInfo = CatalogPresenter.getEntryInfo(entry.getItemId(),
                 CatalogPresenter.ALL_RESOURCES, context);
-        catalogEntryView.setDescription(entry.content, entry.getContentType());
-        String[] firstAcquisitionLink = entry.getFirstAcquisitionLink(null);
+        catalogEntryView.setDescription(entry.getContent(), entry.getContentType());
+        UmOpdsLink firstAcquisitionLink = entry.getFirstAcquisitionLink(null);
         if(firstAcquisitionLink != null
-                && firstAcquisitionLink[UstadJSOPDSItem.ATTR_LENGTH] != null) {
+                && firstAcquisitionLink.getLength() > 0) {
             catalogEntryView.setSize(impl.getString(MessageID.size, getContext())
                     + ": "
-                    + UMFileUtil.formatFileSize(
-                    Long.valueOf(firstAcquisitionLink[UstadJSOPDSItem.ATTR_LENGTH])));
+                    + UMFileUtil.formatFileSize(firstAcquisitionLink.getLength()));
         }
 
         //set the available translated versions that can be found
@@ -278,7 +302,7 @@ public class CatalogEntryPresenter extends BaseCatalogPresenter implements Acqui
         //TODO: as this is bound to the activity - this might not be ready - lifecycle implication needs handled
         NetworkManagerCore manager  = UstadMobileSystemImpl.getInstance().getNetworkManager();
         /* $if umplatform != 2  $ */
-        List<EntryCheckResponse> fileResponse = manager.getEntryResponsesWithLocalFile(entry.id);
+        List<EntryCheckResponse> fileResponse = manager.getEntryResponsesWithLocalFile(entry.getItemId());
         if(fileResponse != null) {
             catalogEntryView.setLocallyAvailableStatus(CatalogEntryView.LOCAL_STATUS_AVAILABLE);
         }
@@ -321,16 +345,32 @@ public class CatalogEntryPresenter extends BaseCatalogPresenter implements Acqui
         Vector coverImages = entry.getLinks(UstadJSOPDSItem.LINK_COVER_IMAGE, null);
         if(coverImages != null && coverImages.size() > 0) {
             String coverImageUrl = UMFileUtil.resolveLink(entry.getHref(),
-                    ((String[])coverImages.elementAt(0))[UstadJSOPDSItem.ATTR_HREF]);
+                    ((UmOpdsLink)coverImages.elementAt(0)).getHref());
             catalogEntryView.setHeader(coverImageUrl);
         }
 
         Vector thumbnails = entry.getThumbnails();
         if(thumbnails != null && thumbnails.size() > 0) {
             String thumbnailUrl = UMFileUtil.resolveLink(entry.getHref(),
-                    ((String[]) thumbnails.elementAt(0))[UstadJSOPDSItem.ATTR_HREF]);
-            catalogEntryView.setIcon(thumbnailUrl);
+                    ((UmOpdsLink) thumbnails.elementAt(0)).getHref());
+            catalogEntryView.setThumbnail(thumbnailUrl);
+        }else {
+            catalogEntryView.setThumbnail(null);
         }
+
+        updateLearnerProgress();
+    }
+
+    protected void updateLearnerProgress() {
+        CourseProgress progress = UstadMobileSystemImpl.getInstance().getCourseProgress(
+                new String[]{entry.getItemId()}, getContext());
+        if(progress == null || progress.getStatus() == CourseProgress.STATUS_NOT_STARTED) {
+            catalogEntryView.setLearnerProgressVisible(false);
+        }else {
+            catalogEntryView.setLearnerProgressVisible(true);
+            catalogEntryView.setLearnerProgress(progress);
+        }
+
     }
 
 
@@ -340,17 +380,20 @@ public class CatalogEntryPresenter extends BaseCatalogPresenter implements Acqui
      * @param item
      */
     protected void handleRelatedItemReady(final RelatedItem item) {
-        String[] thumbnailLink = item.opdsItem.getThumbnailLink(true);
+        UmOpdsLink thumbnailLink = item.opdsItem.getThumbnailLink(true);
         final String[] thumbnailUrl = new String[1];
         if(thumbnailLink != null) {
-            thumbnailUrl[0] = UMFileUtil.resolveLink(
-                    entryFeed.getAbsoluteSelfLink()[UstadJSOPDSItem.ATTR_HREF],
-                    thumbnailLink[UstadJSOPDSItem.ATTR_HREF]);
+            thumbnailUrl[0] = UMFileUtil.resolveLink(entry.getHref(),
+                    thumbnailLink.getHref());
         }
 
         catalogEntryView.runOnUiThread(new Runnable() {
             @Override
             public void run() {
+                if(!seeAlsoVisible) {
+                    catalogEntryView.setSeeAlsoVisible(true);
+                    seeAlsoVisible = true;
+                }
                 catalogEntryView.addSeeAlsoItem(item.link, thumbnailUrl[0]);
             }
         });
@@ -358,21 +401,8 @@ public class CatalogEntryPresenter extends BaseCatalogPresenter implements Acqui
 
 
     public void onStart() {
-//        String[] progressIds = new String[entryTranslationIds.length + 1];
-//        for(int i = 0; i < entryTranslationIds.length; i++) {
-//            progressIds[i] = entryTranslationIds[i];
-//        }
-//        progressIds[entryTranslationIds.length] = entry.id;
-
-        //TODO: fix this
-//        CourseProgress progress = UstadMobileSystemImpl.getInstance().getCourseProgress(
-//                new String[]{entry.id}, getContext());
-//        if(progress == null || progress.getStatus() == CourseProgress.STATUS_NOT_STARTED) {
-//            catalogEntryView.setLearnerProgressVisible(false);
-//        }else {
-//            catalogEntryView.setLearnerProgressVisible(true);
-//            catalogEntryView.setLearnerProgress(progress);
-//        }
+        if(entryLoaded)
+            updateLearnerProgress();
     }
 
     public void onStop() {
@@ -387,7 +417,7 @@ public class CatalogEntryPresenter extends BaseCatalogPresenter implements Acqui
     protected void startMonitoringLocalAvailability() {
         if(availabilityMonitorRequest == null) {
             HashSet<String> monitorIdSet = new HashSet<>();
-            monitorIdSet.add(entry.id);
+            monitorIdSet.add(entry.getItemId());
             availabilityMonitorRequest = new AvailabilityMonitorRequest(monitorIdSet);
             UstadMobileSystemImpl.getInstance().getNetworkManager().startMonitoringAvailability(
                     availabilityMonitorRequest, true);
@@ -415,6 +445,7 @@ public class CatalogEntryPresenter extends BaseCatalogPresenter implements Acqui
                 acquisitionStatus == CatalogPresenter.STATUS_ACQUIRED);
         catalogEntryView.setButtonDisplayed(CatalogEntryView.BUTTON_MODIFY,
                 acquisitionStatus == CatalogPresenter.STATUS_ACQUIRED);
+        catalogEntryView.setShareButtonVisible(acquisitionStatus == CatalogPresenter.STATUS_ACQUIRED);
     }
 
     public void handleClickButton(int buttonId) {
@@ -436,7 +467,7 @@ public class CatalogEntryPresenter extends BaseCatalogPresenter implements Acqui
     }
 
     public void handleOpenEntry(UstadJSOPDSEntry entry) {
-        CatalogEntryInfo entryInfo = CatalogPresenter.getEntryInfo(entry.id,
+        CatalogEntryInfo entryInfo = CatalogPresenter.getEntryInfo(entry.getItemId(),
                 CatalogPresenter.SHARED_RESOURCE | CatalogPresenter.USER_RESOURCE, getContext());
         UstadMobileSystemImpl impl = UstadMobileSystemImpl.getInstance();
 
@@ -471,31 +502,11 @@ public class CatalogEntryPresenter extends BaseCatalogPresenter implements Acqui
     }
 
     public void handleClickShare() {
-        sharedAcquiredEntries = getTranslatedAlternativesLangVectors(entry,
-                CatalogPresenter.STATUS_ACQUIRED);
-        if(sharedAcquiredEntries[0].size() == 0) {
-            UstadMobileSystemImpl.getInstance().getAppView(getContext()).showNotification(
-                    "Not downloaded (in this language)!", AppView.LENGTH_LONG);
-        }else if(sharedAcquiredEntries[0].size() == 1) {
-            UstadJSOPDSEntry entry = (UstadJSOPDSEntry)sharedAcquiredEntries[1].elementAt(0);
-            handleShareSelectedEntry(entry.id);
-        }else {
-            String[] languagesToShare = new String[sharedAcquiredEntries[0].size()];
-            sharedAcquiredEntries[0].copyInto(languagesToShare);
-            UstadMobileSystemImpl impl = UstadMobileSystemImpl.getInstance();
-            impl.getAppView(getContext()).showChoiceDialog(
-                    impl.getString(MessageID.share, getContext()), languagesToShare,
-                    CMD_SHARE_ENTRY,this);
-        }
-    }
-
-    protected void handleShareSelectedEntry(String entryId) {
         Hashtable args = new Hashtable();
-        args.put("title", entry.title);
-        args.put("entries", new String[]{entryId});
+        args.put("title", entry.getTitle());
+        args.put("entries", new String[]{entry.getItemId()});
         UstadMobileSystemImpl.getInstance().go("SendCourse", args, getContext());
     }
-
 
     protected void handleClickRemove() {
         handleClickRemove(new UstadJSOPDSEntry[]{entry});
@@ -531,7 +542,7 @@ public class CatalogEntryPresenter extends BaseCatalogPresenter implements Acqui
     }
 
     public void handleClickStopDownload() {
-        CatalogEntryInfo entryInfo = CatalogPresenter.getEntryInfo(entry.id,
+        CatalogEntryInfo entryInfo = CatalogPresenter.getEntryInfo(entry.getItemId(),
                 CatalogPresenter.SHARED_RESOURCE | CatalogPresenter.USER_RESOURCE, getContext());
         if(entryInfo != null
                 && entryInfo.acquisitionStatus == CatalogPresenter.STATUS_ACQUISITION_IN_PROGRESS
@@ -546,11 +557,6 @@ public class CatalogEntryPresenter extends BaseCatalogPresenter implements Acqui
     
     public void appViewChoiceSelected(int commandId, int choice) {
         switch(commandId) {
-            case CMD_SHARE_ENTRY:
-                UstadJSOPDSEntry entryToShare = (UstadJSOPDSEntry)sharedAcquiredEntries[1].elementAt(choice);
-                handleShareSelectedEntry(entryToShare.id);
-                break;
-
             case CMD_REMOVE_PRESENTER_ENTRY:
 //                UstadJSOPDSEntry entryToDelete = (UstadJSOPDSEntry)modifyAcquiredEntries[1].elementAt(choice);
 //                handleClickRemove(new UstadJSOPDSEntry[]{entryToDelete});
@@ -567,9 +573,7 @@ public class CatalogEntryPresenter extends BaseCatalogPresenter implements Acqui
 
     
     protected void onEntriesRemoved() {
-        catalogEntryView.setButtonDisplayed(CatalogEntryView.BUTTON_DOWNLOAD, true);
-        catalogEntryView.setButtonDisplayed(CatalogEntryView.BUTTON_MODIFY, false);
-        catalogEntryView.setButtonDisplayed(CatalogEntryView.BUTTON_OPEN, false);
+        updateButtonsByStatus(CatalogPresenter.STATUS_NOT_ACQUIRED);
     }
 
     
@@ -579,7 +583,7 @@ public class CatalogEntryPresenter extends BaseCatalogPresenter implements Acqui
 
     
     public void acquisitionProgressUpdate(String entryId, final AcquisitionTaskStatus status) {
-        if(entry != null && entryId.equals(entry.id)) {
+        if(entry != null && entryId.equals(entry.getItemId())) {
             catalogEntryView.runOnUiThread(new Runnable() {
                 
                 public void run() {
@@ -597,7 +601,7 @@ public class CatalogEntryPresenter extends BaseCatalogPresenter implements Acqui
 
     
     public void acquisitionStatusChanged(String entryId, AcquisitionTaskStatus status) {
-        if(entryId.equals(entry.id)) {
+        if(entryId.equals(entry.getItemId())) {
             switch(status.getStatus()) {
                 case UstadMobileSystemImpl.DLSTATUS_SUCCESSFUL:
                     catalogEntryView.runOnUiThread(new Runnable() {
@@ -628,8 +632,8 @@ public class CatalogEntryPresenter extends BaseCatalogPresenter implements Acqui
     }
 
     public void fileStatusCheckInformationAvailable(String[] fileIds) {
-        if(UMUtil.getIndexInArray(entry.id, fileIds) != -1) {
-            final boolean available = manager.isEntryLocallyAvailable(entry.id);
+        if(UMUtil.getIndexInArray(entry.getItemId(), fileIds) != -1) {
+            final boolean available = manager.isEntryLocallyAvailable(entry.getItemId());
             updateViewLocallyAvailableStatus(available ?
                     CatalogEntryView.LOCAL_STATUS_AVAILABLE : CatalogEntryView.LOCAL_STATUS_NOT_AVAILABLE);
         }
@@ -640,7 +644,7 @@ public class CatalogEntryPresenter extends BaseCatalogPresenter implements Acqui
         /* $if umplatform != 2  $ */
         if(task.getTaskId() == entryCheckTaskId && task.getStatus() == NetworkTask.STATUS_COMPLETE) {
             boolean available =
-                UstadMobileSystemImpl.getInstance().getNetworkManager().getEntryResponsesWithLocalFile(entry.id) != null;
+                UstadMobileSystemImpl.getInstance().getNetworkManager().getEntryResponsesWithLocalFile(entry.getItemId()) != null;
             updateViewLocallyAvailableStatus(available ?
                 CatalogEntryView.LOCAL_STATUS_AVAILABLE : CatalogEntryView.LOCAL_STATUS_NOT_AVAILABLE);
             startMonitoringLocalAvailability();

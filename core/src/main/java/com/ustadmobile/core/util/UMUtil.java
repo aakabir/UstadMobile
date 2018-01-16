@@ -30,11 +30,8 @@
  */
 package com.ustadmobile.core.util;
 
-import com.ustadmobile.core.impl.HTTPResult;
-import com.ustadmobile.core.impl.UMLog;
 import com.ustadmobile.core.impl.UstadMobileSystemImpl;
 
-import org.json.JSONObject;
 import org.xmlpull.v1.XmlPullParser;
 import org.xmlpull.v1.XmlPullParserException;
 import org.xmlpull.v1.XmlSerializer;
@@ -63,7 +60,15 @@ public class UMUtil {
     public static final int PORT_ALLOC_SECURITY_ERR = -2;
     
     public static final int PORT_ALLOC_OTHER_ERR = 3;
-    
+
+    /**
+     * A list of elements that must have their own end tag
+     */
+    public static final String[] SEPARATE_END_TAG_REQUIRED_ELEMENTS = new String[] {"script", "style"};
+
+
+
+
     /**
      * Gets the index of a particular item in an array
      * 
@@ -234,46 +239,6 @@ public class UMUtil {
         
         return vector;
     }
-    
-    /**
-     * Request a new port on the DodgyHTTPD Test Server for logging /asset request
-     * 
-     * @param serverURL - Control Server URL eg http://server:8065/
-     * @param action - "newserver" for HTTP server or "newrawserver" for socket logger
-     * @param client client name if requesting newrawserver (otherwise null)
-     * @return the port that was opened or -1 for an error
-     */
-    public static int requestDodgyHTTPDPort(String serverURL, String action, String client) {
-        try {
-            String requestURL = serverURL;
-            if(requestURL.indexOf('?') == -1) {
-                requestURL += "?action=" + action;
-            }else {
-                requestURL += "&action=" + action;
-            }
-            
-            if(client != null) {
-                requestURL += "&client=" + client;
-            }
-            
-            HTTPResult result = UstadMobileSystemImpl.getInstance().makeRequest(
-                requestURL, new Hashtable(), new Hashtable(), "GET");
-            String serverSays = new String(result.getResponse(), "UTF-8");
-            JSONObject response = new JSONObject(serverSays);
-            int serverPort = response.getInt("port");
-            return serverPort;
-        }catch(Exception e) {
-            UstadMobileSystemImpl.getInstance().getLogger().l(UMLog.ERROR, 510, action + "," + serverURL, e);
-            e.printStackTrace();
-            if(e instanceof SecurityException) {
-                return PORT_ALLOC_SECURITY_ERR;
-            }else if(e instanceof IOException) {
-                return PORT_ALLOC_IO_ERR;
-            }else {
-                return PORT_ALLOC_OTHER_ERR;
-            }
-        }
-    }
 
     /**
      * If i < 0  - return "0i", else return "i" - E.g. to dislpay 10:01 instead of 10:1
@@ -380,10 +345,85 @@ public class UMUtil {
         return indexInArray(haystack, needle, 0, haystack.length);
     }
 
-    public static void passXmlThrough(XmlPullParser xpp, XmlSerializer xs, String endTagName) throws XmlPullParserException, IOException {
+    /**
+     * Pass XML through from an XmlPullParser to an XmlSerializer.
+     *
+     * @param parser XmlPullParser XML is coming from
+     * @param serializer XmlSerializer XML is being written to
+     * @param seperateEndTagRequiredElements An array of elements where separate closing tags are
+     *                                       required e.g. script, style etc. using &lt;/script&gt; instead
+     *                                       of &lt;script ... /&gt;
+     *
+     * @throws XmlPullParserException
+     * @throws IOException
+     */
+    public static void passXmlThrough(XmlPullParser parser, XmlSerializer serializer,
+                                      String[] seperateEndTagRequiredElements)
+            throws XmlPullParserException, IOException{
+        PassXmlThroughFilter filter = null;
+        passXmlThrough(parser, serializer, seperateEndTagRequiredElements, filter);
+    }
+
+    /**
+     * Pass XML through from an XmlPullParser to an XmlSerializer.
+     *
+     * @param parser XmlPullParser XML is coming from
+     * @param serializer XmlSerializer XML is being written to
+     *
+     * @throws XmlPullParserException
+     * @throws IOException
+     */
+    public static void passXmlThrough(XmlPullParser parser, XmlSerializer serializer)
+            throws XmlPullParserException, IOException{
+        PassXmlThroughFilter filter = null;
+        passXmlThrough(parser, serializer, null, filter);
+    }
+
+    /**
+     * Pass XML through from an XmlPullParser to an XmlSerializer.
+     *
+     * @param xpp XmlPullParser XML is coming from
+     * @param xs XmlSerializer XML is being written to
+     * @param separateHtmlEndTagRequiredElements if true then use the default list of html elements
+     *                                           that require a separate ending tag e.g. use
+     *                                           &lt;/script&gt; instead of &lt;script ... /&gt;
+     *
+     * @throws XmlPullParserException
+     * @throws IOException
+     */
+    public static void passXmlThrough(XmlPullParser xpp, XmlSerializer xs,
+                                      boolean separateHtmlEndTagRequiredElements,
+                                      PassXmlThroughFilter filter)
+            throws XmlPullParserException, IOException{
+        passXmlThrough(xpp, xs,
+                separateHtmlEndTagRequiredElements ? SEPARATE_END_TAG_REQUIRED_ELEMENTS : null, filter);
+    }
+
+    /**
+     * Pass XML through from an XmlPullParser to an XmlSerializer. This will not call startDocument
+     * or endDocument - that must be called separately. This allows different documents to be merged.
+     *
+     * @param xpp XmlPullParser XML is coming from
+     * @param xs XmlSerializer XML is being written to
+     * @param seperateEndTagRequiredElements An array of elements where separate closing tags are
+     *                                       required e.g. script, style etc. using &lt;/script&gt; instead
+     *                                       of &lt;script ... /&gt;
+     * @param filter XmlPassThroughFilter that can be used to add to output or interrupt processing
+     * @throws XmlPullParserException
+     * @throws IOException
+     */
+    public static void passXmlThrough(XmlPullParser xpp, XmlSerializer xs,
+                                      String[] seperateEndTagRequiredElements,
+                                      PassXmlThroughFilter filter)
+            throws XmlPullParserException, IOException {
+
         int evtType = xpp.getEventType();
+        int lastEvent = -1;
         String tagName;
         while(evtType != XmlPullParser.END_DOCUMENT) {
+            if(filter != null && !filter.beforePassthrough(evtType, xpp, xs))
+                return;
+
             switch(evtType) {
                 case XmlPullParser.START_TAG:
                     xs.startTag(xpp.getNamespace(), xpp.getName());
@@ -397,24 +437,103 @@ public class UMUtil {
                     break;
                 case XmlPullParser.END_TAG:
                     tagName = xpp.getName();
-                    if(endTagName != null && endTagName.equals(tagName))
-                        return;
+
+                    if(lastEvent == XmlPullParser.START_TAG
+                            && seperateEndTagRequiredElements != null
+                            && UMUtil.indexInArray(seperateEndTagRequiredElements, tagName) != -1) {
+                        xs.text(" ");
+                    }
 
                     xs.endTag(xpp.getNamespace(), tagName);
 
 
                     break;
             }
+            if(filter != null && !filter.afterPassthrough(evtType, xpp, xs))
+                return;
+
+            lastEvent = evtType;
             evtType = xpp.next();
         }
     }
+
+    /**
+     *
+     * @param xpp XmlPullParser XML is coming from
+     * @param xs XmlSerializer XML is being written to
+     * @param seperateEndTagRequiredElements An array of elements where separate closing tags are
+     *                                       required e.g. script, style etc. using &lt;/script&gt; instead
+     *                                       of &lt;script ... /&gt;
+     * @param endTagName If the given endTagName is encountered processing will stop. The endTag
+     *                   for this tag will not be sent to the serializer.
+     * @throws XmlPullParserException
+     * @throws IOException
+     */
+    public static void passXmlThrough(XmlPullParser xpp, XmlSerializer xs,
+                                      String[] seperateEndTagRequiredElements,
+                                      final String endTagName) throws XmlPullParserException, IOException {
+        passXmlThrough(xpp, xs,seperateEndTagRequiredElements, new PassXmlThroughFilter() {
+            @Override
+            public boolean beforePassthrough(int evtType, XmlPullParser parser, XmlSerializer serializer)
+                    throws IOException, XmlPullParserException {
+                if(evtType == XmlPullParser.END_TAG && parser.getName() != null
+                        && parser.getName().equals(endTagName))
+                    return false;
+                else
+                    return true;
+            }
+
+            @Override
+            public boolean afterPassthrough(int evtType, XmlPullParser parser, XmlSerializer serializer)
+                    throws IOException, XmlPullParserException {
+                return true;
+            }
+        });
+    }
+
+    /**
+     * Implement this interface to control some of the passXmlThrough methods .  This can be used
+     * to add extra output to be serialized or to stop processing.
+     */
+    public interface PassXmlThroughFilter {
+
+        /**
+         * Called before the given event is passed through to the XmlSerializer.
+         *
+         * @param evtType The event type from the parser
+         * @param parser The XmlPullParser being used
+         * @param serializer The XmlSerializer being used
+         *
+         * @return true to continue processing, false to end processing
+         * @throws IOException
+         * @throws XmlPullParserException
+         */
+        boolean beforePassthrough(int evtType, XmlPullParser parser, XmlSerializer serializer)
+                throws IOException, XmlPullParserException;
+
+        /**
+         * Called after the given event was passed through to the XmlSerializer.
+         *
+         * @param evtType The event type from the parser
+         * @param parser The XmlPullParser being used
+         * @param serializer The XmlSerializer being used
+         *
+         * @return true to continue processing, false to end processing
+         * @throws IOException
+         * @throws XmlPullParserException
+         */
+        boolean afterPassthrough(int evtType, XmlPullParser parser, XmlSerializer serializer)
+                throws IOException, XmlPullParserException;
+
+    }
+
 
     public static String passXmlThroughToString(XmlPullParser xpp, String endTagName) throws XmlPullParserException, IOException{
         ByteArrayOutputStream bout = new ByteArrayOutputStream();
         XmlSerializer xs = UstadMobileSystemImpl.getInstance().newXMLSerializer();
         xs.setOutput(bout, "UTF-8");
         xs.startDocument("UTF-8", Boolean.FALSE);
-        passXmlThrough(xpp, xs, endTagName);
+        passXmlThrough(xpp, xs, null, endTagName);
         xs.endDocument();
         bout.flush();
         String retVal = new String(bout.toByteArray());
@@ -456,7 +575,70 @@ public class UMUtil {
         }
     }
 
+    /**
+     * Generate a new hashtable which is 'flipped' - e.g. where the keys of the input hashtable become
+     * the values in the output hashtable, and vice versa.
+     *
+     * @return Flip hashtable
+     */
+    public static Hashtable flipHashtable(Hashtable table) {
+        Hashtable out = new Hashtable();
+        Object key;
+
+        Enumeration keys = table.keys();
+        while(keys.hasMoreElements()) {
+            key = keys.nextElement();
+            out.put(table.get(key), key);
+        }
+
+        return out;
+    }
+
+    /**
+     * Joins strings e.g. from an array generate a single string with "Bob", "Anand", "Kate" etc.
+     *
+     * @param objects Objects to join - using toString method
+     * @param joiner String to use between each object.
+     *
+     * @return A single string formed by each object's toString method, followed by the joiner, the
+     * next object, and so on.
+     */
+    public static String joinStrings(Object[] objects, String joiner) {
+        StringBuffer buffer = new StringBuffer();
+        for(int i = 0; i < objects.length; i++) {
+            buffer.append(objects.toString());
+
+            if(i < objects.length - 1)
+                buffer.append(joiner);
+        }
+
+        return buffer.toString();
+    }
+
+    /**
+     * Joins strings e.g. from an array generate a single string with "Bob", "Anand", "Kate" etc.
+     *
+     * @param objects Objects to join - using toString method
+     * @param joiner String to use between each object.
+     *
+     * @return A single string formed by each object's toString method, followed by the joiner, the
+     * next object, and so on.
+     */
+    public static String joinStrings(Vector objects, String joiner) {
+        StringBuffer buffer = new StringBuffer();
+        for(int i = 0; i < objects.size(); i++) {
+            buffer.append(objects.elementAt(i));
+
+            if(i < objects.size() - 1)
+                buffer.append(joiner);
+        }
+
+        return buffer.toString();
+    }
 
 
-    
+
+
+
+
 }

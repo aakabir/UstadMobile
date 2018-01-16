@@ -19,6 +19,9 @@ public class ApplicationView extends ViewImpl implements ApplicationPresenter.My
     
     @UiField
     MaterialPanel login;
+    
+    @UiField
+    MaterialPanel about;
 
     @Inject
     ApplicationView(
@@ -27,6 +30,8 @@ public class ApplicationView extends ViewImpl implements ApplicationPresenter.My
 
         //Bind slots in ApplicationPresenter to ApplicationView's Ui Binder.
         bindSlot(ApplicationPresenter.SLOT_MAIN, main);
+        bindSlot(ApplicationPresenter.SLOT_ABOUT, about);
         bindSlot(ApplicationPresenter.SLOT_LOGIN, login);
+        
     }
 }

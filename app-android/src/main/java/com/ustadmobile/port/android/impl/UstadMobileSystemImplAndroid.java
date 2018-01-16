@@ -41,6 +41,7 @@ import android.content.SharedPreferences;
 import android.content.pm.ApplicationInfo;
 import android.content.pm.PackageInfo;
 import android.content.pm.PackageManager;
+import android.os.AsyncTask;
 import android.os.Build;
 import android.os.Bundle;
 import android.os.Environment;
@@ -55,15 +56,18 @@ import android.webkit.WebView;
 import android.widget.Toast;
 
 import com.ustadmobile.core.buildconfig.CoreBuildConfig;
-import com.ustadmobile.core.catalog.contenttype.EPUBTypePlugin;
-import com.ustadmobile.core.catalog.contenttype.XapiPackageTypePlugin;
+import com.ustadmobile.core.catalog.contenttype.*;
 import com.ustadmobile.core.controller.CatalogPresenter;
 import com.ustadmobile.core.controller.UserSettingsController;
+import com.ustadmobile.core.impl.ContainerMountRequest;
 import com.ustadmobile.core.impl.TinCanQueueListener;
 import com.ustadmobile.core.impl.UMDownloadCompleteReceiver;
 import com.ustadmobile.core.impl.UMLog;
+import com.ustadmobile.core.impl.UmCallback;
 import com.ustadmobile.core.impl.UstadMobileSystemImpl;
+import com.ustadmobile.core.opds.db.UmOpdsDbManager;
 import com.ustadmobile.core.tincan.TinCanResultListener;
+import com.ustadmobile.core.util.UMFileUtil;
 import com.ustadmobile.core.util.UMIOUtils;
 import com.ustadmobile.core.util.UMTinCanUtil;
 import com.ustadmobile.core.view.AboutView;
@@ -75,6 +79,8 @@ import com.ustadmobile.core.view.CatalogView;
 import com.ustadmobile.core.view.ContainerView;
 import com.ustadmobile.core.view.LoginView;
 import com.ustadmobile.core.view.RegistrationView;
+import com.ustadmobile.core.view.ScormPackageView;
+import com.ustadmobile.core.view.SettingsDataSyncListView;
 import com.ustadmobile.core.view.SettingsDataUsageView;
 import com.ustadmobile.core.view.UserSettingsView;
 import com.ustadmobile.core.view.UserSettingsView2;
@@ -83,39 +89,19 @@ import com.ustadmobile.core.view.XapiPackageView;
 import com.ustadmobile.nanolrs.core.endpoints.XapiAgentEndpoint;
 import com.ustadmobile.nanolrs.core.endpoints.XapiStatementsForwardingEndpoint;
 import com.ustadmobile.nanolrs.core.endpoints.XapiStatementsForwardingListener;
+import com.ustadmobile.nanolrs.core.manager.UserCustomFieldsManager;
+import com.ustadmobile.nanolrs.core.manager.UserManager;
+import com.ustadmobile.nanolrs.core.model.User;
+import com.ustadmobile.nanolrs.core.persistence.PersistenceManager;
 import com.ustadmobile.port.android.generated.MessageIDMap;
 import com.ustadmobile.port.android.netwokmanager.NetworkManagerAndroid;
 import com.ustadmobile.port.android.netwokmanager.NetworkServiceAndroid;
+import com.ustadmobile.port.android.opds.db.UmOpdsDbManagerAndroid;
 import com.ustadmobile.port.android.util.UMAndroidUtil;
-import com.ustadmobile.port.android.view.AboutActivity;
-import com.ustadmobile.port.android.view.AddFeedDialogFragment;
-import com.ustadmobile.port.android.view.AppViewAndroid;
-import com.ustadmobile.port.android.view.AttendanceActivity;
-import com.ustadmobile.port.android.view.BasePointActivity;
-import com.ustadmobile.port.android.view.CatalogActivity;
-import com.ustadmobile.port.android.view.CatalogEntryActivity;
-import com.ustadmobile.port.android.view.ClassManagementActivity;
-import com.ustadmobile.port.android.view.ClassManagementActivity2;
-import com.ustadmobile.port.android.view.ContainerActivity;
-import com.ustadmobile.port.android.view.EnrollStudentActivity;
-import com.ustadmobile.port.android.view.LoginDialogFragment;
-import com.ustadmobile.port.android.view.ReceiveCourseDialogFragment;
-import com.ustadmobile.port.android.view.RegistrationDialogFragment;
-import com.ustadmobile.port.android.view.SendCourseDialogFragment;
-import com.ustadmobile.port.android.view.SettingsDataUsageActivity;
-import com.ustadmobile.port.android.view.UserSettingsActivity;
-import com.ustadmobile.port.android.view.UserSettingsActivity2;
-import com.ustadmobile.port.android.view.UstadBaseActivity;
-import com.ustadmobile.port.android.view.WelcomeDialogFragment;
-import com.ustadmobile.port.android.view.XapiPackageActivity;
+import com.ustadmobile.port.android.view.*;
+import com.ustadmobile.port.sharedse.view.*;
 import com.ustadmobile.port.sharedse.impl.UstadMobileSystemImplSE;
 import com.ustadmobile.port.sharedse.networkmanager.NetworkManager;
-import com.ustadmobile.port.sharedse.view.AttendanceView;
-import com.ustadmobile.port.sharedse.view.ClassManagementView;
-import com.ustadmobile.port.sharedse.view.ClassManagementView2;
-import com.ustadmobile.port.sharedse.view.EnrollStudentView;
-import com.ustadmobile.port.sharedse.view.ReceiveCourseView;
-import com.ustadmobile.port.sharedse.view.SendCourseView;
 
 import org.json.JSONObject;
 import org.xmlpull.v1.XmlSerializer;
@@ -127,12 +113,18 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.net.URL;
 import java.net.URLConnection;
+import java.sql.SQLException;
+import java.text.Format;
+import java.text.SimpleDateFormat;
+import java.util.Date;
 import java.util.HashMap;
 import java.util.Hashtable;
 import java.util.Map;
 import java.util.Set;
 import java.util.Timer;
 import java.util.WeakHashMap;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
 import java.util.zip.ZipEntry;
 import java.util.zip.ZipOutputStream;
 
@@ -172,6 +164,7 @@ public class UstadMobileSystemImplAndroid extends UstadMobileSystemImplSE {
         viewNameToAndroidImplMap.put(CatalogView.VIEW_NAME, CatalogActivity.class);
         viewNameToAndroidImplMap.put(UserSettingsView.VIEW_NAME, UserSettingsActivity.class);
         viewNameToAndroidImplMap.put(SettingsDataUsageView.VIEW_NAME, SettingsDataUsageActivity.class);
+        viewNameToAndroidImplMap.put(SettingsDataSyncListView.VIEW_NAME, SettingsDataSyncListActivity.class);
         //Account settings:
         //viewNameToAndroidImplMap.put(AccountSettingsView.VIEW_NAME, AccountSettingsActivity.class);
         viewNameToAndroidImplMap.put(BasePointView.VIEW_NAME, BasePointActivity.class);
@@ -188,6 +181,7 @@ public class UstadMobileSystemImplAndroid extends UstadMobileSystemImplSE {
         viewNameToAndroidImplMap.put(ReceiveCourseView.VIEW_NAME, ReceiveCourseDialogFragment.class);
         viewNameToAndroidImplMap.put(XapiPackageView.VIEW_NAME, XapiPackageActivity.class);
         viewNameToAndroidImplMap.put(AddFeedDialogView.VIEW_NAME, AddFeedDialogFragment.class);
+        viewNameToAndroidImplMap.put(ScormPackageView.VIEW_NAME, ScormPackageActivity.class);
     }
 
 
@@ -218,11 +212,13 @@ public class UstadMobileSystemImplAndroid extends UstadMobileSystemImplSE {
      */
     private HashMap<TinCanQueueListener, XapiStatementsForwardingListener> queueStatusListeners;
 
-    /**
-     * Some mime types that the Android OS does not know about but we do...
-     * Mapped: Mime type -> extension
-     */
-    private HashMap<String, String> knownMimeToExtensionMap;
+
+    private UmOpdsDbManagerAndroid opdsDbManager;
+
+    private static final ContentTypePlugin[] SUPPORTED_CONTENT_TYPES = new ContentTypePlugin[] {
+            new EPUBTypePlugin(), new ScormTypePlugin(), new XapiPackageTypePlugin()};
+
+    private ExecutorService bgExecutorService = Executors.newCachedThreadPool();
 
     /**
      * Base ServiceConnection class used to bind any given context to shared services: notably
@@ -281,6 +277,89 @@ public class UstadMobileSystemImplAndroid extends UstadMobileSystemImplSE {
         }
     }
 
+    private abstract static class UmCallbackAsyncTask<A, P, R> extends AsyncTask<A, P, R> {
+
+        protected UmCallback<R> umCallback;
+
+        protected Throwable error;
+
+        private UmCallbackAsyncTask(UmCallback<R> callback) {
+            this.umCallback = callback;
+        }
+
+
+
+        @Override
+        protected void onPostExecute(R r) {
+            if(error == null) {
+                umCallback.onSuccess(r);
+            }else {
+                umCallback.onFailure(error);
+            }
+        }
+    }
+
+    /**
+     * Simple async task to handle getting the setup file
+     * Param 0 = boolean - true to zip, false otherwise
+     */
+    private static class GetSetupFileAsyncTask extends UmCallbackAsyncTask<Boolean, Void, String> {
+
+        private Context context;
+
+        private GetSetupFileAsyncTask(UmCallback doneCallback, Context context) {
+            super(doneCallback);
+            this.context = context;
+
+        }
+
+        @Override
+        protected String doInBackground(Boolean... booleans) {
+            File apkFile = new File(((Context)context).getApplicationInfo().sourceDir);
+            String baseName = CoreBuildConfig.BASE_NAME + "-" + CoreBuildConfig.VERSION;
+            FileInputStream apkFileIn = null;
+            Context ctx = (Context)context;
+            File outDir = new File(ctx.getFilesDir(), "shared");
+            if(!outDir.isDirectory())
+                outDir.mkdirs();
+
+            if(booleans[0]) {
+                ZipOutputStream zipOut = null;
+                File outZipFile = new File(outDir, baseName + ".zip");
+                try {
+                    zipOut = new ZipOutputStream(new FileOutputStream(outZipFile));
+                    zipOut.putNextEntry(new ZipEntry(baseName + ".apk"));
+                    apkFileIn = new FileInputStream(apkFile);
+                    UMIOUtils.readFully(apkFileIn, zipOut, 1024);
+                    zipOut.closeEntry();
+                }catch(IOException e) {
+                    e.printStackTrace();
+                }finally {
+                    UMIOUtils.closeOutputStream(zipOut);
+                    UMIOUtils.closeInputStream(apkFileIn);
+                }
+
+                return outZipFile.getAbsolutePath();
+            }else {
+                FileOutputStream fout = null;
+                File outApkFile = new File(outDir, baseName + ".apk");
+                try {
+                    apkFileIn = new FileInputStream(apkFile);
+                    fout = new FileOutputStream(outApkFile);
+                    UMIOUtils.readFully(apkFileIn, fout, 1024);
+                }catch(IOException e) {
+                    e.printStackTrace();
+                }finally {
+                    UMIOUtils.closeInputStream(apkFileIn);
+                    UMIOUtils.closeOutputStream(fout);
+                }
+
+                return outApkFile.getAbsolutePath();
+            }
+        }
+    }
+
+
     protected HashMap<Context, ServiceConnection> networkServiceConnections = new HashMap<>();
 
     protected NetworkManagerAndroid networkManagerAndroid;
@@ -293,10 +372,9 @@ public class UstadMobileSystemImplAndroid extends UstadMobileSystemImplSE {
         appViews = new WeakHashMap<>();
         downloadCompleteReceivers = new HashMap<>();
         queueStatusListeners = new HashMap<>();
-        knownMimeToExtensionMap = new HashMap<>();
-        knownMimeToExtensionMap.put("application/epub+zip", "epub");
         networkManagerAndroid = new NetworkManagerAndroid();
         networkManagerAndroid.setServiceConnectionMap(networkServiceConnections);
+        opdsDbManager = new UmOpdsDbManagerAndroid();
     }
 
     /**
@@ -309,6 +387,7 @@ public class UstadMobileSystemImplAndroid extends UstadMobileSystemImplSE {
     @Override
     public void init(Object context) {
         super.init(context);
+
 
         if(context instanceof Activity) {
             ((Activity)context).runOnUiThread(new Runnable() {
@@ -568,18 +647,33 @@ public class UstadMobileSystemImplAndroid extends UstadMobileSystemImplSE {
         */
     }
 
-    /**
-     * Use Android assets instead
-     */
     @Override
-    public InputStream openResourceInputStream(String resURI, Object context) throws IOException {
-        if(resURI.charAt(0) == '/')
-            resURI = resURI.substring(1);
+    public void getAsset(final Object context, String path, final UmCallback<InputStream> callback) {
+        if(path.startsWith("/")) {
+            path = path.substring(1);
+        }
+        final String assetPath = path;
 
-        return ((Context)context).getAssets().open(resURI);
+        bgExecutorService.execute(new Runnable() {
+            @Override
+            public void run() {
+                try {
+                    callback.onSuccess(((Context)context).getAssets().open(assetPath));
+                }catch(IOException e) {
+                    callback.onFailure(e);
+                }
+            }
+        });
     }
 
+    @Override
+    public InputStream getAssetSync(Object context, String path) throws IOException {
+        if(path.startsWith("/")) {
+            path = path.substring(1);
+        }
 
+        return ((Context)context).getAssets().open(path);
+    }
 
     @Override
     public int[] getFileDownloadStatus(String downloadID, Object context) {
@@ -754,17 +848,22 @@ public class UstadMobileSystemImplAndroid extends UstadMobileSystemImplSE {
 
     @Override
     public String getMimeTypeFromExtension(String extension) {
-        return MimeTypeMap.getSingleton().getMimeTypeFromExtension(extension);
+        String mimeType = MimeTypeMap.getSingleton().getMimeTypeFromExtension(extension);
+        if(mimeType != null) {
+            return mimeType;
+        }else {
+            return super.getMimeTypeFromExtension(extension);
+        }
     }
 
     @Override
     public String getExtensionFromMimeType(String mimeType) {
         String extension =MimeTypeMap.getSingleton().getExtensionFromMimeType(mimeType);
-        if(extension == null) {
-            extension = knownMimeToExtensionMap.get(mimeType);
+        if(extension != null) {
+            return extension;
+        }else {
+            return super.getExtensionFromMimeType(mimeType);
         }
-
-        return extension;
     }
 
     @Override
@@ -798,56 +897,15 @@ public class UstadMobileSystemImplAndroid extends UstadMobileSystemImplSE {
     }
 
     @Override
-    public String getAppSetupFile(Object context, boolean zip) {
-        File apkFile = new File(((Context)context).getApplicationInfo().sourceDir);
-        String baseName = CoreBuildConfig.BASE_NAME + "-" + CoreBuildConfig.VERSION;
-        FileInputStream apkFileIn = null;
-        Context ctx = (Context)context;
-        File outDir = new File(ctx.getFilesDir(), "shared");
-        if(!outDir.isDirectory())
-            outDir.mkdirs();
-
-        if(zip) {
-            ZipOutputStream zipOut = null;
-            File outZipFile = new File(outDir, baseName + ".zip");
-            try {
-                zipOut = new ZipOutputStream(new FileOutputStream(outZipFile));
-                zipOut.putNextEntry(new ZipEntry(baseName + ".apk"));
-                apkFileIn = new FileInputStream(apkFile);
-                UMIOUtils.readFully(apkFileIn, zipOut, 1024);
-                zipOut.closeEntry();
-            }catch(IOException e) {
-                e.printStackTrace();
-            }finally {
-                UMIOUtils.closeOutputStream(zipOut);
-                UMIOUtils.closeInputStream(apkFileIn);
-            }
-
-            return outZipFile.getAbsolutePath();
-        }else {
-            FileOutputStream fout = null;
-            File outApkFile = new File(outDir, baseName + ".apk");
-            try {
-                apkFileIn = new FileInputStream(apkFile);
-                fout = new FileOutputStream(outApkFile);
-                UMIOUtils.readFully(apkFileIn, fout, 1024);
-            }catch(IOException e) {
-                e.printStackTrace();
-            }finally {
-                UMIOUtils.closeInputStream(apkFileIn);
-                UMIOUtils.closeOutputStream(fout);
-            }
-
-            return outApkFile.getAbsolutePath();
-        }
+    public void getAppSetupFile(Object context, boolean zip, UmCallback callback) {
+        GetSetupFileAsyncTask setupFileAsyncTask = new GetSetupFileAsyncTask(callback,
+                (Context)context);
+        setupFileAsyncTask.execute(zip);
     }
 
     @Override
-    public Class[] getSupportedContentTypePlugins() {
-        return new Class[]{
-                EPUBTypePlugin.class,
-                XapiPackageTypePlugin.class
-        };
+    public ContentTypePlugin[] getSupportedContentTypePlugins() {
+        return SUPPORTED_CONTENT_TYPES;
     }
 
     @Override
@@ -865,5 +923,63 @@ public class UstadMobileSystemImplAndroid extends UstadMobileSystemImplSE {
         }
 
         return null;
+    }
+
+    @Override
+    public String getUserDetail(String username, int field, Object dbContext){
+
+        try {
+            UserCustomFieldsManager customFieldsManager =
+                    PersistenceManager.getInstance().getManager(UserCustomFieldsManager.class);
+            UserManager userManager =
+                    PersistenceManager.getInstance().getManager(UserManager.class);
+            User user = userManager.findByUsername(dbContext, username);
+            String value = customFieldsManager.getUserField(user, field, dbContext);
+            if (value == null) {
+                return "";
+            }
+            return value;
+        }catch(SQLException s){
+            s.printStackTrace();
+            System.out.println("Unable to get user detail: " + field +
+                " for user: " + username);
+            return "";
+        }
+
+
+    }
+
+    @Override
+    public UmOpdsDbManager getOpdsDbManager() {
+        return opdsDbManager;
+    }
+
+    @Override
+    public void mountContainer(final ContainerMountRequest request, final int id,
+                               final UmCallback callback) {
+
+        final String scriptPath = UMFileUtil.joinPaths(new String[] {
+                networkManagerAndroid.getHttpAndroidAssetsUrl(), "epub-paginate.js"});
+        new AsyncTask<Void, Void, String>() {
+            @Override
+            protected String doInBackground(Void... voids) {
+                String mountedPath = networkManagerAndroid.mountZipOnHttp(request.getContainerUri(),
+                        null, request.isEpubMode(), scriptPath);
+                return UMFileUtil.joinPaths(new String[]{networkManagerAndroid.getLocalHttpUrl(),
+                    mountedPath});
+            }
+
+            @Override
+            protected void onPostExecute(String mountedPath) {
+                callback.onSuccess(mountedPath);
+            }
+        }.execute();
+    }
+
+    @Override
+    public String convertTimeToReadableTime(long time) {
+        Date date = new Date(time);
+        Format format = new SimpleDateFormat("yyyy MM dd HH:mm:ss");
+        return format.format(date);
     }
 }

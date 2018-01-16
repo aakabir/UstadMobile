@@ -3,6 +3,7 @@ package com.ustadmobile.port.gwt.client.application.home;
 import com.ustadmobile.port.gwt.client.application.ApplicationPresenter;
 import com.ustadmobile.port.gwt.client.application.home.widget.ContactsWidgetPresenter;
 import com.ustadmobile.port.gwt.client.place.NameTokens;
+import com.google.gwt.core.client.GWT;
 import com.google.inject.Inject;
 import com.google.web.bindery.event.shared.EventBus;
 import com.gwtplatform.mvp.client.Presenter;
@@ -12,6 +13,8 @@ import com.gwtplatform.mvp.client.annotations.ProxyStandard;
 import com.gwtplatform.mvp.client.presenter.slots.Slot;
 import com.gwtplatform.mvp.client.proxy.PlaceManager;
 import com.gwtplatform.mvp.client.proxy.ProxyPlace;
+
+import com.ustadmobile.port.gwt.client.test.ReplaceWithThis;
 
 /**
  * This is the child presenter of Application Presenter.
@@ -66,6 +69,10 @@ extends Presenter<HomePresenter.MyView, HomePresenter.MyProxy> {
         //If you have UiHandlers:
         //getView().setUiHandlers(this);
         
+        //testing
+        ReplaceWithThis bindingTest = new ReplaceWithThis();
+        GWT.log("HomePresenter");
+        GWT.log(bindingTest.value);
         
     }
 }

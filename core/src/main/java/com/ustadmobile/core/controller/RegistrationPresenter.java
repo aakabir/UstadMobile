@@ -5,12 +5,7 @@ import com.ustadmobile.core.impl.UstadMobileSystemImpl;
 import com.ustadmobile.core.view.DialogResultListener;
 import com.ustadmobile.core.view.DismissableDialog;
 import com.ustadmobile.core.view.RegistrationView;
-import com.ustadmobile.nanolrs.core.manager.UserCustomFieldsManager;
-import com.ustadmobile.nanolrs.core.manager.UserManager;
-import com.ustadmobile.nanolrs.core.model.User;
-import com.ustadmobile.nanolrs.core.persistence.PersistenceManager;
 
-import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Hashtable;
@@ -61,6 +56,7 @@ public class RegistrationPresenter extends UstadBaseController {
 
         universities = new int[]{
                 MessageID.options_uni_none,
+                MessageID.options_uni_kabul_uni,
                 MessageID.options_uni_kabul_medical_science,
                 MessageID.options_uni_kabul_polytechnic_uni,
                 MessageID.options_uni_shaheed_rabani,
@@ -140,7 +136,7 @@ public class RegistrationPresenter extends UstadBaseController {
         super(context);
     }
 
-    public RegistrationPresenter(Object context, RegistrationView view) throws SQLException {
+    public RegistrationPresenter(Object context, RegistrationView view)  {
         super(context);
         setExtraFields();
         this.view = view;
@@ -168,18 +164,14 @@ public class RegistrationPresenter extends UstadBaseController {
      * @param username  The username of the active user or any other user
      * @param field     The custom field field id/name
      * @return          value
-     * @throws SQLException
      */
-    public static String getUserDetail(String username, int field, Object dbContext) throws SQLException {
-        UserCustomFieldsManager customFieldsManager =
-                PersistenceManager.getInstance().getManager(UserCustomFieldsManager.class);
-        UserManager userManager =
-                PersistenceManager.getInstance().getManager(UserManager.class);
-        User user = userManager.findByUsername(dbContext, username);
-        String value = customFieldsManager.getUserField(user, field, dbContext);
+    public static String getUserDetail(String username, int field, Object dbContext){
+        UstadMobileSystemImpl impl = UstadMobileSystemImpl.getInstance();
+        String value = impl.getUserDetail(username, field, dbContext);
         if(value == null){
             return "";
         }
+
         return value;
 
     }

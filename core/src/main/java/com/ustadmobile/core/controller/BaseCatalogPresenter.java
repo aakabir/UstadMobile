@@ -9,6 +9,7 @@ import com.ustadmobile.core.networkmanager.NetworkManagerCore;
 import com.ustadmobile.core.opds.UstadJSOPDSEntry;
 import com.ustadmobile.core.opds.UstadJSOPDSFeed;
 import com.ustadmobile.core.opds.UstadJSOPDSItem;
+import com.ustadmobile.core.opds.entities.UmOpdsLink;
 import com.ustadmobile.core.util.UMUtil;
 import com.ustadmobile.core.view.AppViewChoiceListener;
 import com.ustadmobile.core.view.CatalogEntryView;
@@ -47,7 +48,7 @@ public abstract class BaseCatalogPresenter extends UstadBaseController implement
 
     public static final String ARG_RESMOD = "resmod";
 
-    public static final String ARG_BOTTOM_BUTTON_URL = "browesbtnu";
+    public static final String ARG_BOTTOM_BUTTON_URL = "b-btn-url";
 
     public static final String ARG_TITLE = "t";
 
@@ -119,7 +120,7 @@ public abstract class BaseCatalogPresenter extends UstadBaseController implement
         candidateEntries.put(entry.getLanguage() != null ? entry.getLanguage() : "", entry);
         String[] translatedEntryIds = entry.getAlternativeTranslationEntryIds();
         for(int i = 0; i < translatedEntryIds.length; i++) {
-            UstadJSOPDSEntry translatedEntry = entry.parentFeed.getEntryById(translatedEntryIds[i]);
+            UstadJSOPDSEntry translatedEntry = entry.getParentFeed().getEntryById(translatedEntryIds[i]);
             if(translatedEntry != null && translatedEntry.getLanguage() != null)
                 candidateEntries.put(translatedEntry.getLanguage(), translatedEntry);
 
@@ -147,7 +148,7 @@ public abstract class BaseCatalogPresenter extends UstadBaseController implement
         while(candidateLangs.hasMoreElements()) {
             candidateLang = (String)candidateLangs.nextElement();
             candidateEntry = (UstadJSOPDSEntry)candidateEntries.get(candidateLang);
-            info = CatalogPresenter.getEntryInfo(candidateEntry.id,
+            info = CatalogPresenter.getEntryInfo(candidateEntry.getItemId(),
                     CatalogPresenter.ALL_RESOURCES, getContext());
             if(info != null && info.acquisitionStatus == acquisitionStatus) {
                 matchingEntries.put(candidateLang, candidateEntry);
@@ -189,25 +190,44 @@ public abstract class BaseCatalogPresenter extends UstadBaseController implement
 
     /**
      * Open the given entry in the catalog entry view
-     * @param entry
+     *
+     * @param titlebarText Where the 'normal' thumbnail display mode is used for a catalog entry,
+     *                    this sets the title bar. This is normally the same as the OPDS catalog
+     *                     title it was navigated from. The title of the entry itself is displayed
+     *                     next to the thumbnail. Where a banner is used this parameter is ignored.
+     * @param entry The OPDS entry to navigate open.
      */
-    public void handleOpenEntryView(UstadJSOPDSEntry entry) {
+    public void handleOpenEntryView(UstadJSOPDSEntry entry, String titlebarText) {
         Hashtable catalogEntryArgs = new Hashtable();
-        UstadJSOPDSFeed parentFeed = entry.parentFeed;
-        String[] entryAbsoluteLink = entry.parentFeed.getAbsoluteSelfLink();
-        if(entryAbsoluteLink == null && entry.parentFeed.getHref() != null) {
+        UstadJSOPDSFeed parentFeed = entry.getParentFeed();
+        UmOpdsLink entryAbsoluteLink = entry.getParentFeed().getAbsoluteSelfLink();
+        if(entryAbsoluteLink == null && entry.getParentFeed().getHref() != null) {
             parentFeed.addLink(UstadJSOPDSFeed.LINK_REL_SELF_ABSOLUTE,
                     parentFeed.isAcquisitionFeed() ? UstadJSOPDSFeed.TYPE_ACQUISITIONFEED
                     : UstadJSOPDSFeed.TYPE_NAVIGATIONFEED, parentFeed.getHref());
         }
 
         catalogEntryArgs.put(CatalogEntryPresenter.ARG_ENTRY_OPDS_STR,
-                entry.parentFeed.serializeToString(true));
+                entry.getParentFeed().serializeToString(true));
         catalogEntryArgs.put(CatalogEntryPresenter.ARG_ENTRY_ID,
-                entry.id);
+                entry.getItemId());
+        if(titlebarText != null)
+            catalogEntryArgs.put(CatalogEntryPresenter.ARG_TITLEBAR_TEXT, titlebarText);
+
         UstadMobileSystemImpl.getInstance().go(CatalogEntryView.VIEW_NAME, catalogEntryArgs,
                 getContext());
     }
+
+    /**
+     * Open the given entry in the catalog entry view
+     *
+     * @param entry The OPDS entry to navigate open.
+     */
+     public void handleOpenEntryView(UstadJSOPDSEntry entry) {
+        handleOpenEntryView(entry, null);
+    }
+
+
 
     /**
      * Follow a link to a catalog entry. Use a URL that should point to an OPDS entry .
@@ -226,7 +246,7 @@ public abstract class BaseCatalogPresenter extends UstadBaseController implement
         switch(commandId) {
             case CMD_REMOVE_ENTRIES:
                 for(int i = 0; i < removeEntriesSelected.length; i++) {
-                    CatalogPresenter.removeEntry(removeEntriesSelected[i].id,
+                    CatalogPresenter.removeEntry(removeEntriesSelected[i].getItemId(),
                             CatalogPresenter.ALL_RESOURCES, getContext());
                 }
                 onEntriesRemoved();

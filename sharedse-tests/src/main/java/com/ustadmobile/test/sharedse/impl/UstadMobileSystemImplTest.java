@@ -1,8 +1,11 @@
 package com.ustadmobile.test.sharedse.impl;
 
 import com.ustadmobile.core.catalog.contenttype.EPUBTypePlugin;
+import com.ustadmobile.core.impl.ContainerMountRequest;
 import com.ustadmobile.core.impl.UMLog;
+import com.ustadmobile.core.impl.UmCallback;
 import com.ustadmobile.core.opds.UstadJSOPDSFeed;
+import com.ustadmobile.core.opds.db.UmOpdsDbManager;
 import com.ustadmobile.core.tincan.TinCanResultListener;
 import com.ustadmobile.core.view.AppView;
 import com.ustadmobile.port.sharedse.impl.UstadMobileSystemImplSE;
@@ -74,8 +77,8 @@ public class UstadMobileSystemImplTest extends UstadMobileSystemImplSE {
     }
 
     @Override
-    public String getAppSetupFile(Object context, boolean zip) {
-        return null;
+    public void getAppSetupFile(Object context, boolean zip, UmCallback callback) {
+
     }
     
     public String getCacheDir(int mode, Object context) {
@@ -223,14 +226,6 @@ public class UstadMobileSystemImplTest extends UstadMobileSystemImplSE {
     }
 
     @Override
-    public String getExtensionFromMimeType(String mimeType) {
-        if(mimeType.equals(UstadJSOPDSFeed.TYPE_EPUBCONTAINER))
-            return "epub";
-
-        return null;
-    }
-
-    @Override
     public void getResumableRegistrations(String activityId, Object context, TinCanResultListener listener) {
 
     }
@@ -248,6 +243,21 @@ public class UstadMobileSystemImplTest extends UstadMobileSystemImplSE {
     @Override
     public String getManifestPreference(String key, Object context) {
         //TODO: Implement this
+        return null;
+    }
+
+    @Override
+    public String getUserDetail(String username, int field, Object dbContext) {
+        return null;
+    }
+
+    @Override
+    public void mountContainer(ContainerMountRequest request, int id, UmCallback callback) {
+        //do nothing at the moment
+    }
+
+    @Override
+    public UmOpdsDbManager getOpdsDbManager() {
         return null;
     }
 }

@@ -33,14 +33,10 @@
 package com.ustadmobile.port.android.view;
 
 
-import android.app.Dialog;
 import android.content.BroadcastReceiver;
-import android.content.DialogInterface;
+import android.content.Context;
 import android.os.Bundle;
-import android.support.v4.app.DialogFragment;
-import android.support.v4.app.Fragment;
 import android.support.v4.widget.SwipeRefreshLayout;
-import android.support.v7.app.AlertDialog;
 import android.support.v7.widget.LinearLayoutManager;
 import android.support.v7.widget.RecyclerView;
 import android.view.LayoutInflater;
@@ -50,16 +46,12 @@ import android.view.MenuItem;
 import android.view.SubMenu;
 import android.view.View;
 import android.view.ViewGroup;
-import android.widget.AdapterView;
 import android.widget.Button;
-import android.widget.EditText;
 
 import com.toughra.ustadmobile.R;
 import com.ustadmobile.core.controller.CatalogPresenter;
-import com.ustadmobile.core.controller.ControllerReadyListener;
-import com.ustadmobile.core.controller.UstadController;
-import com.ustadmobile.core.impl.UstadMobileSystemImpl;
 import com.ustadmobile.core.model.CourseProgress;
+import com.ustadmobile.core.opds.OpdsFilterOptions;
 import com.ustadmobile.core.opds.UstadJSOPDSEntry;
 import com.ustadmobile.core.opds.UstadJSOPDSItem;
 import com.ustadmobile.core.view.CatalogView;
@@ -131,6 +123,38 @@ public class CatalogOPDSFragment extends UstadBaseFragment implements View.OnCli
 
     private ArrayList<UstadJSOPDSEntry> entryList = new ArrayList<>();
 
+    private OpdsFilterOptions filterOptions;
+
+    private CatalogOPDSFragmentListener catalogOpdsFragmentListener;
+
+
+    /**
+     * This interface *should* be implemented by any activity that holds a catalog fragment. The
+     * fragment will fire events that instruct the activity to update the filter bar and
+     * the visibility of the floating action button.
+     */
+    public interface CatalogOPDSFragmentListener {
+
+        /**
+         * Notifies the hosting activity that the filter options have been updated (e.g. loaded).
+         * The activity should call getFilterOptions to get the current filter options
+         *
+         * @see CatalogOPDSFragment#getFilterOptions()
+         * @param catalogFragment
+         */
+        void filterOptionsUpdated(CatalogOPDSFragment catalogFragment);
+
+        /**
+         * Notifies the hosting activity to show/hide the floating action button for adding a feed.
+         * The activity should call isAddOptionAvaialble to see if the floating action button
+         * should be shown.
+         *
+         * @see CatalogOPDSFragment#isAddOptionAvailable()
+         * @param catalogFragment
+         */
+        void updateAddFabVisibility(CatalogOPDSFragment catalogFragment);
+
+    }
 
     /**
      * Use this factory method to create a new instance of
@@ -174,8 +198,6 @@ public class CatalogOPDSFragment extends UstadBaseFragment implements View.OnCli
         mRecyclerView = rootContainer.findViewById(R.id.fragment_catalog_recyclerview);
         mRecyclerLayoutManager = new LinearLayoutManager(getContext());
         mRecyclerView.setLayoutManager(mRecyclerLayoutManager);
-
-        rootContainer.findViewById(R.id.fragment_catalog_addbutton).setOnClickListener(this);
 
         mCatalogPresenter = new CatalogPresenter(getContext(), this);
 
@@ -257,6 +279,22 @@ public class CatalogOPDSFragment extends UstadBaseFragment implements View.OnCli
         mCatalogPresenter.onStop();
     }
 
+    @Override
+    public void onAttach(Context context) {
+        if(context instanceof CatalogOPDSFragmentListener) {
+            this.catalogOpdsFragmentListener = (CatalogOPDSFragmentListener)context;
+        }
+
+        super.onAttach(context);
+
+    }
+
+    @Override
+    public void onDetach() {
+        super.onDetach();
+        catalogOpdsFragmentListener = null;
+    }
+
     /**
      * Get the OPDSEntryCard for the given OPDS Entry ID
      *
@@ -318,34 +356,11 @@ public class CatalogOPDSFragment extends UstadBaseFragment implements View.OnCli
         if(itemId == MENUCMDID_ADD) {
             mCatalogPresenter.handleClickAdd();
             return true;
-        }else if(itemId == R.id.action_opds_acquire) {
-//                TODO: Handle this in the presenter not the view
-//                if(getSelectedEntries().length > 0) {
-////                    UstadJSOPDSFeed feed = mCatalogController.getModel().opdsFeed;
-//                    UstadJSOPDSFeed feed = mCatalogController.getModel().opdsFeed;
-//                    UstadJSOPDSFeed acquisitionFeed = new UstadJSOPDSFeed(feed.href, feed.title,
-//                            feed.id+"-acquire");
-//                    UstadJSOPDSEntry[] selectedEntries = getSelectedEntries();
-//                    for(int i = 0; i  <selectedEntries.length; i++) {
-//                        acquisitionFeed.addEntry(new UstadJSOPDSEntry(acquisitionFeed, selectedEntries[i]));
-//                    }
-//
-//                    Vector selectEntriesVector = new Vector();
-//                    for(int i = 0; i < selectedEntries.length; i++) {
-//                        selectEntriesVector.addElement(selectedEntries[i]);
-//                    }
-//
-//                    mCatalogController.handleClickDownload(acquisitionFeed, selectEntriesVector);
-//                }else {
-//                    mCatalogController.handleClickDownloadAll();
-//                }
-
-            return true;
         }else if(itemId == MENUCMDID_DELETE) {
             mCatalogPresenter.handleClickDelete();
             return true;
         }else if(itemId == MENUCMD_SHARE) {
-            //mCatalogController.handleClickShare()
+            mCatalogPresenter.handleClickShare();
             return true;
         }
 
@@ -387,7 +402,7 @@ public class CatalogOPDSFragment extends UstadBaseFragment implements View.OnCli
                 getActivity().supportInvalidateOptionsMenu();
             }
         }else {
-            int removeIndex = UstadJSOPDSItem.indexOfItemInVector(card.getEntry().id, mSelectedEntries);
+            int removeIndex = UstadJSOPDSItem.indexOfItemInVector(card.getEntry().getItemId(), mSelectedEntries);
             if(removeIndex != -1)
                 mSelectedEntries.removeElementAt(removeIndex);
 
@@ -407,17 +422,29 @@ public class CatalogOPDSFragment extends UstadBaseFragment implements View.OnCli
             if(mSelectedEntries.size() > 0) {
                 toggleEntrySelected(card);
             }else {
-                mCatalogPresenter.handleClickEntry(card.getEntry().id);
+                mCatalogPresenter.handleClickEntry(card.getEntry().getItemId());
             }
             return;
         }
 
         if(view.getId() == R.id.fragment_catalog_footer_button) {
             mCatalogPresenter.handleClickFooterButton();
-        }else if(view.getId() == R.id.fragment_catalog_addbutton) {
+        }else if(view.getId() == R.id.activity_basepoint_fab) {
             mCatalogPresenter.handleClickAdd();
         }
     }
+
+    @Override
+    public void setFilterOptions(OpdsFilterOptions filterOptions) {
+        this.filterOptions = filterOptions;
+        if(this.catalogOpdsFragmentListener != null)
+            catalogOpdsFragmentListener.filterOptionsUpdated(this);
+    }
+
+    public OpdsFilterOptions getFilterOptions() {
+        return filterOptions;
+    }
+
 
     @Override
     public boolean onLongClick(View view) {
@@ -515,9 +542,9 @@ public class CatalogOPDSFragment extends UstadBaseFragment implements View.OnCli
         this.mSelectedEntries = entries;
 
         for(int i = 0; i < entryList.size(); i++) {
-            boolean isSelected = UstadJSOPDSItem.indexOfItemInVector(entryList.get(i).id, entries) != -1;
-            if(idToCardMap.containsKey(entryList.get(i).id)) {
-                idToCardMap.get(entryList.get(i).id).setSelected(isSelected);
+            boolean isSelected = UstadJSOPDSItem.indexOfItemInVector(entryList.get(i).getItemId(), entries) != -1;
+            if(idToCardMap.containsKey(entryList.get(i).getItemId())) {
+                idToCardMap.get(entryList.get(i).getItemId()).setSelected(isSelected);
             }
         }
 
@@ -562,14 +589,17 @@ public class CatalogOPDSFragment extends UstadBaseFragment implements View.OnCli
     @Override
     public void setAddOptionAvailable(final boolean addOptionAvailable) {
         this.mAddOptionAvailable = addOptionAvailable;
-        if(getActivity() == null)
-            return;
-        super.runOnUiThread( new Runnable() {
+        runOnUiThread(new Runnable() {
+            @Override
             public void run() {
-                rootContainer.findViewById(R.id.fragment_catalog_addbutton).setVisibility(
-                        addOptionAvailable ? View.VISIBLE : View.GONE);
+                if(catalogOpdsFragmentListener != null)
+                    catalogOpdsFragmentListener.updateAddFabVisibility(CatalogOPDSFragment.this);
             }
         });
+    }
+
+    public boolean isAddOptionAvailable() {
+        return mAddOptionAvailable;
     }
 
     public class OPDSRecyclerAdapter extends RecyclerView.Adapter<OPDSRecyclerAdapter.ViewHolder> {
@@ -601,7 +631,7 @@ public class CatalogOPDSFragment extends UstadBaseFragment implements View.OnCli
             holder.mEntryCard.setOPDSEntry(entryList.get(position));
             holder.mEntryCard.setOnClickListener(CatalogOPDSFragment.this);
             holder.mEntryCard.setOnLongClickListener(CatalogOPDSFragment.this);
-            String entryId = entryList.get(position).id;
+            String entryId = entryList.get(position).getItemId();
             if(idToStatusMap.containsKey(entryId)){
                 holder.mEntryCard.setOPDSEntryOverlay(idToStatusMap.get(entryId));
             }else {
@@ -631,7 +661,7 @@ public class CatalogOPDSFragment extends UstadBaseFragment implements View.OnCli
                         mCatalogPresenter, CatalogOPDSFragment.this);
             }
 
-            idToCardMap.put(entryList.get(position).id, holder.mEntryCard);
+            idToCardMap.put(entryList.get(position).getItemId(), holder.mEntryCard);
 
 
         }

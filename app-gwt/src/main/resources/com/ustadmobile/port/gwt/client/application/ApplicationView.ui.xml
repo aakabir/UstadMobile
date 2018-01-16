@@ -6,21 +6,7 @@
     
     <ui:import field="com.ustadmobile.port.gwt.client.place.NameTokens.HOME"/>
 	<ui:import field="com.ustadmobile.port.gwt.client.place.NameTokens.LOGIN"/>
-
-    <!-- 
-    <g:HTMLPanel>
-		Hello Application View!
-        <g:SimplePanel ui:field="main">
-        	<g:Label>Main Panel</g:Label>
-        	
-        </g:SimplePanel>
-        
-        <g:SimplePanel ui:field="login">
-        	<g:Label>Login Panel</g:Label>
-        </g:SimplePanel>
-        
-    </g:HTMLPanel>
-     -->
+	<ui:import field="com.ustadmobile.port.gwt.client.place.NameTokens.ABOUT"/>
     
     
     <m:MaterialPanel>
@@ -50,9 +36,15 @@
         		<m:MaterialLabel>Main Material Panel</m:MaterialLabel>
         	</m:MaterialPanel>
         	
+        	<m:MaterialPanel ui:field="about">
+        		<m:MaterialLabel>About Material Panel</m:MaterialLabel>
+        	</m:MaterialPanel>
+        	
         	<m:MaterialPanel ui:field="login">
         		<m:MaterialLabel>Login Material Panel</m:MaterialLabel>
         	</m:MaterialPanel>
+        	
+        	
         </m:MaterialContainer>
 
     </m:MaterialPanel>

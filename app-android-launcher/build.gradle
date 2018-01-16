@@ -10,9 +10,22 @@ if (project.file("../app-android/buildconfig.local.properties").exists()) {
 //See:
 // https://developer.android.com/studio/projects/android-library.html
 
+//As Per https://developer.android.com/studio/publish/app-signing.html#release-mode
+def keyStorePropertiesExists = rootProject.file("keystore.properties").exists()
+def keystoreProperties = new Properties()
+
+if (keyStorePropertiesExists) {
+    keystoreProperties.load(new FileInputStream(rootProject.file("keystore.properties")))
+}
+
+
 android {
     compileSdkVersion 26
-    buildToolsVersion "26.0.1"
+    buildToolsVersion '26.0.2'
+
+    lintOptions {
+        abortOnError false
+    }
 
     defaultConfig {
         applicationId "com.toughra.ustadmobile.launcher"
@@ -25,11 +38,27 @@ android {
 
     }
 
+    signingConfigs {
+        release {
+            keyAlias keyStorePropertiesExists ? keystoreProperties['keyAlias'] : "default"
+            keyPassword keyStorePropertiesExists ? keystoreProperties['keyPassword'] : "default"
+            storeFile keyStorePropertiesExists ? file(keystoreProperties['storeFile']) : new File("keystore.ks")
+            storePassword keyStorePropertiesExists ? keystoreProperties['storePassword'] : "default"
+        }
+    }
+
+    dexOptions {
+        jumboMode = true
+    }
+
+    flavorDimensions "config"
+
     productFlavors {
         /*
          * The localconfig flavor is created based on the buildconfig.local.properties settings
          */
         localconfig {
+            dimension "config"
             applicationId project.ext.buildConfigProperties['android.applicationId']
             testApplicationId = project.ext.buildConfigProperties['android.applicationId'] + ".test"
             versionCode rootProject.ext.ustadVersionCode + Integer.parseInt(rootProject.ext.buildConfigProperties['localVersionCode'])
@@ -44,6 +73,7 @@ android {
          * having to remove the local config files themselves
          */
         vanilla {
+            dimension "config"
             applicationId "com.toughra.ustadmobile"
             testApplicationId "com.toughra.ustadmobile.appandroid.test"
             versionCode rootProject.ext.ustadVersionCode
@@ -57,18 +87,13 @@ android {
         }
 
         release {
-            testCoverageEnabled = true
+            testCoverageEnabled = false
+            debuggable false
             minifyEnabled false
             proguardFiles getDefaultProguardFile('proguard-android.txt'), 'proguard-rules.pro'
+            signingConfig signingConfigs.release
         }
     }
-}
-
-configurations {
-    localconfigDebugCompile {}
-    localconfigReleaseCompile {}
-    vanillaDebugCompile {}
-    vanillaReleaseCompile {}
 }
 
 configurations.all {
@@ -85,11 +110,7 @@ dependencies {
     compile project(':core')
     compile project(':sharedse')
 
-    localconfigDebugCompile project(path: ':app-android', configuration: "localconfigDebug")
-    localconfigReleaseCompile project(path: ':app-android', configuration: "localconfigRelease")
-
-    vanillaDebugCompile project(path: ':app-android', configuration: 'vanillaDebug')
-    vanillaReleaseCompile project(path: ':app-android', configuration: "vanillaRelease")
+    implementation project(":app-android")
 
     compile fileTree(dir: 'libs', include: ['*.jar'])
     androidTestCompile('com.android.support.test.espresso:espresso-core:2.2.2', {
@@ -98,3 +119,4 @@ dependencies {
 
     testCompile 'junit:junit:4.12'
 }
+
