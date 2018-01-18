@@ -1,0 +1,13 @@
+<ui:UiBinder xmlns:ui='urn:ui:com.google.gwt.uibinder'
+             xmlns:g='urn:import:com.google.gwt.user.client.ui'>
+             
+    
+    
+    <g:HTMLPanel>
+    	<p>Hello CoreLoginView!</p>
+        <g:TextBox ui:field="textBox"/><br/>
+        <g:TextArea ui:field="version"/><br/>
+        <g:Button ui:field="randomButton" text="Update Text"/>
+    </g:HTMLPanel>
+    
+</ui:UiBinder>
