@@ -33,8 +33,8 @@
         
 
 		<!-- GWT Material -->
-		<gwt-material.version>2.0-rc1</gwt-material.version>
-        <gwt-material-table.version>1.0-rc1</gwt-material-table.version>
+	<gwt-material.version>2.0</gwt-material.version>
+        <gwt-material-table.version>2.0</gwt-material-table.version>
       
       	<gwt.style>OBF</gwt.style>
       	
