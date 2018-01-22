@@ -64,7 +64,7 @@ public class CoreLoginPresenter
     
     //A Presenter having a NameToken is a Place.
     @ProxyStandard
-    @NameToken(NameTokens.ABOUT)
+    @NameToken(NameTokens.CORELOGIN)
     @NoGatekeeper
     interface MyProxy extends ProxyPlace<CoreLoginPresenter> {
     }
@@ -93,9 +93,11 @@ public class CoreLoginPresenter
         getView().setUiHandlers((CoreLoginPresenterHandler) mController);
         
     }
-    
-	@Override
+
 	public void dummyHandler() {
-		GWT.log("Alora!");
+		// TODO Auto-generated method stub
+		
 	}
+    
+	
 }

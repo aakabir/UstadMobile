@@ -6,8 +6,8 @@
         <wb-resource deploy-path="/WEB-INF/classes" source-path="/src-jre/main/java"/>
         <wb-resource deploy-path="/WEB-INF/classes" source-path="/src-xpp/main/java"/>
         <wb-resource deploy-path="/WEB-INF/classes" source-path="/src-json/main/java"/>
-        <wb-resource deploy-path="/WEB-INF/classes" source-path="/core-src/main/java"/>
         <wb-resource deploy-path="/WEB-INF/classes" source-path="/src/main/java"/>
+        <wb-resource deploy-path="/WEB-INF/classes" source-path="/core-src/main/java"/>
         <property name="java-output-path" value="/gwtp-basic-archetype/coding/projects/arcbees/archetypes/target/checkout/gwtp-basic/target/gwtp-basic-archetype-1.5.3/WEB-INF/classes"/>
         <property name="context-root" value="ustadmobile-gwtp"/>
     </wb-module>

@@ -57,6 +57,9 @@ public class ApplicationPresenter
     //The Presenter login slot
     public static final NestedSlot SLOT_LOGIN = new NestedSlot();
     
+    //The Presenter core login slot
+    public static final NestedSlot SLOT_CORELOGIN = new NestedSlot();
+    
     //The About page slot
     public static final NestedSlot SLOT_ABOUT = new NestedSlot();
     

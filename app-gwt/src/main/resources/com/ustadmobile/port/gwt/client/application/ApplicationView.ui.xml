@@ -18,10 +18,12 @@
                     <m:MaterialLink href= "#{HOME}" iconType="POLYMER" />
                 </m:MaterialNavSection>
             </m:MaterialNavBar>
+            <!--  
             <m:MaterialSideNav m:id="sidenav" type="PUSH" width="280" alwaysShowActivator="true" showOnAttach="true">
                 <m:MaterialLink text="Login" href="#{LOGIN}" iconType="POLYMER"/>
                 <m:MaterialLink text="Home" href="#{HOME}" iconType="POLYMER"/>
             </m:MaterialSideNav>
+            -->
         </m:MaterialHeader>
 
         <m:MaterialContainer>
@@ -42,6 +44,10 @@
         	
         	<m:MaterialPanel ui:field="login">
         		<m:MaterialLabel>Login Material Panel</m:MaterialLabel>
+        	</m:MaterialPanel>
+        	
+        	<m:MaterialPanel ui:field="corelogin">
+        		<m:MaterialLabel>Core Login Material Panel</m:MaterialLabel>
         	</m:MaterialPanel>
         	
         	
