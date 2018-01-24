@@ -38,18 +38,19 @@
         		<m:MaterialLabel>Main Material Panel</m:MaterialLabel>
         	</m:MaterialPanel>
         	
+        	<m:MaterialPanel></m:MaterialPanel>
+        	
         	<m:MaterialPanel ui:field="about">
         		<m:MaterialLabel>About Material Panel</m:MaterialLabel>
         	</m:MaterialPanel>
         	
         	<m:MaterialPanel ui:field="login">
         		<m:MaterialLabel>Login Material Panel</m:MaterialLabel>
-        	</m:MaterialPanel>
+        	</m:MaterialPanel>        	
         	
         	<m:MaterialPanel ui:field="corelogin">
         		<m:MaterialLabel>Core Login Material Panel</m:MaterialLabel>
         	</m:MaterialPanel>
-        	
         	
         </m:MaterialContainer>
 

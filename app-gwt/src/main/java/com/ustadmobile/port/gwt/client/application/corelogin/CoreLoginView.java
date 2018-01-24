@@ -45,12 +45,6 @@ public class CoreLoginView extends ViewWithUiHandlers<CoreLoginPresenterHandler>
     interface Binder extends UiBinder<Widget, CoreLoginView> {
     }
     
-    @UiField
-    TextBox textBox;
-    
-    @UiField
-    TextArea version;
-    
     String xAPIServerURL;
     
     //This method initializes any DOM elements
@@ -81,7 +75,6 @@ public class CoreLoginView extends ViewWithUiHandlers<CoreLoginPresenterHandler>
 	@Override
 	public void setTitle(String title) {
 		// TODO Auto-generated method stub
-		textBox.setText(title);
 		
 	}
 
@@ -101,7 +94,6 @@ public class CoreLoginView extends ViewWithUiHandlers<CoreLoginPresenterHandler>
 	@Override
 	public void setVersionLabel(String versionLabel) {
 		// TODO Auto-generated method stub
-		this.version.setText(versionLabel);
 		
 	}
 

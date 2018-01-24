@@ -20,7 +20,7 @@ public class LoggedInGatekeeper implements Gatekeeper{
     public LoggedInGatekeeper() {
         this.currentUser = null;
     }
-
+	
 	@Override
 	public boolean canReveal() {
 		System.out.println("Can I reveal?");

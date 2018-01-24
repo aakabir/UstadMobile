@@ -5,9 +5,8 @@
     
     <g:HTMLPanel>
     	<p>Hello CoreLoginView!</p>
-        <g:TextBox ui:field="textBox"/><br/>
-        <g:TextArea ui:field="version"/><br/>
-        <g:Button ui:field="randomButton" text="Update Text"/>
+        <g:Button ui:field="randomButton" text="Random Button"/>
+
     </g:HTMLPanel>
     
 </ui:UiBinder>

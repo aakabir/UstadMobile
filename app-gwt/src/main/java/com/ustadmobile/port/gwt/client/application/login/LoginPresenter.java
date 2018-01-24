@@ -74,7 +74,6 @@ public class LoginPresenter
             , PlaceManager placeManager
     		) {
         super(eventBus, view, proxy, 
-        		//ApplicationPresenter.SLOT_MAIN
         		ApplicationPresenter.SLOT_LOGIN
         		);
         

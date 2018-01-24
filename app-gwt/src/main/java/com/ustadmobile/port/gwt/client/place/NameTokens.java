@@ -9,5 +9,5 @@ public class NameTokens {
     public static final String HOME = "!home";
     public static final String LOGIN = "!login";
     public static final String ABOUT = "!about";
-    public static final String CORELOGIN = "!login";
+    public static final String CORELOGIN = "!corelogin";
 }

@@ -54,14 +54,14 @@ public class ApplicationPresenter
     //The Presenter main slot
     public static final NestedSlot SLOT_MAIN = new NestedSlot();
     
+    //The About page slot
+    public static final NestedSlot SLOT_ABOUT = new NestedSlot();
+    
     //The Presenter login slot
     public static final NestedSlot SLOT_LOGIN = new NestedSlot();
     
     //The Presenter core login slot
     public static final NestedSlot SLOT_CORELOGIN = new NestedSlot();
-    
-    //The About page slot
-    public static final NestedSlot SLOT_ABOUT = new NestedSlot();
     
     //public static Logger logger = Logger.getLogger("NameOfYourLogger");
     
@@ -228,6 +228,16 @@ public class ApplicationPresenter
 		 System.out.println("Going to about..");
 		 PlaceRequest placeRequest = new PlaceRequest.Builder()
 	                .nameToken(NameTokens.ABOUT)
+	                .build();
+		 placeManager.revealPlace(placeRequest);
+    			 
+    }
+    
+    public void goToCoreLogin(){
+		// Navigate to the HomePresenter
+		 System.out.println("Going to login..");
+		 PlaceRequest placeRequest = new PlaceRequest.Builder()
+	                .nameToken(NameTokens.CORELOGIN)
 	                .build();
 		 placeManager.revealPlace(placeRequest);
     			 

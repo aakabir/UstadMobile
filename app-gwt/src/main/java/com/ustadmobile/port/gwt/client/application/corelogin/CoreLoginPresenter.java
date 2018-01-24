@@ -1,11 +1,7 @@
 package com.ustadmobile.port.gwt.client.application.corelogin;
 
-
-import com.ustadmobile.core.view.AboutView;
 import com.ustadmobile.port.gwt.client.application.ApplicationPresenter;
 import com.ustadmobile.port.gwt.client.place.NameTokens;
-
-import java.util.Hashtable;
 
 import com.google.gwt.core.client.GWT;
 import com.google.inject.Inject;
@@ -19,7 +15,6 @@ import com.gwtplatform.mvp.client.annotations.NoGatekeeper;
 import com.gwtplatform.mvp.client.annotations.ProxyStandard;
 import com.gwtplatform.mvp.client.proxy.PlaceManager;
 import com.gwtplatform.mvp.client.proxy.ProxyPlace;
-import com.gwtplatform.mvp.shared.proxy.PlaceRequest;
 
 
 /**
@@ -39,7 +34,7 @@ public class CoreLoginPresenter
 	
 	/**
      * This class extends the core controller/presenter and implements UiHandler
-     * This class is extended by AboutPresenters' view interface so it indirectly also implements UiHandler
+     * This class is extended by CoreLoginPresenters' view interface so it indirectly also implements UiHandler
      * 
      * @author varuna
      *
@@ -52,11 +47,9 @@ public class CoreLoginPresenter
 			// TODO Auto-generated constructor stub
 			GWT.log("CoreLoginPresenterHandler constructor. TODO.");
 		}
-
-		
     }
     
-    //About Presenter's View Interface
+    //Core Login's Presenter's View Interface
     interface MyView extends 	View, 
 								HasUiHandlers<CoreLoginPresenterHandler>, 
 								com.ustadmobile.core.view.LoginView {
@@ -77,7 +70,7 @@ public class CoreLoginPresenter
     @Inject
     CoreLoginPresenter(EventBus eventBus, MyView view, MyProxy proxy, PlaceManager placeManager) {
         super(eventBus, view, proxy, 
-        		ApplicationPresenter.SLOT_ABOUT
+        		ApplicationPresenter.SLOT_CORELOGIN
         		);
         
         this.placeManager = placeManager;
@@ -85,7 +78,7 @@ public class CoreLoginPresenter
         
         mController = new CoreLoginPresenterHandler((CoreLoginView) view);
         
-        //This will create the AboutView object within the AboutController's from its onCreate()
+        //This will create the CoreLoginView object within the CoreLoginController's from its onCreate()
         //Args are never used anyway..
         //mController.onCreate(null, null);
         //mController.
@@ -98,6 +91,4 @@ public class CoreLoginPresenter
 		// TODO Auto-generated method stub
 		
 	}
-    
-	
 }
