@@ -25,6 +25,9 @@ public class ApplicationView extends ViewImpl implements ApplicationPresenter.My
     
     @UiField
     MaterialPanel corelogin;
+    
+    @UiField
+    MaterialPanel base;
 
     @Inject
     ApplicationView(
@@ -36,6 +39,7 @@ public class ApplicationView extends ViewImpl implements ApplicationPresenter.My
         bindSlot(ApplicationPresenter.SLOT_ABOUT, about);
         bindSlot(ApplicationPresenter.SLOT_LOGIN, login);
         bindSlot(ApplicationPresenter.SLOT_CORELOGIN, corelogin);
+        bindSlot(ApplicationPresenter.SLOT_BASE, base);
         
     }
 }

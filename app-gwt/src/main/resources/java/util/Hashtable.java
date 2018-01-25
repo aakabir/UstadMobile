@@ -26,6 +26,10 @@ public class Hashtable<K,V> {
 		return this.map.isEmpty();
 	}
 	
+	public Set<K> keySet() {
+		return this.map.keySet();
+	}
+	
 	public Enumeration keys(){
 		Enumeration enu = java.util.Collections.enumeration(this.map.keySet());
 		return enu;

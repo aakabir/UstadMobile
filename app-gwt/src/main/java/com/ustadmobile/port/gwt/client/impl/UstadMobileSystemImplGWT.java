@@ -3,8 +3,11 @@
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
+import java.util.HashMap;
 import java.util.Hashtable;
 import java.util.LinkedHashMap;
+import java.util.Map;
+import java.util.Set;
 
 import org.json.JSONObject;
 import org.xmlpull.v1.XmlPullParser;
@@ -12,6 +15,7 @@ import org.xmlpull.v1.XmlPullParserException;
 import org.xmlpull.v1.XmlSerializer;
 
 import com.google.gwt.core.client.GWT;
+import com.google.gwt.dev.protobuf.UnknownFieldSet.Field;
 import com.google.gwt.http.client.Request;
 import com.google.gwt.http.client.RequestBuilder;
 import com.google.gwt.http.client.RequestCallback;
@@ -49,21 +53,35 @@ public class UstadMobileSystemImplGWT extends UstadMobileSystemImpl{
 	
 	//PlaceManager
 	private PlaceManager placeManager;
-	
-	public void go(Object context, String destination) {
-		
-		// Navigate to destination (value should be part of NameTokens)
-    	System.out.println("Going to " + destination + ".");
-    	PlaceRequest placeRequest = new PlaceRequest.Builder()
-	            .nameToken(destination)
-	            .build();
-    	placeManager.revealPlace(placeRequest);		
-		
-	}
 
 	@Override
 	public void go(String viewName, Hashtable args, Object context) {
-		// TODO Auto-generated method stub
+		//TODO: WIP
+		
+		/**
+		 * 1. Validate viewName
+		 * In GWT viewName should be part of NameTokens
+		 */
+		//Loop through the public final string variables and check
+		//Lets assume its valid..
+		
+		Map<String, String> argsMap = new HashMap();
+		Set<String> keys = args.keySet();
+		for(String key: keys){
+			argsMap.put(key, (String) args.get(key));
+		}
+		
+		int destinationQueryPos = viewName.indexOf('?');
+		String viewNameWithoutArgs = viewName;
+		if(destinationQueryPos > 0) {
+			viewNameWithoutArgs = viewName.substring(0, destinationQueryPos);
+		}
+		GWT.log("Going to: " + viewNameWithoutArgs + " .");
+		PlaceRequest placeRequest = new PlaceRequest.Builder()
+				.nameToken(viewNameWithoutArgs)
+				//.with(argsMap)
+				.build();
+		((PlaceManager) context).revealPlace(placeRequest);
 		
 	}
 

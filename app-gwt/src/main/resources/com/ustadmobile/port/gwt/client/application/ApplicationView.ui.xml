@@ -7,24 +7,20 @@
     <ui:import field="com.ustadmobile.port.gwt.client.place.NameTokens.HOME"/>
 	<ui:import field="com.ustadmobile.port.gwt.client.place.NameTokens.LOGIN"/>
 	<ui:import field="com.ustadmobile.port.gwt.client.place.NameTokens.ABOUT"/>
+	<ui:import field="com.ustadmobile.port.gwt.client.place.NameTokens.CORELOGIN"/>
+	<ui:import field="com.ustadmobile.port.gwt.client.place.NameTokens.BASE"/>
     
     
     <m:MaterialPanel>
-        <m:MaterialHeader>
-            <m:MaterialNavBar activates="sidenav">
-                <m:MaterialNavBrand paddingLeft="60" text="App" />
-                <m:MaterialNavSection float="RIGHT">
-                    <m:MaterialLink text="Login" href='#{LOGIN}'/>
-                    <m:MaterialLink href= "#{HOME}" iconType="POLYMER" />
-                </m:MaterialNavSection>
+        <m:MaterialHeader ui:field="header">
+            <m:MaterialNavBar activates="sidenavDrawer" backgroundColor="BLUE" shadow="1">
+                <m:MaterialNavBrand paddingLeft="60" text="Ustad Mobile" />
             </m:MaterialNavBar>
-            <!--  
-            <m:MaterialSideNav m:id="sidenav" type="PUSH" width="280" alwaysShowActivator="true" showOnAttach="true">
-                <m:MaterialLink text="Login" href="#{LOGIN}" iconType="POLYMER"/>
-                <m:MaterialLink text="Home" href="#{HOME}" iconType="POLYMER"/>
-            </m:MaterialSideNav>
-            -->
         </m:MaterialHeader>
+
+        <m:MaterialSideNavDrawer m:id="sidenavDrawer" ui:field="sideNav" width="300">
+            <m:MaterialLink iconType="INFO_OUTLINE" text="About"/>
+        </m:MaterialSideNavDrawer>
 
         <m:MaterialContainer>
         
@@ -33,6 +29,11 @@
                 <m:MaterialLabel text="GMD 2.0" textColor="BLUE" fontSize="2em"/>
                 <m:MaterialLabel text="UstadMobile GWTP Material" textColor="BLUE" fontSize="0.8em"/>
             </m:MaterialPanel>
+            
+            <m:MaterialPanel ui:field="base">
+            	<m:MaterialLabel>Base Material Label</m:MaterialLabel>
+            </m:MaterialPanel>
+            
             
             <m:MaterialPanel ui:field="main">
         		<m:MaterialLabel>Main Material Panel</m:MaterialLabel>

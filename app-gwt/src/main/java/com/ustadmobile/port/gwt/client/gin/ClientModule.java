@@ -21,13 +21,26 @@ public class ClientModule extends AbstractPresenterModule {
     @Override
     protected void configure() {
     	
-        install(new DefaultModule
+    	/*
+    	 * We need to install the default module or else PlaceManager will not be able
+    	 * to inject 
+    	 */
+        /*
+    	install(new DefaultModule
                 .Builder()
                 .defaultPlace(NameTokens.LOGIN)
                 .errorPlace(NameTokens.LOGIN)
                 .unauthorizedPlace(NameTokens.LOGIN)
                 .build());
-        
+        */
+    	
+    	install(new DefaultModule
+                .Builder()
+                .defaultPlace(NameTokens.BASE)
+                .errorPlace(NameTokens.BASE)
+                .unauthorizedPlace(NameTokens.BASE)
+                .build());
+    	
         install(new ApplicationModule());
 
         /*

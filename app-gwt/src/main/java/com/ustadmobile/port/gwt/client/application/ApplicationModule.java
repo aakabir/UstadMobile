@@ -1,6 +1,7 @@
 package com.ustadmobile.port.gwt.client.application;
 
 import com.ustadmobile.port.gwt.client.application.about.AboutModule;
+import com.ustadmobile.port.gwt.client.application.base.BaseModule;
 import com.ustadmobile.port.gwt.client.application.corelogin.CoreLoginModule;
 import com.ustadmobile.port.gwt.client.application.home.HomeModule;
 import com.ustadmobile.port.gwt.client.application.login.LoginModule;
@@ -18,6 +19,7 @@ public class ApplicationModule extends AbstractPresenterModule {
         install(new LoginModule());
         install(new AboutModule());
         install(new CoreLoginModule());
+        install(new BaseModule());
 
         //Bind Presenter (main)
         bindPresenter(ApplicationPresenter.class, 
