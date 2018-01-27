@@ -77,7 +77,8 @@ public class BasePresenter
     		MyProxy proxy, 
     		PlaceManager placeManager) {
         super(eventBus, view, proxy, 
-        		ApplicationPresenter.SLOT_BASE
+        		//ApplicationPresenter.SLOT_BASE
+        		ApplicationPresenter.SLOT_CONTENT
         		);
         
         this.placeManager = placeManager;

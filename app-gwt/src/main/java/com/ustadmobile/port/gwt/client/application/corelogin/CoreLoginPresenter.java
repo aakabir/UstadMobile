@@ -70,7 +70,8 @@ public class CoreLoginPresenter
     @Inject
     CoreLoginPresenter(EventBus eventBus, MyView view, MyProxy proxy, PlaceManager placeManager) {
         super(eventBus, view, proxy, 
-        		ApplicationPresenter.SLOT_CORELOGIN
+        		//ApplicationPresenter.SLOT_CORELOGIN
+        		ApplicationPresenter.SLOT_CONTENT
         		);
         
         this.placeManager = placeManager;

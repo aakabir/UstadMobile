@@ -73,9 +73,13 @@ public class AboutPresenter
 
     //Constructor with GWTP Inject 
     @Inject
-    AboutPresenter(EventBus eventBus, MyView view, MyProxy proxy, PlaceManager placeManager) {
+    AboutPresenter(EventBus eventBus, 
+    		MyView view, 
+    		MyProxy proxy, 
+    		PlaceManager placeManager) {
         super(eventBus, view, proxy, 
-        		ApplicationPresenter.SLOT_ABOUT
+        		//ApplicationPresenter.SLOT_ABOUT
+        		ApplicationPresenter.SLOT_CONTENT
         		);
         
         this.placeManager = placeManager;

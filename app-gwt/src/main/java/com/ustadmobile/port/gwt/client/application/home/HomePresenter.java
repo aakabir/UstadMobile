@@ -58,7 +58,10 @@ extends Presenter<HomePresenter.MyView, HomePresenter.MyProxy> {
             ,PlaceManager placeManager
             //,ContactsWidgetPresenter contactsWidgetPresenter
     		){
-        super(eventBus, view, proxy, ApplicationPresenter.SLOT_MAIN);
+        super(eventBus, view, proxy, 
+        		//ApplicationPresenter.SLOT_MAIN
+        		ApplicationPresenter.SLOT_CONTENT
+        		);
         this.placeManager = placeManager;
         
         //ContactsWidget PresenterWidget stuff:

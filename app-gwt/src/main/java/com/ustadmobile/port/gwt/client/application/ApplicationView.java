@@ -15,6 +15,10 @@ public class ApplicationView extends ViewImpl implements ApplicationPresenter.My
     }
 
     @UiField
+    MaterialPanel content;
+    
+    /*
+    @UiField
     MaterialPanel main;
     
     @UiField
@@ -28,18 +32,21 @@ public class ApplicationView extends ViewImpl implements ApplicationPresenter.My
     
     @UiField
     MaterialPanel base;
-
+	*/
+    
     @Inject
     ApplicationView(
             Binder uiBinder) {
         initWidget(uiBinder.createAndBindUi(this));
 
         //Bind slots in ApplicationPresenter to ApplicationView's Ui Binder.
+        bindSlot(ApplicationPresenter.SLOT_CONTENT, content);
+        /*
         bindSlot(ApplicationPresenter.SLOT_MAIN, main);
         bindSlot(ApplicationPresenter.SLOT_ABOUT, about);
         bindSlot(ApplicationPresenter.SLOT_LOGIN, login);
         bindSlot(ApplicationPresenter.SLOT_CORELOGIN, corelogin);
         bindSlot(ApplicationPresenter.SLOT_BASE, base);
-        
+        */
     }
 }

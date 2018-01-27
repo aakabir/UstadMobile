@@ -52,7 +52,11 @@ public class ApplicationPresenter
     @ProxyStandard
     interface MyProxy extends Proxy<ApplicationPresenter> {
     }
+    
+    //Main Content slot
+    public static final NestedSlot SLOT_CONTENT = new NestedSlot();
 
+    /*
     //The Presenter main slot
     public static final NestedSlot SLOT_MAIN = new NestedSlot();
     
@@ -67,6 +71,7 @@ public class ApplicationPresenter
     
     //The Base page slot
     public static final NestedSlot SLOT_BASE = new NestedSlot();
+    */
     
     //public static Logger logger = Logger.getLogger("NameOfYourLogger");
     
@@ -87,7 +92,8 @@ public class ApplicationPresenter
 
         //Start BasePoint:
         UstadMobileSystemImpl impl = UstadMobileSystemImpl.getInstance();
-        impl.go(CoreBuildConfig.FIRST_DESTINATION, placeManager);
+        //impl.go(CoreBuildConfig.FIRST_DESTINATION, placeManager);
+        impl.startUI(placeManager);
         
         //If you have, 
         //view.setUiHanders(this);

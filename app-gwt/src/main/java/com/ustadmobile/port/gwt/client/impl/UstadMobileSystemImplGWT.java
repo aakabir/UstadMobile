@@ -53,6 +53,14 @@ public class UstadMobileSystemImplGWT extends UstadMobileSystemImpl{
 	
 	//PlaceManager
 	private PlaceManager placeManager;
+	
+	//GWT Logger
+	private UMLogGWT logger;
+	
+	public UstadMobileSystemImplGWT(){
+		logger = new UMLogGWT();
+		
+	}
 
 	@Override
 	public void go(String viewName, Hashtable args, Object context) {
@@ -441,8 +449,7 @@ public class UstadMobileSystemImplGWT extends UstadMobileSystemImpl{
 
 	@Override
 	public UMLog getLogger() {
-		// TODO Auto-generated method stub
-		return null;
+		return logger;
 	}
 
 	@Override

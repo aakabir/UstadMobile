@@ -19,17 +19,24 @@
         </m:MaterialHeader>
 
         <m:MaterialSideNavDrawer m:id="sidenavDrawer" ui:field="sideNav" width="300">
-            <m:MaterialLink iconType="INFO_OUTLINE" text="About"/>
+            <m:MaterialLink iconType="INFO_OUTLINE" href="#{ABOUT}" text="About"/>
         </m:MaterialSideNavDrawer>
 
         <m:MaterialContainer>
-        
+        	
+        	<!--  
             <m:MaterialPanel textAlign="CENTER">
                 <m:MaterialIcon marginTop="120" textColor="BLUE_DARKEN_1" iconType="POLYMER" iconSize="LARGE"/>
                 <m:MaterialLabel text="GMD 2.0" textColor="BLUE" fontSize="2em"/>
                 <m:MaterialLabel text="UstadMobile GWTP Material" textColor="BLUE" fontSize="0.8em"/>
             </m:MaterialPanel>
+            -->
             
+            <m:MaterialPanel ui:field="content">
+            	<m:MaterialLabel>Content Material Label</m:MaterialLabel>
+            </m:MaterialPanel>
+            
+            <!--  
             <m:MaterialPanel ui:field="base">
             	<m:MaterialLabel>Base Material Label</m:MaterialLabel>
             </m:MaterialPanel>
@@ -52,6 +59,7 @@
         	<m:MaterialPanel ui:field="corelogin">
         		<m:MaterialLabel>Core Login Material Panel</m:MaterialLabel>
         	</m:MaterialPanel>
+        	-->
         	
         </m:MaterialContainer>
 
