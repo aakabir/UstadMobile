@@ -87,7 +87,7 @@ public class UstadMobileSystemImplGWT extends UstadMobileSystemImpl{
 		GWT.log("Going to: " + viewNameWithoutArgs + " .");
 		PlaceRequest placeRequest = new PlaceRequest.Builder()
 				.nameToken(viewNameWithoutArgs)
-				//.with(argsMap)
+				.with(argsMap)
 				.build();
 		((PlaceManager) context).revealPlace(placeRequest);
 		

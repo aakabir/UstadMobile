@@ -4,6 +4,12 @@ import com.ustadmobile.core.buildconfig.CoreBuildConfig;
 import com.ustadmobile.core.view.BasePointView;
 import com.ustadmobile.port.gwt.client.application.ApplicationPresenter;
 import com.ustadmobile.port.gwt.client.place.NameTokens;
+
+import java.util.Iterator;
+import java.util.Set;
+
+import java.util.Hashtable;
+
 import com.google.gwt.core.client.GWT;
 import com.google.inject.Inject;
 import com.google.web.bindery.event.shared.EventBus;
@@ -16,6 +22,7 @@ import com.gwtplatform.mvp.client.annotations.NoGatekeeper;
 import com.gwtplatform.mvp.client.annotations.ProxyStandard;
 import com.gwtplatform.mvp.client.proxy.PlaceManager;
 import com.gwtplatform.mvp.client.proxy.ProxyPlace;
+import com.gwtplatform.mvp.shared.proxy.PlaceRequest;
 
 
 /**
@@ -68,6 +75,7 @@ public class BasePresenter
     
     private String currentUser;
     private PlaceManager placeManager;
+    private Hashtable args;
     private com.ustadmobile.core.controller.BasePointController mController;
 
     //Constructor with GWTP Inject 
@@ -94,6 +102,25 @@ public class BasePresenter
         
     }
     
+    
+    
+	@Override
+	public void prepareFromRequest(PlaceRequest request) {
+		GWT.log("BasePresenter:prepareFromRequest()");
+		super.prepareFromRequest(request);
+		Set<String> requestArgNames = request.getParameterNames();
+		this.args = new Hashtable();
+		Iterator<String> it = requestArgNames.iterator();
+		while(it.hasNext()){
+			String key = it.next();
+			this.args.put(key, request.getParameter(key, ""));
+		}
+		GWT.log("BasePresenter: Argument creation done.");
+		mController.onCreate(args, null);
+	}
+
+
+
 	@Override
 	public void baseDummyHandler() {
 		GWT.log("baseDummyHandler() : Alora!");
