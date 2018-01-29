@@ -1,45 +1,46 @@
 <ui:UiBinder xmlns:ui='urn:ui:com.google.gwt.uibinder'
              xmlns:g='urn:import:com.google.gwt.user.client.ui'
              xmlns:m="urn:import:gwt.material.design.client.ui">
-             
+           
     
-    <m:MaterialPanel>
-    	<!--  
-        <m:MaterialHeader ui:field="header">
-            <m:MaterialNavBar activates="sidenavDrawer" backgroundColor="BLUE" shadow="1">
-                <m:MaterialNavBrand paddingLeft="60" text="Ustad Mobile" />
-            </m:MaterialNavBar>
-        </m:MaterialHeader>
-
-        <m:MaterialSideNav m:id="sidenavDrawer" ui:field="sideNav" width="300">
-            <m:MaterialLink iconType="INFO_OUTLINE" text="About"/>
-        </m:MaterialSideNav>
-		-->
-		
+    <m:MaterialPanel>		
         <m:MaterialContainer>
-        
+        <!-- Add base point content here -->
+	    <m:MaterialRow>    
+			<m:MaterialColumn grid="s12">
+				<m:MaterialTab ui:field="tab" indicatorColor="YELLOW" shadow="1">
+					<m:MaterialTabItem waves="YELLOW" grid="s4">
+						<m:MaterialLink text="Tab 1" href="#tab1" textColor="WHITE"/>
+					</m:MaterialTabItem>
+					<m:MaterialTabItem waves="YELLOW" grid="s4">
+						<m:MaterialLink text="Tab 2" href="#tab2" textColor="WHITE"/>
+					</m:MaterialTabItem>
+					<m:MaterialTabItem waves="YELLOW" grid="s4">
+						<m:MaterialLink text="Tab 3" href="#tab3" textColor="WHITE"/>
+					</m:MaterialTabItem>
+				</m:MaterialTab>
+			</m:MaterialColumn>
+			
+			<m:MaterialColumn m:id="tab1" grid="s12">
+				<m:MaterialLabel text="Tab 1 Content"/>
+			</m:MaterialColumn>
+				<m:MaterialColumn m:id="tab2" grid="s12">
+				<m:MaterialLabel text="Tab 2 Content"/>
+			</m:MaterialColumn>
+			<m:MaterialColumn m:id="tab3" grid="s12">
+				<m:MaterialLabel text="Tab 3 Content"/>
+			</m:MaterialColumn>
+			
+			<m:MaterialRow ui:field="dynamicTabsRow"/>
+		</m:MaterialRow>
+		
+		
             <m:MaterialPanel textAlign="CENTER">
                 <m:MaterialIcon marginTop="120" textColor="BLUE_DARKEN_1" iconType="POLYMER" iconSize="LARGE"/>
                 <m:MaterialLabel text="Base" textColor="BLUE" fontSize="0.8em"/>
             </m:MaterialPanel>
-            
-            <!--  
-            <m:MaterialPanel ui:field="base">
-            	<m:MaterialLabel>Base Material Label</m:MaterialLabel>
-            </m:MaterialPanel>
-            -->
-            
             <g:Button ui:field="randomButton" text="Base: Material Panel: randomButton"/>
-        	
         </m:MaterialContainer>
-
     </m:MaterialPanel>
-    
-    <!--  
-    <g:HTMLPanel>
-    	<p>Hello BaseView!</p>
-        
-        <g:Button ui:field="randomButton" text="Base: randomButton"/>
-    </g:HTMLPanel>
-    -->
+   
 </ui:UiBinder>

@@ -64,6 +64,8 @@ public class BasePresenter
     interface MyView extends 	View, 
 								HasUiHandlers<CoreBasePointPresenterHandler>, 
 								com.ustadmobile.core.view.BasePointView {
+    	//To re-calcuate Tabs:
+    	 void recalculateTabs();
     }
     
     //A Presenter having a NameToken is a Place.
