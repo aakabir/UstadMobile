@@ -9,6 +9,7 @@
 	    <m:MaterialRow>    
 			<m:MaterialColumn grid="s12">
 				<m:MaterialTab ui:field="tab" indicatorColor="YELLOW" shadow="1">
+					<!--  
 					<m:MaterialTabItem waves="YELLOW" grid="s4">
 						<m:MaterialLink text="Tab 1" href="#tab1" textColor="WHITE"/>
 					</m:MaterialTabItem>
@@ -18,9 +19,11 @@
 					<m:MaterialTabItem waves="YELLOW" grid="s4">
 						<m:MaterialLink text="Tab 3" href="#tab3" textColor="WHITE"/>
 					</m:MaterialTabItem>
+					-->
 				</m:MaterialTab>
 			</m:MaterialColumn>
 			
+			<!--  
 			<m:MaterialColumn m:id="tab1" grid="s12">
 				<m:MaterialLabel text="Tab 1 Content"/>
 			</m:MaterialColumn>
@@ -30,6 +33,7 @@
 			<m:MaterialColumn m:id="tab3" grid="s12">
 				<m:MaterialLabel text="Tab 3 Content"/>
 			</m:MaterialColumn>
+			-->
 			
 			<m:MaterialRow ui:field="dynamicTabsRow"/>
 		</m:MaterialRow>

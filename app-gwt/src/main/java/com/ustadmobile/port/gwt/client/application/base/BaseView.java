@@ -32,6 +32,7 @@ import com.google.gwt.uibinder.client.UiHandler;
 import com.google.gwt.user.client.ui.Widget;
 
 import com.gwtplatform.mvp.client.ViewWithUiHandlers;
+import com.ustadmobile.core.impl.UstadMobileSystemImpl;
 import com.ustadmobile.core.view.BasePointMenuItem;
 import com.ustadmobile.port.gwt.client.application.base.BasePresenter.CoreBasePointPresenterHandler;
 
@@ -55,7 +56,7 @@ public class BaseView extends ViewWithUiHandlers<CoreBasePointPresenterHandler>
 	protected boolean classListVisible;
 	private static final int BASEPOINT_MENU_CMD_ID_OFFSET = 5000;
 	private int tabIndex = 0; //++ when new tab added.
-	
+	private BasePointMenuItem[] mNavigationDrawerItems;
 	
 	@UiField
 	MaterialTab tab;
@@ -95,7 +96,7 @@ public class BaseView extends ViewWithUiHandlers<CoreBasePointPresenterHandler>
         tab.reload();
     }
     
-    protected MaterialTabItem newTabItem(int index) {
+    protected MaterialTabItem newTestTabItem(int index) {
         MaterialTabItem item = new MaterialTabItem();
         item.setWaves(WavesType.DEFAULT);
         MaterialLink link = new MaterialLink("Tab " + index);
@@ -108,6 +109,50 @@ public class BaseView extends ViewWithUiHandlers<CoreBasePointPresenterHandler>
         return item;
     }
     
+    protected MaterialTabItem newBasePointTabItem(int index, String id, String title, 
+    		Color textColor, String materialLink, String href, String contentLabel, WavesType wavesType){
+    	
+    	MaterialTabItem item = new MaterialTabItem();
+    	item.setWaves(wavesType);
+    	
+    	MaterialLink link = new MaterialLink(materialLink);
+    	link.setTextColor(textColor);
+    	link.setHref(href);
+    	
+    	item.add(link);
+    	
+    	MaterialLabel content = new MaterialLabel(contentLabel);
+    	content.setId(id);
+    	
+    	return null;
+    }
+    
+    protected MaterialTabItem newBasePointTabItem(int index, Hashtable tabArguments){
+    	
+    	//TODO: Check if we should use this here
+		UstadMobileSystemImpl impl = UstadMobileSystemImpl.getInstance();
+		
+    	MaterialTabItem item = new MaterialTabItem();
+    	item.setWaves(WavesType.DEFAULT);
+    	
+    	//MaterialLink link = new MaterialLink("#matlink" + index);
+    	String titleNumber = (String) tabArguments.get("t");
+    	int messageCode = Integer.valueOf((String) titleNumber);
+    	String titleFromImpl = impl.getString(messageCode, this);
+    	String url = (String) tabArguments.get("url");
+    	titleFromImpl = "Get String : " + titleNumber;
+    	MaterialLink link = new MaterialLink(titleFromImpl);
+    	link.setTextColor(Color.WHITE);
+    	link.setHref(url);
+    	
+    	item.add(link);
+    	
+    	MaterialLabel content = new MaterialLabel("content: " + index);
+    	content.setId("id:" + index);
+    	
+    	return item;
+    }
+    
     @Override
     protected void onAttach() {
         super.onAttach();
@@ -115,11 +160,11 @@ public class BaseView extends ViewWithUiHandlers<CoreBasePointPresenterHandler>
         //buildListTabIds();
         
         GWT.log("Adding dynamic tab");
-        if(tabIndex == 0){
-        	tabIndex = 3;
-        }
+        //if(tabIndex == 0){
+        //	tabIndex = 3;
+        //}
         tabIndex++;
-        MaterialTabItem newTab = newTabItem(tabIndex);
+        MaterialTabItem newTab = newTestTabItem(tabIndex);
         tab.add(newTab);
         tab.setTabIndex(tabIndex);
 
@@ -138,7 +183,23 @@ public class BaseView extends ViewWithUiHandlers<CoreBasePointPresenterHandler>
 
 	@Override
 	public void setMenuItems(BasePointMenuItem[] menuItems) {
-		// TODO Auto-generated method stub
+		//TODO: Finish this
+		
+		//TODO: Check if we should use this here
+		UstadMobileSystemImpl impl = UstadMobileSystemImpl.getInstance();
+		
+		//1. Set Navigation Drawer Items
+		this.mNavigationDrawerItems = menuItems;
+		//2. Clear the drawer Navigation View
+		//refresh SLOT.NAVIGATION ?
+		//3. Put items in
+		for(int i = 0; i < menuItems.length; i++) {
+			//3a. Add the menu item to navigation menu.
+			String menuItemString = impl.getString(menuItems[i].getTitleStringId(), this);
+            //eg: item = drawerMenu.add(0, BASEPOINT_MENU_CMD_ID_OFFSET+ i, 0, menuItemString);
+            //Set navigation menu item's icon:
+            
+        }
 		
 	}
 
@@ -159,10 +220,17 @@ public class BaseView extends ViewWithUiHandlers<CoreBasePointPresenterHandler>
 		// TODO Auto-generated method stub
 		
 	}
+	
+	
+	
+	public void validateTab(){
+		
+	}
 
 	@Override
 	public void addTab(Hashtable tabArguments) {
-		// TODO this:
+		// TODO: Finish this
+		
 		tabArgumentsList.add(tabArguments);
         if(tabArgumentsList.size() > 1){
         	//Set tab layout's visibility to visible on GWT's tabs 
@@ -170,6 +238,22 @@ public class BaseView extends ViewWithUiHandlers<CoreBasePointPresenterHandler>
         }
         //Notify the data in the view that it has changed.
         //eg: Android: mPagerAdapter.notifyDataSetChanged();
+        
+        /**
+         * addTab() : Adds tab args to tagArgumentList variable
+         * notified new item added
+         * handler: onTabSelected has the new position index 
+         * handler then gets the item. If fragment doesn't exist (this case), a new
+         * CatalogOPDSFragment Fragment object is created and returned.
+         * This fragment then gets added to a member variable fragmentMap
+         * 
+         */
+        //GWT add the tab to the list as well
+        MaterialTabItem newTab = newBasePointTabItem(this.tabIndex, tabArguments);
+        tab.add(newTab);
+        tab.setTabIndex(tabIndex);
+        
+        
 	}
 	
 
