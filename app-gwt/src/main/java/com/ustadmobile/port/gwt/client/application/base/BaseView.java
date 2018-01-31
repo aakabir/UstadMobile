@@ -34,12 +34,14 @@ import com.google.gwt.user.client.ui.Widget;
 import com.gwtplatform.mvp.client.ViewWithUiHandlers;
 import com.ustadmobile.core.impl.UstadMobileSystemImpl;
 import com.ustadmobile.core.view.BasePointMenuItem;
+import com.ustadmobile.port.gwt.client.application.ApplicationPresenter;
 import com.ustadmobile.port.gwt.client.application.base.BasePresenter.CoreBasePointPresenterHandler;
 
 import gwt.material.design.client.constants.Color;
 import gwt.material.design.client.constants.WavesType;
 import gwt.material.design.client.ui.MaterialLabel;
 import gwt.material.design.client.ui.MaterialLink;
+import gwt.material.design.client.ui.MaterialPanel;
 import gwt.material.design.client.ui.MaterialRow;
 import gwt.material.design.client.ui.MaterialTab;
 import gwt.material.design.client.ui.MaterialTabItem;
@@ -64,6 +66,9 @@ public class BaseView extends ViewWithUiHandlers<CoreBasePointPresenterHandler>
 	@UiField
 	MaterialRow dynamicTabsRow;
 	
+	@UiField
+    MaterialPanel content;
+	
 	/************ UI BINDER STUFF: *****************/
 	
 	//This is how GWTP knows to use the HomeView.ui.xml file (bind it)
@@ -75,15 +80,8 @@ public class BaseView extends ViewWithUiHandlers<CoreBasePointPresenterHandler>
     BaseView(Binder uiBinder) {
         initWidget(uiBinder.createAndBindUi(this));
         tabArgumentsList = new ArrayList<>();
+        bindSlot(BasePresenter.SLOT_TAB, content);
     }
-    
-    /*
-    @UiHandler("randomButton")
-    void onConfirm(ClickEvent event) {
-    	GWT.log("GWT:BaseView:onConfirm():UiHandler's updateText button handling..");
-    	
-    }
-    */
     
     @Override
 	public void setUiHandlers(CoreBasePointPresenterHandler uiHandlers) {
@@ -160,15 +158,17 @@ public class BaseView extends ViewWithUiHandlers<CoreBasePointPresenterHandler>
         //buildListTabIds();
         
         GWT.log("Adding dynamic tab");
-        //if(tabIndex == 0){
-        //	tabIndex = 3;
-        //}
+        if(tabIndex == 0){
+        	tabIndex = 1;
+        }
         tabIndex++;
         MaterialTabItem newTab = newTestTabItem(tabIndex);
         tab.add(newTab);
         tab.setTabIndex(tabIndex);
-
         
+        //Testing: Adding another page here
+        
+
         //tabEvents.addSelectionHandler(
         //selectionEvent -> MaterialToast.fireToast(selectionEvent.getSelectedItem() + " Selected Index"));
 	}

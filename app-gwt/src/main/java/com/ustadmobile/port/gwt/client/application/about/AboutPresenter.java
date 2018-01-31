@@ -3,6 +3,7 @@ package com.ustadmobile.port.gwt.client.application.about;
 
 import com.ustadmobile.core.view.AboutView;
 import com.ustadmobile.port.gwt.client.application.ApplicationPresenter;
+import com.ustadmobile.port.gwt.client.application.base.BasePresenter;
 import com.ustadmobile.port.gwt.client.place.NameTokens;
 
 import java.util.Hashtable;

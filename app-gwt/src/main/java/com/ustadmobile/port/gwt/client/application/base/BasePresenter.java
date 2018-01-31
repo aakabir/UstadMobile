@@ -3,6 +3,7 @@ package com.ustadmobile.port.gwt.client.application.base;
 import com.ustadmobile.core.buildconfig.CoreBuildConfig;
 import com.ustadmobile.core.view.BasePointView;
 import com.ustadmobile.port.gwt.client.application.ApplicationPresenter;
+import com.ustadmobile.port.gwt.client.application.about.AboutPresenter;
 import com.ustadmobile.port.gwt.client.place.NameTokens;
 
 import java.util.Iterator;
@@ -20,6 +21,7 @@ import com.gwtplatform.mvp.client.View;
 import com.gwtplatform.mvp.client.annotations.NameToken;
 import com.gwtplatform.mvp.client.annotations.NoGatekeeper;
 import com.gwtplatform.mvp.client.annotations.ProxyStandard;
+import com.gwtplatform.mvp.client.presenter.slots.NestedSlot;
 import com.gwtplatform.mvp.client.proxy.PlaceManager;
 import com.gwtplatform.mvp.client.proxy.ProxyPlace;
 import com.gwtplatform.mvp.shared.proxy.PlaceRequest;
@@ -60,7 +62,7 @@ public class BasePresenter
 		
     }
     
-    //Base Presenter's View Interface
+	//Base Presenter's View Interface
     interface MyView extends 	View, 
 								HasUiHandlers<CoreBasePointPresenterHandler>, 
 								com.ustadmobile.core.view.BasePointView {
@@ -79,6 +81,11 @@ public class BasePresenter
     private PlaceManager placeManager;
     private Hashtable args;
     private com.ustadmobile.core.controller.BasePointController mController;
+    
+    private AboutPresenter aboutPresenter;
+    
+    //Main Tab Content slot
+    public static final NestedSlot SLOT_TAB = new NestedSlot();
 
     //Constructor with GWTP Inject 
     @Inject
@@ -96,13 +103,19 @@ public class BasePresenter
         
         mController = new CoreBasePointPresenterHandler(placeManager, view);
         
-        //This will create the BasePointView (or BaseView?) object within the BasePointController's from its onCreate()
-    	//Needs to be called from go's :TODO
-        //go(CoreBuildConfig.FIRST_DESTINATION, context);
-        //mController.onCreate(null, null);
         getView().setUiHandlers((CoreBasePointPresenterHandler) mController);
         
     }
+    
+    @Override
+	protected void onBind() {
+		// TODO Auto-generated method stub
+		//super.onBind();
+    	if(aboutPresenter == null){
+			GWT.log("Presenter not set");
+    	}
+		setInSlot(SLOT_TAB, aboutPresenter);
+	}    
     
     
     
