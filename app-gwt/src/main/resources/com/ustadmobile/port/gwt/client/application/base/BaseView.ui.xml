@@ -6,7 +6,7 @@
     <m:MaterialPanel>		
         <m:MaterialContainer>
         <!-- Add base point content here -->
-	    <m:MaterialRow>    
+	    <m:MaterialRow ui:field="tabrow">    
 			<m:MaterialColumn grid="s12">
 			
 				<m:MaterialTab ui:field="tab" indicatorColor="YELLOW" shadow="1">

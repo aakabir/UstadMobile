@@ -36,6 +36,7 @@ import com.ustadmobile.core.impl.UstadMobileSystemImpl;
 import com.ustadmobile.core.view.BasePointMenuItem;
 import com.ustadmobile.port.gwt.client.application.ApplicationPresenter;
 import com.ustadmobile.port.gwt.client.application.base.BasePresenter.CoreBasePointPresenterHandler;
+import com.ustadmobile.port.gwt.client.application.catalog.CatalogView;
 
 import gwt.material.design.client.constants.Color;
 import gwt.material.design.client.constants.WavesType;
@@ -101,9 +102,22 @@ public class BaseView extends ViewWithUiHandlers<CoreBasePointPresenterHandler>
         link.setTextColor(Color.WHITE);
         link.setHref("#dynamicTab" + index);
         item.add(link);
-        MaterialLabel content = new MaterialLabel("Dynamic Content " + index);
-        content.setId("dynamicTab" + index);
-        dynamicTabsRow.add(content);
+//        MaterialLabel content = new MaterialLabel("Dynamic Content " + index);
+//        content.setId("dynamicTab" + index);
+//        dynamicTabsRow.add(content);
+        
+        MaterialPanel catalogPanel = new MaterialPanel();
+        catalogPanel.setId("dynamicTab" + index);
+        
+        CatalogView catalogView = new CatalogView();
+        Hashtable args= new Hashtable();
+        args.put("url", "http://www.ustadmobile.com/42");
+        catalogView.setArguments(args);
+        
+        catalogPanel.add(catalogView);
+        dynamicTabsRow.add(catalogPanel);
+        
+        
         return item;
     }
     
@@ -150,7 +164,7 @@ public class BaseView extends ViewWithUiHandlers<CoreBasePointPresenterHandler>
     	
     	return item;
     }
-    
+        
     @Override
     protected void onAttach() {
         super.onAttach();
