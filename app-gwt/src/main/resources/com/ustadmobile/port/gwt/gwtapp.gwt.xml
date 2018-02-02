@@ -32,6 +32,9 @@
 	<!-- Core -->
 	<inherits name="com.ustadmobile.Core"/>
 	
+	<!-- Lib -->
+	<inherits name="com.ustadmobile.Lib"/>
+	
 	<!-- Hashtable for GWT (Hashmap) -->
 	<inherits name="java.HashmapHashtable" />
     
@@ -43,6 +46,7 @@
   	
 	<!-- Specify the paths for translatable code on client-->
 	<source path='../../core/' />
+	<source path='../../lib/' />
     <source path='client'/>
     <source path='shared'/>
     <source path='xmlpull'/>

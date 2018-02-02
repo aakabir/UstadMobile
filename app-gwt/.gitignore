@@ -2,3 +2,6 @@
 src-core/
 core-src/
 *.test
+lib-database-annotation-src/
+lib-database-src/
+lib-util-src/

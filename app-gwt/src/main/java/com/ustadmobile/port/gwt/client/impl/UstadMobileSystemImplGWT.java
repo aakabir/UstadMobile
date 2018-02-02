@@ -154,18 +154,6 @@ public class UstadMobileSystemImplGWT extends UstadMobileSystemImpl{
 	}
 
 	@Override
-	public String getSharedContentDir() {
-		// TODO Auto-generated method stub
-		return null;
-	}
-
-	@Override
-	public String getUserContentDirectory(String username) {
-		// TODO Auto-generated method stub
-		return null;
-	}
-
-	@Override
 	public String getSystemLocale(Object context) {
 		// TODO Auto-generated method stub
 		return null;
@@ -582,5 +570,23 @@ public class UstadMobileSystemImplGWT extends UstadMobileSystemImpl{
 	public String convertTimeToReadableTime(long time) {
 		// TODO Auto-generated method stub
 		return null;
+	} 
+	
+
+	@Override
+	public String getSharedContentDir(Object context) {
+		// TODO Auto-generated method stub
+		GWT.log("ERROR!: impl.getSharedContentDir(context) "
+				+ "NOT IMPLEMENTED> SOMETHING IS CALLING IT!");
+		return null;
 	}
+
+	@Override
+	public String getUserContentDirectory(Object context, String username) {
+		// TODO Auto-generated method stub
+		GWT.log("ERROR!: impl.getUserContentDirectory(context, username)"
+				+ " NOT IMPLEMENTED> SOMETHING IS CALLING IT!");
+		return null;
+	}
+	
 }

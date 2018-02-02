@@ -2,6 +2,7 @@ package com.ustadmobile.port.gwt.xmlpull;
 
 import java.io.IOException;
 import java.io.InputStream;
+import java.io.Reader;
 import java.util.ArrayList;
 
 import org.xmlpull.v1.XmlPullParser;
@@ -597,5 +598,14 @@ public class XmlPullParserGWT implements XmlPullParser {
 			return getCurrentPosition().getCurrentElement();
 		}
 	}
+
+	/* ERROR : Reader not part of GWT. ignoring.
+
+	@Override
+	public void setInput(Reader arg0) throws XmlPullParserException {
+		// TODO Auto-generated method stub
+		GWT.log("WARNING: setInput(Reader arg0) NOT IMPLEMENTED BECAUSE READER NOT PART OF GWT JRE EMULATION!");
+	}
+	*/
 
 }

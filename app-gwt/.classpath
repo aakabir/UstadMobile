@@ -5,6 +5,9 @@
 			<attribute name="maven.pomderived" value="true"/>
 		</attributes>
 	</classpathentry>
+	<classpathentry kind="src" path="lib-util-src/main/java"/>
+	<classpathentry kind="src" path="lib-database-src/main/java"/>
+	<classpathentry kind="src" path="lib-database-annotation-src/main/java"/>
 	<classpathentry excluding="**" kind="src" output="target/ustadmobile-gwtp-1.0-SNAPSHOT/WEB-INF/classes" path="src-jre/main/java">
 		<attributes>
 			<attribute name="maven.pomderived" value="true"/>

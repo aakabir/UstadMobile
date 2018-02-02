@@ -92,10 +92,36 @@
 			<resource>
 			    <directory>core-src/main/java</directory>
 			</resource>
-				  		
 			<!-- Add Core source relative to project directory -->	  
 			<resource>
 				<directory>${project.basedir}/core-src/main/java</directory>
+			</resource>
+			
+			<!-- Add Lib database annotation source as per linked in Java build paths-->
+			<resource>
+			    <directory>lib-database-annotation-src/main/java</directory>
+			</resource>
+			<!-- Add Lib database annotation source relative to project directory -->	  
+			<resource>
+				<directory>${project.basedir}/lib-database-annotation-src/main/java</directory>
+			</resource>
+			
+			<!-- Add Lib database source as per linked in Java build paths-->
+			<resource>
+			    <directory>lib-database-src/main/java</directory>
+			</resource>
+			<!-- Add Lib database source relative to project directory -->	  
+			<resource>
+				<directory>${project.basedir}/lib-database-src/main/java</directory>
+			</resource>
+			
+			<!-- Add Lib util source as per linked in Java build paths-->
+			<resource>
+			    <directory>lib-util-src/main/java</directory>
+			</resource>
+			<!-- Add Lib util source relative to project directory -->	  
+			<resource>
+				<directory>${project.basedir}/lib-util-src/main/java</directory>
 			</resource>
 		
 			
@@ -127,6 +153,44 @@
                     
                     </configuration>
              </plugin>
+             
+            <!-- Adding additional source : lib database annotation to this maven  -->
+			<plugin>
+               <groupId>org.apache.maven.plugins</groupId>
+                  <artifactId>maven-compiler-plugin</artifactId>
+                    <configuration>
+                    	<source>lib-database-annotation-src/main/java</source>
+                       	<includes>
+                      		<include>lib-database-annotation-src/main/java</include>
+                       	</includes>
+                    </configuration>
+             </plugin>
+             
+            <!-- Adding additional source : lib database to this maven  -->
+			<plugin>
+               <groupId>org.apache.maven.plugins</groupId>
+                  <artifactId>maven-compiler-plugin</artifactId>
+                    <configuration>
+                    	<source>lib-database-src/main/java</source>
+                       	<includes>
+                      		<include>lib-database-src/main/java</include>
+                       	</includes>
+                    </configuration>
+             </plugin>
+             
+             <!-- Adding additional source : lib util to this maven  -->
+			<plugin>
+               <groupId>org.apache.maven.plugins</groupId>
+                  <artifactId>maven-compiler-plugin</artifactId>
+                    <configuration>
+                    	<source>lib-util-src/main/java</source>
+                       	<includes>
+                      		<include>lib-util-src/main/java</include>
+                       	</includes>
+                    </configuration>
+             </plugin>
+             
+             
              
              <!-- Adding additional source : xmlpull gwt to this maven  -->
              
