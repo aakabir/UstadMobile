@@ -11,8 +11,8 @@ mkdir lib-util-src
 
 cp -r ../core/src/main core-src/
 cp -r ../lib-database-annotation/src/main lib-database-annotation-src/
-cp -r ../lib-database-src/src/main lib-database-src/
-cp -r ../lib-util-src/src/main lib-util-src/
+cp -r ../lib-database/src/main lib-database-src/
+cp -r ../lib-util/src/main lib-util-src/
 
 mv core-src/main/java/com/ustadmobile/core/impl/UstadMobileSystemImplFactory.java core-src/main/java/com/ustadmobile/core/impl/UstadMobileSystemImplFactory.java.test
 
