@@ -22,6 +22,7 @@ import com.gwtplatform.mvp.client.annotations.NameToken;
 import com.gwtplatform.mvp.client.annotations.NoGatekeeper;
 import com.gwtplatform.mvp.client.annotations.ProxyStandard;
 import com.gwtplatform.mvp.client.presenter.slots.NestedSlot;
+import com.gwtplatform.mvp.client.presenter.slots.Slot;
 import com.gwtplatform.mvp.client.proxy.PlaceManager;
 import com.gwtplatform.mvp.client.proxy.ProxyPlace;
 import com.gwtplatform.mvp.shared.proxy.PlaceRequest;
@@ -85,7 +86,8 @@ public class BasePresenter
     private AboutPresenter aboutPresenter;
     
     //Main Tab Content slot
-    public static final NestedSlot SLOT_TAB = new NestedSlot();
+    //public static final NestedSlot SLOT_TAB = new NestedSlot();
+    public static final Slot SLOT_TAB = new Slot();
 
     //Constructor with GWTP Inject 
     @Inject

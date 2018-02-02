@@ -102,9 +102,6 @@ public class BaseView extends ViewWithUiHandlers<CoreBasePointPresenterHandler>
         link.setTextColor(Color.WHITE);
         link.setHref("#dynamicTab" + index);
         item.add(link);
-//        MaterialLabel content = new MaterialLabel("Dynamic Content " + index);
-//        content.setId("dynamicTab" + index);
-//        dynamicTabsRow.add(content);
         
         MaterialPanel catalogPanel = new MaterialPanel();
         catalogPanel.setId("dynamicTab" + index);

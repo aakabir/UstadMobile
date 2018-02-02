@@ -14,16 +14,18 @@ import javax.inject.Inject;
 
 public class CatalogView extends ViewWithUiHandlers{
 	
+	/**
+	 * Arguments for initialising CatalogView. Set in constructor.
+	 */
 	private Hashtable args;
 	
+	/************ UI BINDER STUFF: *****************/
 	
-	
-/************ UI BINDER STUFF: *****************/
-	
-	//This is how GWTP knows to use the HomeView.ui.xml file (bind it)
+	//This is how GWTP knows to use the CatalogView.ui.xml file (bind it)
     interface Binder extends UiBinder<Widget, CatalogView> {
     }
     
+    //Also needed for binding to xml file (uiBinder)
     private static final Binder uiBinder = GWT.create(Binder.class);
     
     @UiField
