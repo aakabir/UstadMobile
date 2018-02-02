@@ -1,11 +1,8 @@
 package com.ustadmobile.core.catalog;
 
 import com.ustadmobile.core.catalog.contenttype.ContentTypePlugin;
-import com.ustadmobile.core.impl.UMLog;
 import com.ustadmobile.core.impl.UstadMobileSystemImpl;
-import com.ustadmobile.core.util.UMUtil;
-
-import java.util.Vector;
+import com.ustadmobile.lib.util.UMUtil;
 
 /**
  * This is a utility class that helps manage support for different content types. It will cache
@@ -27,11 +24,10 @@ public class ContentTypeManager {
     public static String getViewNameForContentType(String mime) {
         ContentTypePlugin[] plugins = UstadMobileSystemImpl.getInstance().getSupportedContentTypePlugins();
 
-        int supportedMimeIndex;
         for(int i = 0; i < plugins.length; i++) {
-            supportedMimeIndex = UMUtil.indexInArray(plugins[i].getMimeTypes(), mime);
-            if(supportedMimeIndex != -1)
+            if(plugins[i].getMimeTypes().contains(mime))
                 return plugins[i].getViewName();
+
         }
 
         return null;

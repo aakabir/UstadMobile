@@ -9,6 +9,7 @@ dependencies {
     testCompile project(':lib-core-fs-tests')
     testCompile project(":sharedse-tests")
     testCompile project(":app-javase")
+    implementation project(":lib-database")
     ext.testDbDependency = rootProject.ext.buildConfigProperties['test.jdbc.dbDriverDependency']
     testCompile "$testDbDependency"
     testCompile 'com.squareup.okhttp3:okhttp:3.9.0'
@@ -21,8 +22,8 @@ jar {
 }
 
 
-sourceCompatibility = "1.7"
-targetCompatibility = "1.7"
+sourceCompatibility = "1.8"
+targetCompatibility = "1.8"
 
 
 task sourceJar(type: Jar) {

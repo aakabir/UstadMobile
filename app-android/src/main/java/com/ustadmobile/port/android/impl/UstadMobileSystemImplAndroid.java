@@ -59,6 +59,7 @@ import com.ustadmobile.core.buildconfig.CoreBuildConfig;
 import com.ustadmobile.core.catalog.contenttype.*;
 import com.ustadmobile.core.controller.CatalogPresenter;
 import com.ustadmobile.core.controller.UserSettingsController;
+import com.ustadmobile.core.fs.contenttype.EpubTypePluginFs;
 import com.ustadmobile.core.impl.ContainerMountRequest;
 import com.ustadmobile.core.impl.TinCanQueueListener;
 import com.ustadmobile.core.impl.UMDownloadCompleteReceiver;
@@ -157,6 +158,8 @@ public class UstadMobileSystemImplAndroid extends UstadMobileSystemImplSE {
      */
     public static final HashMap<String, Class> viewNameToAndroidImplMap = new HashMap<>();
 
+    private boolean initRan = false;
+
     static {
 
         viewNameToAndroidImplMap.put(LoginView.VIEW_NAME, LoginDialogFragment.class);
@@ -216,7 +219,7 @@ public class UstadMobileSystemImplAndroid extends UstadMobileSystemImplSE {
     private UmOpdsDbManagerAndroid opdsDbManager;
 
     private static final ContentTypePlugin[] SUPPORTED_CONTENT_TYPES = new ContentTypePlugin[] {
-            new EPUBTypePlugin(), new ScormTypePlugin(), new XapiPackageTypePlugin()};
+            new EpubTypePluginFs()};
 
     private ExecutorService bgExecutorService = Executors.newCachedThreadPool();
 
@@ -388,6 +391,16 @@ public class UstadMobileSystemImplAndroid extends UstadMobileSystemImplSE {
     public void init(Object context) {
         super.init(context);
 
+        if(!initRan) {
+            try {
+                if(!dirExists(getSystemBaseDir(context))){
+                    makeDirectoryRecursive(getSystemBaseDir(context));
+                }
+                initRan = true;
+            }catch (IOException e) {
+                l(UMLog.CRITICAL, 0, "Failed to make base system dir");
+            }
+        }
 
         if(context instanceof Activity) {
             ((Activity)context).runOnUiThread(new Runnable() {
@@ -562,7 +575,8 @@ public class UstadMobileSystemImplAndroid extends UstadMobileSystemImplSE {
 
     @Override
     protected String getSystemBaseDir(Object context) {
-        return new File(Environment.getExternalStorageDirectory(), "ustadmobileContent").getAbsolutePath();
+        return new File(Environment.getExternalStorageDirectory(), getContentDirName(context))
+                .getAbsolutePath();
     }
 
     @Override
@@ -603,16 +617,16 @@ public class UstadMobileSystemImplAndroid extends UstadMobileSystemImplSE {
 
 
     @Override
-    public String getSharedContentDir() {
+    public String getSharedContentDir(Object context) {
         File extStorage = Environment.getExternalStorageDirectory();
-        File ustadContentDir = new File(extStorage, "ustadmobileContent");
+        File ustadContentDir = new File(extStorage, getContentDirName(context));
         return ustadContentDir.getAbsolutePath();
     }
 
     @Override
-    public String getUserContentDirectory(String username) {
+    public String getUserContentDirectory(Object context, String username) {
         File userDir = new File(Environment.getExternalStorageDirectory(),
-                "ustadmobileContent/user-" + username);
+                getContentDirName(context) + "/user-" + username);
         return userDir.getAbsolutePath();
     }
 

@@ -10,7 +10,7 @@ import com.ustadmobile.core.opds.UstadJSOPDSEntry;
 import com.ustadmobile.core.opds.UstadJSOPDSFeed;
 import com.ustadmobile.core.opds.UstadJSOPDSItem;
 import com.ustadmobile.core.opds.entities.UmOpdsLink;
-import com.ustadmobile.core.util.UMUtil;
+import com.ustadmobile.lib.util.UMUtil;
 import com.ustadmobile.core.view.AppViewChoiceListener;
 import com.ustadmobile.core.view.CatalogEntryView;
 
@@ -41,6 +41,8 @@ public abstract class BaseCatalogPresenter extends UstadBaseController implement
     protected UstadJSOPDSEntry[] removeEntriesSelected;
 
     public static final String ARG_URL = "url";
+
+    public static final String ARG_BASE_HREF = "base";
 
     public static final String ARG_HTTPUSER = "httpu";
 
@@ -130,7 +132,7 @@ public abstract class BaseCatalogPresenter extends UstadBaseController implement
     }
 
     /**
-     * Returns a hashtable in the form of language - entry id for the entry and any known translations
+     * Returns a hashtable in the form of language - entry uuid for the entry and any known translations
      *
      * @param entry
      *

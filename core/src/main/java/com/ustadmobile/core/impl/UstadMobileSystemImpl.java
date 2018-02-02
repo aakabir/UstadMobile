@@ -34,6 +34,7 @@ package com.ustadmobile.core.impl;
 import com.ustadmobile.core.buildconfig.CoreBuildConfig;
 import com.ustadmobile.core.catalog.contenttype.ContentTypePlugin;
 import com.ustadmobile.core.controller.CatalogPresenter;
+import com.ustadmobile.core.db.UmObserver;
 import com.ustadmobile.core.impl.http.UmHttpCall;
 import com.ustadmobile.core.impl.http.UmHttpRequest;
 import com.ustadmobile.core.impl.http.UmHttpResponse;
@@ -45,7 +46,7 @@ import com.ustadmobile.core.tincan.TinCanResultListener;
 import com.ustadmobile.core.util.MessagesHashtable;
 import com.ustadmobile.core.util.UMFileUtil;
 import com.ustadmobile.core.util.UMIOUtils;
-import com.ustadmobile.core.util.UMUtil;
+import com.ustadmobile.lib.util.UMUtil;
 import com.ustadmobile.core.view.AppView;
 import com.ustadmobile.core.view.LoginView;
 
@@ -60,8 +61,6 @@ import java.io.InputStream;
 import java.io.OutputStream;
 import java.util.Hashtable;
 import java.util.LinkedHashMap;
-import java.util.Properties;
-import java.util.Vector;
 
 /* $if umplatform == 2  $
     import org.json.me.*;
@@ -106,7 +105,7 @@ public abstract class UstadMobileSystemImpl {
     /**
      * Suggested name to create for content on Devices
      */
-    public static final String CONTENT_DIR_NAME = "ustadMobileContent";
+    public static final String DEFAULT_CONTENT_DIR_NAME = "ustadmobileContent";
 
     private MessagesHashtable messages;
 
@@ -191,6 +190,11 @@ public abstract class UstadMobileSystemImpl {
      * Same value as android.app.DownloadManager.STATUS_PENDING
      */
     public static final int DLSTATUS_PAUSED = 4;
+
+    /**
+     * Indicates that a download has not actually started yet
+     */
+    public static final int DLSTATUS_NOT_STARTED = 0;
 
     /**
      * The maximum number of sessions to show for the user to be able to resume
@@ -472,7 +476,7 @@ public abstract class UstadMobileSystemImpl {
      * @deprecated - Use getStorageDirs and getCacheDirinstead
      * @return URI of the shared content directory
      */
-    public abstract String getSharedContentDir();
+    public abstract String getSharedContentDir(Object context);
 
     /**
      * Provides the path to content directory for a given user
@@ -482,7 +486,7 @@ public abstract class UstadMobileSystemImpl {
      *
      * @return URI of the given users content directory
      */
-    public abstract String getUserContentDirectory(String username);
+    public abstract String getUserContentDirectory(Object context, String username);
 
 
     /**
@@ -1209,6 +1213,28 @@ public abstract class UstadMobileSystemImpl {
     public abstract void triggerSync(Object context) throws Exception;
 
     public abstract String convertTimeToReadableTime(long time);
+
+    /**
+     * Determine if the two given locales are the same as far as what the user will see.
+     *
+     * @param oldLocale
+     *
+     * @return
+     */
+    public boolean hasDisplayedLocaleChanged(String oldLocale, Object context) {
+        String currentlyDisplayedLocale = getDisplayedLocale(context);
+        if(currentlyDisplayedLocale != null && oldLocale != null
+                && oldLocale.substring(0, 2).equals(currentlyDisplayedLocale.substring(0,2))) {
+            return false;
+        }else {
+            return true;
+        }
+    }
+
+    protected final String getContentDirName(Object context) {
+        return getAppConfigString(AppConfig.KEY_CONTENT_DIR_NAME, DEFAULT_CONTENT_DIR_NAME, context);
+    }
+
 }
 
 

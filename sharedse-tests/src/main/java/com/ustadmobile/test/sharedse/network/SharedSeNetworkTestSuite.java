@@ -17,8 +17,8 @@ import org.junit.runners.Suite;
 //        TestWifiDirectPeerDiscovery.class,
         TestEntryStatusTask.class,
 //        TestNetworkManagerEntryStatusMonitoring.class,
-        TestAcquisitionTask.class,
-        TestWifiDirectGroupConnection.class
+//        TestAcquisitionTask.class,
+//        TestWifiDirectGroupConnection.class
 })
 public class SharedSeNetworkTestSuite {
 

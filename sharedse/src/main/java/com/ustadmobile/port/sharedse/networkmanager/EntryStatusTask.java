@@ -1,11 +1,15 @@
 package com.ustadmobile.port.sharedse.networkmanager;
 
+import com.google.gson.Gson;
+import com.google.gson.reflect.TypeToken;
 import com.ustadmobile.core.impl.UMLog;
 import com.ustadmobile.core.impl.UstadMobileSystemImpl;
 import com.ustadmobile.core.networkmanager.NetworkManagerCore;
-import com.ustadmobile.core.networkmanager.NetworkNode;
 import com.ustadmobile.core.networkmanager.NetworkTask;
 import com.ustadmobile.core.util.UMIOUtils;
+import com.ustadmobile.lib.db.entities.ContainerFileEntry;
+import com.ustadmobile.lib.db.entities.NetworkNode;
+
 
 import org.json.JSONArray;
 import org.json.JSONObject;
@@ -16,7 +20,9 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.io.OutputStream;
+import java.io.Reader;
 import java.io.UnsupportedEncodingException;
+import java.lang.reflect.Type;
 import java.net.HttpURLConnection;
 import java.net.URL;
 import java.net.URLEncoder;
@@ -39,7 +45,10 @@ import static com.ustadmobile.port.sharedse.networkmanager.BluetoothServer.CMD_S
 public class EntryStatusTask extends NetworkTask implements BluetoothConnectionHandler{
 
     private List<String> entryIdList;
+
     private List<NetworkNode> networkNodeList;
+
+    private NetworkNodeListProvider nodeListProvider;
 
     private int currentNode;
 
@@ -51,21 +60,26 @@ public class EntryStatusTask extends NetworkTask implements BluetoothConnectionH
 
     public static final String ENTRY_RESPONSE_ENTRIES_KEY = "e";
 
-    public EntryStatusTask(List<String> entryIdList, List<NetworkNode> networkNodeList, NetworkManager networkManager){
+    interface NetworkNodeListProvider {
+
+        List<NetworkNode> getNetworkNodes();
+
+    }
+
+
+    public EntryStatusTask(List<String> entryIdList, NetworkNodeListProvider nodeListProvider, NetworkManager networkManager){
         super(networkManager);
         this.networkManager = networkManager;
         this.entryIdList = entryIdList;
-        this.networkNodeList = networkNodeList;
+        this.nodeListProvider = nodeListProvider;
     }
+
     @Override
     public void start() {
         currentNode = 0;
+        networkNodeList = nodeListProvider.getNetworkNodes();
         setStatus(STATUS_RUNNING);
-        new Thread(new Runnable() {
-            public void run() {
-                connectNextNode(0);
-            }
-        }).start();
+        new Thread(() -> connectNextNode(0)).start();
     }
 
     @Override
@@ -96,15 +110,15 @@ public class EntryStatusTask extends NetworkTask implements BluetoothConnectionH
             if(networkManager.isWiFiEnabled() && isUseHttp()
                     && networkManager.getDeviceIPAddress() != null
                     && node.getNsdServiceName() != null
-                    && node.getDeviceIpAddress() != null) {
+                    && node.getIpAddress() != null) {
                 UstadMobileSystemImpl.l(UMLog.VERBOSE, 400, mkLogPrefix() + " connect node #"
-                        + index + " - http to " + node.getDeviceIpAddress() + ":" + node.getPort()
+                        + index + " - http to " + node.getIpAddress() + ":" + node.getPort()
                         + " (" + node.getNsdServiceName() + ")");
                 getEntryStatusHttp(node);
                 connectNextNode(index + 1);
             }else if(networkManager.isBluetoothEnabled() && isUseBluetooth()
-                        && node.getDeviceBluetoothMacAddress() != null) {
-                String bluetoothAddr = networkNodeList.get(currentNode).getDeviceBluetoothMacAddress();
+                        && node.getBluetoothMacAddress() != null) {
+                String bluetoothAddr = networkNodeList.get(currentNode).getBluetoothMacAddress();
                 UstadMobileSystemImpl.l(UMLog.VERBOSE, 400, mkLogPrefix() + " connect node #" + index
                         + " to bluetooth addr " + bluetoothAddr);
                 networkManager.connectBluetooth(bluetoothAddr, this);
@@ -122,10 +136,9 @@ public class EntryStatusTask extends NetworkTask implements BluetoothConnectionH
     protected void getEntryStatusHttp(NetworkNode node) {
         HttpURLConnection connection = null;
         OutputStream httpOut = null;
-        InputStream httpIn = null;
-        List<Boolean> statusResults = null;
+        Reader httpReader = null;
         try {
-            URL apiEndpointUrl = new URL("http://" + node.getDeviceIpAddress() + ":"
+            URL apiEndpointUrl = new URL("http://" + node.getIpAddress() + ":"
                     + node.getPort() + "/catalog/entry_status");
             JSONObject entryIds = new JSONObject();
             JSONArray entryArr = new JSONArray(entryIdList);
@@ -143,43 +156,27 @@ public class EntryStatusTask extends NetworkTask implements BluetoothConnectionH
 
             connection.connect();
             int responseCode = connection.getResponseCode();
+
             if(responseCode >= 200 &&  responseCode < 300) {
-                httpIn = connection.getInputStream();
-                ByteArrayOutputStream responseBuf = new ByteArrayOutputStream();
-                UMIOUtils.readFully(httpIn, responseBuf, 1024);
-                httpIn.close();
+                httpReader = new InputStreamReader(connection.getInputStream());
+                Type gsonType = new TypeToken<List<ContainerFileEntry>>(){}.getType();
+                List<ContainerFileEntry> containerFileEntries = new Gson().fromJson(httpReader,
+                        gsonType);
 
-                JSONObject responseObj = new JSONObject(new String(responseBuf.toByteArray(),
-                        "UTF-8"));
-                JSONObject entriesMap = responseObj.getJSONObject(ENTRY_RESPONSE_ENTRIES_KEY);
-                JSONObject entryObj;
-
-                statusResults = new ArrayList<>();
-                boolean isAvailable;
-                for(int i = 0; i < entryIdList.size(); i++) {
-                    if(!entriesMap.has(entryIdList.get(i))) {
-                        isAvailable = false;
-                    }else {
-                        entryObj = entriesMap.getJSONObject(entryIdList.get(i));
-                        isAvailable = entryObj.getBoolean(ENTRY_RESPONSE_KEY_AVAILABLE);
-                    }
-
-                    statusResults.add(isAvailable);
-                }
                 UstadMobileSystemImpl.l(UMLog.INFO, 376, mkLogPrefix()
                         + " - successfully processed http response");
+
+                networkManager.handleEntriesStatusUpdate(node, entryIdList, containerFileEntries);
+
             }
         }catch(Exception e) {
             e.printStackTrace();
         }finally {
             UMIOUtils.closeOutputStream(httpOut);
-            UMIOUtils.closeInputStream(httpIn);
+            UMIOUtils.closeQuietly(httpReader);
         }
 
         UstadMobileSystemImpl.l(UMLog.INFO, 382, mkLogPrefix() + " - done with node");
-
-        if(statusResults != null)
-            networkManager.handleEntriesStatusUpdate(node, entryIdList, statusResults);
     }
 
     /**
@@ -207,20 +204,10 @@ public class EntryStatusTask extends NetworkTask implements BluetoothConnectionH
             reader = new BufferedReader(new InputStreamReader(inputStream));
             outputStream.write(queryStr.getBytes());
             response = reader.readLine();
-            if(response.startsWith(BluetoothServer.CMD_ENTRY_STATUS_FEEDBACK)) {
-                response=response.substring((BluetoothServer.CMD_ENTRY_STATUS_FEEDBACK.length()+1),response.length());
-
-                for(String status: response.split(CMD_SEPARATOR)){
-                    boolean responseStatus= status.equals("1");
-                    entryIdStatusList.add(responseStatus);
-                }
-
-                UstadMobileSystemImpl.l(UMLog.DEBUG, 648, mkLogPrefix() + " response: " + response);
-
-                networkManager.handleEntriesStatusUpdate(networkNodeList.get(currentNode), entryIdList,entryIdStatusList);
-            }else {
-                System.out.print("Feedback "+response);
-            }
+            Type gsonType = new TypeToken<List<ContainerFileEntry>>(){}.getType();
+            List<ContainerFileEntry> availableEntries = new Gson().fromJson(response, gsonType);
+            networkManager.handleEntriesStatusUpdate(networkNodeList.get(currentNode), entryIdList,
+                    availableEntries);
         }catch(IOException e) {
             UstadMobileSystemImpl.l(UMLog.ERROR, 78, mkLogPrefix() + " onBluetoothConnected IO Exception", e);
         }finally {

@@ -1,8 +1,11 @@
 package com.ustadmobile.core.controller;
 
 import com.ustadmobile.core.catalog.ContentTypeManager;
+import com.ustadmobile.core.db.DbManager;
+import com.ustadmobile.core.db.UmLiveData;
 import com.ustadmobile.core.generated.locale.MessageID;
 import com.ustadmobile.core.impl.AppConfig;
+import com.ustadmobile.core.impl.BaseUmCallback;
 import com.ustadmobile.core.impl.UMLog;
 import com.ustadmobile.core.impl.UstadMobileConstants;
 import com.ustadmobile.core.impl.UstadMobileSystemImpl;
@@ -13,14 +16,18 @@ import com.ustadmobile.core.networkmanager.AvailabilityMonitorRequest;
 import com.ustadmobile.core.networkmanager.EntryCheckResponse;
 import com.ustadmobile.core.networkmanager.NetworkManagerCore;
 import com.ustadmobile.core.networkmanager.NetworkManagerListener;
-import com.ustadmobile.core.networkmanager.NetworkNode;
+import com.ustadmobile.lib.db.entities.NetworkNode;
 import com.ustadmobile.core.networkmanager.NetworkTask;
 import com.ustadmobile.core.opds.UstadJSOPDSEntry;
 import com.ustadmobile.core.opds.UstadJSOPDSFeed;
 import com.ustadmobile.core.opds.UstadJSOPDSItem;
 import com.ustadmobile.core.opds.entities.UmOpdsLink;
 import com.ustadmobile.core.util.UMFileUtil;
-import com.ustadmobile.core.util.UMUtil;
+import com.ustadmobile.lib.db.entities.ContainerFile;
+import com.ustadmobile.lib.db.entities.ContainerFileEntry;
+import com.ustadmobile.lib.db.entities.OpdsEntryWithRelations;
+import com.ustadmobile.lib.db.entities.OpdsLink;
+import com.ustadmobile.lib.util.UMUtil;
 import com.ustadmobile.core.view.AppView;
 import com.ustadmobile.core.view.CatalogEntryView;
 import com.ustadmobile.core.view.DialogResultListener;
@@ -31,6 +38,8 @@ import java.util.HashSet;
 import java.util.Hashtable;
 import java.util.List;
 import java.util.Vector;
+
+import static com.ustadmobile.lib.db.entities.OpdsEntry.ENTRY_PROTOCOL;
 
 /* $if umplatform != 2 $ */
 /* $endif */
@@ -87,6 +96,10 @@ public class CatalogEntryPresenter extends BaseCatalogPresenter implements Acqui
     private boolean entryLoaded = false;
 
     private boolean seeAlsoVisible = false;
+
+    private UmLiveData<OpdsEntryWithRelations> entryLiveData;
+
+    private String baseHref;
 
 
     /**
@@ -204,18 +217,17 @@ public class CatalogEntryPresenter extends BaseCatalogPresenter implements Acqui
 
     public void onCreate() {
         manager = UstadMobileSystemImpl.getInstance().getNetworkManager();
-        if(this.args.containsKey(ARG_ENTRY_OPDS_STR)) {
-            try {
-                entryFeed = new UstadJSOPDSFeed();
-                entryFeed.loadFromString(args.get(ARG_ENTRY_OPDS_STR).toString());
-                entry = entryFeed.getEntryById(args.get(ARG_ENTRY_ID).toString());
-                handleEntryReady();
-            }catch(Exception e) {
-                e.printStackTrace();
-            }
-        }else {
-            entry = new UstadJSOPDSEntry(null);
-            entry.loadFromUrlAsync((String)args.get(ARG_URL), null, getContext(), this);
+
+        if(args.containsKey(ARG_BASE_HREF)) {
+            baseHref = (String)args.get(ARG_BASE_HREF);
+        }
+
+        String entryUri = (String)args.get(ARG_URL);
+        if(entryUri.startsWith(ENTRY_PROTOCOL)) {
+            String entryUuid = entryUri.substring(ENTRY_PROTOCOL.length());
+            entryLiveData = DbManager.getInstance(getContext()).getOpdsEntryWithRelationsDao()
+                    .getEntryByUuid(entryUuid);
+            entryLiveData.observe(this, this::handleEntryUpdated);
         }
 
         if(this.args.containsKey(ARG_TITLEBAR_TEXT))
@@ -223,6 +235,27 @@ public class CatalogEntryPresenter extends BaseCatalogPresenter implements Acqui
 
         UstadMobileSystemImpl.getInstance().getNetworkManager().addAcquisitionTaskListener(this);
     }
+
+    public void handleEntryUpdated(OpdsEntryWithRelations entry) {
+        catalogEntryView.setEntryTitle(entry.getTitle());
+        catalogEntryView.setDescription(entry.getContent(), entry.getContentType());
+        OpdsLink acquisitionLink = entry.getAcquisitionLink(null, true);
+        final UstadMobileSystemImpl impl = UstadMobileSystemImpl.getInstance();
+        if(acquisitionLink != null && acquisitionLink.getLength() > 0)
+            catalogEntryView.setSize(impl.getString(MessageID.size, getContext())
+                    + ": " + UMFileUtil.formatFileSize(acquisitionLink.getLength()));
+
+        OpdsLink thumbnailLink = entry.getThumbnailLink(true);
+        if(thumbnailLink != null)
+            catalogEntryView.setThumbnail(UMFileUtil.resolveLink(baseHref, thumbnailLink.getHref()));
+
+        if(entry.getContainerFileEntries() != null && entry.getContainerFileEntries().size() > 0)
+            updateButtonsByStatus(CatalogPresenter.STATUS_ACQUIRED);
+        else
+            updateButtonsByStatus(CatalogPresenter.STATUS_NOT_ACQUIRED);
+
+    }
+
 
     @Override
     public void onEntryLoaded(UstadJSOPDSItem item, int position, UstadJSOPDSEntry entry) {
@@ -467,38 +500,65 @@ public class CatalogEntryPresenter extends BaseCatalogPresenter implements Acqui
     }
 
     public void handleOpenEntry(UstadJSOPDSEntry entry) {
-        CatalogEntryInfo entryInfo = CatalogPresenter.getEntryInfo(entry.getItemId(),
-                CatalogPresenter.SHARED_RESOURCE | CatalogPresenter.USER_RESOURCE, getContext());
-        UstadMobileSystemImpl impl = UstadMobileSystemImpl.getInstance();
+        final UstadMobileSystemImpl impl = UstadMobileSystemImpl.getInstance();
 
-        if (entryInfo != null && entryInfo.acquisitionStatus == CatalogPresenter.STATUS_ACQUIRED) {
-            //see if the user needs to login
-            if(impl.getActiveUser(context) == null
-                && impl.getAppConfigBoolean(AppConfig.KEY_LOGIN_REQUIRED_FOR_CONTENT_OPEN, context)){
-                openAfterLoginOrRegister = true;
-                impl.go(LoginView.VIEW_NAME, context);
-                return;
-            }
+        //TODO: check if user login is required, and if so, is the user logged in?
 
-            Hashtable openArgs = new Hashtable();
-            openArgs.put(ContainerController.ARG_CONTAINERURI, entryInfo.fileURI);
-            openArgs.put(ContainerController.ARG_MIMETYPE, entryInfo.mimeType);
-            openArgs.put(ContainerController.ARG_OPFINDEX, new Integer(0));
 
-            String viewName = ContentTypeManager.getViewNameForContentType(entryInfo.mimeType);
+        /**
+         * Find if this entry is in a ContainerFile
+         */
+        List<ContainerFileEntry> containerFileEntries = entryLiveData.getValue().getContainerFileEntries();
 
-            if(viewName != null) {
-                UstadMobileSystemImpl.getInstance().go(viewName, openArgs, getContext());
-            }else {
-                UstadMobileSystemImpl.l(UMLog.ERROR, 672, entryInfo.mimeType);
-                impl.getAppView(getContext()).showNotification(impl.getString(0, getContext()),
-                        AppView.LENGTH_LONG);
-            }
-        }else {
-            UstadMobileSystemImpl.l(UMLog.ERROR, 673, entryInfo != null ? entryInfo.toString() : null);
-            impl.getAppView(getContext()).showNotification(impl.getString(
-                    MessageID.error_opening_file, getContext()), AppView.LENGTH_LONG);
+        if(containerFileEntries != null && containerFileEntries.size() > 0) {
+            int containerFileId = containerFileEntries.get(0).getContainerFileId();
+            DbManager.getInstance(getContext()).getContainerFileDao()
+                    .getContainerFileByIdAsync(containerFileId, new BaseUmCallback<ContainerFile>() {
+                        @Override
+                        public void onSuccess(ContainerFile result) {
+                            Hashtable args = new Hashtable();
+                            args.put(ContainerController.ARG_CONTAINERURI, result.getNormalizedPath());
+                            args.put(ContainerController.ARG_MIMETYPE, result.getMimeType());
+                            args.put(ContainerController.ARG_OPFINDEX, Integer.valueOf(0));
+                            impl.go(ContentTypeManager.getViewNameForContentType(result.getMimeType()),
+                                    args, getContext());
+                        }
+                    });
         }
+
+
+
+//        CatalogEntryInfo entryInfo = CatalogPresenter.getEntryInfo(entry.getItemId(),
+//                CatalogPresenter.SHARED_RESOURCE | CatalogPresenter.USER_RESOURCE, getContext());
+//
+//        if (entryInfo != null && entryInfo.acquisitionStatus == CatalogPresenter.STATUS_ACQUIRED) {
+//            //see if the user needs to login
+//            if(impl.getActiveUser(context) == null
+//                && impl.getAppConfigBoolean(AppConfig.KEY_LOGIN_REQUIRED_FOR_CONTENT_OPEN, context)){
+//                openAfterLoginOrRegister = true;
+//                impl.go(LoginView.VIEW_NAME, context);
+//                return;
+//            }
+//
+//            Hashtable openArgs = new Hashtable();
+//            openArgs.put(ContainerController.ARG_CONTAINERURI, entryInfo.fileURI);
+//            openArgs.put(ContainerController.ARG_MIMETYPE, entryInfo.mimeType);
+//            openArgs.put(ContainerController.ARG_OPFINDEX, new Integer(0));
+//
+//            String viewName = ContentTypeManager.getViewNameForContentType(entryInfo.mimeType);
+//
+//            if(viewName != null) {
+//                UstadMobileSystemImpl.getInstance().go(viewName, openArgs, getContext());
+//            }else {
+//                UstadMobileSystemImpl.l(UMLog.ERROR, 672, entryInfo.mimeType);
+//                impl.getAppView(getContext()).showNotification(impl.getString(0, getContext()),
+//                        AppView.LENGTH_LONG);
+//            }
+//        }else {
+//            UstadMobileSystemImpl.l(UMLog.ERROR, 673, entryInfo != null ? entryInfo.toString() : null);
+//            impl.getAppView(getContext()).showNotification(impl.getString(
+//                    MessageID.error_opening_file, getContext()), AppView.LENGTH_LONG);
+//        }
     }
 
     public void handleClickShare() {

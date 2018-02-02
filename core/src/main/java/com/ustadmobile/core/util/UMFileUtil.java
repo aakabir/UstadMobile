@@ -60,7 +60,7 @@ public class UMFileUtil {
      * @param paths Array of paths to join
      * @return path components joined with a single FILE_SEP character between
      */
-    public static String joinPaths(String[] paths) {
+    public static String joinPaths(String... paths) {
         StringBuffer result = new StringBuffer();
         for(int i = 0; i < paths.length; i++) {
             String pathComp = paths[i];
@@ -736,6 +736,22 @@ public class UMFileUtil {
         }
 
         return result;
+    }
+
+    /**
+     * Make a rough guess if the given uri is a file or not.
+     *
+     * Will return true if the uri starts with file:/// or just /
+     *
+     * @param uri the uri to check to determine if it is a file uri or not. Should be an absolute
+     *            uri.
+     * @return True if it looks like a file as above, false otherwise
+     */
+    public static boolean isFileUri(String uri) {
+        if(uri.startsWith(PROTOCOL_FILE) || uri.startsWith("/"))
+            return true;
+        else
+            return false;
     }
 
     

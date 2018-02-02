@@ -30,11 +30,12 @@
  */
 package com.ustadmobile.core.view;
 
+import com.ustadmobile.core.db.UmProvider;
 import com.ustadmobile.core.model.CourseProgress;
 import com.ustadmobile.core.opds.OpdsFilterOptions;
-import com.ustadmobile.core.opds.UstadJSOPDSEntry;
+import com.ustadmobile.lib.db.entities.OpdsEntryWithRelations;
 
-import java.util.Vector;
+import java.util.Set;
 
 /**
  *
@@ -117,20 +118,13 @@ public interface CatalogView extends UstadView{
      */
     void setEntryProgress(String entryId, CourseProgress progress);
 
-    
-    /**
-     * Get the entries that have been selected by the user (e.g. by long press)
-     * 
-     * @return Array of entries selected by the user
-     */
-    Vector getSelectedEntries();
-    
+
     /**
      * Set the entries that are to be marked as selected
      * 
-     * @param entries Array of entries to be marked as selected
+     * @param entries Array of Strings with the uuid of the entries that should be shown as selected
      */
-    void setSelectedEntries(Vector entries);
+    void setSelectedEntries(Set<String> entries);
 
     public void refresh();
 
@@ -165,49 +159,10 @@ public interface CatalogView extends UstadView{
      */
     void setAlternativeTranslationLinks(String[] translationLinks, int disabledItem);
 
-    /**
-     * Add an entry to the catalog display list
-     *
-     * @param entry
-     */
-    void addEntry(UstadJSOPDSEntry entry);
-
-    /**
-     * Add an entry to the catalog display list at the specified index
-     *
-     * @param position
-     * @param entry
-     */
-    void addEntry(int position, UstadJSOPDSEntry entry);
-
-    void setEntryAt(int position, UstadJSOPDSEntry entry);
-
-    /**
-     * Remove an entry from the catalog display list
-     *
-     * @param entry
-     */
-    void removeEntry(UstadJSOPDSEntry entry);
-
-    void removeEntry(int index);
-
-    /**
-     * Return the number of entries in this view
-     *
-     * @return
-     */
-    int getNumEntries();
-
-    /**
-     * Get the index of a given entry id
-     *
-     * @param entryId
-     * @return
-     */
-    int indexOfEntry(String entryId);
-
     void setRefreshing(boolean isRefreshing);
 
     void setFilterOptions(OpdsFilterOptions filterOptions);
+
+    void setEntryProvider(UmProvider<OpdsEntryWithRelations> entryProvider);
 
 }

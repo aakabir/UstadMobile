@@ -2,6 +2,9 @@ package com.ustadmobile.port.sharedse.networkmanager;
 
 import com.ustadmobile.core.controller.CatalogEntryInfo;
 import com.ustadmobile.core.controller.CatalogPresenter;
+import com.ustadmobile.core.db.DbManager;
+import com.ustadmobile.core.db.dao.DownloadJobDao;
+import com.ustadmobile.core.db.dao.NetworkNodeDao;
 import com.ustadmobile.core.impl.UMLog;
 import com.ustadmobile.core.impl.UstadMobileSystemImpl;
 import com.ustadmobile.core.networkmanager.AcquisitionListener;
@@ -10,13 +13,18 @@ import com.ustadmobile.core.networkmanager.EntryCheckResponse;
 import com.ustadmobile.core.networkmanager.NetworkManagerCore;
 import com.ustadmobile.core.networkmanager.NetworkManagerListener;
 import com.ustadmobile.core.networkmanager.NetworkManagerTaskListener;
-import com.ustadmobile.core.networkmanager.NetworkNode;
+import com.ustadmobile.lib.db.entities.ContainerFileEntry;
+import com.ustadmobile.lib.db.entities.DownloadJob;
+import com.ustadmobile.lib.db.entities.DownloadJobItem;
+import com.ustadmobile.lib.db.entities.EntryStatusResponse;
+import com.ustadmobile.lib.db.entities.NetworkNode;
 import com.ustadmobile.core.networkmanager.NetworkTask;
 import com.ustadmobile.core.opds.UstadJSOPDSEntry;
 import com.ustadmobile.core.opds.UstadJSOPDSFeed;
 import com.ustadmobile.core.util.UMFileUtil;
 import com.ustadmobile.core.util.UMIOUtils;
 import com.ustadmobile.core.util.UMUUID;
+import com.ustadmobile.lib.db.entities.OpdsEntryWithRelations;
 import com.ustadmobile.nanolrs.http.NanoLrsHttpd;
 import com.ustadmobile.port.sharedse.impl.http.EmbeddedHTTPD;
 import com.ustadmobile.port.sharedse.impl.http.MountedZipHandler;
@@ -34,13 +42,14 @@ import java.util.Arrays;
 import java.util.Calendar;
 import java.util.HashMap;
 import java.util.HashSet;
-import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.Timer;
 import java.util.TimerTask;
 import java.util.Vector;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
 import java.util.regex.Pattern;
 import java.util.zip.ZipFile;
 
@@ -63,7 +72,10 @@ import static com.ustadmobile.core.buildconfig.CoreBuildConfig.WIFI_P2P_INSTANCE
  * @see com.ustadmobile.core.networkmanager.NetworkManagerCore
  */
 
-public abstract class NetworkManager implements NetworkManagerCore, NetworkManagerTaskListener, LocalMirrorFinder, EmbeddedHTTPD.ResponseListener {
+public abstract class NetworkManager implements NetworkManagerCore, NetworkManagerTaskListener,
+        LocalMirrorFinder, EntryStatusTask.NetworkNodeListProvider, EmbeddedHTTPD.ResponseListener {
+
+    protected ExecutorService executorService;
 
     /**
      * Flag to indicate type of notification used when supernode is active
@@ -136,6 +148,8 @@ public abstract class NetworkManager implements NetworkManagerCore, NetworkManag
 
     private Vector<NetworkNode> knownNetworkNodes=new Vector<>();
 
+    private final Object knownNodesLock = new Object();
+
     private Vector<NetworkTask>[] tasksQueues = new Vector[] {
         new Vector<>(), new Vector<>()
     };
@@ -153,7 +167,7 @@ public abstract class NetworkManager implements NetworkManagerCore, NetworkManag
 
     private Vector<WiFiDirectGroupListener> wifiDirectGroupListeners = new Vector<>();
 
-    private Map<String,AcquisitionTask> entryAcquisitionTaskMap=new HashMap<>();
+    private Map<String,DownloadTask> entryAcquisitionTaskMap=new HashMap<>();
 
     /**
      * The main HTTP server which runs on a dynamic port
@@ -306,6 +320,8 @@ public abstract class NetworkManager implements NetworkManagerCore, NetworkManag
 
         this.mContext = mContext;
 
+        executorService = Executors.newCachedThreadPool();
+
         try {
             /*
              * Do not use .l logging method here: when running sharedse mock tests, this gets called in the
@@ -388,12 +404,17 @@ public abstract class NetworkManager implements NetworkManagerCore, NetworkManag
      */
     //TODO: remove mContext parameter
     public long requestFileStatus(List<String> entryIds,Object mContext,List<NetworkNode> nodeList, boolean useBluetooth, boolean useHttp){
-        EntryStatusTask task = new EntryStatusTask(entryIds,nodeList,this);
+        EntryStatusTask task = new EntryStatusTask(entryIds,this,this);
         task.setTaskType(NetworkManagerCore.QUEUE_ENTRY_STATUS);
         task.setUseBluetooth(useBluetooth);
         task.setUseHttp(useHttp);
         queueTask(task);
         return task.getTaskId();
+    }
+
+    @Override
+    public List<NetworkNode> getNetworkNodes() {
+        return DbManager.getInstance(getContext()).getNetworkNodeDao().findAllActiveNodes();
     }
 
     public long requestFileStatus(String[] entryIds, boolean useBluetooth, boolean useHttp) {
@@ -415,6 +436,23 @@ public abstract class NetworkManager implements NetworkManagerCore, NetworkManag
         return requestFileStatus(entryIds, mContext, nodeList, true, true);
     }
 
+    public long buildDownloadJob(List<OpdsEntryWithRelations> rootEntries, boolean recursive) {
+        DownloadJobDao jobDao = DbManager.getInstance(getContext()).getDownloadJobDao();
+
+        DownloadJob job = new DownloadJob();
+        job.setId((int)jobDao.insert(job));
+        job.setStatus(UstadMobileSystemImpl.DLSTATUS_NOT_STARTED);
+
+        ArrayList<DownloadJobItem> jobItems = new ArrayList<>();
+        for(OpdsEntryWithRelations entry : rootEntries) {
+            jobItems.add(new DownloadJobItem(entry, job));
+        }
+
+        return job.getId();
+    }
+
+
+
     /**
      * Method which invoked when making file acquisition request.
      * @param feed OPDS file feed
@@ -428,13 +466,17 @@ public abstract class NetworkManager implements NetworkManagerCore, NetworkManag
      */
     public long requestAcquisition(UstadJSOPDSFeed feed, LocalMirrorFinder mirrorFinder,
                                               boolean localNetworkEnabled, boolean wifiDirectEnabled){
-        AcquisitionTask task=new AcquisitionTask(feed,this);
-        task.setMirrorFinder(mirrorFinder);
-        task.setTaskType(QUEUE_ENTRY_ACQUISITION);
-        task.setLocalNetworkDownloadEnabled(localNetworkEnabled);
-        task.setWifiDirectDownloadEnabled(wifiDirectEnabled);
-        queueTask(task);
-        return task.getTaskId();
+
+
+
+//        DownloadTask task=new DownloadTask(feed,this);
+//        task.setMirrorFinder(mirrorFinder);
+//        task.setTaskType(QUEUE_ENTRY_ACQUISITION);
+//        task.setLocalNetworkDownloadEnabled(localNetworkEnabled);
+//        task.setWifiDirectDownloadEnabled(wifiDirectEnabled);
+//        queueTask(task);
+//        return task.getTaskId();
+        return 0;
     }
 
     public long requestAcquisition(UstadJSOPDSFeed feed, boolean localNetworkEnabled, boolean wifiDirectEnabled){
@@ -551,42 +593,48 @@ public abstract class NetworkManager implements NetworkManagerCore, NetworkManag
      * @param txtRecords Map of DNS-Text records
      */
     public void handleWifiDirectSdTxtRecordsAvailable(String serviceFullDomain,String senderMacAddr, HashMap<String, String> txtRecords) {
-        if(serviceFullDomain.contains(WIFI_P2P_INSTANCE_NAME)){
-            String ipAddr = txtRecords.get(SD_TXT_KEY_IP_ADDR);
-            String btAddr = txtRecords.get(SD_TXT_KEY_BT_MAC);
-            int port=Integer.parseInt(txtRecords.get(SD_TXT_KEY_PORT));
+        executorService.execute(() -> {
+            if(serviceFullDomain.contains(WIFI_P2P_INSTANCE_NAME)){
+                String ipAddr = txtRecords.get(SD_TXT_KEY_IP_ADDR);
+                String btAddr = txtRecords.get(SD_TXT_KEY_BT_MAC);
+                int port=Integer.parseInt(txtRecords.get(SD_TXT_KEY_PORT));
 
-            boolean newNode;
-            NetworkNode node = null;
-            synchronized (knownNetworkNodes) {
-                newNode = true;
-                if(ipAddr != null) {
-                    node = getNodeByIpAddress(ipAddr);
-                    newNode = (node == null);
+                boolean newNode = false;
+                NetworkNode node = null;
+                synchronized (knownNodesLock) {
+                    NetworkNodeDao networkNodeDao = DbManager.getInstance(getContext()).getNetworkNodeDao();
+                    node = networkNodeDao.findNodeByIpOrWifiDirectMacAddress(ipAddr, senderMacAddr);
+
+                    if(node == null) {
+                        node = new NetworkNode(senderMacAddr, ipAddr);
+                        newNode = true;
+                    }
+
+                    if(ipAddr != null)
+                        node.setIpAddress(ipAddr);
+
+                    node.setBluetoothMacAddress(btAddr);
+                    node.setWifiDirectMacAddress(senderMacAddr);
+                    node.setPort(port);
+                    node.setWifiDirectLastUpdated(Calendar.getInstance().getTimeInMillis());
+
+                    if(newNode) {
+                        networkNodeDao.insert(node);
+                    }else {
+                        networkNodeDao.update(node);
+                    }
                 }
 
 
-                if(node == null) {
-                    node = new NetworkNode(senderMacAddr,ipAddr);
-                    node.setDeviceIpAddress(ipAddr);
-                    knownNetworkNodes.add(node);
+                if(newNode){
+                    queueStatusChecksForNewNode(node);
+                    fireNetworkNodeDiscovered(node);
+                }else{
+                    fireNetworkNodeUpdated(node);
                 }
-
-                node.setDeviceBluetoothMacAddress(btAddr);
-                node.setDeviceWifiDirectMacAddress(senderMacAddr);
-                node.setPort(port);
-                node.setWifiDirectLastUpdated(Calendar.getInstance().getTimeInMillis());
             }
+        });
 
-
-            if(newNode){
-                queueStatusChecksForNewNode(node);
-                fireNetworkNodeDiscovered(node);
-            }else{
-                fireNetworkNodeUpdated(node);
-            }
-
-        }
     }
 
     public void handleWifiDirectPeersChanged(List<NetworkNode> peers) {
@@ -603,19 +651,21 @@ public abstract class NetworkManager implements NetworkManagerCore, NetworkManag
     }
 
     protected void fireWifiDirectPeersChanged() {
-        synchronized (peerChangeListeners) {
-            for(WifiP2pListener listener: peerChangeListeners) {
-                listener.peersChanged(knownPeers);
-            }
-        }
+//        TODO: re-enable this for db based version
+//        synchronized (peerChangeListeners) {
+//            for(WifiP2pListener listener: peerChangeListeners) {
+//                listener.peersChanged(knownPeers);
+//            }
+//        }
     }
 
     protected void fireWifiP2pConnectionChanged(boolean connected) {
-        synchronized (peerChangeListeners) {
-            for(WifiP2pListener listener : peerChangeListeners) {
-                listener.wifiP2pConnectionChanged(connected);
-            }
-        }
+//        TODO: re-enable this for db based version
+//        synchronized (peerChangeListeners) {
+//            for(WifiP2pListener listener : peerChangeListeners) {
+//                listener.wifiP2pConnectionChanged(connected);
+//            }
+//        }
     }
 
     protected void fireWifiP2pConnectionResult(String macAddress, boolean successful) {
@@ -662,34 +712,43 @@ public abstract class NetworkManager implements NetworkManagerCore, NetworkManag
      * @param port Service port on host device
      */
     public void handleNetworkServerDiscovered(String serviceName,String ipAddress,int port){
-        NetworkNode node;
-        boolean newNode;
-        synchronized (knownNetworkNodes) {
-            if(ipAddress.equals(getDeviceIPAddress()) || ipAddress.equals("127.0.0.1"))
-                return;
+        executorService.execute(() -> {
+            NetworkNode node;
+            boolean newNode;
+            synchronized (knownNodesLock) {
+                if(ipAddress.equals(getDeviceIPAddress()) || ipAddress.equals("127.0.0.1"))
+                    return;
 
 
-            node = getNodeByIpAddress(ipAddress);
-            newNode = (node == null);
+                DbManager dbManager = DbManager.getInstance(getContext());
+                node = dbManager.getNetworkNodeDao().findNodeByIpAddress(ipAddress);
 
-            if(node == null) {
-                node = new NetworkNode(null,ipAddress);
-                knownNetworkNodes.add(node);
+//            node = getNodeByIpAddress(ipAddress);
+                newNode = (node == null);
+
+                if(node == null) {
+                    node = new NetworkNode(null,ipAddress);
+//                knownNetworkNodes.add(node);
+                }
+
+                node.setNsdServiceName(serviceName);
+                node.setNetworkServiceLastUpdated(Calendar.getInstance().getTimeInMillis());
+                node.setPort(port);
+
+                if(newNode)
+                    dbManager.getNetworkNodeDao().insert(node);
+                else
+                    dbManager.getNetworkNodeDao().update(node);
             }
 
-            node.setNsdServiceName(serviceName);
-            node.setNetworkServiceLastUpdated(Calendar.getInstance().getTimeInMillis());
-            node.setPort(port);
-        }
 
-
-        if(newNode){
-            queueStatusChecksForNewNode(node);
-            fireNetworkNodeDiscovered(node);
-        }else{
-            fireNetworkNodeUpdated(node);
-        }
-
+            if(newNode){
+                queueStatusChecksForNewNode(node);
+                fireNetworkNodeDiscovered(node);
+            }else{
+                fireNetworkNodeUpdated(node);
+            }
+        });
     }
 
     public void handleNetworkServiceRemoved(String serviceName) {
@@ -769,7 +828,7 @@ public abstract class NetworkManager implements NetworkManagerCore, NetworkManag
         synchronized (knownNetworkNodes) {
             String nodeIp;
             for(NetworkNode node : knownNetworkNodes) {
-                nodeIp = node.getDeviceIpAddress();
+                nodeIp = node.getIpAddress();
                 if(nodeIp != null && nodeIp.equals(ipAddr))
                     return node;
             }
@@ -782,12 +841,14 @@ public abstract class NetworkManager implements NetworkManagerCore, NetworkManag
      * Get known network node using it's bluetooth address
      * @param bluetoothAddr Node's bluetooth address to search for.
      * @return NetworkNode object
+     *
+     * @Deprecated Use the database instead
      */
     public NetworkNode getNodeByBluetoothAddr(String bluetoothAddr) {
         synchronized (knownNetworkNodes) {
             String nodeBtAddr;
             for(NetworkNode node : knownNetworkNodes) {
-                nodeBtAddr = node.getDeviceBluetoothMacAddress();
+                nodeBtAddr = node.getBluetoothMacAddress();
                 if(nodeBtAddr != null && nodeBtAddr.equals(bluetoothAddr))
                     return node;
             }
@@ -821,36 +882,68 @@ public abstract class NetworkManager implements NetworkManagerCore, NetworkManag
      */
     public abstract void connectBluetooth(String deviceAddress,BluetoothConnectionHandler handler);
 
-    /**
-     * Method which invoked when entry status responses is are received
-     * @param node NetworkNode on which entry status check task was executed on.
-     * @param fileIds List of all entries
-     * @param status List of all entries status
-     */
-    public void handleEntriesStatusUpdate(NetworkNode node, List<String> fileIds,List<Boolean> status) {
-        List<EntryCheckResponse> responseList;
-        EntryCheckResponse checkResponse;
-        long timeNow = Calendar.getInstance().getTimeInMillis();
-        for (int position=0;position<fileIds.size();position++){
-            checkResponse = getEntryResponse(fileIds.get(position), node);
+    public void handleEntriesStatusUpdate(NetworkNode node, List<String> entryIds,
+                                          List<ContainerFileEntry> availableEntries) {
 
-            responseList=getEntryResponses().get(fileIds.get(position));
-            if(responseList==null){
-                responseList=new ArrayList<>();
-                entryResponses.put(fileIds.get(position),responseList);
-            }
+        List<String> remainingEntries = new ArrayList<>(entryIds);
+        ArrayList<EntryStatusResponse> entryStatusResponses = new ArrayList<>();
+        long responseTime = System.currentTimeMillis();
 
-            if(checkResponse == null) {
-                checkResponse = new EntryCheckResponse(node);
-                responseList.add(checkResponse);
-            }
-
-            checkResponse.setFileAvailable(status.get(position));
-            checkResponse.setLastChecked(timeNow);
+        for(ContainerFileEntry availableEntry : availableEntries) {
+            entryStatusResponses.add(new EntryStatusResponse(availableEntry.getContainerEntryId(),
+                    node.getId(), responseTime, 0, true));
+            remainingEntries.remove(availableEntry.getContainerEntryId());
         }
 
-        fireFileStatusCheckInformationAvailable(fileIds);
+        for(String unavailableEntryId : remainingEntries) {
+            entryStatusResponses.add(new EntryStatusResponse(unavailableEntryId, node.getId(),
+                    responseTime,0, false));
+        }
+
+        DbManager.getInstance(getContext()).getEntryStatusResponseDao().insert(entryStatusResponses);
+        fireFileStatusCheckInformationAvailable(entryIds);
     }
+
+//    /**
+//     * Method which invoked when entry status responses is are received
+//     * @param node NetworkNode on which entry status check task was executed on.
+//     * @param entryIds List of all entries
+//     * @param status List of all entries status
+//     */
+//    public void handleEntriesStatusUpdate(NetworkNode node, List<String> entryIds, List<Boolean> status) {
+//        ArrayList<EntryStatusResponse> entryStatusResponses = new ArrayList<>();
+//        long responseTime = System.currentTimeMillis();
+//        for(int i = 0; i < entryIds.size(); i++) {
+//            entryStatusResponses.add(new EntryStatusResponse(entryIds.get(i), node.getId(),
+//                    responseTime, 0, status.get(i)));
+//        }
+//
+//        DbManager.getInstance(getContext()).getEntryStatusResponseDao().insert(entryStatusResponses);
+//        fireFileStatusCheckInformationAvailable(entryIds);
+//
+////        List<EntryCheckResponse> responseList;
+////        EntryCheckResponse checkResponse;
+////        long timeNow = Calendar.getInstance().getTimeInMillis();
+////        for (int position=0;position<fileIds.size();position++){
+////            checkResponse = getEntryResponse(fileIds.get(position), node);
+////
+////            responseList=getEntryResponses().get(fileIds.get(position));
+////            if(responseList==null){
+////                responseList=new ArrayList<>();
+////                entryResponses.put(fileIds.get(position),responseList);
+////            }
+////
+////            if(checkResponse == null) {
+////                checkResponse = new EntryCheckResponse(node);
+////                responseList.add(checkResponse);
+////            }
+////
+////            checkResponse.setFileAvailable(status.get(position));
+////            checkResponse.setLastChecked(timeNow);
+////        }
+////
+////        fireFileStatusCheckInformationAvailable(fileIds);
+//    }
 
     /**
      * Method which get particular entry status response on a specific node from list of responses.
@@ -1334,7 +1427,7 @@ public abstract class NetworkManager implements NetworkManagerCore, NetworkManag
      * Fire acquisition progress updates to the listening part of the app
      * @param entryId
      */
-    protected void fireAcquisitionProgressUpdate(String entryId, AcquisitionTask task){
+    protected void fireAcquisitionProgressUpdate(String entryId, DownloadTask task){
         synchronized (acquisitionListeners) {
             for(AcquisitionListener listener : acquisitionListeners){
                 listener.acquisitionProgressUpdate(entryId, task.getStatusByEntryId(entryId));
@@ -1347,7 +1440,7 @@ public abstract class NetworkManager implements NetworkManagerCore, NetworkManag
      * Fire acquisition status change to all listening parts of the app
      * @param entryId
      */
-    protected void fireAcquisitionStatusChanged(String entryId, AcquisitionTask.Status status){
+    protected void fireAcquisitionStatusChanged(String entryId, DownloadTask.Status status){
         UstadMobileSystemImpl.l(UMLog.DEBUG, 645, "fireAcquisitionStatusChanged: " + entryId +
                 " : " + status.getStatus());
         synchronized (acquisitionListeners) {
@@ -1365,7 +1458,7 @@ public abstract class NetworkManager implements NetworkManagerCore, NetworkManag
      * @param entryId Entry id for which status has been discovered
      */
     public void handleEntryStatusChangeDiscovered(String entryId, int acquisitionStatus) {
-        AcquisitionTask.Status status = new AcquisitionTask.Status();
+        DownloadTask.Status status = new DownloadTask.Status();
         status.setStatus(acquisitionStatus);
         UstadMobileSystemImpl.l(UMLog.DEBUG, 645, "handleEntryStatusChangeDiscovered: " + entryId +
                 " : " + status.getStatus());
@@ -1378,11 +1471,11 @@ public abstract class NetworkManager implements NetworkManagerCore, NetworkManag
      *
      * @return The task carrying out acquisition of this entry, or null if it's not being acquired by any known task
      */
-    public AcquisitionTask getAcquisitionTaskByEntryId(String entryId) {
+    public DownloadTask getAcquisitionTaskByEntryId(String entryId) {
         synchronized (tasksQueues[QUEUE_ENTRY_ACQUISITION]) {
-            AcquisitionTask acquisitionTask;
+            DownloadTask acquisitionTask;
             for(int i = 0; i < tasksQueues[QUEUE_ENTRY_ACQUISITION].size(); i++) {
-                acquisitionTask = (AcquisitionTask)tasksQueues[QUEUE_ENTRY_ACQUISITION].get(i);
+                acquisitionTask = (DownloadTask)tasksQueues[QUEUE_ENTRY_ACQUISITION].get(i);
                 if(acquisitionTask.taskIncludesEntry(entryId))
                     return acquisitionTask;
             }
@@ -1420,7 +1513,7 @@ public abstract class NetworkManager implements NetworkManagerCore, NetworkManag
      * Return the Entry ID to AcquisitionTask map
      * @return
      */
-    public Map<String,AcquisitionTask> getEntryAcquisitionTaskMap(){
+    public Map<String,DownloadTask> getEntryAcquisitionTaskMap(){
         return entryAcquisitionTaskMap;
     }
 
@@ -1634,13 +1727,14 @@ public abstract class NetworkManager implements NetworkManagerCore, NetworkManag
      *
      */
     public void clearNetworkNodeAcquisitionHistory() {
-        Iterator<NetworkNode> nodeIterator = getKnownNodes().iterator();
-        NetworkNode node;
-        while(nodeIterator.hasNext()) {
-            node = nodeIterator.next();
-            if(node.getAcquisitionHistory() != null)
-                node.getAcquisitionHistory().clear();
-        }
+//        TODO: re-enable this for db based version
+//        Iterator<NetworkNode> nodeIterator = getKnownNodes().iterator();
+//        NetworkNode node;
+//        while(nodeIterator.hasNext()) {
+//            node = nodeIterator.next();
+//            if(node.getAcquisitionHistory() != null)
+//                node.getAcquisitionHistory().clear();
+//        }
     }
 
     public int getActionRequiredAfterGroupConnection() {
@@ -1766,7 +1860,7 @@ public abstract class NetworkManager implements NetworkManagerCore, NetworkManag
 
         String nodeMacAddr;
         for(NetworkNode node : list) {
-            nodeMacAddr = node.getDeviceWifiDirectMacAddress();
+            nodeMacAddr = node.getWifiDirectMacAddress();
             if(nodeMacAddr != null && nodeMacAddr.equalsIgnoreCase(macAddr))
                 return true;
         }
