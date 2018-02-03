@@ -59,7 +59,7 @@ public class DbManagerGWT extends DbManager {
 	@Override
 	public OpdsEntryWithRelationsDao getOpdsEntryWithRelationsDao() {
 		// TODO Test
-		return appDatabase.getOpdsEntryWithRelationsDao();
+		return opdsEntryRepository;
 	}
 
 	@Override

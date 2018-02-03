@@ -6,6 +6,12 @@ import com.google.gwt.uibinder.client.UiField;
 import com.google.gwt.user.client.ui.TextBox;
 import com.google.gwt.user.client.ui.Widget;
 import com.gwtplatform.mvp.client.ViewWithUiHandlers;
+import com.ustadmobile.core.db.DbManager;
+import com.ustadmobile.core.db.UmLiveData;
+import com.ustadmobile.core.db.dao.OpdsEntryDao;
+import com.ustadmobile.core.db.dao.OpdsEntryWithRelationsDao;
+import com.ustadmobile.lib.db.entities.OpdsEntryWithRelations;
+import com.ustadmobile.port.gwt.client.db.repository.OpdsEntryRepositoryGWT;
 
 import java.util.Hashtable;
 
@@ -47,9 +53,17 @@ public class CatalogView extends ViewWithUiHandlers{
 		this.args = args;
 		
 		if(args != null && args.get("url") != null) {
-			this.textBox.setText(args.get("url").toString());
+			OpdsEntryWithRelationsDao repository = DbManager.getInstance(this)
+					.getOpdsEntryWithRelationsRepository();
+			UmLiveData<OpdsEntryWithRelations> liveData = repository.getEntryByUrl((String)args.get("url"));
+			liveData.observeForever(this::handleEntryChanged);
 		}
 	}
+	
+	public void handleEntryChanged(OpdsEntryWithRelations entry) {
+		
+	}
+	
 	
 	
 	

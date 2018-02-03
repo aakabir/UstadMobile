@@ -1,16 +1,20 @@
 package com.ustadmobile.port.gwt.client.db.repository;
 
 import java.io.IOException;
+import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
 
 import org.xmlpull.v1.XmlPullParser;
 import org.xmlpull.v1.XmlPullParserException;
 
 import com.google.gwt.core.client.GWT;
+import com.google.gwt.storage.client.Storage;
 import com.ustadmobile.core.db.DbManager;
 import com.ustadmobile.core.db.UmLiveData;
 import com.ustadmobile.core.db.UmProvider;
 import com.ustadmobile.core.db.dao.OpdsEntryWithRelationsDao;
+import com.ustadmobile.core.impl.UmCallback;
 import com.ustadmobile.core.impl.UstadMobileSystemImpl;
 import com.ustadmobile.core.impl.http.UmHttpCall;
 import com.ustadmobile.core.impl.http.UmHttpRequest;
@@ -20,99 +24,115 @@ import com.ustadmobile.lib.db.entities.OpdsEntry;
 import com.ustadmobile.lib.db.entities.OpdsEntry.OpdsItemLoadCallback;
 import com.ustadmobile.lib.db.entities.OpdsEntryWithRelations;
 import com.ustadmobile.lib.db.entities.OpdsLink;
+import com.ustadmobile.port.gwt.client.db.dao.AbstractLiveDataGWT;
 import com.ustadmobile.port.gwt.client.db.dao.UmLiveDataGWT;
+import com.ustadmobile.port.gwt.client.db.dao.UmLiveDataGwtSync;
 import com.ustadmobile.port.gwt.xmlpull.XmlPullParserGWT;
 
 public class OpdsEntryRepositoryGWT extends OpdsEntryWithRelationsDao{
 
 	private DbManager dbManager;
+	
 	UstadMobileSystemImpl impl;
 	
+	private HashMap<String, List<String>> opdsParentToChildListCache;
+	
+	private HashMap<String, OpdsEntryWithRelations> opdsEntryCache;
 	
 	public OpdsEntryRepositoryGWT(DbManager manager){
 		this.dbManager = manager;
+		opdsParentToChildListCache = new HashMap<>();
+		opdsEntryCache = new HashMap<>();
 		this.impl = UstadMobileSystemImpl.getInstance();
 	}
+	
+	private OpdsItemLoadCallback mLoadcallback = new OpdsItemLoadCallback() {
+		
+		@Override
+		public void onLinkAdded(OpdsLink link, OpdsEntry parentItem, int position) {
+			
+		}
+		
+		@Override
+		public void onError(OpdsEntry item, Throwable cause) {
+			// TODO Auto-generated method stub
+			
+		}
+		
+		@Override
+		public void onEntryAdded(OpdsEntryWithRelations childEntry, OpdsEntry parentFeed, int position) {
+			//put the child entry in
+			List<String> parentFeedList = opdsParentToChildListCache.get(parentFeed.getUuid());
+			if(parentFeedList == null) {
+				parentFeedList = new ArrayList<>();
+				opdsParentToChildListCache.put(parentFeed.getUuid(), parentFeedList);
+			}
+			
+			
+			if(parentFeedList.size() > position)
+				parentFeedList.set(position, childEntry.getUuid());
+			else
+				parentFeedList.add(childEntry.getUuid());
+			
+			opdsEntryCache.put(childEntry.getUuid(), childEntry);
+		}
+		
+		@Override
+		public void onDone(OpdsEntry item) {
+			// TODO Auto-generated method stub
+			
+		}
+	};
+	
 	
 	@Override
 	public UmLiveData<OpdsEntryWithRelations> getEntryByUrl(String url, String entryUuid,
 			OpdsItemLoadCallback callback) {
-		// TODO Test this
 		
-		UmLiveData<OpdsEntryWithRelations> data = 
-				new UmLiveDataGWT<OpdsEntryWithRelations>();
-		
-		@SuppressWarnings("deprecation")
-		UmHttpRequest request = new UmHttpRequest(url);
-		impl.makeRequestAsync(request, new UmHttpResponseCallback() {
-			
+		return new AbstractLiveDataGWT<OpdsEntryWithRelations>() {
 			@Override
-			public void onFailure(UmHttpCall call, IOException exception) {
-				// TODO Finish
-				GWT.log("OpdsEntryRepositoryGWT:getEntryByUrl: Request failed!");
-				GWT.log("Exception was: " + exception.getMessage());
-			}
-			
-			@Override
-			public void onComplete(UmHttpCall call, UmHttpResponse response) {
-				OpdsEntry entry = new OpdsEntry();
-				String dataString = null;
-				try {
-					dataString = new String(response.getResponseBody());
-				} catch (IOException e1) {
-					// TODO Auto-generated catch block
-					e1.printStackTrace();
-					GWT.log("OpdsEntryRespositoryGWT onComplete():"
-							+ "Unable to read from response.");
-				}
-				XmlPullParser dataXPP = new XmlPullParserGWT(dataString);
+			public void fetchValue(UmCallback<OpdsEntryWithRelations> callback) {
+				UmHttpRequest request = new UmHttpRequest(dbManager.getContext(), url);
+				impl.makeRequestAsync(request, new UmHttpResponseCallback() {
+					
+					@Override
+					public void onFailure(UmHttpCall call, IOException exception) {
+						// TODO Finish
+						GWT.log("OpdsEntryRepositoryGWT:getEntryByUrl: Request failed!");
+						GWT.log("Exception was: " + exception.getMessage());
+						callback.onFailure(exception);
+					}
+					
+					@Override
+					public void onComplete(UmHttpCall call, UmHttpResponse response) {
+						OpdsEntryWithRelations entry = new OpdsEntryWithRelations();
+						entry.setUuid(entryUuid);
+						String dataString = null;
+						try {
+							dataString = new String(response.getResponseBody());
+						} catch (IOException e1) {
+							// TODO Auto-generated catch block
+							e1.printStackTrace();
+							GWT.log("OpdsEntryRespositoryGWT onComplete():"
+									+ "Unable to read from response.");
+						}
+						
+						XmlPullParser dataXPP = new XmlPullParserGWT(dataString);
 
-				try {
-					entry.load(dataXPP, new OpdsItemLoadCallback() {
-						
-						//2nd callback called
-						@Override
-						public void onLinkAdded(OpdsLink link, OpdsEntry parentItem, int position) {
-							// TODO Handle if needed
-							
+						try {
+							entry.load(dataXPP, mLoadcallback);
+							callback.onSuccess(entry);
+						} catch (IOException | XmlPullParserException e) {
+							// TODO Auto-generated catch block
+							e.printStackTrace();
+							GWT.log("OpdsEntry.load exception: " + e.getMessage());
+							callback.onFailure(e);
 						}
 						
-						//If any error, this is called. ie: Failed
-						@Override
-						public void onError(OpdsEntry item, Throwable cause) {
-							// TODO Coplete this
-							//data = null ?
-						}
-						
-						//1st callback called
-						@Override
-						public void onEntryAdded(OpdsEntryWithRelations childEntry, OpdsEntry parentFeed, int position) {
-							// TODO Handle if needed.
-							
-						}
-						
-						//3rd/Last callback called
-						@Override
-						public void onDone(OpdsEntry item) {
-							// TODO Add entry to the data set
-							//data.onChanged(entry);
-							
-							//TODO: Set entried with id in local Storage 
-							
-						}
-					});
-				} catch (IOException | XmlPullParserException e) {
-					// TODO Auto-generated catch block
-					e.printStackTrace();
-					GWT.log("OpdsEntry.load exception: " + e.getMessage());
-				}
-				
+					}
+				});
 			}
-		});
-		
-
-		return data;
-		
+		};		
 	}
 
 	@Override
@@ -127,17 +147,29 @@ public class OpdsEntryRepositoryGWT extends OpdsEntryWithRelationsDao{
 		// TODO Get from Local Storage
 		return null;
 	}
-	//In GWT gets it from localStorage
+	
 	@Override
 	public UmLiveData<List<OpdsEntryWithRelations>> getEntriesByParentAsList(String parentId) {
-		// TODO Get it from local storage 
-		return null;
+		return new AbstractLiveDataGWT<List<OpdsEntryWithRelations>>() {
+			@Override
+			public void fetchValue(UmCallback<List<OpdsEntryWithRelations>> callback) {
+				// TODO Auto-generated method stub
+				List<String> childUuidList = opdsParentToChildListCache.get(parentId);
+				List<OpdsEntryWithRelations> childEntriesList = new ArrayList<>();
+				if(childUuidList != null) {
+					for(String uuid : childUuidList) {
+						childEntriesList.add(opdsEntryCache.get(uuid));
+					}
+				}
+				
+				callback.onSuccess(childEntriesList);
+			}
+		};
 	}
 
 	@Override
 	public UmLiveData<OpdsEntryWithRelations> getEntryByUuid(String uuid) {
-		// TODO Auto-generated method stub
-		return null;
+		return new UmLiveDataGwtSync<OpdsEntryWithRelations>(opdsEntryCache.get(uuid));
 	}
 
 	@Override
@@ -148,14 +180,12 @@ public class OpdsEntryRepositoryGWT extends OpdsEntryWithRelationsDao{
 
 	@Override
 	public UmLiveData<List<OpdsEntryWithRelations>> findEntriesByContainerFileDirectoryAsList(String dir) {
-		// TODO Auto-generated method stub
-		return null;
+		throw new RuntimeException("Container files are not running on the web with GWT!");
 	}
 
 	@Override
 	public UmProvider<OpdsEntryWithRelations> findEntriesByContainerFileDirectoryAsProvider(String dir) {
-		// TODO Auto-generated method stub
-		return null;
+		throw new RuntimeException("Container files are not running on the web with GWT!");
 	}
 
 }
