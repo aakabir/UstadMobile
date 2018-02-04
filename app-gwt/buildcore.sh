@@ -24,4 +24,6 @@ mv core-src/main/java/com/ustadmobile/core/util/UMCalendarUtil.java core-src/mai
 
 mv lib-util-src/main/java/com/ustadmobile/lib/util/UmUuidUtil.java lib-util-src/main/java/com/ustadmobile/lib/util/UmUuidUtil.java.test
 
+mv core-src/main/java/com/ustadmobile/core/db/impl/DbManagerFactory.java core-src/main/java/com/ustadmobile/core/db/impl/DbManagerFactory.java.test
+
 echo "Core, lib db, annotations and utils moved. Now you can build the maven project: mvn install, or the usual eclipse + GWT + maven way"
