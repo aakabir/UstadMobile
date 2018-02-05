@@ -57,6 +57,10 @@ public class CatalogView extends ViewWithUiHandlers{
 					.getOpdsEntryWithRelationsRepository();
 			UmLiveData<OpdsEntryWithRelations> liveData = repository.getEntryByUrl((String)args.get("url"));
 			liveData.observeForever(this::handleEntryChanged);
+			
+			OpdsEntryWithRelations value = liveData.getValue();
+			
+			
 		}
 	}
 	

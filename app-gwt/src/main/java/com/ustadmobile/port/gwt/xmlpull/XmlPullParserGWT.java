@@ -95,8 +95,20 @@ public class XmlPullParserGWT implements XmlPullParser {
 			if(eventIndex == element.getChildNodes().getLength()) {
 				return element;
 			}else{
-				//TODO: Throw xml pull parse exception if we're not on an element
-				return (Element)element.getChildNodes().item(eventIndex);				
+				
+				try{
+					//TODO: Throw xml pull parse exception if we're not on an element
+					NodeList elementNodeList = element.getChildNodes();
+					Node elementItem = elementNodeList.item(eventIndex);
+					Element nodeToElement = (Element)elementItem;
+					return nodeToElement;
+					//return (Element)element.getChildNodes().item(eventIndex);		
+				}catch(Exception e){
+					GWT.log("XmlPullParserGWT EXCEOPTION in getCurrnetElement(): " +e.toString());
+					
+					return null;
+				}
+						
 			}
 		}
 		
@@ -336,7 +348,14 @@ public class XmlPullParserGWT implements XmlPullParser {
 
 	@Override
 	public String getName() {
-		return getCurrentElement().getNodeName();
+		Element currentElement = getCurrentElement();
+		if(currentElement != null){
+			return currentElement.getNodeName();
+		}
+		else{
+			return "";
+		}
+		//return getCurrentElement().getNodeName();
 	}
 
 	@Override
@@ -593,9 +612,12 @@ public class XmlPullParserGWT implements XmlPullParser {
 	
 	protected Element getCurrentElement() {
 		if(docStarted && !rootElFirstChildStarted) {
-			return treeStack.get(0).element;
+			Element treeStackElement = this.treeStack.get(0).element;
+			return treeStackElement;
+			//return this.treeStack.get(0).element;
 		}else {
-			return getCurrentPosition().getCurrentElement();
+			PositionEntry currentPosition = getCurrentPosition();
+			return currentPosition.getCurrentElement();
 		}
 	}
 
