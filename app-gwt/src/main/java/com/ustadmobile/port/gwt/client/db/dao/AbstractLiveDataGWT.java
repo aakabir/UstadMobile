@@ -31,6 +31,7 @@ public abstract class AbstractLiveDataGWT<T> implements UmLiveData<T> {
 			public void onSuccess(T result) {
 				AbstractLiveDataGWT.this.value = value;
 				observer.onChanged(value);
+				
 			}
 
 			@Override

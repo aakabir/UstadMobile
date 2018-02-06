@@ -87,7 +87,7 @@ public class OpdsEntryRepositoryGWT extends OpdsEntryWithRelationsDao{
 	
 	@Override
 	public UmLiveData<OpdsEntryWithRelations> getEntryByUrl(String url, String entryUuid,
-			OpdsItemLoadCallback callback) {
+			OpdsItemLoadCallback callbackMain) {
 		
 		return new AbstractLiveDataGWT<OpdsEntryWithRelations>() {
 			@Override
@@ -122,6 +122,7 @@ public class OpdsEntryRepositoryGWT extends OpdsEntryWithRelationsDao{
 						try {
 							entry.load(dataXPP, mLoadcallback);
 							callback.onSuccess(entry);
+							callbackMain.onDone(entry);
 						} catch (IOException | XmlPullParserException e) {
 							// TODO Auto-generated catch block
 							e.printStackTrace();

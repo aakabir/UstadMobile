@@ -10,7 +10,11 @@ import com.ustadmobile.core.db.DbManager;
 import com.ustadmobile.core.db.UmLiveData;
 import com.ustadmobile.core.db.dao.OpdsEntryDao;
 import com.ustadmobile.core.db.dao.OpdsEntryWithRelationsDao;
+import com.ustadmobile.core.impl.UmCallback;
+import com.ustadmobile.lib.db.entities.OpdsEntry;
+import com.ustadmobile.lib.db.entities.OpdsEntry.OpdsItemLoadCallback;
 import com.ustadmobile.lib.db.entities.OpdsEntryWithRelations;
+import com.ustadmobile.lib.db.entities.OpdsLink;
 import com.ustadmobile.port.gwt.client.db.repository.OpdsEntryRepositoryGWT;
 
 import java.util.Hashtable;
@@ -55,12 +59,57 @@ public class CatalogView extends ViewWithUiHandlers{
 		if(args != null && args.get("url") != null) {
 			OpdsEntryWithRelationsDao repository = DbManager.getInstance(this)
 					.getOpdsEntryWithRelationsRepository();
-			UmLiveData<OpdsEntryWithRelations> liveData = repository.getEntryByUrl((String)args.get("url"));
-			liveData.observeForever(this::handleEntryChanged);
+			String url = (String)args.get("url");
+			//UmLiveData<OpdsEntryWithRelations> liveData = repository.getEntryByUrl(url);
+			//liveData.observeForever(this::handleEntryChanged);
 			
+			
+			/*
 			OpdsEntryWithRelations value = liveData.getValue();
+			GWT.log("Now What?");
+			*/
+			
+			///*
+			UmLiveData<OpdsEntryWithRelations> dataLive = 
+					repository.getEntryByUrl(url, null, new OpdsItemLoadCallback() {
+				
+				@Override
+				public void onLinkAdded(OpdsLink link, OpdsEntry parentItem, int position) {
+					// TODO Auto-generated method stub
+					GWT.log("Link Aded..");
+					
+				}
+				
+				@Override
+				public void onError(OpdsEntry item, Throwable cause) {
+					// TODO Auto-generated method stub
+					GWT.log("ERROR!");
+					
+				}
+				
+				@Override
+				public void onEntryAdded(OpdsEntryWithRelations childEntry, OpdsEntry parentFeed, int position) {
+					// TODO Auto-generated method stu
+					GWT.log("Entry added..");
+				}
+				
+				@Override
+				public void onDone(OpdsEntry item) {
+					// TODO Auto-generated method stub
+					GWT.log("Its done..");
+					//dataLive.observeForever(this::handleEntryChanged);
+					
+					
+				}
+			});
+			dataLive.observeForever(this::handleEntryChanged);
 			
 			
+			//*/
+			/*
+			UmLiveData<OpdsEntryWithRelations> dataLive = 
+					repository.getEntryByUrl(url, null, new..);
+			*/
 		}
 	}
 	
