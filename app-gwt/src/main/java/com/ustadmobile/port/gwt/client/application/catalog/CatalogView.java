@@ -18,6 +18,7 @@ import com.ustadmobile.lib.db.entities.OpdsLink;
 import com.ustadmobile.port.gwt.client.db.repository.OpdsEntryRepositoryGWT;
 
 import java.util.Hashtable;
+import java.util.List;
 
 import javax.inject.Inject;
 
@@ -97,11 +98,22 @@ public class CatalogView extends ViewWithUiHandlers{
 				public void onDone(OpdsEntry item) {
 					// TODO Auto-generated method stub
 					GWT.log("Its done..");
-					//dataLive.observeForever(this::handleEntryChanged);
+					//Update the UI for items
+					String itemTitle = item.getTitle();
+					GWT.log("Item title: " + itemTitle);
+					
+					//Load the feed
+					UmLiveData<List<OpdsEntryWithRelations>> entitiesByParentAsList = 
+							repository.getEntriesByParentAsList(item.getEntryId());
+
+					List<OpdsEntryWithRelations> entitesValue = entitiesByParentAsList.getValue();
+					GWT.log("CatalogView:setArguments():getEntryByUrl:onDone()..");
+					
 					
 					
 				}
 			});
+			
 			dataLive.observeForever(this::handleEntryChanged);
 			
 			

@@ -50,18 +50,21 @@ public class OpdsEntryRepositoryGWT extends OpdsEntryWithRelationsDao{
 		
 		@Override
 		public void onLinkAdded(OpdsLink link, OpdsEntry parentItem, int position) {
+			GWT.log("OpdsEntryRepositoryGWT: Link added. link is: " + link.getHref());
 			
 		}
 		
 		@Override
 		public void onError(OpdsEntry item, Throwable cause) {
 			// TODO Auto-generated method stub
+			GWT.log("OpdsEntryRepositoryGWT: ERROR..");
 			
 		}
 		
 		@Override
 		public void onEntryAdded(OpdsEntryWithRelations childEntry, OpdsEntry parentFeed, int position) {
 			//put the child entry in
+			GWT.log("OpdsEntryRepositoryGWT: Child entry being put in: " + childEntry.getTitle());
 			List<String> parentFeedList = opdsParentToChildListCache.get(parentFeed.getUuid());
 			if(parentFeedList == null) {
 				parentFeedList = new ArrayList<>();
@@ -80,7 +83,7 @@ public class OpdsEntryRepositoryGWT extends OpdsEntryWithRelationsDao{
 		@Override
 		public void onDone(OpdsEntry item) {
 			// TODO Auto-generated method stub
-			
+			GWT.log("OpdsEntryRepositoryGWT: Done..");
 		}
 	};
 	
@@ -118,9 +121,20 @@ public class OpdsEntryRepositoryGWT extends OpdsEntryWithRelationsDao{
 						}
 						
 						XmlPullParser dataXPP = new XmlPullParserGWT(dataString);
-
+						
+						//Debugging:
+						int dataXPPAttrCount = dataXPP.getAttributeCount();
+						//end.
+						
 						try {
 							entry.load(dataXPP, mLoadcallback);
+							
+							//Debugging:
+							List<OpdsLink> entryLinks = entry.getLinks();
+							String entryContent = entry.getContent();
+							String entryId = entry.getEntryId();
+							//end.
+							
 							callback.onSuccess(entry);
 							callbackMain.onDone(entry);
 						} catch (IOException | XmlPullParserException e) {
