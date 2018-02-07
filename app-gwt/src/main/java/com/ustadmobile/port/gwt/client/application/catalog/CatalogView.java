@@ -61,14 +61,6 @@ public class CatalogView extends ViewWithUiHandlers{
 			OpdsEntryWithRelationsDao repository = DbManager.getInstance(this)
 					.getOpdsEntryWithRelationsRepository();
 			String url = (String)args.get("url");
-			//UmLiveData<OpdsEntryWithRelations> liveData = repository.getEntryByUrl(url);
-			//liveData.observeForever(this::handleEntryChanged);
-			
-			
-			/*
-			OpdsEntryWithRelations value = liveData.getValue();
-			GWT.log("Now What?");
-			*/
 			
 			///*
 			UmLiveData<OpdsEntryWithRelations> dataLive = 
@@ -77,51 +69,51 @@ public class CatalogView extends ViewWithUiHandlers{
 				@Override
 				public void onLinkAdded(OpdsLink link, OpdsEntry parentItem, int position) {
 					// TODO Auto-generated method stub
-					GWT.log("Link Aded..");
+					GWT.log("CatalogView: Link Aded..");
 					
 				}
 				
 				@Override
 				public void onError(OpdsEntry item, Throwable cause) {
 					// TODO Auto-generated method stub
-					GWT.log("ERROR!");
+					GWT.log("CatalogView: ERROR!");
 					
 				}
 				
 				@Override
 				public void onEntryAdded(OpdsEntryWithRelations childEntry, OpdsEntry parentFeed, int position) {
 					// TODO Auto-generated method stu
-					GWT.log("Entry added..");
+					GWT.log("CatalogView: Entry added..");
 				}
 				
 				@Override
 				public void onDone(OpdsEntry item) {
 					// TODO Auto-generated method stub
-					GWT.log("Its done..");
-					//Update the UI for items
 					String itemTitle = item.getTitle();
-					GWT.log("Item title: " + itemTitle);
+					GWT.log("CatalogView:setArguments():getEntryByUrl:onDone(): "
+							+ "Its done. Item: " + itemTitle);
 					
 					//Load the feed
 					UmLiveData<List<OpdsEntryWithRelations>> entitiesByParentAsList = 
 							repository.getEntriesByParentAsList(item.getEntryId());
+					
 
 					List<OpdsEntryWithRelations> entitesValue = entitiesByParentAsList.getValue();
-					GWT.log("CatalogView:setArguments():getEntryByUrl:onDone()..");
 					
+					//Update the UI for items?
+					GWT.log("CatalogView: Update UI?");
 					
 					
 				}
 			});
 			
+			GWT.log("CatalogView: ObserveForever..");
 			dataLive.observeForever(this::handleEntryChanged);
 			
 			
-			//*/
-			/*
-			UmLiveData<OpdsEntryWithRelations> dataLive = 
-					repository.getEntryByUrl(url, null, new..);
-			*/
+			
+			
+			
 		}
 	}
 	

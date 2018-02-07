@@ -357,7 +357,8 @@ public class UstadMobileSystemImplGWT extends UstadMobileSystemImpl{
 				@Override
 				public void onResponseReceived(Request request, Response response) {
 					// TODO Auto-generated method stub
-					GWT.log("sendRequest Succes");
+					GWT.log("UstadMobileSystemImplGWT:"
+							+ "makeRequestAsync.onResponseReceived():sendRequest Succes");
 					//responseListener.onComplete(call, response);
 					//UmHttpCall call = null;
 					UmHttpResponseGWT responseGWT = new UmHttpResponseGWT(response);
@@ -369,7 +370,8 @@ public class UstadMobileSystemImplGWT extends UstadMobileSystemImpl{
 				@Override
 				public void onError(Request request, Throwable exception) {
 					// TODO Auto-generated method stub
-					GWT.log("sendRequest FAIL");
+					GWT.log("UstadMobileSystemImplGWT:"
+							+ "makeRequestAsync.onResponseReceived():sendRequest FAIL");
 				}
 			});
 		} catch (RequestException e) {

@@ -477,7 +477,9 @@ public class XmlPullParserGWT implements XmlPullParser {
 
 	@Override
 	public String getAttributeValue(int index) {
-		GWT.log("WARNING: getAttributeValue() Not tested.");
+		//GWT.log("WARNING: getAttributeValue() Not tested.");
+		//tested: OK.
+		
 		//Gets the index'th attribute value for this element
 		NamedNodeMap currentElementNodeMap = getCurrentElement().getAttributes();
 		Node currentItem = currentElementNodeMap.item(index);
@@ -487,7 +489,8 @@ public class XmlPullParserGWT implements XmlPullParser {
 
 	@Override
 	public String getAttributeValue(String namespace, String name) {
-		GWT.log("WARNING: getAttributeValue() not tested");
+		//GWT.log("WARNING: getAttributeValue() not tested");
+		//Tested: Ok.
 		return getCurrentElement().getAttribute(name);
 	}
 
