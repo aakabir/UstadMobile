@@ -68,7 +68,8 @@ public class OpdsEntryRepositoryGWT extends OpdsEntryWithRelationsDao{
 			List<String> parentFeedList = opdsParentToChildListCache.get(parentFeed.getUuid());
 			if(parentFeedList == null) {
 				parentFeedList = new ArrayList<>();
-				opdsParentToChildListCache.put(parentFeed.getUuid(), parentFeedList);
+				String parentFeedEntryId = parentFeed.getEntryId();
+				opdsParentToChildListCache.put(parentFeedEntryId, parentFeedList);
 			}
 			
 			

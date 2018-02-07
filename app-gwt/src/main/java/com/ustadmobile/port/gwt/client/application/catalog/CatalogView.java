@@ -3,6 +3,9 @@ package com.ustadmobile.port.gwt.client.application.catalog;
 import com.google.gwt.core.client.GWT;
 import com.google.gwt.uibinder.client.UiBinder;
 import com.google.gwt.uibinder.client.UiField;
+import com.google.gwt.user.client.ui.Button;
+import com.google.gwt.user.client.ui.FlowPanel;
+import com.google.gwt.user.client.ui.SimplePanel;
 import com.google.gwt.user.client.ui.TextBox;
 import com.google.gwt.user.client.ui.Widget;
 import com.gwtplatform.mvp.client.ViewWithUiHandlers;
@@ -43,7 +46,7 @@ public class CatalogView extends ViewWithUiHandlers{
     private static final Binder uiBinder = GWT.create(Binder.class);
     
     @UiField
-    TextBox textBox;
+    FlowPanel entriesPanel; 
     
     public CatalogView() {
         initWidget(uiBinder.createAndBindUi(this));
@@ -108,18 +111,41 @@ public class CatalogView extends ViewWithUiHandlers{
 	
 	public void handleEntryChanged(OpdsEntryWithRelations entry) {
 		
-		GWT.log("CatalogView: handleEntryChanged.");
+		GWT.log("CatalogView: handleEntryChanged():");
 		if(entry != null){
 			String entryId = entry.getEntryId();
 			
+			repository.getEntriesByParentAsList(entryId).observeForever(
+					new UmObserver<List<OpdsEntryWithRelations>>() {
+				
+				@Override
+				public void onChanged(List<OpdsEntryWithRelations> t) {
+					GWT.log("CatalogView: handleEntryChanged().onChanged():");
+					
+					//testing
+					if(t.size() < 0){
+						GWT.log("     ENTRY LIST IS ZERO.");
+					}
+					
+					
+					//UI stuff:
+					for (int i=0; i<t.size(); i++){
+						OpdsEntryWithRelations entry = t.get(i);
+						String entryTitle = entry.getTitle();
+						GWT.log("Got entry: " + entryTitle + ". "
+								+ "Adding to View..");
+						addUiEntry(entryTitle);
+					}
+					
+				}
+			});
 			
-			
-			
+			/*
 			UmLiveData<List<OpdsEntryWithRelations>> entitiesByParentAsList = 
 					repository.getEntriesByParentAsList(entryId);
 			
 			List<OpdsEntryWithRelations> entitiesValueList = 
-					repository.getEntriesByParentAsList(entryId).getValue();
+					entitiesByParentAsList.getValue();
 			
 			if(entitiesValueList != null){
 				
@@ -128,20 +154,25 @@ public class CatalogView extends ViewWithUiHandlers{
 					GWT.log("NO ENTRIES FOUND");
 				}
 			}else{
-				GWT.log("ERROR: NuLL ENTRIeS?");
+				GWT.log("ERROR: NULL ENTRIES?");
 			}
-
+			*/
 			GWT.log("CatalogView:handleEntryChanged. GOT entries?");
 			
 		}else{
 			GWT.log("CatalogView.handleEntryChanged: ERROR. entry is null!");
 		}
 		
-		GWT.log("CatalogView:handleEntryChanged: Did it go well");
 		
 	}
 	
-	
+	public void addUiEntry(String title){
+		//Button newEntryButton = new Button();
+		//newEntryButton.setTitle(title);
+		TextBox textBox = new TextBox();
+		textBox.setText(title);
+		entriesPanel.add(textBox);
+	}
 	
 	
 	
