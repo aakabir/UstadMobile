@@ -168,7 +168,7 @@ public class OpdsEntryRepositoryGWT extends OpdsEntryWithRelationsDao{
 		return new AbstractLiveDataGWT<List<OpdsEntryWithRelations>>() {
 			@Override
 			public void fetchValue(UmCallback<List<OpdsEntryWithRelations>> callback) {
-				// TODO Auto-generated method stub
+				GWT.log("OpdsEntryRepositoryGWT: fetchValue()");
 				List<String> childUuidList = opdsParentToChildListCache.get(parentId);
 				List<OpdsEntryWithRelations> childEntriesList = new ArrayList<>();
 				if(childUuidList != null) {
@@ -176,9 +176,11 @@ public class OpdsEntryRepositoryGWT extends OpdsEntryWithRelationsDao{
 						childEntriesList.add(opdsEntryCache.get(uuid));
 					}
 				}
-				
+				GWT.log("    ...success.");
 				callback.onSuccess(childEntriesList);
 			}
+			
+			
 		};
 	}
 

@@ -8,6 +8,7 @@ import com.google.gwt.user.client.ui.Widget;
 import com.gwtplatform.mvp.client.ViewWithUiHandlers;
 import com.ustadmobile.core.db.DbManager;
 import com.ustadmobile.core.db.UmLiveData;
+import com.ustadmobile.core.db.UmObserver;
 import com.ustadmobile.core.db.dao.OpdsEntryDao;
 import com.ustadmobile.core.db.dao.OpdsEntryWithRelationsDao;
 import com.ustadmobile.core.impl.UmCallback;
@@ -29,6 +30,8 @@ public class CatalogView extends ViewWithUiHandlers{
 	 * Arguments for initialising CatalogView. Set in constructor.
 	 */
 	private Hashtable args;
+	
+	OpdsEntryWithRelationsDao repository;
 	
 	/************ UI BINDER STUFF: *****************/
 	
@@ -58,7 +61,7 @@ public class CatalogView extends ViewWithUiHandlers{
 		this.args = args;
 		
 		if(args != null && args.get("url") != null) {
-			OpdsEntryWithRelationsDao repository = DbManager.getInstance(this)
+			repository = DbManager.getInstance(this)
 					.getOpdsEntryWithRelationsRepository();
 			String url = (String)args.get("url");
 			
@@ -93,17 +96,6 @@ public class CatalogView extends ViewWithUiHandlers{
 					GWT.log("CatalogView:setArguments():getEntryByUrl:onDone(): "
 							+ "Its done. Item: " + itemTitle);
 					
-					//Load the feed
-					UmLiveData<List<OpdsEntryWithRelations>> entitiesByParentAsList = 
-							repository.getEntriesByParentAsList(item.getEntryId());
-					
-
-					List<OpdsEntryWithRelations> entitesValue = entitiesByParentAsList.getValue();
-					
-					//Update the UI for items?
-					GWT.log("CatalogView: Update UI?");
-					
-					
 				}
 			});
 			
@@ -111,13 +103,41 @@ public class CatalogView extends ViewWithUiHandlers{
 			dataLive.observeForever(this::handleEntryChanged);
 			
 			
-			
-			
-			
 		}
 	}
 	
 	public void handleEntryChanged(OpdsEntryWithRelations entry) {
+		
+		GWT.log("CatalogView: handleEntryChanged.");
+		if(entry != null){
+			String entryId = entry.getEntryId();
+			
+			
+			
+			
+			UmLiveData<List<OpdsEntryWithRelations>> entitiesByParentAsList = 
+					repository.getEntriesByParentAsList(entryId);
+			
+			List<OpdsEntryWithRelations> entitiesValueList = 
+					repository.getEntriesByParentAsList(entryId).getValue();
+			
+			if(entitiesValueList != null){
+				
+				int listSize = entitiesValueList.size();
+				if(listSize < 1){
+					GWT.log("NO ENTRIES FOUND");
+				}
+			}else{
+				GWT.log("ERROR: NuLL ENTRIeS?");
+			}
+
+			GWT.log("CatalogView:handleEntryChanged. GOT entries?");
+			
+		}else{
+			GWT.log("CatalogView.handleEntryChanged: ERROR. entry is null!");
+		}
+		
+		GWT.log("CatalogView:handleEntryChanged: Did it go well");
 		
 	}
 	

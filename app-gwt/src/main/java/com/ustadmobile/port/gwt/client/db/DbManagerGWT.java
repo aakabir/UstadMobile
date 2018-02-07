@@ -1,5 +1,6 @@
 package com.ustadmobile.port.gwt.client.db;
 
+import com.google.gwt.core.client.GWT;
 import com.gwtplatform.mvp.client.proxy.PlaceManager;
 import com.ustadmobile.core.db.DbManager;
 import com.ustadmobile.core.db.dao.ContainerFileDao;
@@ -40,7 +41,9 @@ public class DbManagerGWT extends DbManager {
 	@Override
 	public OpdsEntryWithRelationsDao getOpdsEntryWithRelationsRepository() {
 		// TODO Check
+		GWT.log("getOpdsEntryWithRelationsRepository");
 		if(opdsEntryRepository == null){
+			GWT.log("getOpdsEntryWithRelationsRepository opdsEntryRepository is null");
 			//opdsEntryRepository = new OpdsEntryRepositoryGWT(this, executorService);
 			opdsEntryRepository = new OpdsEntryRepositoryGWT(this);
 		}
@@ -52,6 +55,7 @@ public class DbManagerGWT extends DbManager {
 	@Override
 	public OpdsEntryDao getOpdsEntryDao() {
 		// TODO Test
+		GWT.log("getOpdsEntryDao");
 		return appDatabase.getOpdsEntryDao();
 	}
 
@@ -59,54 +63,63 @@ public class DbManagerGWT extends DbManager {
 	@Override
 	public OpdsEntryWithRelationsDao getOpdsEntryWithRelationsDao() {
 		// TODO Test
+		GWT.log("getOpdsEntryWithRelationsDao");
 		return opdsEntryRepository;
 	}
 
 	@Override
 	public OpdsLinkDao getOpdsLinkDao() {
 		// TODO Auto-generated method stub
+		GWT.log("getOpdsLinkDao");
 		return null;
 	}
 
 	@Override
 	public OpdsEntryParentToChildJoinDao getOpdsEntryParentToChildJoinDao() {
 		// TODO Auto-generated method stub
+		GWT.log("getOpdsEntryParentToChildJoinDao");
 		return null;
 	}
 
 	@Override
 	public ContainerFileDao getContainerFileDao() {
 		// TODO Auto-generated method stub
+		GWT.log("getContainerFileDao");
 		return null;
 	}
 
 	@Override
 	public ContainerFileEntryDao getContainerFileEntryDao() {
 		// TODO Auto-generated method stub
+		GWT.log("getContainerFileEntryDao");
 		return null;
 	}
 
 	@Override
 	public NetworkNodeDao getNetworkNodeDao() {
 		// TODO Auto-generated method stub
+		GWT.log("getNetworkNodeDao");
 		return null;
 	}
 
 	@Override
 	public EntryStatusResponseDao getEntryStatusResponseDao() {
 		// TODO Auto-generated method stub
+		GWT.log("getEntryStatusResponseDao");
 		return null;
 	}
 
 	@Override
 	public DownloadJobDao getDownloadJobDao() {
 		// TODO Auto-generated method stub
+		GWT.log("getDownloadJobDao");
 		return null;
 	}
 
 	@Override
 	public Object getContext() {
 		// TODO Auto-generated method stub
+		GWT.log("getContext");
 		return null;
 	}
 	
