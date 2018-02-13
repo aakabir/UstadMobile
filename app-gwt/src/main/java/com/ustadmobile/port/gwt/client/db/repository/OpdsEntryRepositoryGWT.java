@@ -41,6 +41,7 @@ public class OpdsEntryRepositoryGWT extends OpdsEntryWithRelationsDao{
 	
 	public OpdsEntryRepositoryGWT(DbManager manager){
 		this.dbManager = manager;
+		GWT.log("Intantiating OpdsEntryRelation variables..");
 		opdsParentToChildListCache = new HashMap<>();
 		opdsEntryCache = new HashMap<>();
 		this.impl = UstadMobileSystemImpl.getInstance();
@@ -64,21 +65,27 @@ public class OpdsEntryRepositoryGWT extends OpdsEntryWithRelationsDao{
 		@Override
 		public void onEntryAdded(OpdsEntryWithRelations childEntry, OpdsEntry parentFeed, int position) {
 			//put the child entry in
-			GWT.log("OpdsEntryRepositoryGWT: Child entry being put in: " + childEntry.getTitle());
-			List<String> parentFeedList = opdsParentToChildListCache.get(parentFeed.getUuid());
+			GWT.log("OpdsEntryRepositoryGWT: Child entry being put in: " 
+			+ childEntry.getTitle() + " at position: " + position);
+			String parentFeedEntryId = parentFeed.getEntryId();
+			List<String> parentFeedList = opdsParentToChildListCache.get(parentFeedEntryId);
 			if(parentFeedList == null) {
+				GWT.log("Parent feed is empty..Generating new list.");
 				parentFeedList = new ArrayList<>();
-				String parentFeedEntryId = parentFeed.getEntryId();
 				opdsParentToChildListCache.put(parentFeedEntryId, parentFeedList);
 			}
 			
+			String childEntryEntryId = childEntry.getEntryId();
+
+			if(parentFeedList.size() > position){
+				GWT.log("    Setting existing position..");
+				parentFeedList.set(position, childEntryEntryId);
+			}else{
+				GWT.log("    Adding new entry.");
+				parentFeedList.add(childEntryEntryId);
+			}
 			
-			if(parentFeedList.size() > position)
-				parentFeedList.set(position, childEntry.getUuid());
-			else
-				parentFeedList.add(childEntry.getUuid());
-			
-			opdsEntryCache.put(childEntry.getUuid(), childEntry);
+			opdsEntryCache.put(childEntryEntryId, childEntry);
 		}
 		
 		@Override

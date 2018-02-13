@@ -41,10 +41,8 @@ public class DbManagerGWT extends DbManager {
 	@Override
 	public OpdsEntryWithRelationsDao getOpdsEntryWithRelationsRepository() {
 		// TODO Check
-		GWT.log("getOpdsEntryWithRelationsRepository");
 		if(opdsEntryRepository == null){
-			GWT.log("getOpdsEntryWithRelationsRepository opdsEntryRepository is null");
-			//opdsEntryRepository = new OpdsEntryRepositoryGWT(this, executorService);
+			GWT.log("Instantiating new getOpdsEntryWithRelationsRepository");
 			opdsEntryRepository = new OpdsEntryRepositoryGWT(this);
 		}
 
@@ -119,7 +117,7 @@ public class DbManagerGWT extends DbManager {
 	@Override
 	public Object getContext() {
 		// TODO Auto-generated method stub
-		GWT.log("getContext");
+		GWT.log("DbManagerGWT: getContext(): returning null (check this).");
 		return null;
 	}
 	

@@ -111,7 +111,6 @@ public class CatalogView extends ViewWithUiHandlers{
 	
 	public void handleEntryChanged(OpdsEntryWithRelations entry) {
 		
-		GWT.log("CatalogView: handleEntryChanged():");
 		if(entry != null){
 			String entryId = entry.getEntryId();
 			
@@ -124,15 +123,16 @@ public class CatalogView extends ViewWithUiHandlers{
 					
 					//testing
 					if(t.size() < 0){
-						GWT.log("     ENTRY LIST IS ZERO.");
+						GWT.log("CatalogView: ENTRY LIST IS ZERO.");
+					}else{
+						GWT.log("CatalogView: Entry size: " + t.size());
 					}
-					
 					
 					//UI stuff:
 					for (int i=0; i<t.size(); i++){
 						OpdsEntryWithRelations entry = t.get(i);
 						String entryTitle = entry.getTitle();
-						GWT.log("Got entry: " + entryTitle + ". "
+						GWT.log("CatalogView: Entry: " + entryTitle + ". "
 								+ "Adding to View..");
 						addUiEntry(entryTitle);
 					}
@@ -140,24 +140,6 @@ public class CatalogView extends ViewWithUiHandlers{
 				}
 			});
 			
-			/*
-			UmLiveData<List<OpdsEntryWithRelations>> entitiesByParentAsList = 
-					repository.getEntriesByParentAsList(entryId);
-			
-			List<OpdsEntryWithRelations> entitiesValueList = 
-					entitiesByParentAsList.getValue();
-			
-			if(entitiesValueList != null){
-				
-				int listSize = entitiesValueList.size();
-				if(listSize < 1){
-					GWT.log("NO ENTRIES FOUND");
-				}
-			}else{
-				GWT.log("ERROR: NULL ENTRIES?");
-			}
-			*/
-			GWT.log("CatalogView:handleEntryChanged. GOT entries?");
 			
 		}else{
 			GWT.log("CatalogView.handleEntryChanged: ERROR. entry is null!");
@@ -167,9 +149,9 @@ public class CatalogView extends ViewWithUiHandlers{
 	}
 	
 	public void addUiEntry(String title){
-		//Button newEntryButton = new Button();
-		//newEntryButton.setTitle(title);
+		GWT.log("CatalogView: Adding entry to UI: " + title);
 		TextBox textBox = new TextBox();
+		textBox.setName(title);
 		textBox.setText(title);
 		entriesPanel.add(textBox);
 	}

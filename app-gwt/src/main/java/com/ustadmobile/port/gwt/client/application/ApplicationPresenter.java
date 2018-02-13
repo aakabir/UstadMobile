@@ -87,8 +87,6 @@ public class ApplicationPresenter
         super(eventBus, view, proxy, RevealType.Root);
         
         this.placeManager = placeManager;
-        
-        GWT.log("ApplicationPresenter");
 
         //Start BasePoint:
         UstadMobileSystemImpl impl = UstadMobileSystemImpl.getInstance();

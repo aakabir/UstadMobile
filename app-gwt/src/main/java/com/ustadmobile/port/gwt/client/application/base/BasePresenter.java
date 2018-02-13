@@ -58,7 +58,6 @@ public class BasePresenter
 		public CoreBasePointPresenterHandler(Object context, BasePointView view) {
 			super(context, view);
 			// TODO Auto-generated constructor stub
-			GWT.log("CoreBasePointPresenterHandler constructor. TODO.");
 		}
 		
     }
@@ -113,9 +112,6 @@ public class BasePresenter
 	protected void onBind() {
 		// TODO Auto-generated method stub
 		//super.onBind();
-    	if(aboutPresenter == null){
-			GWT.log("Presenter not set");
-    	}
 		setInSlot(SLOT_TAB, aboutPresenter);
 	}    
     
@@ -123,7 +119,6 @@ public class BasePresenter
     
 	@Override
 	public void prepareFromRequest(PlaceRequest request) {
-		GWT.log("BasePresenter:prepareFromRequest()");
 		super.prepareFromRequest(request);
 		Set<String> requestArgNames = request.getParameterNames();
 		this.args = new Hashtable();
@@ -132,7 +127,7 @@ public class BasePresenter
 			String key = it.next();
 			this.args.put(key, request.getParameter(key, ""));
 		}
-		GWT.log("BasePresenter: Argument creation done.");
+		GWT.log("BasePresenter: prepareFromRequest(): Argument creation done.");
 		mController.onCreate(args, null);
 	}
 

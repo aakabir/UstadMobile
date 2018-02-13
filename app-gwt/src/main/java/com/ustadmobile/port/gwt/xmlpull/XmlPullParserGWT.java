@@ -104,7 +104,7 @@ public class XmlPullParserGWT implements XmlPullParser {
 					return nodeToElement;
 					//return (Element)element.getChildNodes().item(eventIndex);		
 				}catch(Exception e){
-					GWT.log("XmlPullParserGWT EXCEOPTION in getCurrnetElement(): " +e.toString());
+					//GWT.log("XmlPullParserGWT EXCEOPTION in getCurrnetElement(): " +e.toString());
 					
 					return null;
 				}
@@ -393,7 +393,6 @@ public class XmlPullParserGWT implements XmlPullParser {
 	// or -1 if the current event type is not START_TAG
 	@Override
 	public int getAttributeCount() {
-		GWT.log("WARNING: getAttributeCount() not tested.");
 		try {
 			if(getEventType() != XmlPullParser.START_TAG){
 				return -1;

@@ -166,10 +166,8 @@ public class BaseView extends ViewWithUiHandlers<CoreBasePointPresenterHandler>
     @Override
     protected void onAttach() {
         super.onAttach();
-    	
-        //buildListTabIds();
         
-        GWT.log("Adding dynamic tab");
+        GWT.log("BaseView: Adding dynamic tab");
         if(tabIndex == 0){
         	tabIndex = 1;
         }
@@ -178,9 +176,6 @@ public class BaseView extends ViewWithUiHandlers<CoreBasePointPresenterHandler>
         tab.add(newTab);
         tab.setTabIndex(tabIndex);
         
-        //Testing: Adding another page here
-        
-
         //tabEvents.addSelectionHandler(
         //selectionEvent -> MaterialToast.fireToast(selectionEvent.getSelectedItem() + " Selected Index"));
 	}
@@ -232,8 +227,6 @@ public class BaseView extends ViewWithUiHandlers<CoreBasePointPresenterHandler>
 		// TODO Auto-generated method stub
 		
 	}
-	
-	
 	
 	public void validateTab(){
 		
