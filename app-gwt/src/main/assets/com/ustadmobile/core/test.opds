@@ -11,4 +11,27 @@
            rel="subsection"/>
     </entry>
 
+    <entry>
+       <title>Entry Blue</title>
+       <id>com.ustadmobile.presetfeeds.blue</id>
+       <link href="http://m.gutenberg.org/ebooksblue/?format=opds"
+           type="application/atom+xml;profile=opds-catalog;kind=navigation"
+           rel="subsection"/>
+    </entry>
+
+    <entry>
+       <title>Entry Black</title>
+       <id>com.ustadmobile.presetfeeds.black</id>
+       <link href="http://m.gutenberg.org/ebooksblack/?format=opds"
+           type="application/atom+xml;profile=opds-catalog;kind=navigation"
+           rel="subsection"/>
+    </entry>
+
+    <entry>
+       <title>Entry Red</title>
+       <id>com.ustadmobile.presetfeeds.red</id>
+       <link href="http://m.gutenberg.org/ebooksred/?format=opds"
+           type="application/atom+xml;profile=opds-catalog;kind=navigation"
+           rel="subsection"/>
+    </entry>
 </feed>

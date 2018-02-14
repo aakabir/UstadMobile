@@ -1,6 +1,8 @@
 /target/
 src-core/
 core-src/
+core-src/main/
+core-src
 *.test
 lib-database-annotation-src/
 lib-database-src/
