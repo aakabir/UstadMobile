@@ -3,7 +3,7 @@
 
    	
    	<g:FlowPanel ui:field="entriesPanel">
-        <g:Label>Hello CatalogView</g:Label>
+        
     </g:FlowPanel>
     
 </ui:UiBinder>

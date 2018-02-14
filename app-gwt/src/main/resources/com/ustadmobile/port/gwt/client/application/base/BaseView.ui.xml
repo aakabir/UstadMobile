@@ -16,21 +16,14 @@
 					</m:MaterialTabItem>
 					-->
 					
-					<m:MaterialTabItem waves="YELLOW" grid="s4">
-						<m:MaterialLink text="About Tab" href="#tababout" textColor="WHITE"/>
-					</m:MaterialTabItem>
+					
 				</m:MaterialTab>
 				
 			</m:MaterialColumn>
 			
 			<!-- Separate MaterialColumn  -->
 			
-			<m:MaterialColumn m:id="tababout" grid="s12">
-				<m:MaterialLabel text="Tab About Content"/>
-				<m:MaterialPanel ui:field="content">
-	            	<m:MaterialLabel>Tab Content Material Label</m:MaterialLabel>
-	            </m:MaterialPanel>
-			</m:MaterialColumn>
+			<m:MaterialPanel ui:field="content"></m:MaterialPanel>
 			
 			<!--  
 			<m:MaterialColumn m:id="tab1" grid="s12">
@@ -51,12 +44,7 @@
 			
 			
 		</m:MaterialRow>
-		
-		
-            <m:MaterialPanel textAlign="CENTER">
-                <m:MaterialLabel text="Base" textColor="BLUE" fontSize="0.8em"/>
-            </m:MaterialPanel>
-            <g:Button ui:field="randomButton" text="Base: Material Panel: randomButton"/>
+            
         </m:MaterialContainer>
     </m:MaterialPanel>
    

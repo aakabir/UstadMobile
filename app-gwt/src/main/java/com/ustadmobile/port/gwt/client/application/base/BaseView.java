@@ -108,7 +108,6 @@ public class BaseView extends ViewWithUiHandlers<CoreBasePointPresenterHandler>
         
         CatalogView catalogView = new CatalogView();
         Hashtable args= new Hashtable();
-        //args.put("url", "http://www.ustadmobile.com/42");
         args.put("url", "com/ustadmobile/core/test.opds");
         catalogView.setArguments(args);
         
