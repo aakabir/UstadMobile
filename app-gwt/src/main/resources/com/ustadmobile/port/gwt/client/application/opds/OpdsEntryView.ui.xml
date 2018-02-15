@@ -1,0 +1,23 @@
+<ui:UiBinder xmlns:ui='urn:ui:com.google.gwt.uibinder'
+             xmlns:g='urn:import:com.google.gwt.user.client.ui'
+			 xmlns:m="urn:import:gwt.material.design.client.ui">
+
+    <m:MaterialPanel ui:field="entryPanel">
+	    <m:MaterialColumn grid="l6 m6 s12">
+			<m:MaterialCard backgroundColor="WHITE" orientation="LANDSCAPE">
+				<m:MaterialCardImage waves="LIGHT">
+					<m:MaterialImage url="http://assets.materialup.com/uploads/b6992fb2-7bf4-401d-a233-e34a486b9337/gif.gif"/>
+				</m:MaterialCardImage>
+				<m:MaterialCardContent textColor="BLACK">
+					<m:MaterialLabel ui:field="title" text="Title of your card" fontSize="1.5em" addStyleNames="truncate" />
+					<m:MaterialLabel text="Lorem ipsum dolor sit amet, consectetur adipiscing elit" addStyleNames="truncate"/>
+				</m:MaterialCardContent>
+				<m:MaterialCardAction>
+					<m:MaterialLink iconType="SHARE" textColor="BLACK" />
+					<m:MaterialLink iconType="LOCATION_ON" textColor="RED" />
+				</m:MaterialCardAction>
+			</m:MaterialCard>
+		</m:MaterialColumn>
+	</m:MaterialPanel>
+    
+</ui:UiBinder>

@@ -19,6 +19,7 @@ import com.ustadmobile.lib.db.entities.OpdsEntry;
 import com.ustadmobile.lib.db.entities.OpdsEntry.OpdsItemLoadCallback;
 import com.ustadmobile.lib.db.entities.OpdsEntryWithRelations;
 import com.ustadmobile.lib.db.entities.OpdsLink;
+import com.ustadmobile.port.gwt.client.application.opds.OpdsEntryView;
 import com.ustadmobile.port.gwt.client.db.repository.OpdsEntryRepositoryGWT;
 
 import java.util.Hashtable;
@@ -153,7 +154,11 @@ public class CatalogView extends ViewWithUiHandlers{
 		TextBox textBox = new TextBox();
 		textBox.setName(title);
 		textBox.setText(title);
-		entriesPanel.add(textBox);
+		
+		OpdsEntryView entryCard = new OpdsEntryView(title);
+		entriesPanel.add(entryCard);
+		
+		//entriesPanel.add(textBox);
 	}
 	
 	
