@@ -4,48 +4,18 @@
            
     
     <m:MaterialPanel>		
-        <m:MaterialContainer>
+        
         <!-- Add base point content here -->
-	    <m:MaterialRow ui:field="tabrow">    
-			<m:MaterialColumn grid="s12">
+	    <m:MaterialRow  ui:field="tabrow">    
 			
-				<m:MaterialTab ui:field="tab" indicatorColor="YELLOW" shadow="1">
-					<!--  
-					<m:MaterialTabItem waves="YELLOW" grid="s4">
-						<m:MaterialLink text="Tab 1" href="#tab1" textColor="WHITE"/>
-					</m:MaterialTabItem>
-					-->
-					
-					
-				</m:MaterialTab>
-				
-			</m:MaterialColumn>
+			<m:MaterialTab ui:field="tab" indicatorColor="YELLOW" shadow="1">
+					<!-- Test tab will be put in on onAttach() -->
+			</m:MaterialTab>
 			
-			<!-- Separate MaterialColumn  -->
-			
-			<m:MaterialPanel ui:field="content"></m:MaterialPanel>
-			
-			<!--  
-			<m:MaterialColumn m:id="tab1" grid="s12">
-				<m:MaterialLabel text="Tab 1 Content"/>
-			</m:MaterialColumn>
-			-->
-			
-			<m:MaterialRow ui:field="dynamicTabsRow"/>
-			
-			<!-- Outer content ? -->
-			<!--  
-			<m:MaterialColumn>
-				<m:MaterialPanel ui:field="content2">
-	            	<m:MaterialLabel>Tab Content Outer Material Label</m:MaterialLabel>
-	            </m:MaterialPanel>
-			</m:MaterialColumn>
-			-->
-			
-			
+			<m:MaterialRow ui:field="dynamicTabsRow"/>			
 		</m:MaterialRow>
             
-        </m:MaterialContainer>
+        
     </m:MaterialPanel>
    
 </ui:UiBinder>

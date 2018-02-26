@@ -2,6 +2,7 @@ package com.ustadmobile.port.gwt.client.place;
 
 import com.ustadmobile.core.view.AboutView;
 import com.ustadmobile.core.view.BasePointView;
+import com.ustadmobile.core.view.CatalogView;
 import com.ustadmobile.core.view.LoginView;
 
 /**
@@ -17,7 +18,11 @@ public class NameTokens {
     //public static final String ABOUT = "!about";
     public static final String ABOUT = AboutView.VIEW_NAME;
     //public static final String CORELOGIN = "!corelogin";
-    public static final String CORELOGIN = LoginView.VIEW_NAME;
+    public static final String CORELOGIN = LoginView.VIEW_NAME; 
     //public static final String BASE = "!base";
     public static final String BASE = BasePointView.VIEW_NAME;
+    
+    public static final String CATALOG = CatalogView.VIEW_NAME;
+    
+    public static final String COURSE_UPLOAD = "!upload";
 }

@@ -1,7 +1,7 @@
 <ui:UiBinder xmlns:ui='urn:ui:com.google.gwt.uibinder'
              xmlns:g='urn:import:com.google.gwt.user.client.ui'>
 
-   	
+   	<!-- The panel where the View would go -->
    	<g:FlowPanel ui:field="entriesPanel">
         
     </g:FlowPanel>

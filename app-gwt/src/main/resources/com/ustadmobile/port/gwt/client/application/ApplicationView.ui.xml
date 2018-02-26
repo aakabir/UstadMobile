@@ -9,6 +9,7 @@
 	<ui:import field="com.ustadmobile.port.gwt.client.place.NameTokens.ABOUT"/>
 	<ui:import field="com.ustadmobile.port.gwt.client.place.NameTokens.CORELOGIN"/>
 	<ui:import field="com.ustadmobile.port.gwt.client.place.NameTokens.BASE"/>
+	<ui:import field="com.ustadmobile.port.gwt.client.place.NameTokens.COURSE_UPLOAD" />
     
     
     <m:MaterialPanel>
@@ -19,7 +20,10 @@
         </m:MaterialHeader>
 
         <m:MaterialSideNavDrawer m:id="sidenavDrawer" ui:field="sideNav" width="300">
+        	<m:MaterialLink iconType="HOME" href="#{BASE}" text="Libraries" />
             <m:MaterialLink iconType="INFO_OUTLINE" href="#{ABOUT}" text="About"/>
+			<m:MaterialLink iconType="CLOUD_UPLOAD" href="#{COURSE_UPLOAD}" text="Upload"/>
+			<!--  <m:MaterialLink iconType="FILE_UPLOAD" href="#{COURSE_UPLOAD}" text="Upload"/> -->
         </m:MaterialSideNavDrawer>
 
         <m:MaterialContainer>

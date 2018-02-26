@@ -12,23 +12,28 @@ import com.gwtplatform.mvp.client.ViewWithUiHandlers;
 import com.ustadmobile.core.db.DbManager;
 import com.ustadmobile.core.db.UmLiveData;
 import com.ustadmobile.core.db.UmObserver;
+import com.ustadmobile.core.db.UmProvider;
 import com.ustadmobile.core.db.dao.OpdsEntryDao;
 import com.ustadmobile.core.db.dao.OpdsEntryWithRelationsDao;
 import com.ustadmobile.core.impl.UmCallback;
+import com.ustadmobile.core.model.CourseProgress;
+import com.ustadmobile.core.opds.OpdsFilterOptions;
 import com.ustadmobile.lib.db.entities.OpdsEntry;
 import com.ustadmobile.lib.db.entities.OpdsEntry.OpdsItemLoadCallback;
 import com.ustadmobile.lib.db.entities.OpdsEntryWithRelations;
 import com.ustadmobile.lib.db.entities.OpdsLink;
-import com.ustadmobile.port.gwt.client.application.opds.OpdsEntryView;
+import com.ustadmobile.port.gwt.client.application.opds.CatalogEntryViewGWT;
 import com.ustadmobile.port.gwt.client.db.repository.OpdsEntryRepositoryGWT;
 
 import java.util.Hashtable;
 import java.util.List;
+import java.util.Set;
 
 import javax.inject.Inject;
 
 
-public class CatalogView extends ViewWithUiHandlers{
+public class CatalogViewGWT extends ViewWithUiHandlers
+	implements CatalogPresenterGWT.MyView{
 	
 	/**
 	 * Arguments for initialising CatalogView. Set in constructor.
@@ -37,10 +42,12 @@ public class CatalogView extends ViewWithUiHandlers{
 	
 	OpdsEntryWithRelationsDao repository;
 	
+	public String baseURL = "/";
+	
 	/************ UI BINDER STUFF: *****************/
 	
 	//This is how GWTP knows to use the CatalogView.ui.xml file (bind it)
-    interface Binder extends UiBinder<Widget, CatalogView> {
+    interface Binder extends UiBinder<Widget, CatalogViewGWT> {
     }
     
     //Also needed for binding to xml file (uiBinder)
@@ -49,7 +56,7 @@ public class CatalogView extends ViewWithUiHandlers{
     @UiField
     FlowPanel entriesPanel; 
     
-    public CatalogView() {
+    public CatalogViewGWT() {
         initWidget(uiBinder.createAndBindUi(this));
     }
 
@@ -57,7 +64,6 @@ public class CatalogView extends ViewWithUiHandlers{
 	protected void onAttach() {
 		// Create a new CatalogPresenter etc. as needed here
 		super.onAttach();
-		
 		
 	}
 	
@@ -68,6 +74,8 @@ public class CatalogView extends ViewWithUiHandlers{
 			repository = DbManager.getInstance(this)
 					.getOpdsEntryWithRelationsRepository();
 			String url = (String)args.get("url");
+			
+			this.baseURL = url;
 			
 			///*
 			UmLiveData<OpdsEntryWithRelations> dataLive = 
@@ -122,20 +130,13 @@ public class CatalogView extends ViewWithUiHandlers{
 				public void onChanged(List<OpdsEntryWithRelations> t) {
 					GWT.log("CatalogView: handleEntryChanged().onChanged():");
 					
-					//testing
-					if(t.size() < 0){
-						GWT.log("CatalogView: ENTRY LIST IS ZERO.");
-					}else{
-						GWT.log("CatalogView: Entry size: " + t.size());
-					}
-					
 					//UI stuff:
 					for (int i=0; i<t.size(); i++){
 						OpdsEntryWithRelations entry = t.get(i);
 						String entryTitle = entry.getTitle();
 						GWT.log("CatalogView: Entry: " + entryTitle + ". "
 								+ "Adding to View..");
-						addUiEntry(entryTitle);
+						addUiEntry(entry);
 					}
 					
 				}
@@ -149,18 +150,167 @@ public class CatalogView extends ViewWithUiHandlers{
 		
 	}
 	
-	public void addUiEntry(String title){
-		GWT.log("CatalogView: Adding entry to UI: " + title);
-		TextBox textBox = new TextBox();
-		textBox.setName(title);
-		textBox.setText(title);
+	public void addUiEntry(OpdsEntryWithRelations entry){
+		GWT.log("CatalogView: Adding entry to UI: " + entry.getTitle());
 		
-		OpdsEntryView entryCard = new OpdsEntryView(title);
-		entriesPanel.add(entryCard);
+		CatalogEntryViewGWT entryCardComplete = new CatalogEntryViewGWT(entry, this);
+		entriesPanel.add(entryCardComplete);
 		
-		//entriesPanel.add(textBox);
 	}
 	
+	/************ CORE VIEW OVERRIDES: ************/
+
+	@Override
+	public void setEntryStatus(String entryId, int status) {
+		// TODO Auto-generated method stub
+		
+	}
+
+	@Override
+	public void setEntrythumbnail(String entryId, String iconFileURI) {
+		// TODO Auto-generated method stub
+		
+	}
+
+	@Override
+	public void setEntryBackground(String entryId, String backgroundFileURI) {
+		// TODO Auto-generated method stub
+		
+	}
+
+	@Override
+	public void setCatalogBackground(String backgroundFileURI) {
+		// TODO Auto-generated method stub
+		
+	}
+
+	@Override
+	public void updateDownloadAllProgress(int loaded, int total) {
+		// TODO Auto-generated method stub
+		
+	}
+
+	@Override
+	public void setDownloadEntryProgressVisible(String entryId, boolean visible) {
+		// TODO Auto-generated method stub
+		
+	}
+
+	@Override
+	public void updateDownloadEntryProgress(String entryId, float progress, String statusText) {
+		// TODO Auto-generated method stub
+		
+	}
+
+	@Override
+	public void setEntryProgress(String entryId, CourseProgress progress) {
+		// TODO Auto-generated method stub
+		
+	}
+
+	@Override
+	public void setSelectedEntries(Set<String> entries) {
+		// TODO Auto-generated method stub
+		
+	}
+
+	@Override
+	public void refresh() {
+		// TODO Auto-generated method stub
+		
+	}
+
+	@Override
+	public void setFooterButtonVisible(boolean buttonVisible) {
+		// TODO Auto-generated method stub
+		
+	}
+
+	@Override
+	public void setFooterButtonLabel(String browseButtonLabel) {
+		// TODO Auto-generated method stub
+		
+	}
+
+	@Override
+	public void setDeleteOptionAvailable(boolean deleteOptionAvailable) {
+		// TODO Auto-generated method stub
+		
+	}
+
+	@Override
+	public void setAddOptionAvailable(boolean addOptionAvailable) {
+		// TODO Auto-generated method stub
+		
+	}
+
+	@Override
+	public void setAlternativeTranslationLinks(String[] translationLinks, int disabledItem) {
+		// TODO Auto-generated method stub
+		
+	}
+
+	@Override
+	public void setRefreshing(boolean isRefreshing) {
+		// TODO Auto-generated method stub
+		
+	}
+
+	@Override
+	public void setFilterOptions(OpdsFilterOptions filterOptions) {
+		// TODO Auto-generated method stub
+		
+	}
+
+	@Override
+	public void setEntryProvider(UmProvider<OpdsEntryWithRelations> entryProvider) {
+		// TODO Auto-generated method stub
+		
+	}
+	/* END OF CORE VIEW OVERRIDE */
 	
+	
+	/*
+	 * CORE USTADVIEW OVERRIDES: 
+	 * TODO: CAN BE PART OF USTADVIEW IN GWT
+	 * */
+
+	@Override
+	public Object getContext() {
+		// TODO Auto-generated method stub
+		return null;
+	}
+
+	@Override
+	public int getDirection() {
+		// TODO Auto-generated method stub
+		return 0;
+	}
+
+	@Override
+	public void setDirection(int dir) {
+		// TODO Auto-generated method stub
+		
+	}
+
+	@Override
+	public void setAppMenuCommands(String[] labels, int[] ids) {
+		// TODO Auto-generated method stub
+		
+	}
+
+	@Override
+	public void setUIStrings() {
+		// TODO Auto-generated method stub
+		
+	}
+
+	@Override
+	public void runOnUiThread(Runnable r) {
+		// TODO Auto-generated method stub
+		
+	}
+	
+	/* End of CORE USTADVIEW OVERRIDE */
 	
 }

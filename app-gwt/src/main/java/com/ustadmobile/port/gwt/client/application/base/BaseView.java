@@ -36,9 +36,10 @@ import com.ustadmobile.core.impl.UstadMobileSystemImpl;
 import com.ustadmobile.core.view.BasePointMenuItem;
 import com.ustadmobile.port.gwt.client.application.ApplicationPresenter;
 import com.ustadmobile.port.gwt.client.application.base.BasePresenter.CoreBasePointPresenterHandler;
-import com.ustadmobile.port.gwt.client.application.catalog.CatalogView;
+import com.ustadmobile.port.gwt.client.application.catalog.CatalogViewGWT;
 
 import gwt.material.design.client.constants.Color;
+import gwt.material.design.client.constants.Flex;
 import gwt.material.design.client.constants.WavesType;
 import gwt.material.design.client.ui.MaterialLabel;
 import gwt.material.design.client.ui.MaterialLink;
@@ -67,8 +68,8 @@ public class BaseView extends ViewWithUiHandlers<CoreBasePointPresenterHandler>
 	@UiField
 	MaterialRow dynamicTabsRow;
 	
-	@UiField
-    MaterialPanel content;
+	//@UiField
+    //MaterialPanel content;
 	
 	/************ UI BINDER STUFF: *****************/
 	
@@ -81,7 +82,7 @@ public class BaseView extends ViewWithUiHandlers<CoreBasePointPresenterHandler>
     BaseView(Binder uiBinder) {
         initWidget(uiBinder.createAndBindUi(this));
         tabArgumentsList = new ArrayList<>();
-        bindSlot(BasePresenter.SLOT_TAB, content);
+        //bindSlot(BasePresenter.SLOT_TAB, content);
     }
     
     @Override
@@ -98,17 +99,20 @@ public class BaseView extends ViewWithUiHandlers<CoreBasePointPresenterHandler>
     protected MaterialTabItem newTestTabItem(int index) {
         MaterialTabItem item = new MaterialTabItem();
         item.setWaves(WavesType.DEFAULT);
-        MaterialLink link = new MaterialLink("Tab " + index);
+        //MaterialLink link = new MaterialLink("Test " + index);
+        MaterialLink link = new MaterialLink("Available");
         link.setTextColor(Color.WHITE);
         link.setHref("#dynamicTab" + index);
         item.add(link);
-        
         MaterialPanel catalogPanel = new MaterialPanel();
         catalogPanel.setId("dynamicTab" + index);
         
-        CatalogView catalogView = new CatalogView();
+        CatalogViewGWT catalogView = new CatalogViewGWT();
         Hashtable args= new Hashtable();
-        args.put("url", "com/ustadmobile/core/test.opds");
+        //args.put("url", "com/ustadmobile/core/test.opds");
+        
+        //Testing SAL:
+        args.put("url", "http://www.ustadmobile.com/files/saltracker/index.opds");
         catalogView.setArguments(args);
         
         catalogPanel.add(catalogView);
@@ -150,6 +154,12 @@ public class BaseView extends ViewWithUiHandlers<CoreBasePointPresenterHandler>
     	String titleFromImpl = impl.getString(messageCode, this);
     	String url = (String) tabArguments.get("url");
     	titleFromImpl = "Get String : " + titleNumber;
+    	if(messageCode == 80) {
+    		titleFromImpl = "Libraries";
+    	}
+    	if(messageCode == 81) {
+    		titleFromImpl = "Downloaded";
+    	}
     	MaterialLink link = new MaterialLink(titleFromImpl);
     	link.setTextColor(Color.WHITE);
     	link.setHref(url);
@@ -253,10 +263,11 @@ public class BaseView extends ViewWithUiHandlers<CoreBasePointPresenterHandler>
          * 
          */
         //GWT add the tab to the list as well
+        /* DISABLING FOR NOW> TODO: PLEASE UNCOMMENT TO MAKE IT WORK!
         MaterialTabItem newTab = newBasePointTabItem(this.tabIndex, tabArguments);
         tab.add(newTab);
         tab.setTabIndex(tabIndex);
-        
+        */
         
 	}
 	

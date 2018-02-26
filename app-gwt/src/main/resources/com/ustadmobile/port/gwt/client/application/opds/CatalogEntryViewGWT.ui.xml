@@ -6,15 +6,16 @@
 	    <m:MaterialColumn grid="l6 m6 s12">
 			<m:MaterialCard backgroundColor="WHITE" orientation="LANDSCAPE">
 				<m:MaterialCardImage waves="LIGHT">
-					<m:MaterialImage url="http://assets.materialup.com/uploads/b6992fb2-7bf4-401d-a233-e34a486b9337/gif.gif"/>
+					<m:MaterialImage ui:field="entryImage" url="/com/ustadmobile/core/blank.png"/>
 				</m:MaterialCardImage>
 				<m:MaterialCardContent textColor="BLACK">
-					<m:MaterialLabel ui:field="title" text="Title of your card" fontSize="1.5em" addStyleNames="truncate" />
-					<m:MaterialLabel text="Lorem ipsum dolor sit amet, consectetur adipiscing elit" addStyleNames="truncate"/>
+					<m:MaterialLabel ui:field="entryTitle" text="Title of your card" fontSize="1.5em" addStyleNames="truncate" />
+					<m:MaterialLabel ui:field="entryText" text="" addStyleNames="truncate"/>
 				</m:MaterialCardContent>
 				<m:MaterialCardAction>
-					<m:MaterialLink iconType="SHARE" textColor="BLACK" />
-					<m:MaterialLink iconType="LOCATION_ON" textColor="RED" />
+					<!--  <m:MaterialLink iconType="SHARE" textColor="BLACK" /> -->
+					<!--  <m:MaterialLink ui:field="entryLink" iconType="LINK" href="" textColor="BLACK" /> -->
+					<m:MaterialButton ui:field="go" text="Go"/>
 				</m:MaterialCardAction>
 			</m:MaterialCard>
 		</m:MaterialColumn>
