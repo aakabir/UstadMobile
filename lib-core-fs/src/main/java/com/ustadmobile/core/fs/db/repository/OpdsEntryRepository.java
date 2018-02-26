@@ -4,9 +4,12 @@ import com.ustadmobile.core.db.DbManager;
 import com.ustadmobile.core.db.UmLiveData;
 import com.ustadmobile.core.db.UmProvider;
 import com.ustadmobile.core.db.dao.OpdsEntryWithRelationsDao;
+import com.ustadmobile.lib.db.entities.ContainerFileWithRelations;
 import com.ustadmobile.lib.db.entities.OpdsEntry;
 import com.ustadmobile.lib.db.entities.OpdsEntryWithRelations;
+import com.ustadmobile.lib.db.entities.OpdsEntryWithRelationsAndContainerMimeType;
 
+import java.io.File;
 import java.util.List;
 import java.util.concurrent.ExecutorService;
 
@@ -25,6 +28,7 @@ public class OpdsEntryRepository extends OpdsEntryWithRelationsDao {
         this.executorService = executorService;
     }
 
+    //TODO: rename entryId parameter - it's misleading when it is really uuid
     @Override
     public UmLiveData<OpdsEntryWithRelations> getEntryByUrl(String url, String entryId,
                                                             OpdsEntry.OpdsItemLoadCallback callback) {
@@ -47,24 +51,35 @@ public class OpdsEntryRepository extends OpdsEntryWithRelationsDao {
     }
 
     @Override
-    public UmLiveData<List<OpdsEntryWithRelations>> findEntriesByContainerFileDirectoryAsList(String dir) {
+    public UmLiveData<List<OpdsEntryWithRelations>> findEntriesByContainerFileDirectoryAsList(
+            List<String> dirList, OpdsEntry.OpdsItemLoadCallback callback) {
         UmLiveData<List<OpdsEntryWithRelations>> dbResult = dbManager.getOpdsEntryWithRelationsDao()
-                .findEntriesByContainerFileDirectoryAsList(dir);
+                .findEntriesByContainerFileDirectoryAsList(dirList, callback);
 
-        executorService.execute(new OpdsDirScanner(dbManager, dir));
+        executorService.execute(new OpdsDirScanner(dbManager, dirList, callback));
 
         return dbResult;
     }
 
     @Override
-    public UmProvider<OpdsEntryWithRelations> findEntriesByContainerFileDirectoryAsProvider(String dir) {
+    public UmProvider<OpdsEntryWithRelations> findEntriesByContainerFileDirectoryAsProvider(
+            List<String> dirList, OpdsEntry.OpdsItemLoadCallback callback) {
         UmProvider<OpdsEntryWithRelations> dbResult = dbManager.getOpdsEntryWithRelationsDao()
-                .findEntriesByContainerFileDirectoryAsProvider(dir);
+                .findEntriesByContainerFileDirectoryAsProvider(dirList, callback);
 
-        executorService.execute(new OpdsDirScanner(dbManager, dir));
+        executorService.execute(new OpdsDirScanner(dbManager, dirList, callback));
 
         return dbResult;
     }
+
+    public List<OpdsEntryWithRelations> findEntriesByContainerFileNormalizedPath(String containerFilePath) {
+        OpdsDirScanner scanner = new OpdsDirScanner(dbManager);
+        ContainerFileWithRelations containerFile = scanner.scanFile(new File(containerFilePath));
+
+        return dbManager.getOpdsEntryWithRelationsDao().findEntriesByContainerFileNormalizedPath(
+                containerFilePath);
+    }
+
 
     @Override
     public UmProvider<OpdsEntryWithRelations> getEntriesByParent(String parentId) {
@@ -86,5 +101,33 @@ public class OpdsEntryRepository extends OpdsEntryWithRelationsDao {
         return null;
     }
 
+    @Override
+    public OpdsEntryWithRelations getEntryByUuidStatic(String uuid) {
+        return null;
+    }
 
+    @Override
+    public String findParentUrlByChildUuid(String childUuid) {
+        return null;
+    }
+
+    @Override
+    public int deleteOpdsEntriesByUuids(List<String> entryUuids) {
+        return 0;
+    }
+
+    @Override
+    public int deleteLinksByOpdsEntryUuids(List<String> entryUuids) {
+        return 0;
+    }
+
+    @Override
+    public List<OpdsEntryWithRelationsAndContainerMimeType> findByUuidsWithContainerMimeType(List<String> uuids) {
+        return null;
+    }
+
+    @Override
+    public List<OpdsEntryWithRelations> getEntriesByParentAsListStatic(String parentId) {
+        return null;
+    }
 }

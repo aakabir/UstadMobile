@@ -26,17 +26,19 @@ import android.widget.ImageView;
 import android.widget.LinearLayout;
 import android.widget.TextView;
 
+import com.squareup.picasso.Picasso;
 import com.toughra.ustadmobile.R;
 import com.ustadmobile.core.controller.CatalogEntryPresenter;
 import com.ustadmobile.core.impl.UstadMobileSystemImpl;
 import com.ustadmobile.core.model.CourseProgress;
-import com.ustadmobile.core.opds.UstadJSOPDSEntry;
 import com.ustadmobile.core.opds.UstadJSOPDSItem;
 import com.ustadmobile.core.view.CatalogEntryView;
 import com.ustadmobile.core.view.DialogResultListener;
 import com.ustadmobile.core.view.DismissableDialog;
 import com.ustadmobile.core.fs.view.ImageLoader;
+import com.ustadmobile.lib.db.entities.OpdsEntry;
 import com.ustadmobile.port.android.util.UMAndroidUtil;
+import com.ustadmobile.port.android.util.UmAndroidImageUtil;
 
 import java.util.ArrayList;
 import java.util.Enumeration;
@@ -320,7 +322,7 @@ public class CatalogEntryActivity extends UstadBaseActivity implements CatalogEn
         MenuInflater inflater = getMenuInflater();
         inflater.inflate(R.menu.catalog_entry_presenter, menu);
         if(!shareButtonVisible) {
-            menu.removeItem(R.id.menu_catalog_entry_presenter_share);
+//            menu.removeItem(R.id.menu_catalog_entry_presenter_share);
         }
 
         return true;
@@ -378,11 +380,16 @@ public class CatalogEntryActivity extends UstadBaseActivity implements CatalogEn
     }
 
     @Override
-    public void setThumbnail(String iconFileUri) {
-        if(iconFileUri != null)
-            ImageLoader.getInstance().loadImage(iconFileUri, thumbnailLoadTarget, mPresenter);
-        else
-            ((ImageView)findViewById(getThumbnailImageViewId())).setImageResource(R.drawable.cover);
+    public void setThumbnail(String iconFileUri, String mimeType) {
+        ImageView coverImageView = (ImageView)findViewById(getThumbnailImageViewId());
+
+        if(iconFileUri == null){
+            Picasso.with(this).load(R.drawable.cover).fit().centerInside().into(coverImageView);
+        }else if(UmAndroidImageUtil.isSvg(mimeType)) {
+            UmAndroidImageUtil.loadSvgIntoImageView(iconFileUri, coverImageView);
+        }else {
+            Picasso.with(this).load("um-"+ iconFileUri).fit().centerInside().into(coverImageView);
+        }
     }
 
     @Override
@@ -415,7 +422,7 @@ public class CatalogEntryActivity extends UstadBaseActivity implements CatalogEn
     @Override
     public void setDescription(String description, String contentType) {
         TextView descriptionTextView = ((TextView)findViewById(R.id.activity_catalog_entry_description));
-        if(contentType.equals(UstadJSOPDSEntry.CONTENT_TYPE_XHTML)) {
+        if(OpdsEntry.CONTENT_TYPE_XHTML.equals(contentType)) {
             descriptionTextView.setText(Html.fromHtml(description));
         }else {
             descriptionTextView.setText(description);

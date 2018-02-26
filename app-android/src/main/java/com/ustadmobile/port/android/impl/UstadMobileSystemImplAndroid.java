@@ -55,11 +55,15 @@ import android.webkit.MimeTypeMap;
 import android.webkit.WebView;
 import android.widget.Toast;
 
+import com.squareup.picasso.Picasso;
 import com.ustadmobile.core.buildconfig.CoreBuildConfig;
 import com.ustadmobile.core.catalog.contenttype.*;
 import com.ustadmobile.core.controller.CatalogPresenter;
 import com.ustadmobile.core.controller.UserSettingsController;
 import com.ustadmobile.core.fs.contenttype.EpubTypePluginFs;
+import com.ustadmobile.core.fs.contenttype.H5PContentTypeFs;
+import com.ustadmobile.core.fs.contenttype.ScormTypePluginFs;
+import com.ustadmobile.core.fs.contenttype.XapiPackageTypePluginFs;
 import com.ustadmobile.core.impl.ContainerMountRequest;
 import com.ustadmobile.core.impl.TinCanQueueListener;
 import com.ustadmobile.core.impl.UMDownloadCompleteReceiver;
@@ -78,6 +82,7 @@ import com.ustadmobile.core.view.BasePointView;
 import com.ustadmobile.core.view.CatalogEntryView;
 import com.ustadmobile.core.view.CatalogView;
 import com.ustadmobile.core.view.ContainerView;
+import com.ustadmobile.core.view.H5PContentView;
 import com.ustadmobile.core.view.LoginView;
 import com.ustadmobile.core.view.RegistrationView;
 import com.ustadmobile.core.view.ScormPackageView;
@@ -95,6 +100,7 @@ import com.ustadmobile.nanolrs.core.manager.UserManager;
 import com.ustadmobile.nanolrs.core.model.User;
 import com.ustadmobile.nanolrs.core.persistence.PersistenceManager;
 import com.ustadmobile.port.android.generated.MessageIDMap;
+import com.ustadmobile.port.android.impl.http.UmHttpCachePicassoRequestHandler;
 import com.ustadmobile.port.android.netwokmanager.NetworkManagerAndroid;
 import com.ustadmobile.port.android.netwokmanager.NetworkServiceAndroid;
 import com.ustadmobile.port.android.opds.db.UmOpdsDbManagerAndroid;
@@ -185,6 +191,7 @@ public class UstadMobileSystemImplAndroid extends UstadMobileSystemImplSE {
         viewNameToAndroidImplMap.put(XapiPackageView.VIEW_NAME, XapiPackageActivity.class);
         viewNameToAndroidImplMap.put(AddFeedDialogView.VIEW_NAME, AddFeedDialogFragment.class);
         viewNameToAndroidImplMap.put(ScormPackageView.VIEW_NAME, ScormPackageActivity.class);
+        viewNameToAndroidImplMap.put(H5PContentView.VIEW_NAME, H5PContentActivity.class);
     }
 
 
@@ -215,11 +222,11 @@ public class UstadMobileSystemImplAndroid extends UstadMobileSystemImplSE {
      */
     private HashMap<TinCanQueueListener, XapiStatementsForwardingListener> queueStatusListeners;
 
-
     private UmOpdsDbManagerAndroid opdsDbManager;
 
     private static final ContentTypePlugin[] SUPPORTED_CONTENT_TYPES = new ContentTypePlugin[] {
-            new EpubTypePluginFs()};
+            new EpubTypePluginFs(), new ScormTypePluginFs(), new XapiPackageTypePluginFs(),
+            new H5PContentTypeFs()};
 
     private ExecutorService bgExecutorService = Executors.newCachedThreadPool();
 
@@ -400,6 +407,12 @@ public class UstadMobileSystemImplAndroid extends UstadMobileSystemImplSE {
             }catch (IOException e) {
                 l(UMLog.CRITICAL, 0, "Failed to make base system dir");
             }
+
+            Context appContext = ((Context)context).getApplicationContext();
+
+            Picasso.Builder picassoBuilder = new Picasso.Builder(appContext);
+            picassoBuilder.addRequestHandler(new UmHttpCachePicassoRequestHandler(appContext));
+            Picasso.setSingletonInstance(picassoBuilder.build());
         }
 
         if(context instanceof Activity) {

@@ -181,6 +181,30 @@ public class UMFileUtil {
         
         return resultSB.toString();
     }
+
+    private static boolean isUriAbsoluteLcase(String uriLower) {
+        int charFoundIndex = uriLower.indexOf("://");
+        if(charFoundIndex != -1) {
+            boolean isAllChars = true;
+            char cc;
+            for(int i = 0; i < charFoundIndex; i++) {
+                cc = uriLower.charAt(i);
+                isAllChars &= ((cc > 'a' && cc < 'z') || (cc > '0' && cc < '9') || cc == '+' || cc == '.' || cc == '-');
+            }
+
+            //we found :// and all valid scheme name characters before; path itself is absolute
+            if(isAllChars) {
+                return true;
+            }
+        }
+
+        return false;
+    }
+
+    public static boolean isUriAbsolute(String uri) {
+        return isUriAbsoluteLcase(uri.toLowerCase());
+    }
+
     
     /**
      * Split a string into an array of Strings at each instance of splitChar
@@ -748,7 +772,7 @@ public class UMFileUtil {
      * @return True if it looks like a file as above, false otherwise
      */
     public static boolean isFileUri(String uri) {
-        if(uri.startsWith(PROTOCOL_FILE) || uri.startsWith("/"))
+        if(uri.startsWith("file:/") || uri.startsWith("/"))
             return true;
         else
             return false;

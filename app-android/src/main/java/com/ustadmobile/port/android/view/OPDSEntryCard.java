@@ -32,8 +32,6 @@
 package com.ustadmobile.port.android.view;
 
 import android.content.Context;
-import android.graphics.Bitmap;
-import android.graphics.BitmapFactory;
 import android.support.v4.content.ContextCompat;
 import android.util.AttributeSet;
 import android.util.Log;
@@ -41,14 +39,13 @@ import android.view.View;
 import android.widget.ImageView;
 import android.widget.TextView;
 
+import com.squareup.picasso.Picasso;
 import com.toughra.ustadmobile.R;
 import com.ustadmobile.core.controller.CatalogPresenter;
-import com.ustadmobile.core.controller.UstadBaseController;
 import com.ustadmobile.core.generated.locale.MessageID;
 import com.ustadmobile.core.model.CourseProgress;
-import com.ustadmobile.core.fs.view.ImageLoader;
-import com.ustadmobile.core.view.UstadView;
 import com.ustadmobile.lib.db.entities.OpdsEntryWithRelations;
+import com.ustadmobile.port.android.util.UmAndroidImageUtil;
 
 import java.util.HashMap;
 
@@ -149,8 +146,8 @@ public class OPDSEntryCard extends android.support.v7.widget.CardView {
     }
 
     public void setOPDSEntryOverlay(int overlay) {
-        ImageView statusIconView = (ImageView)findViewById(R.id.opds_item_status_icon);
-        TextView statusText = (TextView)findViewById(R.id.opds_item_status_text);
+        ImageView statusIconView = findViewById(R.id.opds_item_status_icon);
+        TextView statusText = findViewById(R.id.opds_item_status_text);
         switch(overlay) {
             case CatalogPresenter.STATUS_ACQUIRED:
                 findViewById(R.id.opds_item_download_progress_view).setVisibility(View.GONE);
@@ -174,28 +171,20 @@ public class OPDSEntryCard extends android.support.v7.widget.CardView {
         }
     }
 
-    /**
-     * Set the thumbnail for this OPDS entry card
-     *
-     * @param bitmap Bitmap with thumbnail image
-     */
-    public void setThumbnail(Bitmap bitmap) {
-        ((ImageView)findViewById(R.id.opds_item_thumbnail)).setImageBitmap(bitmap);
-    }
+    public void setThumbnailUrl(final String url, final String mimeType) {
+        final ImageView thumbImageView =(ImageView)findViewById(R.id.opds_item_thumbnail);
+        if(url == null) {
+            thumbImageView.setImageResource(android.R.color.transparent);
+            return;
+        }
 
-    public void setThumbnailUrl(final String url, final UstadBaseController controller, final UstadView view) {
-        ImageLoader.getInstance().loadImage(url, new ImageLoader.ImageLoadTarget() {
-            @Override
-            public void setImageFromBytes(byte[] buf) {
-                final Bitmap imgBitmap = BitmapFactory.decodeByteArray(buf, 0, buf.length);
-                view.runOnUiThread(new Runnable() {
-                    @Override
-                    public void run() {
-                        setThumbnail(imgBitmap);
-                    }
-                });
-            }
-        }, controller);
+        if(UmAndroidImageUtil.isSvg(mimeType)) {
+            UmAndroidImageUtil.loadSvgIntoImageView(url, thumbImageView);
+        }else {
+            Picasso.with(getContext()).load("um-"+url).fit().centerInside().into(thumbImageView);
+        }
+
+
     }
 
 

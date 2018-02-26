@@ -1,11 +1,10 @@
 package com.ustadmobile.port.sharedse.networkmanager;
 
-import com.ustadmobile.core.controller.CatalogEntryInfo;
-import com.ustadmobile.core.controller.CatalogPresenter;
 import com.ustadmobile.core.db.DbManager;
 import com.ustadmobile.core.db.dao.DownloadJobDao;
 import com.ustadmobile.core.db.dao.NetworkNodeDao;
 import com.ustadmobile.core.impl.UMLog;
+import com.ustadmobile.core.impl.UmCallback;
 import com.ustadmobile.core.impl.UstadMobileSystemImpl;
 import com.ustadmobile.core.networkmanager.AcquisitionListener;
 import com.ustadmobile.core.networkmanager.AvailabilityMonitorRequest;
@@ -16,15 +15,19 @@ import com.ustadmobile.core.networkmanager.NetworkManagerTaskListener;
 import com.ustadmobile.lib.db.entities.ContainerFileEntry;
 import com.ustadmobile.lib.db.entities.DownloadJob;
 import com.ustadmobile.lib.db.entities.DownloadJobItem;
+import com.ustadmobile.lib.db.entities.DownloadJobWithRelations;
 import com.ustadmobile.lib.db.entities.EntryStatusResponse;
 import com.ustadmobile.lib.db.entities.NetworkNode;
 import com.ustadmobile.core.networkmanager.NetworkTask;
-import com.ustadmobile.core.opds.UstadJSOPDSEntry;
 import com.ustadmobile.core.opds.UstadJSOPDSFeed;
 import com.ustadmobile.core.util.UMFileUtil;
 import com.ustadmobile.core.util.UMIOUtils;
-import com.ustadmobile.core.util.UMUUID;
+import com.ustadmobile.lib.db.entities.OpdsEntry;
+import com.ustadmobile.lib.db.entities.OpdsEntryParentToChildJoin;
 import com.ustadmobile.lib.db.entities.OpdsEntryWithRelations;
+import com.ustadmobile.lib.db.entities.OpdsEntryWithRelationsAndContainerMimeType;
+import com.ustadmobile.lib.db.entities.OpdsLink;
+import com.ustadmobile.lib.util.UmUuidUtil;
 import com.ustadmobile.nanolrs.http.NanoLrsHttpd;
 import com.ustadmobile.port.sharedse.impl.http.EmbeddedHTTPD;
 import com.ustadmobile.port.sharedse.impl.http.MountedZipHandler;
@@ -47,11 +50,14 @@ import java.util.Map;
 import java.util.Set;
 import java.util.Timer;
 import java.util.TimerTask;
+import java.util.UUID;
 import java.util.Vector;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.regex.Pattern;
-import java.util.zip.ZipFile;
+import net.lingala.zip4j.core.ZipFile;
+
+import javax.net.SocketFactory;
 
 import fi.iki.elonen.NanoHTTPD;
 import fi.iki.elonen.router.RouterNanoHTTPD;
@@ -75,7 +81,7 @@ import static com.ustadmobile.core.buildconfig.CoreBuildConfig.WIFI_P2P_INSTANCE
 public abstract class NetworkManager implements NetworkManagerCore, NetworkManagerTaskListener,
         LocalMirrorFinder, EntryStatusTask.NetworkNodeListProvider, EmbeddedHTTPD.ResponseListener {
 
-    protected ExecutorService executorService;
+    protected ExecutorService dbExecutorService;
 
     /**
      * Flag to indicate type of notification used when supernode is active
@@ -154,6 +160,8 @@ public abstract class NetworkManager implements NetworkManagerCore, NetworkManag
         new Vector<>(), new Vector<>()
     };
 
+    private Set<DownloadTask> activeDownloadTasks;
+
 
     private Vector<NetworkManagerListener> networkManagerListeners = new Vector<>();
 
@@ -187,7 +195,7 @@ public abstract class NetworkManager implements NetworkManagerCore, NetworkManag
     /**
      * The feed that the user wants to share at the moment
      */
-    protected UstadJSOPDSFeed sharedFeed;
+    protected String sharedFeedUuid;
 
     public static final int SHARED_FEED_PORT = 8006;
 
@@ -257,6 +265,8 @@ public abstract class NetworkManager implements NetworkManagerCore, NetworkManag
 
     private boolean receivingOn = false;
 
+    protected URLConnectionOpener wifiUrlConnectionOpener;
+
     /**
      * The time that the shared feed will be available
      */
@@ -291,6 +301,7 @@ public abstract class NetworkManager implements NetworkManagerCore, NetworkManag
 
 
     public NetworkManager() {
+        activeDownloadTasks = new HashSet<>();
     }
 
     /**
@@ -320,7 +331,7 @@ public abstract class NetworkManager implements NetworkManagerCore, NetworkManag
 
         this.mContext = mContext;
 
-        executorService = Executors.newCachedThreadPool();
+        dbExecutorService = Executors.newCachedThreadPool();
 
         try {
             /*
@@ -436,20 +447,71 @@ public abstract class NetworkManager implements NetworkManagerCore, NetworkManag
         return requestFileStatus(entryIds, mContext, nodeList, true, true);
     }
 
-    public long buildDownloadJob(List<OpdsEntryWithRelations> rootEntries, boolean recursive) {
+    public DownloadJob buildDownloadJob(List<OpdsEntryWithRelations> rootEntries, String destintionDir,
+                                        boolean recursive, boolean wifiDirectEnabled,
+                                        boolean localWifiEnabled) {
         DownloadJobDao jobDao = DbManager.getInstance(getContext()).getDownloadJobDao();
 
         DownloadJob job = new DownloadJob();
-        job.setId((int)jobDao.insert(job));
+        job.setDestinationDir(destintionDir);
         job.setStatus(UstadMobileSystemImpl.DLSTATUS_NOT_STARTED);
+        job.setLanDownloadEnabled(localWifiEnabled);
+        job.setWifiDirectDownloadEnabled(wifiDirectEnabled);
+        job.setId((int)jobDao.insert(job));
+
+
 
         ArrayList<DownloadJobItem> jobItems = new ArrayList<>();
         for(OpdsEntryWithRelations entry : rootEntries) {
             jobItems.add(new DownloadJobItem(entry, job));
         }
+        DbManager.getInstance(getContext()).getDownloadJobItemDao().insertList(jobItems);
 
-        return job.getId();
+        return job;
     }
+
+    public void buildDownloadJobAsync(List<OpdsEntryWithRelations> rootEntries, String destintionDir,
+                                      boolean recursive, boolean wifiDirectEnabled,
+                                      boolean localWifiEnabled, UmCallback<DownloadJob> callback) {
+        dbExecutorService.execute(() -> callback.onSuccess(buildDownloadJob(rootEntries, destintionDir,
+                recursive, wifiDirectEnabled, localWifiEnabled)));
+    }
+
+    public DownloadJob buildDownloadJob(List<OpdsEntryWithRelations> rootEntries, String destinationDir,
+                                        boolean recursive){
+        return buildDownloadJob(rootEntries,  destinationDir, recursive, true, true);
+    }
+
+
+    public void queueDownloadJob(int downloadJobId) {
+        //just set the status of the job and let it be found using a query
+        dbExecutorService.execute(() -> {
+            DbManager.getInstance(getContext()).getDownloadJobDao().queueDownload(
+                    downloadJobId, NetworkTask.STATUS_QUEUED, System.currentTimeMillis());
+            checkDownloadJobQueue();
+        });
+    }
+
+    /**
+     *
+     */
+    public void checkDownloadJobQueue(){
+        if(activeDownloadTasks.isEmpty()){
+            DownloadJobWithRelations job = DbManager.getInstance(getContext())
+                    .getDownloadJobDao().findNextDownloadJobAndSetStartingStatus();
+            if(job == null)
+                return;//nothing to do
+
+            DownloadTask task = new DownloadTask(job, this);
+            task.start();
+        }
+    }
+
+
+    public void handleDownloadTaskStatusChanged() {
+
+    }
+
 
 
 
@@ -593,7 +655,7 @@ public abstract class NetworkManager implements NetworkManagerCore, NetworkManag
      * @param txtRecords Map of DNS-Text records
      */
     public void handleWifiDirectSdTxtRecordsAvailable(String serviceFullDomain,String senderMacAddr, HashMap<String, String> txtRecords) {
-        executorService.execute(() -> {
+        dbExecutorService.execute(() -> {
             if(serviceFullDomain.contains(WIFI_P2P_INSTANCE_NAME)){
                 String ipAddr = txtRecords.get(SD_TXT_KEY_IP_ADDR);
                 String btAddr = txtRecords.get(SD_TXT_KEY_BT_MAC);
@@ -712,7 +774,7 @@ public abstract class NetworkManager implements NetworkManagerCore, NetworkManag
      * @param port Service port on host device
      */
     public void handleNetworkServerDiscovered(String serviceName,String ipAddress,int port){
-        executorService.execute(() -> {
+        dbExecutorService.execute(() -> {
             NetworkNode node;
             boolean newNode;
             synchronized (knownNodesLock) {
@@ -891,12 +953,12 @@ public abstract class NetworkManager implements NetworkManagerCore, NetworkManag
 
         for(ContainerFileEntry availableEntry : availableEntries) {
             entryStatusResponses.add(new EntryStatusResponse(availableEntry.getContainerEntryId(),
-                    node.getId(), responseTime, 0, true));
+                    node.getNodeId(), responseTime, 0, true));
             remainingEntries.remove(availableEntry.getContainerEntryId());
         }
 
         for(String unavailableEntryId : remainingEntries) {
-            entryStatusResponses.add(new EntryStatusResponse(unavailableEntryId, node.getId(),
+            entryStatusResponses.add(new EntryStatusResponse(unavailableEntryId, node.getNodeId(),
                     responseTime,0, false));
         }
 
@@ -1301,6 +1363,21 @@ public abstract class NetworkManager implements NetworkManagerCore, NetworkManag
     }
 
     /**
+     * Can be overridden if needed so that the download task can get a socket factory that is
+     * bound to the wifi network. When Android connects to a wifi network that has no Internet,
+     * (e.g. a WiFi Direct legacy group network)
+     *
+     * @return
+     */
+    public SocketFactory getWifiSocketFactory(){
+        return SocketFactory.getDefault();
+    }
+
+    public URLConnectionOpener getWifiUrlConnectionOpener(){
+        return wifiUrlConnectionOpener;
+    }
+
+    /**
      * Connect to the given wifi direct node. This node should be the owner, and the other node
      * should be a client of the group.
      *
@@ -1411,6 +1488,7 @@ public abstract class NetworkManager implements NetworkManagerCore, NetworkManag
      * Method which is responsible for adding all acquisition listeners.
      * @param listener AcquisitionListener to listen to and fire events accordingly
      */
+    @Deprecated
     public void addAcquisitionTaskListener(AcquisitionListener listener){
         acquisitionListeners.add(listener);
     }
@@ -1419,6 +1497,7 @@ public abstract class NetworkManager implements NetworkManagerCore, NetworkManag
      * Method which is responsible for removing all listeners added
      * @param listener
      */
+    @Deprecated
     public void removeAcquisitionTaskListener(AcquisitionListener listener){
         acquisitionListeners.remove(listener);
     }
@@ -1431,21 +1510,6 @@ public abstract class NetworkManager implements NetworkManagerCore, NetworkManag
         synchronized (acquisitionListeners) {
             for(AcquisitionListener listener : acquisitionListeners){
                 listener.acquisitionProgressUpdate(entryId, task.getStatusByEntryId(entryId));
-            }
-        }
-    }
-
-
-    /**
-     * Fire acquisition status change to all listening parts of the app
-     * @param entryId
-     */
-    protected void fireAcquisitionStatusChanged(String entryId, DownloadTask.Status status){
-        UstadMobileSystemImpl.l(UMLog.DEBUG, 645, "fireAcquisitionStatusChanged: " + entryId +
-                " : " + status.getStatus());
-        synchronized (acquisitionListeners) {
-            for(AcquisitionListener listener : acquisitionListeners){
-                listener.acquisitionStatusChanged(entryId, status);
             }
         }
     }
@@ -1621,12 +1685,12 @@ public abstract class NetworkManager implements NetworkManagerCore, NetworkManag
      *
      * @param sharedFeed
      */
-    public void setSharedFeed(UstadJSOPDSFeed sharedFeed) {
+    public void setSharedFeed(String sharedFeedUuid) {
         synchronized (sharedFeedLock) {
-            this.sharedFeed = sharedFeed;
+            this.sharedFeedUuid = sharedFeedUuid;
 
             cancelStopSharedFeedHttpdTimerTask();
-            if(sharedFeed != null) {
+            if(sharedFeedUuid != null) {
                 if(sharedFeedHttpd == null) {
                     sharedFeedHttpd = new RouterNanoHTTPD(SHARED_FEED_PORT);
                     try {
@@ -1644,22 +1708,26 @@ public abstract class NetworkManager implements NetworkManagerCore, NetworkManag
                     sharedFeedHttpd.removeRoute("(.*)");
                 }
 
-                sharedFeedHttpd.addRoute("(.*)", OPDSFeedUriResponder.class, sharedFeed, this);
+                sharedFeedHttpd.addRoute("(.*)", OPDSFeedUriResponder.class, sharedFeedUuid, this, getContext());
 
                 updateClientServices();
-            }else if(sharedFeed == null) {
+            }else if(sharedFeedUuid == null) {
                 UstadMobileSystemImpl.l(UMLog.INFO, 301, "setSharedFeed: shared feed is now null");
                 updateClientServices();
                 cancelStopSharedFeedHttpdTimerTask();
                 submitCancelSharedFeedHttpdTimerTask();
             }
 
-            httpd.addRoute(CATALOG_HTTP_SHARED_URI, OPDSFeedUriResponder.class, sharedFeed);
+//            httpd.addRoute(CATALOG_HTTP_SHARED_URI, OPDSFeedUriResponder.class, sha);
         }
     }
 
-    public UstadJSOPDSFeed getSharedFeed() {
-        return sharedFeed;
+    /**
+     * The Uuid i
+     * @return
+     */
+    public String getSharedFeed() {
+        return sharedFeedUuid;
     }
 
     private void cancelStopSharedFeedHttpdTimerTask() {
@@ -1695,30 +1763,57 @@ public abstract class NetworkManager implements NetworkManagerCore, NetworkManag
     /**
      * Set the shared http endpoint catalog using an array of entry ids to be shared
      *
-     * @param entryIds
+     * @param uuids
      */
-    public void setSharedFeed(String[] entryIds, String title) {
+    public void setSharedFeed(String[] uuids, String title) {
         //TODO: replace this hardcoded value with something generic that gets replaced by client
+
+        //TODO: if there is already a shared feed, delete the old one from the database
         String feedSrcHref = "p2p://groupowner:" + getHttpListeningPort() + "/";
-        UstadJSOPDSFeed feed = new UstadJSOPDSFeed(feedSrcHref, title,
-                UMUUID.randomUUID().toString());
-        UstadJSOPDSEntry entry;
-        CatalogEntryInfo entryInfo;
-        for(int i = 0; i < entryIds.length; i++) {
-            entryInfo = CatalogPresenter.getEntryInfo(entryIds[i], CatalogPresenter.SHARED_RESOURCE,
-                    getContext());
 
-            if(entryInfo == null || entryInfo.acquisitionStatus != CatalogPresenter.STATUS_ACQUIRED)
-                continue;//cannot be shared if it has not been acquired.
+        OpdsEntryWithRelations sharedFeed = new OpdsEntryWithRelations();
+        sharedFeed.setUrl(feedSrcHref);
+        sharedFeed.setTitle(title);
+        sharedFeed.setUuid(UmUuidUtil.encodeUuidWithAscii85(UUID.randomUUID()));
 
-            entry = new UstadJSOPDSEntry(feed, "Shared: " + entryInfo.fileURI, entryIds[i],
-                    UstadJSOPDSFeed.LINK_ACQUIRE, entryInfo.mimeType,
-                    UMFileUtil.joinPaths(new String[] {CATALOG_HTTP_ENDPOINT_PREFIX, "entry",
-                            entryIds[i]}));
-            feed.addEntry(entry);
-        }
+        List<OpdsEntryParentToChildJoin> joinList = new ArrayList<>();
+        List<OpdsEntry> sharedEntries = new ArrayList<>();
+        List<OpdsLink> sharedLinks = new ArrayList<>();
+        dbExecutorService.execute(() -> {
+            List<OpdsEntryWithRelationsAndContainerMimeType> entriesToShareSrc = DbManager.getInstance(getContext())
+                    .getOpdsEntryWithRelationsDao().findByUuidsWithContainerMimeType(Arrays.asList(uuids));
 
-        setSharedFeed(feed);
+
+            for(int i = 0; i < entriesToShareSrc.size(); i++) {
+                OpdsEntryWithRelationsAndContainerMimeType entry = entriesToShareSrc.get(i);
+                OpdsEntryWithRelations sharedEntry = new OpdsEntryWithRelations();
+                sharedEntry.setUuid(UmUuidUtil.encodeUuidWithAscii85(UUID.randomUUID()));
+                sharedEntry.setTitle(entry.getTitle());
+                sharedEntry.setEntryId(entry.getEntryId());
+
+                if(entry.getContainerMimeType() == null) {
+                    //for now - we can't share that
+                    continue;
+                }
+
+                OpdsLink link = new OpdsLink(sharedEntry.getUuid(), entry.getContainerMimeType(),
+                        UMFileUtil.joinPaths(CATALOG_HTTP_ENDPOINT_PREFIX, "entry",
+                                entry.getEntryId()), OpdsEntry.LINK_REL_ACQUIRE);
+
+                sharedEntries.add(sharedEntry);
+                sharedLinks.add(link);
+                joinList.add(new OpdsEntryParentToChildJoin(sharedFeed.getUuid(), sharedEntry.getUuid(),
+                        i));
+            }
+
+            //persist to the database
+            DbManager dbManager = DbManager.getInstance(getContext());
+            dbManager.getOpdsEntryDao().insert(sharedFeed);
+            dbManager.getOpdsEntryDao().insertList(sharedEntries);
+            dbManager.getOpdsLinkDao().insert(sharedLinks);
+            dbManager.getOpdsEntryParentToChildJoinDao().insertAll(joinList);
+            setSharedFeed(sharedFeed.getUuid());
+        });
     }
 
     /**
@@ -1783,11 +1878,11 @@ public abstract class NetworkManager implements NetworkManagerCore, NetworkManag
      * @param feed
      * @param destinationMacAddr
      */
-    public void shareFeed(UstadJSOPDSFeed feed, String destinationMacAddr) {
-        setSharedFeed(feed);
-        if(!isWifiDirectConnectionEstablished(destinationMacAddr))
-            connectToWifiDirectNode(destinationMacAddr);
-    }
+//    public void shareFeed(UstadJSOPDSFeed feed, String destinationMacAddr) {
+//        setSharedFeed(feed);
+//        if(!isWifiDirectConnectionEstablished(destinationMacAddr))
+//            connectToWifiDirectNode(destinationMacAddr);
+//    }
 
     public void shareEntries(String[] entryIds, String title, String destinationMacAddr) {
         setSharedFeed(entryIds, title);

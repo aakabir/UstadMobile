@@ -32,6 +32,7 @@ package com.ustadmobile.core.controller;
 
 import com.ustadmobile.core.buildconfig.CoreBuildConfig;
 import com.ustadmobile.core.generated.locale.MessageID;
+import com.ustadmobile.core.impl.AppConfig;
 import com.ustadmobile.core.impl.UmCallback;
 import com.ustadmobile.core.impl.UstadMobileConstants;
 import com.ustadmobile.core.impl.UstadMobileSystemImpl;
@@ -280,7 +281,8 @@ public class LoginController extends UstadBaseController{
             if (resultListener != null) {
                 resultListener.onDialogResult(RESULT_LOGIN_SUCCESSFUL, (DismissableDialog) view, null);
             } else {
-                UstadMobileSystemImpl.getInstance().go(CoreBuildConfig.FIRST_DESTINATION, context);
+                UstadMobileSystemImpl impl = UstadMobileSystemImpl.getInstance();
+                impl.go(impl.getAppConfigString(AppConfig.KEY_FIRST_DEST, null, context), context);
             }
         }
         return result;
@@ -317,8 +319,8 @@ public class LoginController extends UstadBaseController{
                 if(resultListener != null) {
                     resultListener.onDialogResult(RESULT_LOGIN_SUCCESSFUL, (DismissableDialog)view, null);
                 }else {
-                    UstadMobileSystemImpl.getInstance().go(CoreBuildConfig.FIRST_DESTINATION,
-                            context);
+                    UstadMobileSystemImpl impl = UstadMobileSystemImpl.getInstance();
+                    impl.go(impl.getAppConfigString(AppConfig.KEY_FIRST_DEST, null, context), context);
                 }
             }
 
@@ -349,7 +351,8 @@ public class LoginController extends UstadBaseController{
     private void handleUserLoginAuthComplete(final String username, final String password) {
         UstadMobileSystemImpl.getInstance().setActiveUser(username, context);
         UstadMobileSystemImpl.getInstance().setActiveUserAuth(password, context);
-        UstadMobileSystemImpl.getInstance().go(CoreBuildConfig.FIRST_DESTINATION, context);
+        UstadMobileSystemImpl impl = UstadMobileSystemImpl.getInstance();
+        impl.go(impl.getAppConfigString(AppConfig.KEY_FIRST_DEST, null, context), context);
     }    
     
     /**

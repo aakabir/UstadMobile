@@ -1,4 +1,3 @@
-
 //As Per https://developer.android.com/studio/publish/app-signing.html#release-mode
 def keyStorePropertiesExists = rootProject.file("keystore.properties").exists()
 def keystoreProperties = new Properties()
@@ -24,7 +23,6 @@ apply plugin: 'digital.wup.android-maven-publish'
 configurations.all {
     exclude group: "net.sf.kxml", module: "kxml2"
     exclude group: "org.json", module: "json"
-    exclude module: "lib-database"
 }
 
 ext.buildConfigProperties = new Properties()
@@ -202,13 +200,13 @@ android {
     buildToolsVersion "27.0.3"
 
     defaultConfig {
-
         minSdkVersion 16
         targetSdkVersion 27
         versionCode rootProject.ext.ustadVersionCode
         versionName rootProject.version
         testInstrumentationRunner "android.support.test.runner.AndroidJUnitRunner"
         buildConfigField "long", "TIMESTAMP", System.currentTimeMillis() + "L"
+        manifestPlaceholders = [applicationClass: "android.app.Application"]
     }
 
     flavorDimensions "config"
@@ -236,24 +234,33 @@ android {
             testApplicationId "com.toughra.ustadmobile.test"
             versionCode rootProject.ext.ustadVersionCode
             manifestPlaceholders = ["appName": "Ustad Mobile"]
+
+
+            manifestPlaceholders = [appName: "Ustad Mobile", applicationClass: "android.support.multidex.MultiDexApplication"]
+
         }
 
-//        remotetestslave {
-//            dimension "config"
-//            testApplicationId "com.toughra.testslave.test"
-//            manifestPlaceholders = ["appName": "UM Test Server"]
-//        }
+        vanillamultidex {
+            dimension "config"
+            multiDexEnabled true
+            packagingOptions { //Required: otherwise we get complaints on assembling
+                merge "META-INF/INDEX.LIST"
+            }
+        }
 
     }
 
     buildTypes {
         release {
             minifyEnabled false
+            useProguard false
             proguardFiles getDefaultProguardFile('proguard-android.txt'), 'proguard-rules.pro'
             signingConfig signingConfigs.release
         }
 
         debug {
+            minifyEnabled false
+            useProguard false
             testCoverageEnabled = true
         }
     }
@@ -289,7 +296,7 @@ task generateCoreStringToAndroidResMap {
     inputs.files("core/locale/*/*.xml")
 
     doLast {
-        int MAIN = 0, LOCALCONFIG = 1
+        int MAIN = 0, LOCALCONFIG = 1, VANILLAMULTIDEX = 2
         String[] dirNames = new String[2]
         dirNames[MAIN] = "vanilla"
         dirNames[LOCALCONFIG] = "localconfig"
@@ -350,17 +357,19 @@ task generateCoreStringToAndroidResMap {
         String[] outDirNames = new String[3]
         outDirNames[MAIN] = "vanilla"
         outDirNames[LOCALCONFIG] = "localconfig"
+        outDirNames[VANILLAMULTIDEX] = "vanillamultidex"
 
 
 
-        for (int i = 0; i < dirNames.length; i++) {
-            File outDir = project.file("src/" + dirNames[i] + "/java/com/ustadmobile/port/android/generated")
+        for (int i = 0; i < outDirNames.length; i++) {
+            File outDir = project.file("src/" + outDirNames[i] + "/java/com/ustadmobile/port/android/generated")
             if (!outDir.isDirectory()) {
                 outDir.mkdirs()
             }
 
             File outFile = new File(outDir, "MessageIDMap.java")
-            outFile.setText(genSrcHeader + genSrcBody[i] + genSrcFooter, "UTF-8")
+            int idMapIndex = i == VANILLAMULTIDEX ? MAIN : i;
+            outFile.setText(genSrcHeader + genSrcBody[idMapIndex] + genSrcFooter, "UTF-8")
         }
 
 
@@ -377,6 +386,7 @@ dependencies {
     implementation project(":lib-database-annotation")
     implementation project(":lib-util")
 
+    vanillamultidexApi "com.android.support:multidex:1.0.2"
 
     androidTestApi project(":core-tests")
 
@@ -410,6 +420,7 @@ dependencies {
     implementation group: 'com.android.support', name: "support-v4", version: "[26+, 27+]"
 
 
+    implementation 'com.squareup.picasso:picasso:2.5.2'
     implementation 'com.github.clans:fab:1.6.4'
     implementation 'com.android.support.constraint:constraint-layout:1.1.0-beta4'
     implementation 'com.ustadmobile.wifibuddy:wifibuddy:1.1.45-SNAPSHOT'
@@ -418,12 +429,16 @@ dependencies {
     implementation "com.google.android:flexbox:0.3.0"
     implementation 'org.jmdns:jmdns:3.5.2'
     implementation 'com.github.fzakaria:ascii85:1.1'
+    implementation 'com.pixplicity.sharp:library:1.1.0'
+    implementation "net.lingala.zip4j:zip4j:1.3.2"
     androidTestImplementation 'junit:junit:4.12'
-    androidTestImplementation group: "com.android.support", name:"support-annotations", version: "[26+, 27+]"
+    androidTestImplementation group: "com.android.support", name: "support-annotations", version: "[26+, 27+]"
 
     //As per: https://developer.android.com/topic/libraries/testing-support-library/packages.html#gradle-dependencies
-    androidTestImplementation 'com.android.support.test:runner:1.0.0'
-    androidTestImplementation 'com.android.support.test:rules:1.0.0'
+    androidTestImplementation 'com.android.support.test:runner:1.0.1'
+    androidTestImplementation 'com.android.support.test:rules:1.0.1'
+
+    androidTestImplementation "org.mockito:mockito-android:2.13.0"
 }
 
 task sourceJar(type: Jar) {
@@ -435,7 +450,7 @@ publishing {
     publications {
         //For the moment - publish only localconfig debug variant. Can publish others as per:
         // https://github.com/wupdigital/android-maven-publish
-        mavenLocalconfigAar(MavenPublication){
+        mavenLocalconfigAar(MavenPublication) {
             from components.findByName("androidLocalconfigDebug")
             groupId 'com.ustadmobile.app'
             artifactId 'app-android'

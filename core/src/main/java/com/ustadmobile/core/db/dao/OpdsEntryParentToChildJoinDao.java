@@ -16,8 +16,17 @@ public abstract class OpdsEntryParentToChildJoinDao {
     @UmInsert
     public abstract long insert(OpdsEntryParentToChildJoin entry);
 
+    @UmInsert
+    public abstract void insertAll(List<OpdsEntryParentToChildJoin> entryList);
+
     public abstract void insertAsync(OpdsEntryParentToChildJoin entry, UmCallback<Integer> callback);
 
+    public abstract void insertAsLastEntryForParentAsync(OpdsEntryParentToChildJoin entry, UmCallback<Long> callback);
+
+    public long insertAsLastEntryForParent(OpdsEntryParentToChildJoin entry) {
+        entry.setChildIndex(getNumEntriesByParent(entry.getParentEntry()) + 1);
+        return insert(entry);
+    }
 
     public abstract List<OpdsEntryParentToChildJoin> findByParentAndEntry(String parentId, String childId);
 

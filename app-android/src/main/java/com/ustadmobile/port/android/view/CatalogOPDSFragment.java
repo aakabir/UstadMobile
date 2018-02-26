@@ -216,6 +216,7 @@ public class CatalogOPDSFragment extends UstadBaseFragment implements View.OnCli
         OpdsEntryRecyclerAdapter adapter = new OpdsEntryRecyclerAdapter();
         DataSource.Factory factory = (DataSource.Factory)entryProvider.getProvider();
         LiveData<PagedList<OpdsEntryWithRelations>> data =  new LivePagedListBuilder<>(factory, 20).build();
+
         data.observe(this, adapter::setList);
         mRecyclerView.setAdapter(adapter);
     }
@@ -277,9 +278,10 @@ public class CatalogOPDSFragment extends UstadBaseFragment implements View.OnCli
             item.setShowAsAction(MenuItem.SHOW_AS_ACTION_ALWAYS);
         }
 
-        MenuItem shareItem = menu.add(Menu.NONE, MENUCMD_SHARE, 2, "");
-        shareItem.setIcon(R.drawable.ic_share_white_24dp);
-        shareItem.setShowAsAction(MenuItem.SHOW_AS_ACTION_ALWAYS);
+//        Temporarily hidden
+//        MenuItem shareItem = menu.add(Menu.NONE, MENUCMD_SHARE, 2, "");
+//        shareItem.setIcon(R.drawable.ic_share_white_24dp);
+//        shareItem.setShowAsAction(MenuItem.SHOW_AS_ACTION_ALWAYS);
 
         if(alternativeTranslationLanguages != null) {
             SubMenu languagesSubmenu = menu.addSubMenu(Menu.NONE, 700, 3, "");
@@ -425,14 +427,6 @@ public class CatalogOPDSFragment extends UstadBaseFragment implements View.OnCli
                 }
             }
         });
-    }
-
-    @Override
-    public void setEntrythumbnail(final String entryId, String iconUrl) {
-        idToThumbnailUrlMap.put(entryId, iconUrl);
-        OPDSEntryCard card = idToCardMap.get(entryId);
-        if(card != null)
-            card.setThumbnailUrl(iconUrl, mCatalogPresenter, this);
     }
 
     @Override
@@ -587,20 +581,20 @@ public class CatalogOPDSFragment extends UstadBaseFragment implements View.OnCli
         public void onBindViewHolder(OpdsEntryViewHolder holder, int position) {
             final OpdsEntryWithRelations entry = getItem(position);
             holder.mEntryCard.setOpdsEntry(entry);
+            OpdsLink imgLink = null;
             String imageUri = null;
 
             if(entry != null) {
-                OpdsLink imgLink = entry.getThumbnailLink(true);
-                if(imgLink != null)
+                imgLink = entry.getThumbnailLink(true);
+                if(imgLink != null) {
                     imageUri = imgLink.getHref();
+                    imageUri = mCatalogPresenter.resolveLink(imageUri);
+
+                    holder.mEntryCard.setThumbnailUrl(imageUri, imgLink.getMimeType());
+                }
 
                 holder.mEntryCard.setSelected(selectedUuids.contains(entry.getUuid()));
                 boundViewHolders.add(holder);
-            }
-
-            if(imageUri != null) {
-                holder.mEntryCard.setThumbnailUrl(mCatalogPresenter.resolveLink(imageUri),
-                        mCatalogPresenter, CatalogOPDSFragment.this);
             }
         }
 
@@ -614,12 +608,12 @@ public class CatalogOPDSFragment extends UstadBaseFragment implements View.OnCli
     public static final DiffCallback<OpdsEntryWithRelations> DIFF_CALLBACK = new DiffCallback<OpdsEntryWithRelations>() {
         @Override
         public boolean areItemsTheSame(@NonNull OpdsEntryWithRelations oldItem, @NonNull OpdsEntryWithRelations newItem) {
-            return oldItem.getUuid() == newItem.getUuid();
+            return oldItem.getUuid().equals(newItem.getUuid());
         }
 
         @Override
         public boolean areContentsTheSame(@NonNull OpdsEntryWithRelations oldItem, @NonNull OpdsEntryWithRelations newItem) {
-            return oldItem.getTitle() != null && newItem.getTitle().equals(newItem.getTitle());
+            return oldItem.getTitle() != null && oldItem.getTitle().equals(newItem.getTitle());
         }
     };
 

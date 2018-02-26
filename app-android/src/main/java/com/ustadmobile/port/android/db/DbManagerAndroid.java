@@ -6,6 +6,9 @@ import android.content.Context;
 import com.ustadmobile.core.db.DbManager;
 import com.ustadmobile.core.db.dao.ContainerFileDao;
 import com.ustadmobile.core.db.dao.ContainerFileEntryDao;
+import com.ustadmobile.core.db.dao.DownloadJobDao;
+import com.ustadmobile.core.db.dao.DownloadJobItemDao;
+import com.ustadmobile.core.db.dao.DownloadJobItemHistoryDao;
 import com.ustadmobile.core.db.dao.EntryStatusResponseDao;
 import com.ustadmobile.core.db.dao.NetworkNodeDao;
 import com.ustadmobile.core.db.dao.OpdsEntryDao;
@@ -14,6 +17,7 @@ import com.ustadmobile.core.db.dao.OpdsEntryWithRelationsDao;
 import com.ustadmobile.core.db.dao.OpdsLinkDao;
 import com.ustadmobile.core.fs.db.repository.OpdsEntryRepository;
 import com.ustadmobile.port.android.db.dao.ContainerFileDaoAndroid;
+import com.ustadmobile.port.android.db.dao.OpdsEntryParentToChildJoinDaoAndriod;
 
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
@@ -34,9 +38,11 @@ public class DbManagerAndroid extends DbManager {
 
     private ContainerFileDaoAndroid containerFileDao;
 
+    private OpdsEntryParentToChildJoinDaoAndriod opdsEntryParentToChildJoinDao;
+
     public DbManagerAndroid(Object context) {
         this.context = ((Context)context).getApplicationContext();
-        appDatabase = Room.databaseBuilder(this.context, AppDatabase.class, "appdb44")
+        appDatabase = Room.databaseBuilder(this.context, AppDatabase.class, "appdb57")
             .build();
         executorService = Executors.newCachedThreadPool();
     }
@@ -72,7 +78,12 @@ public class DbManagerAndroid extends DbManager {
 
     @Override
     public OpdsEntryParentToChildJoinDao getOpdsEntryParentToChildJoinDao() {
-        return appDatabase.getOpdsEntryParentToChildJoinDao();
+        if(opdsEntryParentToChildJoinDao == null){
+            opdsEntryParentToChildJoinDao = appDatabase.getOpdsEntryParentToChildJoinDao();
+            opdsEntryParentToChildJoinDao.setExecutorService(executorService);
+        }
+
+        return opdsEntryParentToChildJoinDao;
     }
 
     @Override
@@ -98,5 +109,20 @@ public class DbManagerAndroid extends DbManager {
     @Override
     public EntryStatusResponseDao getEntryStatusResponseDao() {
         return appDatabase.getEntryStatusResponseDao();
+    }
+
+    @Override
+    public DownloadJobDao getDownloadJobDao() {
+        return appDatabase.getDownloadJobDao();
+    }
+
+    @Override
+    public DownloadJobItemHistoryDao getDownloadJobItemHistoryDao() {
+        return appDatabase.getDownloadJobItemHistoryDao();
+    }
+
+    @Override
+    public DownloadJobItemDao getDownloadJobItemDao() {
+        return appDatabase.getDownloadJobItemDao();
     }
 }
