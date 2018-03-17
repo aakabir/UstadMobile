@@ -166,11 +166,7 @@ public class CatalogViewGWT extends ViewWithUiHandlers
 		
 	}
 
-	@Override
-	public void setEntrythumbnail(String entryId, String iconFileURI) {
-		// TODO Auto-generated method stub
-		
-	}
+
 
 	@Override
 	public void setEntryBackground(String entryId, String backgroundFileURI) {

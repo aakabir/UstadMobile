@@ -231,11 +231,6 @@ public class CatalogEntryViewGWT extends ViewWithUiHandlers
 	}
 
 	@Override
-	public void setThumbnail(String iconFileUri) {
-		setImageLink(iconFileUri);
-	}
-
-	@Override
 	public void setMode(int mode) {
 		// TODO Auto-generated method stub
 		
@@ -346,6 +341,13 @@ public class CatalogEntryViewGWT extends ViewWithUiHandlers
 	@Override
 	public void setDisplayMode(int viewMode) {
 		// TODO Auto-generated method stub
+		
+	}
+
+	@Override
+	public void setThumbnail(String iconFileUri, String mimeType) {
+		// TODO Auto-generated method stub
+		setImageLink(iconFileUri);
 		
 	}
 	

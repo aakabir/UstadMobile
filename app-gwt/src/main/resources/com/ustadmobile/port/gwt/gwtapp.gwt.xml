@@ -37,6 +37,9 @@
 	
 	<!-- Hashtable for GWT (Hashmap) -->
 	<inherits name="java.HashmapHashtable" />
+	
+	<!-- Local HTML5 Storage -->
+	<!-- <inherits name="com.google.gwt.storage.client.Storage" />  -->
     
     <!--GWT Material-->
     <inherits name="gwt.material.design.GwtMaterialWithJQueryDebug"/>
@@ -66,6 +69,22 @@
     
     <define-configuration-property name="line.separator" is-multi-valued='false'/>
 	<set-configuration-property name="line.separator" value='\n'/>
+	
+	<!-- AppConfig -->
+	<define-configuration-property name="content_dir" is-multi-valued='false'/>
+	<set-configuration-property name="content_dir" value=''/>
+	
+	<define-configuration-property name="login_before_open" is-multi-valued='false'/>
+	<set-configuration-property name="login_before_open" value="false"/>
+	
+	<define-configuration-property name="login_before_download" is-multi-valued='false'/>
+	<set-configuration-property name="login_before_download" value="false"/>
+	
+	<define-configuration-property name="first_dest" is-multi-valued='false'/>
+	<set-configuration-property name="first_dest" value="BasePoint?catalog-0-url=entries%3A%2F%2F%2FfindEntriesByContainerFileDirectory&amp;catalog-0-t=81&amp;catalog-1-url=entries%3A%2F%2F%2Fmy_library&amp;catalog-1-t=80" />
+	
+	<define-configuration-property name="first_dest_login_required" is-multi-valued='false'/>
+	<set-configuration-property name="first_dest_login_required" value="false"/>
     
     <set-configuration-property name="CssResource.enableGss" value="true"/>
 </module>

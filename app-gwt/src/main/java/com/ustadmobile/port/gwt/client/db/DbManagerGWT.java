@@ -6,6 +6,8 @@ import com.ustadmobile.core.db.DbManager;
 import com.ustadmobile.core.db.dao.ContainerFileDao;
 import com.ustadmobile.core.db.dao.ContainerFileEntryDao;
 import com.ustadmobile.core.db.dao.DownloadJobDao;
+import com.ustadmobile.core.db.dao.DownloadJobItemDao;
+import com.ustadmobile.core.db.dao.DownloadJobItemHistoryDao;
 import com.ustadmobile.core.db.dao.EntryStatusResponseDao;
 import com.ustadmobile.core.db.dao.NetworkNodeDao;
 import com.ustadmobile.core.db.dao.OpdsEntryDao;
@@ -118,6 +120,18 @@ public class DbManagerGWT extends DbManager {
 	public Object getContext() {
 		// TODO Auto-generated method stub
 		GWT.log("DbManagerGWT: getContext(): returning null (check this).");
+		return null;
+	}
+
+	@Override
+	public DownloadJobItemDao getDownloadJobItemDao() {
+		// TODO Auto-generated method stub
+		return null;
+	}
+
+	@Override
+	public DownloadJobItemHistoryDao getDownloadJobItemHistoryDao() {
+		// TODO Auto-generated method stub
 		return null;
 	}
 	

@@ -21,12 +21,14 @@ import com.google.gwt.http.client.RequestBuilder;
 import com.google.gwt.http.client.RequestCallback;
 import com.google.gwt.http.client.RequestException;
 import com.google.gwt.http.client.Response;
+import com.google.gwt.storage.client.Storage;
 import com.google.gwt.http.client.RequestBuilder.Method;
 import com.gwtplatform.mvp.client.proxy.PlaceManager;
 import com.gwtplatform.mvp.shared.proxy.PlaceRequest;
 import com.ustadmobile.port.gwt.client.impl.http.UmHttpResponseGWT;
 import com.ustadmobile.port.gwt.client.place.NameTokens;
 import com.ustadmobile.core.catalog.contenttype.ContentTypePlugin;
+import com.ustadmobile.core.impl.AppConfig;
 import com.ustadmobile.core.impl.ContainerMountRequest;
 import com.ustadmobile.core.impl.TinCanQueueListener;
 import com.ustadmobile.core.impl.UMLog;
@@ -47,6 +49,8 @@ public class UstadMobileSystemImplGWT extends UstadMobileSystemImpl{
 
 	public static UstadMobileSystemImplGWT instance = new UstadMobileSystemImplGWT();
 	
+	private static Storage localStorage;
+	
 	public static UstadMobileSystemImplGWT getInstance() {
 		return instance;
 	}
@@ -58,8 +62,22 @@ public class UstadMobileSystemImplGWT extends UstadMobileSystemImpl{
 	private UMLogGWT logger;
 	
 	public UstadMobileSystemImplGWT(){
+		GWT.log("Hello impl..");
 		logger = new UMLogGWT();
+		localStorage = Storage.getLocalStorageIfSupported();
+		if(localStorage != null) {
+			GWT.log("Got storage ok");
+		}else {
+			GWT.log("Got storage NOT OK!");
+		}
+		Object context = null;
 		
+		setAppPref(AppConfig.KEY_CONTENT_DIR_NAME, System.getProperty(AppConfig.KEY_CONTENT_DIR_NAME), context);
+		setAppPref(AppConfig.KEY_LOGIN_REQUIRED_FOR_CONTENT_OPEN, System.getProperty(AppConfig.KEY_LOGIN_REQUIRED_FOR_CONTENT_OPEN), context);
+		setAppPref(AppConfig.KEY_LOGIN_REQUIRED_FOR_CONTENT_DOWNLOAD, System.getProperty(AppConfig.KEY_LOGIN_REQUIRED_FOR_CONTENT_DOWNLOAD), context);
+		String first_dest = System.getProperty(AppConfig.KEY_FIRST_DEST);
+		setAppPref(AppConfig.KEY_FIRST_DEST, first_dest, context);
+		setAppPref(AppConfig.KEY_FIRST_DEST_LOGIN_REQUIRED, System.getProperty(AppConfig.KEY_FIRST_DEST_LOGIN_REQUIRED), context);
 	}
 
 	@Override
@@ -324,19 +342,24 @@ public class UstadMobileSystemImplGWT extends UstadMobileSystemImpl{
 
 	@Override
 	public String getAppPref(String key, Object context) {
-		// TODO Auto-generated method stub
-		return null;
+		GWT.log("Getting app pref: " + key);
+		return localStorage.getItem(key);
 	}
 
 	@Override
 	public String[] getAppPrefKeyList(Object context) {
-		// TODO Auto-generated method stub
-		return null;
+		GWT.log("Getting app pref key list");
+		String[] appPrefKeyList = new String[localStorage.getLength()];
+		for ( int i = 0 ; i < localStorage.getLength(); i++) {
+			appPrefKeyList[i] = localStorage.key(i);
+		}
+		return appPrefKeyList;
 	}
 
 	@Override
 	public void setAppPref(String key, String value, Object context) {
-		// TODO Auto-generated method stub
+		GWT.log("Setting app pref: " + key);
+		localStorage.setItem(key, value);
 		
 	}
 
@@ -528,8 +551,13 @@ public class UstadMobileSystemImplGWT extends UstadMobileSystemImpl{
 
 	@Override
 	public String getAppConfigString(String key, String defaultVal, Object context) {
-		// TODO Auto-generated method stub
-		return null;
+		GWT.log("Get app config string: " + key);
+		String appConfigString = getAppPref(key, context);
+		if(appConfigString == null) {
+			GWT.log("Key value not found. Returning default value");
+			return defaultVal;
+		}
+		return appConfigString;
 	}
 
 	@Override

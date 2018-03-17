@@ -7,6 +7,7 @@ import com.ustadmobile.core.db.UmProvider;
 import com.ustadmobile.core.db.dao.OpdsEntryWithRelationsDao;
 import com.ustadmobile.lib.db.entities.OpdsEntry.OpdsItemLoadCallback;
 import com.ustadmobile.lib.db.entities.OpdsEntryWithRelations;
+import com.ustadmobile.lib.db.entities.OpdsEntryWithRelationsAndContainerMimeType;
 
 public class OpdsEntryWithRelationsDaoGWT extends OpdsEntryWithRelationsDao{
 
@@ -48,13 +49,57 @@ public class OpdsEntryWithRelationsDaoGWT extends OpdsEntryWithRelationsDao{
 	}
 
 	@Override
-	public UmLiveData<List<OpdsEntryWithRelations>> findEntriesByContainerFileDirectoryAsList(String dir) {
+	public List<OpdsEntryWithRelations> getEntriesByParentAsListStatic(String parentId) {
 		// TODO Auto-generated method stub
 		return null;
 	}
 
 	@Override
-	public UmProvider<OpdsEntryWithRelations> findEntriesByContainerFileDirectoryAsProvider(String dir) {
+	public OpdsEntryWithRelations getEntryByUuidStatic(String uuid) {
+		// TODO Auto-generated method stub
+		return null;
+	}
+
+	@Override
+	public UmLiveData<List<OpdsEntryWithRelations>> findEntriesByContainerFileDirectoryAsList(List<String> dirList,
+			OpdsItemLoadCallback callback) {
+		// TODO Auto-generated method stub
+		return null;
+	}
+
+	@Override
+	public UmProvider<OpdsEntryWithRelations> findEntriesByContainerFileDirectoryAsProvider(List<String> dirList,
+			OpdsItemLoadCallback callback) {
+		// TODO Auto-generated method stub
+		return null;
+	}
+
+	@Override
+	public List<OpdsEntryWithRelations> findEntriesByContainerFileNormalizedPath(String normalizedPath) {
+		// TODO Auto-generated method stub
+		return null;
+	}
+
+	@Override
+	public String findParentUrlByChildUuid(String childUuid) {
+		// TODO Auto-generated method stub
+		return null;
+	}
+
+	@Override
+	public int deleteOpdsEntriesByUuids(List<String> entryUuids) {
+		// TODO Auto-generated method stub
+		return 0;
+	}
+
+	@Override
+	public int deleteLinksByOpdsEntryUuids(List<String> entryUuids) {
+		// TODO Auto-generated method stub
+		return 0;
+	}
+
+	@Override
+	public List<OpdsEntryWithRelationsAndContainerMimeType> findByUuidsWithContainerMimeType(List<String> uuids) {
 		// TODO Auto-generated method stub
 		return null;
 	}

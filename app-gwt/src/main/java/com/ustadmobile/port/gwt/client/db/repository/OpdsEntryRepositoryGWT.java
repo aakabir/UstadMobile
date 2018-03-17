@@ -23,6 +23,7 @@ import com.ustadmobile.core.impl.http.UmHttpResponseCallback;
 import com.ustadmobile.lib.db.entities.OpdsEntry;
 import com.ustadmobile.lib.db.entities.OpdsEntry.OpdsItemLoadCallback;
 import com.ustadmobile.lib.db.entities.OpdsEntryWithRelations;
+import com.ustadmobile.lib.db.entities.OpdsEntryWithRelationsAndContainerMimeType;
 import com.ustadmobile.lib.db.entities.OpdsLink;
 import com.ustadmobile.port.gwt.client.db.dao.AbstractLiveDataGWT;
 import com.ustadmobile.port.gwt.client.db.dao.UmLiveDataGWT;
@@ -204,13 +205,59 @@ public class OpdsEntryRepositoryGWT extends OpdsEntryWithRelationsDao{
 	}
 
 	@Override
-	public UmLiveData<List<OpdsEntryWithRelations>> findEntriesByContainerFileDirectoryAsList(String dir) {
-		throw new RuntimeException("Container files are not running on the web with GWT!");
+	public List<OpdsEntryWithRelations> getEntriesByParentAsListStatic(String parentId) {
+		// TODO Auto-generated method stub
+		return null;
 	}
 
 	@Override
-	public UmProvider<OpdsEntryWithRelations> findEntriesByContainerFileDirectoryAsProvider(String dir) {
-		throw new RuntimeException("Container files are not running on the web with GWT!");
+	public OpdsEntryWithRelations getEntryByUuidStatic(String uuid) {
+		// TODO Auto-generated method stub
+		return null;
+	}
+
+	@Override
+	public UmLiveData<List<OpdsEntryWithRelations>> findEntriesByContainerFileDirectoryAsList(List<String> dirList,
+			OpdsItemLoadCallback callback) {
+		// TODO Auto-generated method stub
+		return null;
+	}
+
+	@Override
+	public UmProvider<OpdsEntryWithRelations> findEntriesByContainerFileDirectoryAsProvider(List<String> dirList,
+			OpdsItemLoadCallback callback) {
+		// TODO Auto-generated method stub
+		return null;
+	}
+
+	@Override
+	public List<OpdsEntryWithRelations> findEntriesByContainerFileNormalizedPath(String normalizedPath) {
+		// TODO Auto-generated method stub
+		return null;
+	}
+
+	@Override
+	public String findParentUrlByChildUuid(String childUuid) {
+		// TODO Auto-generated method stub
+		return null;
+	}
+
+	@Override
+	public int deleteOpdsEntriesByUuids(List<String> entryUuids) {
+		// TODO Auto-generated method stub
+		return 0;
+	}
+
+	@Override
+	public int deleteLinksByOpdsEntryUuids(List<String> entryUuids) {
+		// TODO Auto-generated method stub
+		return 0;
+	}
+
+	@Override
+	public List<OpdsEntryWithRelationsAndContainerMimeType> findByUuidsWithContainerMimeType(List<String> uuids) {
+		// TODO Auto-generated method stub
+		return null;
 	}
 
 }

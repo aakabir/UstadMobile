@@ -29,4 +29,10 @@ public class OpdsEntryDaoGWT extends OpdsEntryDao {
 		return null;
 	}
 
+	@Override
+	public String findTitleByUuid(String uuid) {
+		// TODO Auto-generated method stub
+		return null;
+	}
+
 }
