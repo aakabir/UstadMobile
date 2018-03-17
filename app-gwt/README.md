@@ -11,8 +11,8 @@ We've choosen to use this structure for UstadMobile GWT:
 GWTP uiBinders for Views and GWT-Material for style and consistency with Material Design layouts on Android.
 
 #### Screenshots of the application and progress:
-	![OPDS Catalog](images/UstadMobileGWT01.PNG "Home")
-	![Settings Menu](images/UstadMobileGWT02.PNG "Settings")
+![OPDS Catalog](images/UstadMobileGWT01.PNG "Home")
+![Settings Menu](images/UstadMobileGWT02.PNG "Settings")
 
 #### Project folder:
 All GWT related code and assets live in the app-gwt folder. This is also the folder for the eclipse project. Since GWTP uses Maven, app-gwt is also a maven project and can be built frm the command line. 
