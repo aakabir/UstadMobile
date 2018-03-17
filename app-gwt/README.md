@@ -1,8 +1,8 @@
-##UstadMobile GWT project
+## UstadMobile GWT project
 
 This branch : gwtdev2 is the GWT branch of UstadMobile application. Here resides all GWT components - code and assets for the project. 
 
-####Why GWT?
+#### Why GWT?
 GWT is Google's Web Toolkit. It allows us to use the same underlining java code used on android/j2me on the web. This project allows to get an app like experiecne on the web. eg: login, browse opds, view content, access statistical data (if your role allows it), etc. In addition functions that typically start on the web such as user and group management can be made available to all modern platforms of UstadMobile under one core code base. 
 GWT would still need to have its own views, system implementation of some platform specific tasks such as xml parsing, HTTP request, replacement for files, etc. 
 GWT would also need to be visually scalable within different device types.
@@ -10,13 +10,13 @@ GWT would also need to be visually scalable within different device types.
 We've choosen to use this structure for UstadMobile GWT:
 GWTP uiBinders for Views and GWT-Material for style and consistency with Material Design layouts on Android.
 
-####Screenshots of the application and progress:
+#### Screenshots of the application and progress:
 	<Screnshots>
 
-####Project folder:
+#### Project folder:
 All GWT related code and assets live in the app-gwt folder. This is also the folder for the eclipse project. Since GWTP uses Maven, app-gwt is also a maven project and can be built frm the command line. 
 
-####Building:
+#### Building:
 Git clone and checkout gwtdev2 branch. 
 ```console
 git checkout gwtdev2
