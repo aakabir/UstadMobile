@@ -1,0 +1,753 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD HTML 4.01 Strict//EN" "http://www.w3.org/TR/html4/strict.dtd">
+<html>
+<head>
+<meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
+<title>C:\Users\Varuna\Ustadmobile\UstadmobileGWT\app-gwt\.README.md.html</title>
+
+
+<style type="text/css">
+body {
+	color: #333;
+	font: 13px/1.4 "Helvetica Neue", Helvetica, "Segoe UI", Arial, freesans, sans-serif;
+	padding: 0;
+	margin: 0;
+}
+
+a {
+	background: transparent;
+	color: #4183c4;
+	text-decoration: none;
+}
+
+a:active,
+a:hover {
+	outline: 0 none;
+	text-decoration: underline;
+}
+
+abbr[title] {
+	border-bottom: 1px dotted;
+}
+
+b,
+strong {
+	font-weight: bold;
+}
+
+dfn {
+	font-style: italic;
+}
+h1 {
+	font-size: 2em;
+	margin: 0.67em 0;
+}
+mark {
+	background: #ff0;
+	color: #000;
+}
+small {
+	font-size: 80%;
+}
+sub, sup {
+	font-size: 75%;
+	line-height: 0;
+	position: relative;
+	vertical-align: baseline;
+}
+sup {
+	top: -0.5em;
+}
+sub {
+	bottom: -0.25em;
+}
+img {
+	border: 0 none;
+}
+svg:not(:root) {
+	overflow: hidden;
+}
+figure {
+	margin: 1em 40px;
+}
+hr {
+	box-sizing: content-box;
+	height: 0;
+}
+
+code,
+kbd,
+pre,
+samp {
+	font-family: monospace,monospace;
+	font-size: 1em;
+}
+
+pre {
+	overflow: auto;
+	font: 12px Consolas,"Liberation Mono",Menlo,Courier,monospace;
+	margin-bottom: 0;
+	margin-top: 0;
+}
+
+.markdown-body {
+	padding: 30px;
+	font-size: 16px;
+	line-height: 1.6;
+	word-wrap: break-word;
+}
+
+.markdown-body>*:first-child {
+	margin-top: 0 !important;
+}
+
+.markdown-body>*:last-child {
+	margin-bottom: 0 !important;
+}
+
+.markdown-body .absent {
+	color: #c00;
+}
+
+.markdown-body .anchor {
+	position: absolute;
+	top: 0;
+	bottom: 0;
+	left: 0;
+	display: block;
+	padding-right: 6px;
+	padding-left: 30px;
+	margin-left: -30px;
+}
+
+.markdown-body .anchor:focus {
+	outline: none;
+}
+
+.markdown-body h1,
+.markdown-body h2,
+.markdown-body h3,
+.markdown-body h4,
+.markdown-body h5,
+.markdown-body h6 {
+	position: relative;
+	margin-top: 1em;
+	margin-bottom: 16px;
+	font-weight: bold;
+	line-height: 1.4;
+}
+
+.markdown-body h1 .octicon-link,
+.markdown-body h2 .octicon-link,
+.markdown-body h3 .octicon-link,
+.markdown-body h4 .octicon-link,
+.markdown-body h5 .octicon-link,
+.markdown-body h6 .octicon-link {
+	display: none;
+	color: #000;
+	vertical-align: middle;
+}
+
+.markdown-body h1:hover .anchor,
+.markdown-body h2:hover .anchor,
+.markdown-body h3:hover .anchor,
+.markdown-body h4:hover .anchor,
+.markdown-body h5:hover .anchor,
+.markdown-body h6:hover .anchor {
+	padding-left: 8px;
+	margin-left: -30px;
+	line-height: 1;
+	text-decoration: none;
+}
+
+.markdown-body h1:hover .anchor .octicon-link,
+.markdown-body h2:hover .anchor .octicon-link,
+.markdown-body h3:hover .anchor .octicon-link,
+.markdown-body h4:hover .anchor .octicon-link,
+.markdown-body h5:hover .anchor .octicon-link,
+.markdown-body h6:hover .anchor .octicon-link {
+	display: inline-block;
+}
+
+.markdown-body h1 tt,
+.markdown-body h1 code,
+.markdown-body h2 tt,
+.markdown-body h2 code,
+.markdown-body h3 tt,
+.markdown-body h3 code,
+.markdown-body h4 tt,
+.markdown-body h4 code,
+.markdown-body h5 tt,
+.markdown-body h5 code,
+.markdown-body h6 tt,
+.markdown-body h6 code {
+	font-size: inherit;
+}
+
+.markdown-body h1 {
+	padding-bottom: 0.3em;
+	font-size: 2.25em;
+	line-height: 1.2;
+	border-bottom: 1px solid #eee;
+}
+
+.markdown-body h2 {
+	padding-bottom: 0.3em;
+	font-size: 1.75em;
+	line-height: 1.225;
+	border-bottom: 1px solid #eee;
+}
+
+.markdown-body h3 {
+	font-size: 1.5em;
+	line-height: 1.43;
+}
+
+.markdown-body h4 {
+	font-size: 1.25em;
+}
+
+.markdown-body h5 {
+	font-size: 1em;
+}
+
+.markdown-body h6 {
+	font-size: 1em;
+	color: #777;
+}
+
+.markdown-body p,.markdown-body blockquote,
+.markdown-body ul,.markdown-body ol,
+.markdown-body dl,.markdown-body table,
+.markdown-body pre {
+	margin-top: 0;
+	margin-bottom: 16px;
+}
+
+.markdown-body hr {
+	height: 4px;
+	padding: 0;
+	margin: 16px 0;
+	background-color: #e7e7e7;
+	border: 0 none;
+}
+
+.markdown-body ul,
+.markdown-body ol {
+	padding-left: 2em;
+}
+
+.markdown-body ul.no-list,
+.markdown-body ol.no-list {
+	padding: 0;
+	list-style-type: none;
+}
+
+.markdown-body ul ul,
+.markdown-body ul ol,
+.markdown-body ol ol,
+.markdown-body ol ul {
+	margin-top: 0;
+	margin-bottom: 0;
+}
+
+.markdown-body li>p {
+	margin-top: 16px;
+}
+
+.markdown-body dl {
+	padding: 0;
+}
+
+.markdown-body dl dt {
+	padding: 0;
+	margin-top: 16px;
+	font-size: 1em;
+	font-style: italic;
+	font-weight: bold;
+}
+
+.markdown-body dl dd {
+	padding: 0 16px;
+	margin-bottom: 16px;
+}
+
+.markdown-body blockquote {
+	padding: 0 15px;
+	color: #777;
+	border-left: 4px solid #ddd;
+}
+
+.markdown-body blockquote>:first-child {
+	margin-top: 0;
+}
+
+.markdown-body blockquote>:last-child {
+	margin-bottom: 0;
+}
+
+.markdown-body table {
+	display: block;
+	width: 100%;
+	overflow: auto;
+	word-break: normal;
+	word-break: keep-all;
+}
+
+.markdown-body table th {
+	font-weight: bold;
+}
+
+.markdown-body table th,
+.markdown-body table td {
+	padding: 6px 13px;
+	border: 1px solid #ddd;
+}
+
+.markdown-body table tr {
+	background-color: #fff;
+	border-top: 1px solid #ccc;
+}
+
+.markdown-body table tr:nth-child(2n) {
+	background-color: #f8f8f8;
+}
+
+.markdown-body img {
+	max-width: 100%;
+	-moz-box-sizing: border-box;
+	box-sizing: border-box;
+}
+
+.markdown-body span.frame {
+	display: block;
+	overflow: hidden;
+}
+
+.markdown-body span.frame>span {
+	display: block;
+	float: left;
+	width: auto;
+	padding: 7px;
+	margin: 13px 0 0;
+	overflow: hidden;
+	border: 1px solid #ddd;
+}
+
+.markdown-body span.frame span img {
+	display: block;
+	float: left;
+}
+
+.markdown-body span.frame span span {
+	display: block;
+	padding: 5px 0 0;
+	clear: both;
+	color: #333;
+}
+
+.markdown-body span.align-center {
+	display: block;
+	overflow: hidden;
+	clear: both;
+}
+
+.markdown-body span.align-center>span {
+	display: block;
+	margin: 13px auto 0;
+	overflow: hidden;
+	text-align: center;
+}
+
+.markdown-body span.align-center span img {
+	margin: 0 auto;
+	text-align: center;
+}
+
+.markdown-body span.align-right {
+	display: block;
+	overflow: hidden;
+	clear: both;
+}
+
+.markdown-body span.align-right>span {
+	display: block;
+	margin: 13px 0 0;
+	overflow: hidden;
+	text-align: right;
+}
+
+.markdown-body span.align-right span img {
+	margin: 0;
+	text-align: right;
+}
+
+.markdown-body span.float-left {
+	display: block;
+	float: left;
+	margin-right: 13px;
+	overflow: hidden;
+}
+
+.markdown-body span.float-left span {
+	margin: 13px 0 0;
+}
+
+.markdown-body span.float-right {
+	display: block;
+	float: right;
+	margin-left: 13px;
+	overflow: hidden;
+}
+
+.markdown-body span.float-right>span {
+	display: block;
+	margin: 13px auto 0;
+	overflow: hidden;
+	text-align: right;
+}
+
+.markdown-body code,.markdown-body tt {
+	padding: 0;
+	padding-top: 0.2em;
+	padding-bottom: 0.2em;
+	margin: 0;
+	font-size: 85%;
+	background-color: rgba(0,0,0,0.04);
+	border-radius: 3px;
+}
+
+.markdown-body code:before,
+.markdown-body code:after,
+.markdown-body tt:before,
+.markdown-body tt:after {
+	letter-spacing: -0.2em;
+	content: "\00a0";
+}
+
+.markdown-body code br,
+.markdown-body tt br {
+	display: none;
+}
+
+.markdown-body del code {
+	text-decoration: inherit;
+}
+
+.markdown-body pre>code {
+	padding: 0;
+	margin: 0;
+	font-size: 100%;
+	word-break: normal;
+	white-space: pre;
+	background: transparent;
+	border: 0;
+}
+
+.markdown-body .highlight {
+	margin-bottom: 16px;
+}
+
+.markdown-body .highlight pre,
+.markdown-body pre {
+	padding: 16px;
+	overflow: auto;
+	font-size: 85%;
+	line-height: 1.45;
+	background-color: #f7f7f7;
+	border-radius: 3px;
+}
+
+.markdown-body .highlight pre {
+	margin-bottom: 0;
+	word-break: normal;
+}
+
+.markdown-body pre {
+	word-wrap: normal;
+}
+
+.markdown-body pre code,
+.markdown-body pre tt {
+	display: inline;
+	max-width: initial;
+	padding: 0;
+	margin: 0;
+	overflow: initial;
+	line-height: inherit;
+	word-wrap: normal;
+	background-color: transparent;
+	border: 0;
+}
+
+.markdown-body pre code:before,
+.markdown-body pre code:after,
+.markdown-body pre tt:before,
+.markdown-body pre tt:after {
+	content: normal;
+}
+
+.highlight .pl-coc,
+.highlight .pl-entl,
+.highlight .pl-entm,
+.highlight .pl-eoa,
+.highlight .pl-mai .pl-sf,
+.highlight .pl-mm,
+.highlight .pl-pdv,
+.highlight .pl-sc,
+.highlight .pl-som,
+.highlight .pl-sr,
+.highlight .pl-v,
+.highlight .pl-vpf {
+	color: #0086b3;
+}
+.highlight .pl-eoac,
+.highlight .pl-mdht,
+.highlight .pl-mi1,
+.highlight .pl-mri,
+.highlight .pl-va,
+.highlight .pl-vpu {
+	color: #008080;
+}
+.highlight .pl-c,
+.highlight .pl-pdc {
+	color: #b4b7b4;
+	font-style: italic;
+}
+.highlight .pl-k,
+.highlight .pl-ko,
+.highlight .pl-kolp,
+.highlight .pl-mc,
+.highlight .pl-mr,
+.highlight .pl-ms,
+.highlight .pl-s,
+.highlight .pl-sok,
+.highlight .pl-st {
+	color: #6e5494;
+}
+.highlight .pl-ef,
+.highlight .pl-enf,
+.highlight .pl-enm,
+.highlight .pl-entc,
+.highlight .pl-eoi,
+.highlight .pl-sf,
+.highlight .pl-smc {
+	color: #d12089;
+}
+.highlight .pl-ens,
+.highlight .pl-eoai,
+.highlight .pl-kos,
+.highlight .pl-mh .pl-pdh,
+.highlight .pl-mp,
+.highlight .pl-pde,
+.highlight .pl-stp {
+	color: #458;
+}
+.highlight .pl-enti {
+	color: #d12089;
+	font-weight: bold;
+}
+.highlight .pl-cce,
+.highlight .pl-enc,
+.highlight .pl-kou,
+.highlight .pl-mq {
+	color: #f93;
+}
+.highlight .pl-mp1 .pl-sf {
+	color: #458;
+	font-weight: bold;
+}
+.highlight .pl-cos,
+.highlight .pl-ent,
+.highlight .pl-md,
+.highlight .pl-mdhf,
+.highlight .pl-ml,
+.highlight .pl-pdc1,
+.highlight .pl-pds,
+.highlight .pl-s1,
+.highlight .pl-scp,
+.highlight .pl-sol {
+	color: #df5000;
+}
+.highlight .pl-c1,
+.highlight .pl-cn,
+.highlight .pl-pse,
+.highlight .pl-pse .pl-s2,
+.highlight .pl-vi {
+	color: #a31515;
+}
+.highlight .pl-mb,
+.highlight .pl-pdb {
+	color: #df5000;
+	font-weight: bold;
+}
+.highlight .pl-mi,
+.highlight .pl-pdi {
+	color: #6e5494;
+	font-style: italic;
+}
+.highlight .pl-ms1 {
+	background-color: #f5f5f5;
+}
+.highlight .pl-mdh,
+.highlight .pl-mdi {
+	font-weight: bold;
+}
+.highlight .pl-mdr {
+	color: #0086b3;
+	font-weight: bold;
+}
+.highlight .pl-s2 {
+	color: #333;
+}
+.highlight .pl-ii {
+	background-color: #df5000;
+	color: #fff;
+}
+.highlight .pl-ib {
+	background-color: #f93;
+}
+.highlight .pl-id {
+	background-color: #a31515;
+	color: #fff;
+}
+.highlight .pl-iu {
+	background-color: #b4b7b4;
+}
+.highlight .pl-mo {
+	color: #969896;
+}
+
+</style>
+
+
+<script type="text/javascript">
+
+function getDocumentScrollTop() 
+{
+   var res = document.body.scrollTop || document.documentElement.scrollTop || window.pageYOffset || 0;
+   // alert(res);
+   return res;
+}
+
+function setDocumentScrollTop(ypos) 
+{
+	window.scrollTo(0, ypos);
+}
+
+</script>
+
+
+</head>
+<body class="markdown-body">
+<h2> <a id="ustadmobile-gwt-project" class="anchor" href="#ustadmobile-gwt-project" aria-hidden="true"><span aria-hidden="true" class="octicon octicon-link"></span></a>UstadMobile GWT project</h2> 
+<p>This branch : gwtdev2 is the GWT branch of UstadMobile application. Here resides all GWT components - code and assets for the project.</p> 
+<h4> <a id="why-gwt" class="anchor" href="#why-gwt" aria-hidden="true"><span aria-hidden="true" class="octicon octicon-link"></span></a>Why GWT?</h4> 
+<p>GWT is Google's Web Toolkit. It allows us to use the same underlining java code used on android/j2me on the web. This project allows to get an app like experience on the web. eg: login, browse opds, view content, access statistical data (if your role allows it), etc. In addition functions that typically start on the web such as user and group management can be made available to all modern platforms of UstadMobile under one core code base. GWT would still need to have its own views, system implementation of some platform specific tasks such as xml parsing, HTTP request, replacement for files, etc. GWT would also need to be visually scalable within different device types.</p> 
+<p>We've choosen to use this structure for UstadMobile GWT: GWTP uiBinders for Views and GWT-Material for style and consistency with Material Design layouts on Android.</p> 
+<h4> <a id="screenshots-of-the-application-and-progress" class="anchor" href="#screenshots-of-the-application-and-progress" aria-hidden="true"><span aria-hidden="true" class="octicon octicon-link"></span></a>Screenshots of the application and progress:</h4> 
+<p><a href="images/UstadMobileGWT01.PNG" target="_blank"><img src="images/UstadMobileGWT01.PNG" alt="OPDS Catalog" title="Home" style="max-width:100%;" /></a> <a href="images/UstadMobileGWT02.PNG" target="_blank"><img src="images/UstadMobileGWT02.PNG" alt="Settings Menu" title="Settings" style="max-width:100%;" /></a></p> 
+<h4> <a id="project-folder" class="anchor" href="#project-folder" aria-hidden="true"><span aria-hidden="true" class="octicon octicon-link"></span></a>Project folder:</h4> 
+<p>All GWT related code and assets live in the app-gwt folder. This is also the folder for the eclipse project. Since GWTP uses Maven, app-gwt is also a maven project and can be built frm the command line.</p> 
+<h4> <a id="building" class="anchor" href="#building" aria-hidden="true"><span aria-hidden="true" class="octicon octicon-link"></span></a>Building:</h4> 
+<p>Git clone and checkout gwtdev2 branch.</p> 
+<div class="highlight highlight-text-shell-session">
+ <pre><span class="pl-c1">git checkout gwtdev2</span></pre>
+</div> 
+<p>Then go to app-gwt folder</p> 
+<div class="highlight highlight-text-shell-session">
+ <pre><span class="pl-c1">cd app-gwt</span></pre>
+</div> 
+<p>Run buildcore.sh &lt;- This script copies core files to the project. It also copies lib db, annotations and utils. It also removes any classes that cannot be replaced by the GWTp build procedure.</p> 
+<div class="highlight highlight-text-shell-session">
+ <pre><span class="pl-c1">./buildcore.sh</span></pre>
+</div> 
+<p>For an IDE independent build procedure: On a console where maven is present, first clean (just in case) and then install :</p> 
+<div class="highlight highlight-text-shell-session">
+ <pre><span class="pl-c1">maven clean</span>
+<span class="pl-c1">maven install</span></pre>
+</div> 
+<p>In order to run the project we need to launch eclipse and set it up. Make sure you have GWT plugin for Ecipse installed. Import existing project to eclipse and choose the folder app-gwt Add a new run configuration in eclipse - this will be the config that runs the gwt application.</p> 
+<pre><code>Goals: gwt:run
+Base directory : Choose the project imported when you click Workspace..
+Give it a recognizable name. eg: app-gwt GWT Run
+</code></pre> 
+<p>If you didnt do the command line tools, you can right click the project and select : Run As &gt; Maven clean.. and then Run As &gt; Maven install.. Then click the Run icon dropdown and select app-gwt GWT Run to run the application. This will open a Jetty instance after successful build and compilation. You can tell launch the application and see where it is at now in development.</p> 
+<h4> <a id="project-structure" class="anchor" href="#project-structure" aria-hidden="true"><span aria-hidden="true" class="octicon octicon-link"></span></a>Project Structure</h4> 
+<p>For clarity and sanity, here is how the project is structured right now.</p> 
+<div class="highlight highlight-text-shell-session">
+ <pre><span class="pl-c1">repo/app-gwt/	&lt;- This is where all the GWT bit lives. </span>
+<span class="pl-c1">├─ coding/</span>
+<span class="pl-c1">├─ core-src/	&lt;- Contains core source/assets/res copied via build .sh</span>
+<span class="pl-c1">│  ├─ main/ </span>
+<span class="pl-c1">│  │  ├─ ...</span>
+<span class="pl-c1">├─ images/	&lt;- Contains images for this MD &amp; any other doc/wiki</span>
+<span class="pl-c1">│</span>
+<span class="pl-c1">├─ lib-database-annotation-src/</span>
+<span class="pl-c1">├─ lib-database-src/</span>
+<span class="pl-c1">├─ lib-util-src/</span>
+<span class="pl-c1">│</span>
+<span class="pl-c1">├─ src/		&lt;- The main GWT specific source folder </span>
+<span class="pl-c1">│  ├─ main/</span>
+<span class="pl-c1">│  │  ├─ assets/</span>
+<span class="pl-c1">│  │  │	 ├─ com/ustadmobile/core </span>
+<span class="pl-c1">│  │  │		├─ &lt;Files&gt;	&lt;- Contains feeds, html, prop  files for core</span>
+<span class="pl-c1">│</span>
+<span class="pl-c1">│  │  ├─ java/</span>
+<span class="pl-c1">│  │  │	 ├─ com/ustadmobile/</span>
+<span class="pl-c1">│  │  │	 │  ├─ core/</span>
+<span class="pl-c1">│  │  │	 │  │  ├─ db/		&lt;- DB Manager Factory returns GWT impl</span>
+<span class="pl-c1">│  │  │	 │  │  ├─ impl/		&lt;- SystemImpl Factory return GWT impl</span>
+<span class="pl-c1">│  │  │	 │  │  ├─ opds/		&lt;- OPDS Async Helper </span>
+<span class="pl-c1">│  │  │	 │  │  ├─ util/		&lt;- Utilities eg UMCalendar impl</span>
+<span class="pl-c1">│  │  │	 │  │  ├─ about.html &lt;- About file here for now.</span>
+<span class="pl-c1">│  │  │	 │  ├─ port/gwt/</span>
+<span class="pl-c1">│  │  │	 │  │  ├─ client/ 	&lt;- This package has GWT/GWTP MVP specific code</span>
+<span class="pl-c1">│  │  │	 │  │  │  ├─ application/ &lt;- Consists of the application and every single Views, Modules, Presenters, Gatekeepers.</span>
+<span class="pl-c1">│  │  │	 │  │  │  ├─ db/	&lt;- DAO's, GWT impl of DB Manager, DAOs, OpdsEntryRepository, etc</span>
+<span class="pl-c1">│  │  │	 │  │  │  ├─ gin/	&lt;- Contains MAIN module. It is from this main module where all child modules. (used by GWTP)</span>
+<span class="pl-c1">│  │  │	 │  │  │  ├─ impl/	&lt;- GWT impl of SystemImpl, Logging, HttpResponse.</span>
+<span class="pl-c1">│  │  │	 │  │  │  ├─ place/	&lt;- Consists NamesTokens that identifies all Places available as String urls.</span>
+<span class="pl-c1">│  │  │	 │  │  │  ├─ resources/	&lt;- Contains AppResources class</span>
+<span class="pl-c1">│  │  │	 │  │  │  ├─ test/		&lt;- Test files go here</span>
+<span class="pl-c1">│  │  │	 │  │  │  ├─ util/		&lt;- GWT specific util files go here</span>
+<span class="pl-c1">│  │  │	 │  │  ├─ xmlpull/	&lt;- XmlPullParser GWT implementation</span>
+<span class="pl-c1">│  │  │	 │  │  │  ├─ XmlPullParserGWT.jav	&lt;- GWT implementation of XPP.</span>
+<span class="pl-c1">│</span>
+<span class="pl-c1">│  │  ├─ res/		&lt;- Any resources used by GWT are copied here</span>
+<span class="pl-c1">│</span>
+<span class="pl-c1">│  │  ├─ resources	&lt;- Any resources used by GWT packages</span>
+<span class="pl-c1">│  │  │	 ├─ com/ustadmobile/port/</span>
+<span class="pl-c1">│  │  │		├─ gwt/</span>
+<span class="pl-c1">│  │  │		│  ├─ client/</span>
+<span class="pl-c1">│  │  │		│     ├─ gwtapp.gwt.xml &lt;- Main GWT App's XML</span>
+<span class="pl-c1">│  │  │		├─ Core.gwt.xml	&lt;- Core module's gwt xml</span>
+<span class="pl-c1">│  │  │		├─ Lib.gwt.xml 	&lt;- Lib modules's gwt xml</span>
+<span class="pl-c1">│</span>
+<span class="pl-c1">│  │  ├─ webapp/	&lt;- Contains Website assets(feeds, images, etc) copied from source package</span>
+<span class="pl-c1">│  │  │	 ├─ com/ustadmobile/core/</span>
+<span class="pl-c1">│  │  │	 │  ├─ &lt;Files&gt; &lt;- Copied from src/main/assets/com/ustadmobile/core to be accessible.</span>
+<span class="pl-c1">│  │  │	 ├─ WEB-INF/</span>
+<span class="pl-c1">│  │  │	 │  ├─ com/ustadmobile/core/</span>
+<span class="pl-c1">│  │  │	 │  │  ├─ &lt;Files&gt; &lt;-Copied from src/main/assets/com/ustadmobile/core to be accessible.    </span>
+<span class="pl-c1">│  │  │	 ├─ index.html	&lt;- If you want this to load; other static html files. </span>
+<span class="pl-c1">│  </span>
+<span class="pl-c1">├─ src-jre/	&lt;- Class override -To implement JRE classes that are not in GWT </span>
+<span class="pl-c1">│  ├─ main/java/java/util/concurrent/atomic/AtomicInteger.java 	&lt;- Implemented as normal int. </span>
+<span class="pl-c1">│ </span>
+<span class="pl-c1">├─ src-json/ &lt;- Class overide to implement JSON class's methods not in GWT</span>
+<span class="pl-c1">│  ├─ main/java/org/json/ </span>
+<span class="pl-c1">│  │  ├─ &lt;Classes&gt;</span>
+<span class="pl-c1">│ </span>
+<span class="pl-c1">├─ src-xpp/ &lt;- Classes override to implement XPP classes and its methods not in GWT</span>
+<span class="pl-c1">│  ├─ main/java/org/xmlpull/v1/</span>
+<span class="pl-c1">│  │  ├─ &lt;Classes&gt;</span>
+<span class="pl-c1">│  </span>
+<span class="pl-c1">├─ target/	&lt;- Build directory for maven</span>
+<span class="pl-c1">│  ├─ &lt;Files&gt;</span>
+<span class="pl-c1">│ </span>
+<span class="pl-c1">├─ buildcore.sh	&lt;- The build script. This copies files and renames, etc for GWT to work. Check README for the right setup steps.</span>
+<span class="pl-c1">├─ pom.xml	&lt;- The project's maven pom xml. </span>
+<span class="pl-c1">├─ README.md 	&lt;- This md README</span></pre>
+</div>
+</body>
+</html>
