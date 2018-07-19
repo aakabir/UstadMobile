@@ -676,7 +676,6 @@ Give it a recognizable name. eg: app-gwt GWT Run
 <p>For clarity and sanity, here is how the project is structured right now.</p> 
 <div class="highlight highlight-text-shell-session">
  <pre><span class="pl-c1">repo/app-gwt/	&lt;- This is where all the GWT bit lives. </span>
-<span class="pl-c1">├─ coding/</span>
 <span class="pl-c1">├─ core-src/	&lt;- Contains core source/assets/res copied via build .sh</span>
 <span class="pl-c1">│  ├─ main/ </span>
 <span class="pl-c1">│  │  ├─ ...</span>
@@ -748,6 +747,127 @@ Give it a recognizable name. eg: app-gwt GWT Run
 <span class="pl-c1">├─ buildcore.sh	&lt;- The build script. This copies files and renames, etc for GWT to work. Check README for the right setup steps.</span>
 <span class="pl-c1">├─ pom.xml	&lt;- The project's maven pom xml. </span>
 <span class="pl-c1">├─ README.md 	&lt;- This md README</span></pre>
-</div>
+</div> 
+<h4> <a id="gwt-application-explanation" class="anchor" href="#gwt-application-explanation" aria-hidden="true"><span aria-hidden="true" class="octicon octicon-link"></span></a>GWT application explanation</h4> 
+<p>All GWT specific source files are in <code>src</code> folder. All classes are in the <code>java</code> folder. The <code>com.ustadmobile.core</code> package has factory classes that return GWT implementation bits. The <code>com.ustadmobile.port.gwt</code> package has all GWT related source code. The <code>com.ustadmobile.port.client</code> package has all GWT client classes to make the application run. The packages and classes outside <code>client</code> are related to GWT but are not part of running GWT and its components.</p> 
+<h4> <a id="application-components" class="anchor" href="#application-components" aria-hidden="true"><span aria-hidden="true" class="octicon octicon-link"></span></a>Application components</h4> 
+<p>Note: This project is using GWTP and GWT-Material (for UI). For more understanding, refer to their turorial: <a href="https://dev.arcbees.com/gwtp/tutorials/index.html" rel="nofollow">https://dev.arcbees.com/gwtp/tutorials/index.html</a></p> 
+<p>All the application components lie in the package <code>com.ustadmobile.port.gwt.client.application</code>. Every page/view has a module associated with it that is declared and linked by the class: ApplicationModule.java. This &quot;installs&quot; the module to the application.</p> 
+<pre><code>configure(){
+	...
+	install(new AboutModule());
+	...
+}
+</code></pre> 
+<p>Every page/view is in its own package. eg: <code>com.ustadmobile.port.gwt.client.application.about</code>. The package contains of the GWT Presenter, UI Handler, GWT View and GWT Module.</p> 
+<pre><code>├─ com.ustadmobile.port.gwt.client.application
+│  ├─ ...
+│  ├─ about/
+│  │  ├─ AboutModule.java
+│  │  ├─ AboutPresenter.java
+│  │  ├─ AboutUiHandlers.java
+│  │  ├─ AboutView.java
+│  ├─ ApplicationModule.java
+│  ├─ ApplicationPresenter.java
+│  ├─ ApplicationView.java
+</code></pre> 
+<h5> <a id="module" class="anchor" href="#module" aria-hidden="true"><span aria-hidden="true" class="octicon octicon-link"></span></a>Module</h5> 
+<p>All modules declared in the ApplicationModule.java class' configure() are sub-modules to it. A Module here is a GIN module. A GIN module, made by Google, is used by GWTP for dependency injection. A GIN Module should extend <code>AbstractPresenterModule</code> in any GWTP application.</p> 
+<p>In all modules and sub-modules you bind the presenter, view to the module using bindPresenter(). For eg: in AboutModule we bind the AboutPresenter and in the main ApplicationModule we bind the ApplicationPresenter class.</p> 
+<p>The starting point of this GWT application is from ApplicationModule. Like its sub modules and view, it has a presenter and a view: ApplicationView.</p> 
+<h5> <a id="presenter" class="anchor" href="#presenter" aria-hidden="true"><span aria-hidden="true" class="octicon octicon-link"></span></a>Presenter</h5> 
+<p>But we are only declaring the panel in the parent and no content yet. We aren't telling GWT to go to any particular page because we are internally handling that in UstadMobileSystemImpl.startUI(). This is similar across all ports of UstadMobile. So we are declaring an instance of UstadMobileSystemImpl in the main ApplicationPresenter and calling startUI().</p> 
+<p>The main ApplicationPresenter class has the logic for everything to do with GWT application start. For now it has some methods to go to different pages of the application and most importantly initiates UstadMobileSystemImpl.</p> 
+<p>The presenters for the individual views in their packages are child Presenters here. For eg: AboutPresenter is the child presenter of Application Presenter. It uses its parent presenter (ApplicationPresenter)'s slot to reveal itself.</p> 
+<h6> <a id="what-does-a-gwt-presenter-do-" class="anchor" href="#what-does-a-gwt-presenter-do-" aria-hidden="true"><span aria-hidden="true" class="octicon octicon-link"></span></a>What does a GWT Presenter do ?</h6> 
+<p>The way to link a Core Presenter to this GWT Presenter is to create a new CorePresenterHandler class (inside the GWT Presenter) that extends the Core Presenter and implements any UiHandlers. In this nested class's constructor we call super with the context and view passed to it.</p> 
+<pre><code> public class CoreAboutPresenterHandler 
+ 	extends com.ustadmobile.core.controller.AboutController	
+		implements UiHandlers {
+			public CoreAboutPresenterHandler(Object context, AboutView view) {
+				super(context, view);
+				// TODO Auto-generated constructor stub
+				GWT.log(&quot;CoreAboutPresenter constructor. TODO.&quot;);
+		}
+ } 
+</code></pre> 
+<p>This CorePresenterHandler is used to create a <code>mController</code> object within the GWT Presenter.</p> 
+<p><code>mController = new CorePresenterHandler(placeManager, (AboutView)view);</code></p> 
+<p>This Core presenter (or mController) can be used elsewhere throughout the presenter. We choose to use the placeManager as the context that will get passed around as state. Place managers work as an intermediary between the GWT History API and ProxyPlaceAbstract. It sets up event listener relationships to synchronize them.</p> 
+<p>The view object is an interface created in the Application Presenter. Every Presenter has two interfaces - MyView and MyProxy. MyView extends GWTP View, extend any other View and in our case extends our core View.</p> 
+<pre><code>    //About Presenter's View Interface
+    interface MyView extends 
+    	View, 
+		HasUiHandlers&lt;CoreAboutPresenterHandler&gt;, 
+		com.ustadmobile.core.view.AboutView {
+    }
+</code></pre> 
+<p>So with that laid out, we have a way to create a new page, load it to the application. Bind its presenter and view. Link Core Presenter with the GWT Presenter and link Core View to GWT View as well.</p> 
+<p>Any update to the Core View will update the GWT View.</p> 
+<h5> <a id="view" class="anchor" href="#view" aria-hidden="true"><span aria-hidden="true" class="octicon octicon-link"></span></a>View</h5> 
+<p>A View in GWT is bound to a corresponding view_name.ui.xml file in the same package. A UI XML contains the widgets and we use GWT-Material panels and normal HTML Panels. Below is a simple UI XML.</p> 
+<pre><code>&lt;ui:UiBinder xmlns:ui='urn:ui:com.google.gwt.uibinder'
+             xmlns:g='urn:import:com.google.gwt.user.client.ui'&gt;    
+    &lt;g:HTMLPanel&gt;
+    	&lt;p&gt;Hello AboutView!&lt;/p&gt;
+        &lt;g:TextBox ui:field=&quot;textBox&quot;/&gt;&lt;br/&gt;
+        &lt;g:TextArea ui:field=&quot;version&quot;/&gt;&lt;br/&gt;
+        &lt;g:Button ui:field=&quot;updateText&quot; text=&quot;Update Text&quot;/&gt;
+    &lt;/g:HTMLPanel&gt;
+    
+&lt;/ui:UiBinder&gt;
+</code></pre> 
+<p>This is bound by this line of code in AboutView.java:</p> 
+<pre><code>//This is how GWTP knows to use the HomeView.ui.xml file (bind it)
+interface Binder extends UiBinder&lt;Widget, AboutView&gt; {
+}
+</code></pre> 
+<p>A GWT-Material panel can be used like so (in ApplicationView.ui.xml):</p> 
+<pre><code>&lt;m:MaterialPanel ui:field=&quot;content&quot;&gt;
+  &lt;m:MaterialLabel&gt;Content Material Label&lt;/m:MaterialLabel&gt;
+&lt;/m:MaterialPanel&gt;
+</code></pre> 
+<p>Since we want to separate out classes and ui xmls, they are located in the resources package of src folder.</p> 
+<pre><code>├─ src/main/resources/com/ustadmobile/port/gwt/client/application
+│  ├─ ...
+│  ├─ about/
+│  │  ├─ AboutView.ui.xml
+│  ├─ ApplicationView.ui.xml
+</code></pre> 
+<p>Since the starting point of this GWT application is ApplicationModule, we can see ApplicationView has a panel content declared (in this case it is a material panel since we are using GWT-Material for UI).</p> 
+<p>We are also injecting in the view's constructor the content panel in the ApplicationPresenter's slot.</p> 
+<p>The concept of slots is how UIs are generated. We can have side slot, content slot, etc. Our current design is separating out content in its own panel and the side menu in a different slot.</p> 
+<p>Our GWT Views extend the MyView interfaces (that in turn extend from CorePresenterHandler) so every methods of Core View's are overridden. If a Core presenter is updating a core view's text field for example, it will update GWT Views and so on.</p> 
+<h5> <a id="other-parts-of-gwtp" class="anchor" href="#other-parts-of-gwtp" aria-hidden="true"><span aria-hidden="true" class="octicon octicon-link"></span></a>Other parts of GWTP</h5> 
+<p>There are other integral part of this project that are so that this GWTP application can run okay.</p> 
+<pre><code>├─ com.ustadmobile.port.gwt.client
+│  ├─ ...
+│  ├─ gin/
+│  │  ├─ ClientModule.java
+│  ├─ place/
+│  │  ├─ NameTokens.java
+│  ├─ resources/
+│  │  ├─ AppResources.java
+│  │  ├─ ResourceLoader.java
+</code></pre> 
+<h6> <a id="nametokensjava" class="anchor" href="#nametokensjava" aria-hidden="true"><span aria-hidden="true" class="octicon octicon-link"></span></a>NameTokens.java</h6> 
+<p>This is a simple class that mapps literal String names to places.</p> 
+<pre><code>public class NameTokens {
+	...
+    public static final String ABOUT = AboutView.VIEW_NAME;
+    ...
+}
+</code></pre> 
+<h6> <a id="clientmodulejava" class="anchor" href="#clientmodulejava" aria-hidden="true"><span aria-hidden="true" class="octicon octicon-link"></span></a>ClientModule.java</h6> 
+<p>This is your main GIN module from which all of the child modules are loaded. It is also where the DefaultPlaceManager is setup. In GWTP, this is the very start of the application.</p> 
+<h5> <a id="database--repository" class="anchor" href="#database--repository" aria-hidden="true"><span aria-hidden="true" class="octicon octicon-link"></span></a>Database &amp; Repository</h5> 
+<p>All the GWT DB components lie in the sub package <code>db</code>.</p> 
+<h5> <a id="gwt-implementation-of-core" class="anchor" href="#gwt-implementation-of-core" aria-hidden="true"><span aria-hidden="true" class="octicon octicon-link"></span></a>GWT Implementation of Core</h5> 
+<p>All the implementations specific to GWT lie in the <code>impl</code> sub package, etc.</p> 
+<h5> <a id="overall-flow-of-the-application" class="anchor" href="#overall-flow-of-the-application" aria-hidden="true"><span aria-hidden="true" class="octicon octicon-link"></span></a>Overall Flow of the Application</h5> 
+<p><a href="images/UstadMobileGWT03.PNG" target="_blank"><img src="images/UstadMobileGWT03.PNG" alt="OPDS Catalog" title="Application Flow" style="max-width:100%;" /></a></p> 
+<h4> <a id="testing-on-gwt" class="anchor" href="#testing-on-gwt" aria-hidden="true"><span aria-hidden="true" class="octicon octicon-link"></span></a>Testing on GWT</h4> 
+<p>Since the presenters are being unit tested (which are part of core) seperate to GWT, we are focusing on GWT's implementation / GWT specific unit tests. The major chunk of testing will be functional testing the web server.</p> 
+<p>The most recommended way forward is by the use of Selenium and WebDriver via page objects.</p>
 </body>
 </html>
