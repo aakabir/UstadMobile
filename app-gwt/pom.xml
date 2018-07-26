@@ -162,39 +162,6 @@
                             <goal>test</goal>
                         </goals>
                     </execution>
-                    
-                    <!-- Testing  -->
-                    <execution>
-						<id>compile-json</id>
-						<goals>
-							<goal>compile</goal>
-						</goals>
-						<configuration>
-							<moduleName>org.JsonGWT</moduleName>
-							<moduleShortName>JsonGWT</moduleShortName>
-						</configuration>
-					</execution>
-					<execution>
-						<id>compile-xpp</id>
-						<goals>
-							<goal>compile</goal>
-						</goals>
-						<configuration>
-							<moduleName>org.XmlPullGWT</moduleName>
-							<moduleShortName>XmlPullGWT</moduleShortName>
-						</configuration>
-					</execution>
-					<execution>
-						<id>compile-core</id>
-						<goals>
-							<goal>compile</goal>
-						</goals>
-						<configuration>
-							<moduleName>com.ustadmobile.Core</moduleName>
-							<moduleShortName>Core</moduleShortName>
-						</configuration>
-					</execution>
-					
                 </executions>
             </plugin>       
               
