@@ -37,6 +37,7 @@
         <!-- maven -->
         <maven-war-plugin.version>2.6</maven-war-plugin.version>
         <maven-compiler-plugin.version>3.7.0</maven-compiler-plugin.version>
+        <build-helper-maven-plugin.version>3.0.0</build-helper-maven-plugin.version>
 
 		<!-- JDK -->
         <target.jdk>1.8</target.jdk>
@@ -63,65 +64,39 @@
 
         <resources>
             <resource>
-                <directory>src/main/resources</directory>
-            </resource>
-			 
-	<!--  Questionable Use of Sources as Resources starts -->
-			<!--  -->
-			
-			<!-- <resource>
-				<directory>src/test/java</directory>
-			</resource>
-			-->
-			
-			<resource>
-		    	<directory>src-json/main/java</directory>
-			</resource>
-			
-			<resource>
-		    	<directory>src-jre/main/java</directory>
-			</resource>
-			
-			<resource>
-		    	<directory>src-xpp/main/java</directory>
-			</resource>
-			
-			<resource>
-			    <directory>${project.basedir}/core-src/main/java</directory>
-			</resource>
-
-			<resource>
-				<directory>${project.basedir}/core-src/main/java</directory>
-			</resource>
-			
-			<resource>
-			    <directory>lib-database-annotation-src/main/java</directory>
-			</resource>
-			<resource>
-				<directory>${project.basedir}/lib-database-annotation-src/main/java</directory>
-			</resource>
-			
-			<resource>
-			    <directory>lib-database-src/main/java</directory>
-			</resource>
-			<resource>
-				<directory>${project.basedir}/lib-database-src/main/java</directory>
-			</resource>
-			
-			<resource>
-			    <directory>lib-util-src/main/java</directory>
-			</resource>
-			<resource>
-				<directory>${project.basedir}/lib-util-src/main/java</directory>
-			</resource>
-
-			<!-- -->
-
-	<!--  Questionable Use of Sources as Resources ends-->
-			
+                <directory>${project.basedir}/src/main/resources</directory>
+            </resource>			
         </resources>
 
         <plugins>
+        
+        	<!-- Adding multiple source folders -->
+			<plugin>
+				<groupId>org.codehaus.mojo</groupId>
+				<artifactId>build-helper-maven-plugin</artifactId>
+				<version>${build-helper-maven-plugin.version}</version>
+				<executions>
+					<execution>
+						<phase>generate-sources</phase>
+						<goals>
+							<goal>add-source</goal>
+						</goals>
+						<configuration>
+							<sources>
+								<!-- <source>src/main/generated</source> -->
+								<source>${project.basedir}/src/main/java</source>
+								<source>${project.basedir}/src-json/main/java</source>
+								<source>${project.basedir}/src-jre/main/java</source>
+								<source>${project.basedir}/src-xpp/main/java</source>
+								<source>${project.basedir}/core-src/main/java</source>
+								<source>${project.basedir}/lib-database-annotation-src/main/java</source>
+								<source>${project.basedir}/lib-database-src/main/java</source>
+								<source>${project.basedir}/lib-util-src/main/java</source>
+							</sources>
+						</configuration>
+					</execution>
+				</executions>
+			</plugin>
         
         	<!-- Maven Compiler Plugin: Compiles the sources of this project -->
             <plugin>
@@ -131,19 +106,16 @@
                 <configuration>
                     <source>${target.jdk}</source>
                     <target>${target.jdk}</target>
-                    <encoding>UTF-8</encoding>
+                    <encoding>${project.build.sourceEncoding}</encoding>
                     
                     <!-- According to this: 
 		           	https://stackoverflow.com/questions/270445/
 		           	
 		           	Also added to the main maven-compiler-plugin since 
 		           	Maven warns about multiple instances of maven-compiler-plugin
+		           	Update: Using build-helper-maven-plugin instead.
 		           	-->
-                    <includes>
-                 		<include>src/main/java</include>
-                 		<include>core-src/main/java</include>
-                 		<!-- <include>src/test/java</include> -->
-              		</includes>
+		           	
                 </configuration>
             </plugin>
         
@@ -190,113 +162,41 @@
                             <goal>test</goal>
                         </goals>
                     </execution>
+                    
+                    <!-- Testing  -->
+                    <execution>
+						<id>compile-json</id>
+						<goals>
+							<goal>compile</goal>
+						</goals>
+						<configuration>
+							<moduleName>org.JsonGWT</moduleName>
+							<moduleShortName>JsonGWT</moduleShortName>
+						</configuration>
+					</execution>
+					<execution>
+						<id>compile-xpp</id>
+						<goals>
+							<goal>compile</goal>
+						</goals>
+						<configuration>
+							<moduleName>org.XmlPullGWT</moduleName>
+							<moduleShortName>XmlPullGWT</moduleShortName>
+						</configuration>
+					</execution>
+					<execution>
+						<id>compile-core</id>
+						<goals>
+							<goal>compile</goal>
+						</goals>
+						<configuration>
+							<moduleName>com.ustadmobile.Core</moduleName>
+							<moduleShortName>Core</moduleShortName>
+						</configuration>
+					</execution>
+					
                 </executions>
-            </plugin>
-        
-        
-        	
-       
-       
-       
-            
-            	
-	<!--  Questionable USE of sources start -->
-            
-            <!-- Adding additional source : core to this maven  -->
-            <!--
-            <plugin>
-               <groupId>org.apache.maven.plugins</groupId>
-                  <artifactId>maven-compiler-plugin</artifactId>
-                  <version>${maven-compiler-plugin.version}</version>
-					<configuration>
-                    	<source>core-src/main/java</source>
-                       	<includes>
-                      		<include>core-src/main/java</include>
-                    	</includes>
-                    </configuration>
-            </plugin>
-            -->
-            
-            <!-- Adding additional source : lib database annotation to this maven  -->
-            <!--
-			<plugin>
-               <groupId>org.apache.maven.plugins</groupId>
-                  <artifactId>maven-compiler-plugin</artifactId>
-                  <version>${maven-compiler-plugin.version}</version>
-                    <configuration>
-                    	<source>lib-database-annotation-src/main/java</source>
-                       	<includes>
-                      		<include>lib-database-annotation-src/main/java</include>
-                       	</includes>
-                    </configuration>
-            </plugin>
-            -->
-             
-            <!-- Adding additional source : lib database to this maven  -->
-            <!--
-			<plugin>
-               <groupId>org.apache.maven.plugins</groupId>
-                  <artifactId>maven-compiler-plugin</artifactId>
-                  <version>${maven-compiler-plugin.version}</version>
-                    <configuration>
-                    	<source>lib-database-src/main/java</source>
-                       	<includes>
-                      		<include>lib-database-src/main/java</include>
-                       	</includes>
-                    </configuration>
-             </plugin>
-           	-->
-             
-            <!-- Adding additional source : lib util to this maven  -->
-			<!--
-			<plugin>
-               <groupId>org.apache.maven.plugins</groupId>
-                  <artifactId>maven-compiler-plugin</artifactId>
-                  <version>${maven-compiler-plugin.version}</version>
-                    <configuration>
-                    	<source>lib-util-src/main/java</source>
-                       	<includes>
-                      		<include>lib-util-src/main/java</include>
-                       	</includes>
-                    </configuration>
-            </plugin>
-            -->
-            
-			<!-- Adding additional source : xmlpull gwt to this maven  -->
-            <!--
-            <plugin>
-            	<groupId>org.apache.maven.plugins</groupId>
-				<artifactId>maven-compiler-plugin</artifactId>
-				<version>${maven-compiler-plugin.version}</version>
-				<configuration>
-                	<source>src-xpp/main/java</source>
-                  	<includes>
-                 		<include>src-xpp/main/java</include>
-              		</includes>
-                
-                </configuration>
-             </plugin>
-             -->
-             
-            <!-- Adding additional source : Test sources to this maven  -->
-            <!--
-            <plugin>
-            	<groupId>org.apache.maven.plugins</groupId>
-				<artifactId>maven-compiler-plugin</artifactId>
-				<version>${maven-compiler-plugin.version}</version>
-				<configuration>
-                	<source>src/test/java</source>
-                  	<includes>
-                 		<include>src/test/java</include>
-              		</includes>
-				</configuration>
-            </plugin>
-            -->
-            
-	<!--  Questionable USE of sources ends -->
-              
-              
-              
+            </plugin>       
               
         </plugins>
     </build>
@@ -411,6 +311,13 @@
 		    <scope>test</scope>
 		</dependency>
 				
+		<!--  
+		<dependency>
+		    <groupId>org.eclipse.jetty</groupId>
+		    <artifactId>jetty-jsp</artifactId>
+		    <version>9.3.0.M1</version>
+		</dependency>
+		-->
 		
 				
     </dependencies>

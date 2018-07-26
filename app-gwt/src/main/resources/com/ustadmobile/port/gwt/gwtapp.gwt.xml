@@ -20,23 +20,37 @@
 	<!-- HTTP -->
 	<inherits name="com.google.gwt.http.HTTP"/>
 	
-	<!-- JSON GWT-->
-	<inherits name="org.JsonGWT"/>
-	
-	<!-- XML Wrapper -->
-	<inherits name="org.XmlPullGWT" />
-	
 	<!-- GWT's XML -->
 	<inherits name="com.google.gwt.xml.XML"/>
 	
+	<!--  -->
+	
+	<!-- JSON GWT-->
+	<!--  --> 
+	<inherits name="org.JsonGWT"/>
+	<!--  -->
+	
+	<!-- XML Wrapper -->
+	<!--  --> 
+	<inherits name="org.XmlPullGWT" />
+	<!--  -->
+	
 	<!-- Core -->
+	<!--  -->
 	<inherits name="com.ustadmobile.Core"/>
+	<!--  -->
 	
 	<!-- Lib -->
+	<!--  -->
 	<inherits name="com.ustadmobile.Lib"/>
+	<!--  -->
 	
 	<!-- Hashtable for GWT (Hashmap) -->
+	<!--  -->
 	<inherits name="java.HashmapHashtable" />
+	
+	
+	<!--  -->
 	
 	<!-- Local HTML5 Storage -->
 	<!-- <inherits name="com.google.gwt.storage.client.Storage" />  -->

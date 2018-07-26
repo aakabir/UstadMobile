@@ -454,28 +454,36 @@ Plugins are integral part of the project to run. They differ with dependencies a
 ##### Adding an external class/package to the GWT client #####
 
 ###### Step 1 ######
-Add the directory of the source as a resource in the pom.xml file.
-```
-<resource>
-	<directory>${project.basedir}/src/test/main/java</directory>
-</resource>
-```
-
+Create another source folder within the project directory. If you are trying to include source external to the project, this is not the step. For that look at linking multiple modules in one maven project - It essentially consists of multiple maven projects (POM) and a main one that links them. This is to add multiple sources within the project such that maven can compile and GWT can compile as well. 
 ###### Step 2 ######
 
-Add the source to let Maven ```maven-compiler-plugin``` know you are going to compile it. 
+Add the ```build-helper-maven-plugin``` plugin to the POM and add the source folder over there. The current version as of July 2018 is 3.0.0. 
 
 ```
+<!-- Adding multiple source folders -->
 <plugin>
-	...
-		<configuration>
-			...
-				<includes>
-					...
-					<include>srcnew/main/java</include>
-					...
+    <groupId>org.codehaus.mojo</groupId>
+    <artifactId>build-helper-maven-plugin</artifactId>
+    <version>${build-helper-maven-plugin.version}</version>
+    <executions>
+        <execution>
+        <phase>generate-sources</phase>
+        <goals>
+        	<goal>add-source</goal>
+        </goals>
+        <configuration>
+            <sources>
+            	<source>src/main/generated</source>
+				...
+            </sources>
+            </configuration>
+        </execution>
+    </executions>
+</plugin>
 				
 ```
+
+This set-up will then compile every java class to .class file (ie compile it). This should let you be independent of resources tag which isn't supposed to be for sources anyway. 
 
 ###### Step 3 ######
 
@@ -574,7 +582,7 @@ This way of separation was adopted from GWTP's own testing samples here : https:
 
 Now when we build ```mvn install``` or test ```mvn test``` the application, all tests will run separately OK. We can also right click the tests themselves in Eclipse > Run As > JUnit Test / GWT JUnit Test all OK.
 
-
+Note: We are not adding JUnit based test sources as a resource in the ```resources``` tag of the POM since we do not want it to be included in the client as JUnit isn't going to be made available on client. 
 
 
 
