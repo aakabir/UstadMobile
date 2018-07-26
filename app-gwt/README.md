@@ -577,6 +577,8 @@ Now when we build ```mvn install``` or test ```mvn test``` the application, all 
 
 
 
+
+
 Since the presenters are being unit tested (which are part of core) separate to GWT, we are focusing on GWT's implementation / GWT specific unit tests. The major chunk of testing will be functional testing the web server. 
 
 The most recommended way forward is by the use of Selenium and WebDriver via page objects. 

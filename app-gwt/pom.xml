@@ -68,10 +68,11 @@
 			 
 	<!--  Questionable Use of Sources as Resources starts -->
 			<!--  -->
-			<resource>
+			
+			<!-- <resource>
 				<directory>src/test/java</directory>
 			</resource>
-			
+			-->
 			
 			<resource>
 		    	<directory>src-json/main/java</directory>
@@ -122,6 +123,30 @@
 
         <plugins>
         
+        	<!-- Maven Compiler Plugin: Compiles the sources of this project -->
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-compiler-plugin</artifactId>
+                <version>${maven-compiler-plugin.version}</version>
+                <configuration>
+                    <source>${target.jdk}</source>
+                    <target>${target.jdk}</target>
+                    <encoding>UTF-8</encoding>
+                    
+                    <!-- According to this: 
+		           	https://stackoverflow.com/questions/270445/
+		           	
+		           	Also added to the main maven-compiler-plugin since 
+		           	Maven warns about multiple instances of maven-compiler-plugin
+		           	-->
+                    <includes>
+                 		<include>src/main/java</include>
+                 		<include>core-src/main/java</include>
+                 		<!-- <include>src/test/java</include> -->
+              		</includes>
+                </configuration>
+            </plugin>
+        
         	<!-- 'mvn test' - runs the non GWT tests (*Test.java) -->
             <!-- Attempt to not let GWTTestCase tests (*GwtTest.java) run on mvn test -->
             <plugin>
@@ -169,28 +194,7 @@
             </plugin>
         
         
-        	<!-- Maven Compiler Plugin: Compiles the sources of this project -->
-            <plugin>
-                <groupId>org.apache.maven.plugins</groupId>
-                <artifactId>maven-compiler-plugin</artifactId>
-                <version>${maven-compiler-plugin.version}</version>
-                <configuration>
-                    <source>${target.jdk}</source>
-                    <target>${target.jdk}</target>
-                    <encoding>UTF-8</encoding>
-                    
-                    <!-- According to this: 
-		           	https://stackoverflow.com/questions/270445/
-		           	
-		           	Also added to the main maven-compiler-plugin since 
-		           	Maven warns about multiple instances of maven-compiler-plugin
-		           	-->
-                    <includes>
-                 		<include>src/main/java</include>
-                 		<include>core-src/main/java</include>
-              		</includes>
-                </configuration>
-            </plugin>
+        	
        
        
        
