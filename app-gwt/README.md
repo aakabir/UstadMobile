@@ -395,25 +395,16 @@ The build output directory is ```<outputDirectory>${webappDirectory}/WEB-INF/cla
 The ```target``` folder also has a folder called ```gwtapp``` this is where the converted javascript files are located with mappings that get run on client (thats what GWT is all about). 
 
 ###### resources ######
-Resources are copied as is to the project output in their respective package folders. We are also coping sources. GWT also has a primary way to copy sources and add classes and packages to client source in its main app .gwt.xml file. 
+Resources are copied as is to the project output in their respective package folders. We are NOT coping sources. GWT has a way to copy sources and the process to copy external sources is in another topic in this documentation. While we could get away, resources are mostly not for sources and we are following that procedure over here. However this is still useful for any kind of assets / resources to be copied in to the client side. 
 
 ```
 <resource>
 	<directory>src/main/resources</directory>
 </resource>
-
-<resource>
-	<directory>${project.basedir}/core-src/main/java</directory>
-</resource>
+...
 ```
 
-As you can see above, we are adding sources as well in resources. 
-
-TODO: Check this and update. 
-
 ...
-
-
 
 ###### plugins ######
 Plugins are integral part of the project to run. They differ with dependencies as they are more core to the maven project. For UstadMobileGWT we are using the plugins:
@@ -487,11 +478,35 @@ This set-up will then compile every java class to .class file (ie compile it). T
 
 ###### Step 3 ######
 
-TODO: Something about .gwt.xml file ?
+Step 2 was to add the sources into GWT for Maven's sake. However, we still need to create the ```.gwt.xml``` files for GWT. Without this, GWT will complain when you compile the GWT way or when Maven compiles the GWT way with the maven gwt plugin in the application. 
 
-...
+The location of this additional source's ```.gwt.xml``` can be anywhere and probably better to put it in the parent source's resources  ```src/main/resources``` folder so that it is a: in the same ```src``` folder as the MAIN application's ```.gwt.xml``` and b: its separate from the java source files and all resources can be put here even if the actual source files live in another source folder outside ```src```. 
 
-###### Step 99 ######
+Here is how the additional source's ```.gwt.xml``` file might look like:
+
+```
+<?xml version="1.0" encoding="UTF-8"?>
+<!--
+  When updating your version of GWT, you should also update this DTD reference,
+  so that your app can take advantage of the latest GWT module capabilities.
+-->
+<!DOCTYPE module PUBLIC "-//Google Inc.//DTD Google Web Toolkit 2.7.0//EN"
+  "http://www.gwtproject.org/doctype/2.8.0/gwt-module.dtd">
+
+<module >
+	<!-- Add all of core to source path -->
+	<source path='core'>
+	</source>
+
+	<!-- allow Super Dev Mode -->
+	<add-linker name="xsiframe"/>
+</module>
+
+```
+
+Its quite simple and all it does is reference the folder where the source will be relative to the package where this xml is. For example the above ```.gwt.xml``` file is located in : ```src/main/resources/com/ustadmobile/Core.gwt.xml``` . Core's sources are located in ```core-src/main/java/com/ustadmobile/core``` . When it all comes together in the same package after compilation, the ```Core.gwt.xml``` and the ```core``` source package is relatively in the same location. Thats why it works well. 
+
+###### Step 4 ######
 
 Re build the project: ```mvn clean``` and ```mvn install```.
 
@@ -584,7 +599,7 @@ Now when we build ```mvn install``` or test ```mvn test``` the application, all 
 
 Note: We are not adding JUnit based test sources as a resource in the ```resources``` tag of the POM since we do not want it to be included in the client as JUnit isn't going to be made available on client. 
 
-
+...
 
 
 Since the presenters are being unit tested (which are part of core) separate to GWT, we are focusing on GWT's implementation / GWT specific unit tests. The major chunk of testing will be functional testing the web server. 
