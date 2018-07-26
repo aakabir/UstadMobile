@@ -1,0 +1,4 @@
+# Module com.ustadmobile.port.gwt.gwtapp.JUnit
+# RPC service class, partial path of RPC policy file
+com.google.gwt.logging.shared.RemoteLoggingService, 341328A94A140BD3E22935B1D4EB6329.gwt.rpc
+com.google.gwt.junit.client.impl.JUnitHost, 96393FD5B90EFD77EACE5B4F721C3D47.gwt.rpc

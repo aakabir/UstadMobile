@@ -6,15 +6,8 @@
     <groupId>com.ustadmobile.port.gwt</groupId>
     <artifactId>ustadmobile-gwtp</artifactId>
     <version>1.0-SNAPSHOT</version>
-
-	
-	<!-- 
-	<modules>
-        <module>json</module>
-	</modules>
-	 -->
 	 
-    <packaging>war</packaging>
+    <packaging>war</packaging>	<!-- Demonstrated the kind of packaging. GWT uses war -->
     <name>UstadMobile GWTP with Material Design</name>
     <url>https://github.com/UstadMobile/UstadMobile</url>
 
@@ -33,14 +26,17 @@
         
 
 		<!-- GWT Material -->
-	<gwt-material.version>2.0</gwt-material.version>
+		<gwt-material.version>2.0</gwt-material.version>
         <gwt-material-table.version>2.0</gwt-material-table.version>
       
       	<gwt.style>OBF</gwt.style>
       	
+      	<!-- Maven Surefire Plugin for tests -->
+      	<maven.surefire.version>2.12</maven.surefire.version>
+      	
         <!-- maven -->
         <maven-war-plugin.version>2.6</maven-war-plugin.version>
-        <maven-compiler-plugin.version>3.3</maven-compiler-plugin.version>
+        <maven-compiler-plugin.version>3.7.0</maven-compiler-plugin.version>
 
 		<!-- JDK -->
         <target.jdk>1.8</target.jdk>
@@ -48,7 +44,7 @@
         <webappDirectory>${project.build.directory}/${project.build.finalName}</webappDirectory>
     </properties>
 
-	<!-- Repositories for Central and Sonatype Nexus for GWT Material? -->
+	<!-- Repositories for Maven Central and Sonatype Nexus for GWTP -->
 	<repositories>
         <repository>
             <id>central</id>
@@ -61,12 +57,6 @@
             <url>https://oss.sonatype.org/content/repositories/snapshots</url>
         </repository>
     </repositories>
-    
-    <!-- 
-    <compileSourcesArtifacts>
-	  <compileSourcesArtifact>groupId:artifactId</compileSourcesArtifact>
-	<compileSourcesArtifacts>
-	 -->
 	 
     <build>
         <outputDirectory>${webappDirectory}/WEB-INF/classes</outputDirectory>
@@ -76,6 +66,13 @@
                 <directory>src/main/resources</directory>
             </resource>
 			 
+	<!--  Questionable Use of Sources as Resources starts -->
+			<!--  -->
+			<resource>
+				<directory>src/test/java</directory>
+			</resource>
+			
+			
 			<resource>
 		    	<directory>src-json/main/java</directory>
 			</resource>
@@ -88,153 +85,78 @@
 		    	<directory>src-xpp/main/java</directory>
 			</resource>
 			
-			<!-- Add Core source as per linked in Java build paths-->
 			<resource>
-			    <directory>core-src/main/java</directory>
+			    <directory>${project.basedir}/core-src/main/java</directory>
 			</resource>
-			<!-- Add Core source relative to project directory -->	  
+
 			<resource>
 				<directory>${project.basedir}/core-src/main/java</directory>
 			</resource>
 			
-			<!-- Add Lib database annotation source as per linked in Java build paths-->
 			<resource>
 			    <directory>lib-database-annotation-src/main/java</directory>
 			</resource>
-			<!-- Add Lib database annotation source relative to project directory -->	  
 			<resource>
 				<directory>${project.basedir}/lib-database-annotation-src/main/java</directory>
 			</resource>
 			
-			<!-- Add Lib database source as per linked in Java build paths-->
 			<resource>
 			    <directory>lib-database-src/main/java</directory>
 			</resource>
-			<!-- Add Lib database source relative to project directory -->	  
 			<resource>
 				<directory>${project.basedir}/lib-database-src/main/java</directory>
 			</resource>
 			
-			<!-- Add Lib util source as per linked in Java build paths-->
 			<resource>
 			    <directory>lib-util-src/main/java</directory>
 			</resource>
-			<!-- Add Lib util source relative to project directory -->	  
 			<resource>
 				<directory>${project.basedir}/lib-util-src/main/java</directory>
 			</resource>
-		
+
+			<!-- -->
+
+	<!--  Questionable Use of Sources as Resources ends-->
 			
         </resources>
 
         <plugins>
         
-        	<!-- Maven -->
+        	<!-- 'mvn test' - runs the non GWT tests (*Test.java) -->
+            <!-- Attempt to not let GWTTestCase tests (*GwtTest.java) run on mvn test -->
             <plugin>
-                <groupId>org.apache.maven.plugins</groupId>
-                <artifactId>maven-compiler-plugin</artifactId>
-                <version>${maven-compiler-plugin.version}</version>
-                <configuration>
-                    <source>${target.jdk}</source>
-                    <target>${target.jdk}</target>
-                    <encoding>UTF-8</encoding>
-                </configuration>
-            </plugin>
-            
-            <!-- Adding additional source : core to this maven  -->
-            <plugin>
-               <groupId>org.apache.maven.plugins</groupId>
-                  <artifactId>maven-compiler-plugin</artifactId>
-                    <configuration>
-                    	<source>core-src/main/java</source>
-                       <includes>
-                      <include>core-src/main/java</include>
-                    </includes>
-                    
-                    </configuration>
-             </plugin>
-             
-            <!-- Adding additional source : lib database annotation to this maven  -->
-			<plugin>
-               <groupId>org.apache.maven.plugins</groupId>
-                  <artifactId>maven-compiler-plugin</artifactId>
-                    <configuration>
-                    	<source>lib-database-annotation-src/main/java</source>
-                       	<includes>
-                      		<include>lib-database-annotation-src/main/java</include>
-                       	</includes>
-                    </configuration>
-             </plugin>
-             
-            <!-- Adding additional source : lib database to this maven  -->
-			<plugin>
-               <groupId>org.apache.maven.plugins</groupId>
-                  <artifactId>maven-compiler-plugin</artifactId>
-                    <configuration>
-                    	<source>lib-database-src/main/java</source>
-                       	<includes>
-                      		<include>lib-database-src/main/java</include>
-                       	</includes>
-                    </configuration>
-             </plugin>
-             
-             <!-- Adding additional source : lib util to this maven  -->
-			<plugin>
-               <groupId>org.apache.maven.plugins</groupId>
-                  <artifactId>maven-compiler-plugin</artifactId>
-                    <configuration>
-                    	<source>lib-util-src/main/java</source>
-                       	<includes>
-                      		<include>lib-util-src/main/java</include>
-                       	</includes>
-                    </configuration>
-             </plugin>
-             
-             
-             
-             <!-- Adding additional source : xmlpull gwt to this maven  -->
-             
-            <plugin>
-               <groupId>org.apache.maven.plugins</groupId>
-                  <artifactId>maven-compiler-plugin</artifactId>
-                    <configuration>
-                    	<source>src-xpp/main/java</source>
-                       <includes>
-                      <include>src-xpp/main/java</include>
-                    </includes>
-                    
-                    </configuration>
-             </plugin>
-            
-            
-            <!-- GWT -->
+				<groupId>org.apache.maven.plugins</groupId>
+				<artifactId>maven-surefire-plugin</artifactId>
+				<version>${maven.surefire.version}</version>
+				<configuration>
+				    <includes>
+				    	<include>**/*Test.java</include>
+				    </includes>
+				    <excludes>
+				    	<exclude>**/*GwtTest.java</exclude>
+				    </excludes>
+				</configuration>
+			</plugin>
+			
+			<!-- 'mvn gwt:run' - runs development mode -->
+			<!-- 'mvn gwt:debug' - runs debug mode -->
+			<!-- 'mvn gwt:compile' - compiles gwt -->
+			<!-- 'mvn integration-test' - runs the gwt tests (*GwtTest.java) -->
+			
+			<!-- GWT Maven Plugin : Running GWTTestCase only -->
             <plugin>
                 <groupId>org.codehaus.mojo</groupId>
                 <artifactId>gwt-maven-plugin</artifactId>
                 <version>${gwt.version}</version>
                 <configuration>
                     <strict>true</strict>
-
                     <testTimeOut>180</testTimeOut>
                     <mode>htmlunit</mode>
                     <includes>**/*GwtTest.java</includes>
-
                     <logLevel>INFO</logLevel>
-
                     <runTarget>index.html</runTarget>
-                    <module>com.ustadmobile.port.gwt.gwtapp</module>
-                    
-                    <!-- Won't work as it needs an Entry point. 
-                    	Only ideal for external GWT projects -->
-                    <!-- <module>com.ustadmobile.Core</module>  -->
-                    
-                    <!-- Trying to tell maven to compile sources from core project -->
-                    <compileSourcesArtifacts>
-					  <compileSourcesArtifact>com.ustadmobile.core:core</compileSourcesArtifact>
-					</compileSourcesArtifacts>
-					
-					
-					
+                    <module>com.ustadmobile.port.gwt.gwtapp</module>		
+                    		
                 </configuration>
                 <executions>
                     <execution>
@@ -245,6 +167,132 @@
                     </execution>
                 </executions>
             </plugin>
+        
+        
+        	<!-- Maven Compiler Plugin: Compiles the sources of this project -->
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-compiler-plugin</artifactId>
+                <version>${maven-compiler-plugin.version}</version>
+                <configuration>
+                    <source>${target.jdk}</source>
+                    <target>${target.jdk}</target>
+                    <encoding>UTF-8</encoding>
+                    
+                    <!-- According to this: 
+		           	https://stackoverflow.com/questions/270445/
+		           	
+		           	Also added to the main maven-compiler-plugin since 
+		           	Maven warns about multiple instances of maven-compiler-plugin
+		           	-->
+                    <includes>
+                 		<include>src/main/java</include>
+                 		<include>core-src/main/java</include>
+              		</includes>
+                </configuration>
+            </plugin>
+       
+       
+       
+            
+            	
+	<!--  Questionable USE of sources start -->
+            
+            <!-- Adding additional source : core to this maven  -->
+            <!--
+            <plugin>
+               <groupId>org.apache.maven.plugins</groupId>
+                  <artifactId>maven-compiler-plugin</artifactId>
+                  <version>${maven-compiler-plugin.version}</version>
+					<configuration>
+                    	<source>core-src/main/java</source>
+                       	<includes>
+                      		<include>core-src/main/java</include>
+                    	</includes>
+                    </configuration>
+            </plugin>
+            -->
+            
+            <!-- Adding additional source : lib database annotation to this maven  -->
+            <!--
+			<plugin>
+               <groupId>org.apache.maven.plugins</groupId>
+                  <artifactId>maven-compiler-plugin</artifactId>
+                  <version>${maven-compiler-plugin.version}</version>
+                    <configuration>
+                    	<source>lib-database-annotation-src/main/java</source>
+                       	<includes>
+                      		<include>lib-database-annotation-src/main/java</include>
+                       	</includes>
+                    </configuration>
+            </plugin>
+            -->
+             
+            <!-- Adding additional source : lib database to this maven  -->
+            <!--
+			<plugin>
+               <groupId>org.apache.maven.plugins</groupId>
+                  <artifactId>maven-compiler-plugin</artifactId>
+                  <version>${maven-compiler-plugin.version}</version>
+                    <configuration>
+                    	<source>lib-database-src/main/java</source>
+                       	<includes>
+                      		<include>lib-database-src/main/java</include>
+                       	</includes>
+                    </configuration>
+             </plugin>
+           	-->
+             
+            <!-- Adding additional source : lib util to this maven  -->
+			<!--
+			<plugin>
+               <groupId>org.apache.maven.plugins</groupId>
+                  <artifactId>maven-compiler-plugin</artifactId>
+                  <version>${maven-compiler-plugin.version}</version>
+                    <configuration>
+                    	<source>lib-util-src/main/java</source>
+                       	<includes>
+                      		<include>lib-util-src/main/java</include>
+                       	</includes>
+                    </configuration>
+            </plugin>
+            -->
+            
+			<!-- Adding additional source : xmlpull gwt to this maven  -->
+            <!--
+            <plugin>
+            	<groupId>org.apache.maven.plugins</groupId>
+				<artifactId>maven-compiler-plugin</artifactId>
+				<version>${maven-compiler-plugin.version}</version>
+				<configuration>
+                	<source>src-xpp/main/java</source>
+                  	<includes>
+                 		<include>src-xpp/main/java</include>
+              		</includes>
+                
+                </configuration>
+             </plugin>
+             -->
+             
+            <!-- Adding additional source : Test sources to this maven  -->
+            <!--
+            <plugin>
+            	<groupId>org.apache.maven.plugins</groupId>
+				<artifactId>maven-compiler-plugin</artifactId>
+				<version>${maven-compiler-plugin.version}</version>
+				<configuration>
+                	<source>src/test/java</source>
+                  	<includes>
+                 		<include>src/test/java</include>
+              		</includes>
+				</configuration>
+            </plugin>
+            -->
+            
+	<!--  Questionable USE of sources ends -->
+              
+              
+              
               
         </plugins>
     </build>
@@ -342,6 +390,24 @@
 		    <version>2.3.0</version>
 		</dependency>
 
+		<!-- Selenium Java Drivers -->
+		<!-- https://mvnrepository.com/artifact/org.seleniumhq.selenium/selenium-java -->
+		<dependency>
+		    <groupId>org.seleniumhq.selenium</groupId>
+		    <artifactId>selenium-java</artifactId>
+		    <version>3.13.0</version>
+		</dependency>
+		
+		<!-- Selenium Java Client Drivers -->
+		<!-- https://mvnrepository.com/artifact/org.seleniumhq.selenium.client-drivers/selenium-java-client-driver -->
+		<dependency>
+		    <groupId>org.seleniumhq.selenium.client-drivers</groupId>
+		    <artifactId>selenium-java-client-driver</artifactId>
+		    <version>1.0.2</version>
+		    <scope>test</scope>
+		</dependency>
+				
+		
 				
     </dependencies>
 </project>

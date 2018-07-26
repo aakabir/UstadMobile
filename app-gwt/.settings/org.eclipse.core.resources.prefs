@@ -1,5 +1,8 @@
 eclipse.preferences.version=1
 encoding//core-src/main/java=UTF-8
+encoding//lib-database-annotation-src/main/java=UTF-8
+encoding//lib-database-src/main/java=UTF-8
+encoding//lib-util-src/main/java=UTF-8
 encoding//src-jre/main/java=UTF-8
 encoding//src-json/main/java=UTF-8
 encoding//src-xpp/main/java=UTF-8

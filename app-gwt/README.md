@@ -49,6 +49,78 @@ Add a new run configuration in eclipse - this will be the config that runs the g
 If you didnt do the command line tools, you can right click the project and select : Run As > Maven clean.. and then Run As > Maven install..
 Then click the Run icon dropdown and select app-gwt GWT Run to run the application. This will open a Jetty instance after successful build and compilation. You can tell launch the application and see where it is at now in development. 
 
+#### Getting Started with GWTP and GWT-Material ####
+
+This explains how we got to this project. The documentation on both of them took a while getting used to- so here are my notes in setting up a project like this. 
+
+We first use GWT-Material's documentation and build the archetype: 
+
+```mvn archetype:generate -DarchetypeGroupId=com.github.gwtmaterialdesign -DarchetypeArtifactId=gwt-material-archetype -DarchetypeVersion=2.0```
+
+On Windows, ```archetypeVersion=2.1``` does not work and complains about some missing bits. Setting that to version 2.0 seems okay as of today (July 2018). After this, enter in the necessary artifact and group Ids. Here is an example to understand how it could be:
+
+```
+Define value for property 'groupId': com.varuna.port.gwt
+[INFO] Using property: groupId = com.varuna.port.gwt
+Define value for property 'artifactId': gwtbasicapp
+[INFO] Using property: artifactId = gwtbasicapp
+[INFO] Using property: version = 1.0-SNAPSHOT
+Define value for property 'package' com.varuna.port.gwt.gwtbasicapp: :
+```
+
+Note: Make sure that your artifactId does not have any hyphens "-" that will mess up the way the sources are set in the Eclipse project. While you can solve this, it would be easier to just have one continuous string as the artifactId instead. 
+
+This will create a folder ```gwtbasicapp``` which is the project that can be opened in Eclipse (what I'm using - however can be opened in IntelliJ as well). 
+
+Note: Eclipse and GWT needs the GWT plugin to work best together. 
+
+The XMLS auto-generated might be throwing a warning. To solve that, we need to replace the ```DOCTYPE``` url in the XML's header with the new URL. 
+
+From this:
+
+```
+<!DOCTYPE module PUBLIC "-//Google Inc.//DTD Google Web Toolkit 2.7.0//EN"
+        "http://gwtproject.org/doctype/2.7.0/gwt-module.dtd">
+```
+
+to this:
+
+```
+<!DOCTYPE module PUBLIC "-//Google Inc.//DTD Google Web Toolkit 2.7.0//EN"
+        "http://www.gwtproject.org/doctype/2.8.0/gwt-module.dtd">
+```
+
+Then the whole project in the IDE does not complain. 
+
+Regarding testing, we need to set it up such that maven runs our tests separately.  This is explained in the Testing section of this document. 
+
+#### Linking additional sources on GWT + GWTP + Maven ####
+
+Our project has a mix of implementations, core, replacement sources and libraries that are all sources to the GWT project. They all need to be compiled on client and this is how we are doing it. 
+
+...
+
+If you want to link external source's jar files (that do NOT have ```*.java``` files) in maven, we need to add the ```compileSourcesArtifacts``` tag to the ```configuration``` tag of ```gwt-maven-plugin``` plugin. 
+
+```
+<plugin>
+	<artifactId>gwt-maven-plugin</artifactId>
+	...
+	<configuration>
+		...
+        <compileSourcesArtifacts>
+            <compileSourcesArtifact>com.something.proj:Name</compileSourcesArtifact>
+        </compileSourcesArtifacts>
+	...
+	
+```
+
+
+
+...
+
+
+
 
 #### Project Structure ####
 For clarity and sanity, here is how the project is structured right now.
@@ -176,11 +248,11 @@ But we are only declaring the panel in the parent and no content yet. We aren't 
 The main ApplicationPresenter class has the logic for everything to do with GWT application start. For now it has some methods to go to different pages of the application and most importantly initiates UstadMobileSystemImpl. 
 
 The presenters for the individual views in their packages are child Presenters here. For eg: AboutPresenter is the child presenter of Application Presenter. It uses its parent presenter (ApplicationPresenter)'s slot to reveal itself. 
- 
+
  ###### What does a GWT Presenter do ? ######
- 
+
  The way to link a Core Presenter to this GWT Presenter is to create a new CorePresenterHandler class (inside the GWT Presenter) that extends the Core Presenter and implements any UiHandlers. In this nested class's constructor we call super with the context and view passed to it. 
- 
+
 ``` 
  public class CoreAboutPresenterHandler 
  	extends com.ustadmobile.core.controller.AboutController	
@@ -192,11 +264,11 @@ The presenters for the individual views in their packages are child Presenters h
 		}
  } 
 ```
- 
+
  This CorePresenterHandler is used to create a ```mController``` object within the GWT Presenter. 
- 
+
  ```mController = new CorePresenterHandler(placeManager, (AboutView)view); ```
- 
+
  This Core presenter (or mController) can be used elsewhere throughout the presenter. We choose to use the placeManager as the context that will get passed around as state. Place managers work as an intermediary between the GWT History API and ProxyPlaceAbstract. It sets up event listener relationships to synchronize them.
 
 The view object is an interface created in the Application Presenter. Every Presenter has two interfaces - MyView and MyProxy. MyView extends GWTP View,  extend any other View and in our case extends our core View.
@@ -293,19 +365,219 @@ public class NameTokens {
 ###### ClientModule.java ######
 This is your main GIN module from which all of the child modules are loaded. It is also where the DefaultPlaceManager is setup. In GWTP, this is the very start of the application. 
 
-##### Database & Repository #####
+##### GWTP and pom.xml #####
+The pom.xml file is important in setting up our GWTP application. Below are the few components that showcases the application properties, its components, how GWT accepts sources and resources, other dependencies, version control and other things. 
+
+Application properties, Version info are defined within the properties tag like so: 
+
+```
+    <!-- App -->
+    <app.id>ustadmobile-gwtp</app.id>
+  	<app.version>1</app.version>
+```
+
+Project properties are defined in the root of the xml:
+
+```
+    <groupId>com.ustadmobile.port.gwt</groupId>
+    <artifactId>ustadmobile-gwtp</artifactId>
+    <version>1.0-SNAPSHOT</version>
+```
+
+The build output as per maven defaults is : 
+```<webappDirectory>${project.build.directory}/${project.build.finalName}</webappDirectory>```
+Where ```project.build.finalName``` resolves to : ${artifactId}-${version} which in our case is: ```target/ustadmobile-gwtp-1.0-SNAPSHOT```
+
+The repositories tag is used her for Maven and Sonatype repositories(for GWTP dependency).
+
+The build output directory is ```<outputDirectory>${webappDirectory}/WEB-INF/classes</outputDirectory>``` which for us is ```target/ustadmobile-gwtp-1.0-SNAPSHOT/WEB-INF/classes/```. This is where the GWT xml files, assets get copied as well as any resources (source code files included) specified in the pom.xml to be copied. 
+
+The ```target``` folder also has a folder called ```gwtapp``` this is where the converted javascript files are located with mappings that get run on client (thats what GWT is all about). 
+
+###### resources ######
+Resources are copied as is to the project output in their respective package folders. We are also coping sources. GWT also has a primary way to copy sources and add classes and packages to client source in its main app .gwt.xml file. 
+
+```
+<resource>
+	<directory>src/main/resources</directory>
+</resource>
+
+<resource>
+	<directory>${project.basedir}/core-src/main/java</directory>
+</resource>
+```
+
+As you can see above, we are adding sources as well in resources. 
+
+TODO: Check this and update. 
+
+...
+
+
+
+###### plugins ######
+Plugins are integral part of the project to run. They differ with dependencies as they are more core to the maven project. For UstadMobileGWT we are using the plugins:
+
+1. ```maven-surefire-plugin``` for testing JUnit tests.
+
+2. ```gwt-maven-plugin``` the GWT Maven plugin for testing GWTTestCase tests as well.
+
+3. ```maven-compiler-plugin``` compiles sources in the application in Maven. 
+
+   Note: There can only be one instance of Maven Compiler Plugin. Additional sources and includes must be in the same one instance in the xml. While the project would compile, it throws a WARNING. 
+
+```
+<!-- Maven Compiler Plugin: Compiles the sources of this project -->
+<plugin>
+    <groupId>org.apache.maven.plugins</groupId>
+    <artifactId>maven-compiler-plugin</artifactId>
+    <version>${maven-compiler-plugin.version}</version>
+    <configuration>
+        <source>${target.jdk}</source>
+        <target>${target.jdk}</target>
+        <encoding>UTF-8</encoding>
+        
+        <!-- According to this: 
+        https://stackoverflow.com/questions/270445/
+        Also added to the main maven-compiler-plugin since 
+        Maven warns about multiple instances of maven-compiler-plugin
+        -->
+        <includes>
+            <include>src/main/java</include>
+            <include>core-src/main/java</include>
+        </includes>
+    </configuration>
+</plugin>
+```
+
+
+##### Adding an external class/package to the GWT client #####
+
+###### Step 1 ######
+Add the directory of the source as a resource in the pom.xml file.
+```
+<resource>
+	<directory>${project.basedir}/src/test/main/java</directory>
+</resource>
+```
+
+###### Step 2 ######
+
+Add the source to let Maven ```maven-compiler-plugin``` know you are going to compile it. 
+
+```
+<plugin>
+	...
+		<configuration>
+			...
+				<includes>
+					...
+					<include>srcnew/main/java</include>
+					...
+				
+```
+
+###### Step 3 ######
+
+TODO: Something about .gwt.xml file ?
+
+...
+
+###### Step 99 ######
+
+Re build the project: ```mvn clean``` and ```mvn install```.
+
+#### Database & Repository ####
 
 All the GWT DB components lie in the sub package ```db```. 
 
-##### GWT Implementation of Core #####
+TODO: this
+
+...
+
+#### GWT Implementation of Core ####
 All the implementations specific to GWT lie in the ```impl``` sub package, etc.
+
+TODO: this.
+
+...
 
 ##### Overall Flow of the Application #####
 ![OPDS Catalog](images/UstadMobileGWT03.PNG "Application Flow")
 
 
 #### Testing on GWT ####
-Since the presenters are being unit tested (which are part of core) seperate to GWT, we are focusing on GWT's implementation / GWT specific unit tests. The major chunk of testing will be functional testing the web server. 
+
+According to GWT, we can use its build.xml script (used by ant) to set up classes in the test section. However were using GWTP which replaces the ant system with Maven. 
+
+According to GWT's docs, tests are stored in ```test``` folder in root (same as ```src```) but because of our structure, were taking the Android approach and storing tests in ```src/test/main/java/```. Test classes in GWT extend GWTTestCase and are run via JUnit. 
+
+In Eclipse, we include the test package in ```src/test/java``` as a source. If we have it Output to ```target/test-classes``` in the project properties for that source, maven will complain. Outputting to the default location will make maven work OK which is ```target/ustadmobile-gwtp-1.0-SNAPSHOT/WEB-INF/classes```.
+
+ We need to add the separation of Maven tests between JUnit and GWTTestCase tests. While we can still right-click a GWTTestCase in Eclipse and Run-as > GWT JUnit Test OK, Maven doesn't run it. GWT's ```GWTTestCase``` doesn't gel well with GWTP's configuration in the pom.xml, so we are going to separate those tests out. By the end of this step we will have normal JUnit tests and GWTTestCase tests running every time after every ```mvn install``` or ```mvn test```. 
+
+We have decided to name all GWTTestCase tests with the suffix ```*GwtTest.java``` and all JUnit tests with the suffix ```*Test.java```. Eg: ```RPCGwtTest.java``` and ```MathTest.java```.
+
+We are going to include Maven Surfire Plugin in the project. This plugin is used during the ```test``` phase of the build lifecycle to execute the unit tests and it generates reports in both ```txt``` and ```xml``` formats. Include it in the pom.xml's properties tag like so. 
+
+```
+<maven.surfire.version>2.12</maven.surfire.version>
+```
+
+In the ```plugins``` tag of pom.xml, we use the plugin like so:
+
+```
+<plugin>
+    <groupId>org.apache.maven.plugins</groupId>
+    <artifactId>maven-surefire-plugin</artifactId>
+    <version>${maven.surfire.version}</version>
+    <configuration>
+        <includes>
+        	<include>**/*Test.java</include>
+        </includes>
+        <excludes>
+        	<exclude>**/*GwtTest.java</exclude>
+        </excludes>
+    </configuration>
+</plugin>
+```
+
+As per the the above configuration, the direct ```mvn test``` command will run all tests excluding the ```GWTTestCase``` tests. For those, we edit the ```gwt-maven-plugin``` plugin entry as so:
+
+```
+<plugin>
+    <groupId>org.codehaus.mojo</groupId>
+    <artifactId>gwt-maven-plugin</artifactId>
+    <version>${gwt.version}</version>
+    <configuration>
+        <testTimeOut>180</testTimeOut>
+        <mode>htmlunit</mode>
+        <includes>**/*GwtTest.java</includes>
+        <logLevel>INFO</logLevel>
+        <runTarget>index.html</runTarget>
+        <module>com.varuna.port.gwt.gwtbasicapp.GwtMaterialBasic</module>
+    </configuration>
+    <executions>
+        <execution>
+            <goals>
+                <goal>compile</goal>
+                <goal>test</goal>
+            </goals>
+        </execution>
+    </executions>
+</plugin>
+```
+
+This will run the ```*GwtTest.java``` tests only which will work OK. 
+
+This way of separation was adopted from GWTP's own testing samples here : https://github.com/ArcBees/GWTP-Samples/blob/master/gwtp-samples/
+
+Now when we build ```mvn install``` or test ```mvn test``` the application, all tests will run separately OK. We can also right click the tests themselves in Eclipse > Run As > JUnit Test / GWT JUnit Test all OK.
+
+
+
+
+Since the presenters are being unit tested (which are part of core) separate to GWT, we are focusing on GWT's implementation / GWT specific unit tests. The major chunk of testing will be functional testing the web server. 
 
 The most recommended way forward is by the use of Selenium and WebDriver via page objects. 
 

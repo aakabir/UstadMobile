@@ -860,6 +860,41 @@ interface Binder extends UiBinder&lt;Widget, AboutView&gt; {
 </code></pre> 
 <h6> <a id="clientmodulejava" class="anchor" href="#clientmodulejava" aria-hidden="true"><span aria-hidden="true" class="octicon octicon-link"></span></a>ClientModule.java</h6> 
 <p>This is your main GIN module from which all of the child modules are loaded. It is also where the DefaultPlaceManager is setup. In GWTP, this is the very start of the application.</p> 
+<h5> <a id="gwtp-and-pomxml" class="anchor" href="#gwtp-and-pomxml" aria-hidden="true"><span aria-hidden="true" class="octicon octicon-link"></span></a>GWTP and pom.xml</h5> 
+<p>The pom.xml file is important in setting up our GWTP application. Below are the few components that showcases the application properties, its components, how GWT accepts sources and resources, other dependencies, version control and other things.</p> 
+<p>Application properties, Version info are defined within the properties tag like so:</p> 
+<pre><code>    &lt;!-- App --&gt;
+    &lt;app.id&gt;ustadmobile-gwtp&lt;/app.id&gt;
+  	&lt;app.version&gt;1&lt;/app.version&gt;
+</code></pre> 
+<p>Project properties are defined in the root of the xml:</p> 
+<pre><code>    &lt;groupId&gt;com.ustadmobile.port.gwt&lt;/groupId&gt;
+    &lt;artifactId&gt;ustadmobile-gwtp&lt;/artifactId&gt;
+    &lt;version&gt;1.0-SNAPSHOT&lt;/version&gt;
+</code></pre> 
+<p>The build output as per maven defaults is : <code>&lt;webappDirectory&gt;${project.build.directory}/${project.build.finalName}&lt;/webappDirectory&gt;</code> Where <code>project.build.finalName</code> resolves to : ${artifactId}-${version} which in our case is: <code>target/ustadmobile-gwtp-1.0-SNAPSHOT</code></p> 
+<p>The repositories tag is used her for Maven and Sonatype repositories(for GWTP dependency).</p> 
+<p>The build output directory is <code>&lt;outputDirectory&gt;${webappDirectory}/WEB-INF/classes&lt;/outputDirectory&gt;</code> which for us is <code>target/ustadmobile-gwtp-1.0-SNAPSHOT/WEB-INF/classes/</code>. This is where the GWT xml files, assets get copied as well as any resources (source code files included) specified in the pom.xml to be copied.</p> 
+<p>The <code>target</code> folder also has a folder called <code>gwtapp</code> this is where the converted javascript files are located with mappings that get run on client (thats what GWT is all about).</p> 
+<h6> <a id="resources" class="anchor" href="#resources" aria-hidden="true"><span aria-hidden="true" class="octicon octicon-link"></span></a>resources</h6> 
+<p>Resources are copied as is to the project output in their respective package folders. We are also coping sources. GWT also has a primary way to copy sources and add classes and packages to client source in its main app .gwt.xml file.</p> 
+<h6> <a id="plugins" class="anchor" href="#plugins" aria-hidden="true"><span aria-hidden="true" class="octicon octicon-link"></span></a>plugins</h6> 
+<p>Plugins are integral part of the project to run. They differ with dependencies as they are more core to the maven project. The maven plugin has multiple additional sources associated with it that are outside the main <code>src</code> source. This tells maven to compile this source when run. We do the same for all kinds of sources in the project. Like so:</p> 
+<pre><code>&lt;!-- Adding additional source : core to this maven  --&gt;
+&lt;plugin&gt;
+   &lt;groupId&gt;org.apache.maven.plugins&lt;/groupId&gt;
+      &lt;artifactId&gt;maven-compiler-plugin&lt;/artifactId&gt;
+		&lt;configuration&gt;
+        	&lt;source&gt;core-src/main/java&lt;/source&gt;
+           	&lt;includes&gt;
+          		&lt;include&gt;core-src/main/java&lt;/include&gt;
+        	&lt;/includes&gt;
+        &lt;/configuration&gt;
+ &lt;/plugin&gt;
+</code></pre> 
+<h5> <a id="adding-an-external-classpackage-to-the-gwt-client" class="anchor" href="#adding-an-external-classpackage-to-the-gwt-client" aria-hidden="true"><span aria-hidden="true" class="octicon octicon-link"></span></a>Adding an external class/package to the GWT client</h5> 
+<h6> <a id="step-1" class="anchor" href="#step-1" aria-hidden="true"><span aria-hidden="true" class="octicon octicon-link"></span></a>Step 1</h6> 
+<p>Add the</p> 
 <h5> <a id="database--repository" class="anchor" href="#database--repository" aria-hidden="true"><span aria-hidden="true" class="octicon octicon-link"></span></a>Database &amp; Repository</h5> 
 <p>All the GWT DB components lie in the sub package <code>db</code>.</p> 
 <h5> <a id="gwt-implementation-of-core" class="anchor" href="#gwt-implementation-of-core" aria-hidden="true"><span aria-hidden="true" class="octicon octicon-link"></span></a>GWT Implementation of Core</h5> 
@@ -867,7 +902,9 @@ interface Binder extends UiBinder&lt;Widget, AboutView&gt; {
 <h5> <a id="overall-flow-of-the-application" class="anchor" href="#overall-flow-of-the-application" aria-hidden="true"><span aria-hidden="true" class="octicon octicon-link"></span></a>Overall Flow of the Application</h5> 
 <p><a href="images/UstadMobileGWT03.PNG" target="_blank"><img src="images/UstadMobileGWT03.PNG" alt="OPDS Catalog" title="Application Flow" style="max-width:100%;" /></a></p> 
 <h4> <a id="testing-on-gwt" class="anchor" href="#testing-on-gwt" aria-hidden="true"><span aria-hidden="true" class="octicon octicon-link"></span></a>Testing on GWT</h4> 
-<p>Since the presenters are being unit tested (which are part of core) seperate to GWT, we are focusing on GWT's implementation / GWT specific unit tests. The major chunk of testing will be functional testing the web server.</p> 
+<p>According to GWT, we can use its build.xml script (used by ant) to set up classes in the test section. However were using GWTP which replaces the ant system with Maven.</p> 
+<p>According to GWT's docs, tests are stored in <code>test</code> folder in root (same as <code>src</code>) but because of our structure, were taking the Android approach and storing tests in <code>src/test/main/java/</code>. Test classes in GWT extend GWTTestCase and are run via JUnit.</p> 
+<p>Since the presenters are being unit tested (which are part of core) separate to GWT, we are focusing on GWT's implementation / GWT specific unit tests. The major chunk of testing will be functional testing the web server.</p> 
 <p>The most recommended way forward is by the use of Selenium and WebDriver via page objects.</p>
 </body>
 </html>
