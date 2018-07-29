@@ -24,7 +24,6 @@
         <gwtp.version>1.5.3</gwtp.version> <!--  Update available is: 1.6 -->
         <gin.version>2.1.2</gin.version>
         
-
 		<!-- GWT Material -->
 		<gwt-material.version>2.0</gwt-material.version>
         <gwt-material-table.version>2.0</gwt-material-table.version>
@@ -38,9 +37,23 @@
         <maven-war-plugin.version>2.6</maven-war-plugin.version>
         <maven-compiler-plugin.version>3.7.0</maven-compiler-plugin.version>
         <build-helper-maven-plugin.version>3.0.0</build-helper-maven-plugin.version>
+        
+        <!-- Selenium Versions -->
+        <selenium-java-version>3.13.0</selenium-java-version>
+        <selenium-java-client-driver-version>1.0.2</selenium-java-client-driver-version>
+        <selenium-firefox-driver-version>3.13.0</selenium-firefox-driver-version>
+        <selenium-chrome-driver-version>3.13.0</selenium-chrome-driver-version>
 
 		<!-- JDK -->
         <target.jdk>1.8</target.jdk>
+        <!-- Java Servlet version -->
+        <javax.servlet-api-version>3.1.0</javax.servlet-api-version>
+        <!-- JUnit version -->
+        <junit-version>4.12</junit-version>
+        <!-- kXML version -->
+        <kxml2-version>2.3.0</kxml2-version>
+        <!-- JSON version -->
+        <json-version>20171018</json-version>
 
         <webappDirectory>${project.build.directory}/${project.build.finalName}</webappDirectory>
     </properties>
@@ -197,7 +210,7 @@
         <dependency>
             <groupId>javax.servlet</groupId>
             <artifactId>javax.servlet-api</artifactId>
-            <version>3.1.0</version>
+            <version>${javax.servlet-api-version}</version>
             <scope>provided</scope>
         </dependency>
 
@@ -243,7 +256,7 @@
         <dependency>
             <groupId>junit</groupId>
             <artifactId>junit</artifactId>
-            <version>4.12</version>
+            <version>${junit-version}</version>
             <scope>test</scope>
         </dependency>
         
@@ -251,14 +264,14 @@
 		<dependency>
 		    <groupId>org.json</groupId>
 		    <artifactId>json</artifactId>
-		    <version>20171018</version>
+		    <version>${json-version}</version>
 		</dependency>
 		
 		<!-- kXML Pull Parser -->
 		<dependency>
 		    <groupId>net.sf.kxml</groupId>
 		    <artifactId>kxml2</artifactId>
-		    <version>2.3.0</version>
+		    <version>${kxml2-version}</version>
 		</dependency>
 
 		<!-- Selenium Java Drivers -->
@@ -266,7 +279,7 @@
 		<dependency>
 		    <groupId>org.seleniumhq.selenium</groupId>
 		    <artifactId>selenium-java</artifactId>
-		    <version>3.13.0</version>
+		    <version>${selenium-java-version}</version>
 		</dependency>
 		
 		<!-- Selenium Java Client Drivers -->
@@ -274,9 +287,25 @@
 		<dependency>
 		    <groupId>org.seleniumhq.selenium.client-drivers</groupId>
 		    <artifactId>selenium-java-client-driver</artifactId>
-		    <version>1.0.2</version>
+		    <version>${selenium-java-client-driver-version}</version>
 		    <scope>test</scope>
 		</dependency>
+		
+		<!-- https://mvnrepository.com/artifact/org.seleniumhq.selenium/selenium-firefox-driver -->
+		<dependency>
+		    <groupId>org.seleniumhq.selenium</groupId>
+		    <artifactId>selenium-firefox-driver</artifactId>
+		    <version>${selenium-firefox-driver-version}</version>
+		</dependency>
+		
+		<!-- https://mvnrepository.com/artifact/org.seleniumhq.selenium/selenium-chrome-driver -->
+		<dependency>
+		    <groupId>org.seleniumhq.selenium</groupId>
+		    <artifactId>selenium-chrome-driver</artifactId>
+		    <version>${selenium-chrome-driver-version}</version>
+		</dependency>
+				
+				
 				
 		<!--  
 		<dependency>
