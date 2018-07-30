@@ -87,7 +87,6 @@ public class IndexSeTest {
         assertEquals("gwtapp", driver.getTitle());
         
         
-        
         System.out.println("UMSELOG: Quiting..");
         driver.quit();
         assertEquals("/", "/");
