@@ -98,8 +98,6 @@ Regarding testing, we need to set it up such that maven runs our tests separatel
 
 Our project has a mix of implementations, core, replacement sources and libraries that are all sources to the GWT project. They all need to be compiled on client and this is how we are doing it. 
 
-...
-
 If you want to link external source's jar files (that do NOT have ```*.java``` files) in maven, we need to add the ```compileSourcesArtifacts``` tag to the ```configuration``` tag of ```gwt-maven-plugin``` plugin. 
 
 ```
@@ -115,11 +113,7 @@ If you want to link external source's jar files (that do NOT have ```*.java``` f
 	
 ```
 
-
-
-...
-
-
+For step by step procedure, check out the section: Adding an external class/package to the GWT client. 
 
 
 #### Project Structure ####
@@ -403,8 +397,6 @@ Resources are copied as is to the project output in their respective package fol
 </resource>
 ...
 ```
-
-...
 
 ###### plugins ######
 Plugins are integral part of the project to run. They differ with dependencies as they are more core to the maven project. For UstadMobileGWT we are using the plugins:
