@@ -4,14 +4,11 @@ import com.ustadmobile.core.catalog.contenttype.ContentTypePlugin;
 import com.ustadmobile.core.catalog.contenttype.EPUBTypePlugin;
 import com.ustadmobile.core.catalog.contenttype.ScormTypePlugin;
 import com.ustadmobile.core.catalog.contenttype.XapiPackageTypePlugin;
-import com.ustadmobile.core.epubnav.EPUBNavItem;
 import com.ustadmobile.core.impl.ContainerMountRequest;
 import com.ustadmobile.core.impl.UMLog;
 import com.ustadmobile.core.impl.UmCallback;
-import com.ustadmobile.core.opds.db.UmOpdsDbManager;
 import com.ustadmobile.core.tincan.TinCanResultListener;
 import com.ustadmobile.core.view.AppView;
-import com.ustadmobile.port.javase.opds.db.UmOpdsDbManagerJdbc;
 import com.ustadmobile.port.sharedse.impl.UstadMobileSystemImplSE;
 import com.ustadmobile.port.sharedse.networkmanager.NetworkManager;
 
@@ -21,6 +18,7 @@ import java.io.InputStream;
 import java.net.URL;
 import java.net.URLConnection;
 import java.util.Hashtable;
+import java.util.List;
 
 /**
  * Created by mike on 10/17/17.
@@ -32,14 +30,12 @@ public class UstadMobileSystemImplJavaSe extends UstadMobileSystemImplSE {
 
     private File systemDir;
 
-    private UmOpdsDbManagerJdbc opdsDbManager;
 
     public static final ContentTypePlugin[] SUPPORTED_CONTENT_TYPES = new ContentTypePlugin[] {
             new EPUBTypePlugin(), new XapiPackageTypePlugin(), new ScormTypePlugin()};
 
     public UstadMobileSystemImplJavaSe() {
         logJavaSe = new UMLogJavaSe();
-        opdsDbManager =new UmOpdsDbManagerJdbc();
     }
 
     @Override
@@ -192,19 +188,8 @@ public class UstadMobileSystemImplJavaSe extends UstadMobileSystemImplSE {
     }
 
     @Override
-    public String getUserDetail(String username, int field, Object dbContext) {
-        return null;
-    }
-
-    @Override
     public void mountContainer(ContainerMountRequest request, int id, UmCallback callback) {
 
-    }
-
-    @Override
-    public UmOpdsDbManager getOpdsDbManager() {
-        //TODO: implement me
-        return opdsDbManager;
     }
 
     protected File makeTempDir(String prefix, String suffix) {
@@ -239,5 +224,15 @@ public class UstadMobileSystemImplJavaSe extends UstadMobileSystemImplSE {
     @Override
     public InputStream getAssetSync(Object context, String path) throws IOException {
         return null;
+    }
+
+    @Override
+    public void deleteEntriesAsync(Object context, List<String> entryId, boolean recursive, UmCallback<Void> callback) {
+        //not implemented
+    }
+
+    @Override
+    public void deleteEntries(Object context, List<String> entryId, boolean recursive) {
+
     }
 }

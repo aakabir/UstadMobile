@@ -1,6 +1,6 @@
 package com.ustadmobile.test.sharedse.network;
 
-import com.ustadmobile.core.db.DbManager;
+import com.ustadmobile.core.db.UmAppDatabase;
 import com.ustadmobile.core.db.dao.EntryStatusResponseDao;
 import com.ustadmobile.core.networkmanager.AvailabilityMonitorRequest;
 import com.ustadmobile.core.networkmanager.NetworkManagerCore;
@@ -9,6 +9,7 @@ import com.ustadmobile.port.sharedse.networkmanager.NetworkManager;
 import com.ustadmobile.core.networkmanager.NetworkManagerListener;
 import com.ustadmobile.lib.db.entities.NetworkNode;
 import com.ustadmobile.core.networkmanager.NetworkTask;
+import com.ustadmobile.test.core.annotation.PeerServerRequiredTest;
 import com.ustadmobile.test.core.buildconfig.TestConstants;
 import com.ustadmobile.test.core.impl.PlatformTestUtil;
 import com.ustadmobile.test.sharedse.SharedSeTestSuite;
@@ -31,6 +32,7 @@ import java.util.Map;
 /**
  * Created by kileha3 on 16/05/2017.
  */
+@PeerServerRequiredTest
 public class TestEntryStatusTask{
 
 
@@ -94,7 +96,7 @@ public class TestEntryStatusTask{
 //    }
 
     public static void testEntryStatusBluetooth(Hashtable expectedAvailability, String remoteBluetoothAddr) throws IOException, InterruptedException {
-        NetworkNode networkNode= DbManager.getInstance(PlatformTestUtil.getTargetContext())
+        NetworkNode networkNode= UmAppDatabase.getInstance(PlatformTestUtil.getTargetContext())
                 .getNetworkNodeDao().findNodeByBluetoothAddress(remoteBluetoothAddr);
         if(networkNode == null)
             throw new IllegalArgumentException("testEntryStatuBluetooth Hashtable, String requires the bluetooth address to have been discovered");
@@ -219,7 +221,7 @@ public class TestEntryStatusTask{
         final long taskId[] = new long[]{-1};
         final boolean taskCompleted[] = new boolean[]{false};
 
-        final EntryStatusResponseDao responseDao = DbManager.getInstance(PlatformTestUtil.getTargetContext())
+        final EntryStatusResponseDao responseDao = UmAppDatabase.getInstance(PlatformTestUtil.getTargetContext())
                 .getEntryStatusResponseDao();
 
         NetworkManagerListener responseListener = new NetworkManagerListener() {

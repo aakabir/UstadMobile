@@ -1,6 +1,6 @@
 package com.ustadmobile.test.sharedse.network;
 
-import com.ustadmobile.core.db.DbManager;
+import com.ustadmobile.core.db.UmAppDatabase;
 import com.ustadmobile.core.db.dao.NetworkNodeDao;
 import com.ustadmobile.core.impl.UMLog;
 import com.ustadmobile.core.impl.UstadMobileSystemImpl;
@@ -9,6 +9,7 @@ import com.ustadmobile.port.sharedse.networkmanager.NetworkManager;
 import com.ustadmobile.core.networkmanager.NetworkManagerListener;
 import com.ustadmobile.lib.db.entities.NetworkNode;
 import com.ustadmobile.core.networkmanager.NetworkTask;
+import com.ustadmobile.test.core.annotation.PeerServerRequiredTest;
 import com.ustadmobile.test.core.buildconfig.TestConstants;
 import com.ustadmobile.test.core.impl.PlatformTestUtil;
 import com.ustadmobile.test.sharedse.SharedSeTestSuite;
@@ -27,7 +28,7 @@ import java.util.Calendar;
 /**
  * Created by kileha3 on 16/05/2017.
  */
-
+@PeerServerRequiredTest
 public class TestNetworkManager {
     public static final int NODE_DISCOVERY_TIMEOUT =(5*60 * 1000)+2000;//2min2sec in ms
 
@@ -97,8 +98,8 @@ public class TestNetworkManager {
         };
         manager.addNetworkManagerListener(responseListener);
 
-        NetworkNode nodeInDb = DbManager.getInstance(PlatformTestUtil.getTargetContext()).getNetworkNodeDao()
-                .findNodeByBluetoothAddress(bluetoothAddr);
+        NetworkNode nodeInDb = UmAppDatabase.getInstance(PlatformTestUtil.getTargetContext())
+                .getNetworkNodeDao().findNodeByBluetoothAddress(bluetoothAddr);
 
         if(nodeInDb == null || (System.currentTimeMillis() - nodeInDb.getWifiDirectLastUpdated()) > timeout ) {
             synchronized (nodeDiscoveryLock) {
@@ -109,7 +110,7 @@ public class TestNetworkManager {
             }
         }
 
-        nodeInDb = DbManager.getInstance(PlatformTestUtil.getTargetContext()).getNetworkNodeDao()
+        nodeInDb = UmAppDatabase.getInstance(PlatformTestUtil.getTargetContext()).getNetworkNodeDao()
                 .findNodeByBluetoothAddress(bluetoothAddr);
 
         Assert.assertNotNull("Remote wifi direct device discovered",
@@ -189,7 +190,7 @@ public class TestNetworkManager {
         };
         manager.addNetworkManagerListener(responseListener);
 
-        NetworkNodeDao networkNodeDao = DbManager.getInstance(PlatformTestUtil.getTargetContext())
+        NetworkNodeDao networkNodeDao = UmAppDatabase.getInstance(PlatformTestUtil.getTargetContext())
                 .getNetworkNodeDao();
         NetworkNode node = networkNodeDao.findNodeByIpAddress(ipAddress);
 

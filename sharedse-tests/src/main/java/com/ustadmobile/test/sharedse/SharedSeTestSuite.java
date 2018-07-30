@@ -12,11 +12,23 @@ import org.junit.runners.Suite;
 @RunWith(Suite.class)
 
 @Suite.SuiteClasses({
-        TestResumableHttpDownload.class,
+        TestCatalogUriResponder.class,
         TestMountedZipHandler.class
 })
 
 public abstract class SharedSeTestSuite {
+
+    /**
+     * An entry id for a container file which is present on the test peer (should be downloaded
+     * over the local network) - the little chicks.
+     */
+    public static final String ENTRY_ID_LOCAL = "202b10fe-b028-4b84-9b84-852aa766607d";
+
+    /**
+     * An entry id for a container file which is not present on the test peer, and thus should
+     * be downloaded from the cloud for tests.
+     */
+    public static final String ENTRY_ID_REMOTE = "202b10fe-b028-4b84-9b84-852aa766607dx";
 
 
     /**

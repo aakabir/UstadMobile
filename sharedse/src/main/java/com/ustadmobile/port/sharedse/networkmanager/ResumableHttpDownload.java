@@ -1,5 +1,7 @@
 package com.ustadmobile.port.sharedse.networkmanager;
 
+import com.ustadmobile.core.impl.UMLog;
+import com.ustadmobile.core.impl.UstadMobileSystemImpl;
 import com.ustadmobile.core.util.UMIOUtils;
 
 import java.io.BufferedOutputStream;
@@ -25,9 +27,17 @@ import java.util.TreeMap;
  */
 public class ResumableHttpDownload {
 
+    private static final String SUBLOGTAG = "ResumableHttpDownload";
+
     private String httpSrc;
 
     private String destinationFile;
+
+    private InputStream httpIn;
+
+    private OutputStream fileOut;
+
+    private HttpURLConnection con;
 
     /**
      * Extension of the file which carry file information
@@ -90,9 +100,14 @@ public class ResumableHttpDownload {
 
     private URLConnectionOpener connectionOpener;
 
+    private final String logPrefix;
+
+    private int responseCode;
+
     public ResumableHttpDownload(String httpSrc, String destinationFile){
         this.httpSrc = httpSrc;
         this.destinationFile = destinationFile;
+        logPrefix = SUBLOGTAG + "(" + System.identityHashCode(this)+")";
     }
 
     /**
@@ -106,12 +121,10 @@ public class ResumableHttpDownload {
 
         IOException ioe = null;
         Properties dlInfoProperties = new Properties();
-        HttpURLConnection con = null;
         URL url;
-        OutputStream fileOut = null;
         OutputStream propertiesOut = null;
         InputStream propertiesIn = null;
-        InputStream httpIn = null;
+
 
         boolean completed = false;
         try {
@@ -168,11 +181,15 @@ public class ResumableHttpDownload {
 
                 if(validated) {
                     startFrom = dlPartFile.length();
+                    UstadMobileSystemImpl.l(UMLog.DEBUG, 0, mkLogPrefix() + " validated to start from " + startFrom);
+                }else {
+                    UstadMobileSystemImpl.l(UMLog.DEBUG, 0, mkLogPrefix() + " file exists but not validated");
                 }
             }
 
             if(startFrom == 0 && dlPartFile.exists()) {
                 //Part file exists but does not match the last modified and/or etag
+                UstadMobileSystemImpl.l(UMLog.DEBUG, 0, mkLogPrefix() + " : startFrom = 0 and dlpart file exists");
                 dlPartFile.delete();
             }
 
@@ -219,10 +236,15 @@ public class ResumableHttpDownload {
             propertiesOut.close();
             propertiesOut = null;
 
-            int responseCode = con.getResponseCode();
+            responseCode = con.getResponseCode();
             boolean appendToPartFileOutput = responseCode == HttpURLConnection.HTTP_PARTIAL;
-            fileOut = new BufferedOutputStream(new FileOutputStream(dlPartFile, appendToPartFileOutput));
             synchronized (this) {
+                if(isStopped()) {
+                    UstadMobileSystemImpl.l(UMLog.INFO, 0, mkLogPrefix() + " stopped before output file is to be opened");
+                    return false;
+                }
+
+                fileOut = new BufferedOutputStream(new FileOutputStream(dlPartFile, appendToPartFileOutput));
                 downloadedSoFar = appendToPartFileOutput ? dlPartFileSize : 0L;
                 progressHistoryLastRecorded = System.currentTimeMillis();
             }
@@ -236,8 +258,16 @@ public class ResumableHttpDownload {
             httpIn = con.getInputStream();
 
             long currentTime;
-            while(!isStopped() && (bytesRead = httpIn.read(buf)) != -1) {
-                fileOut.write(buf, 0, bytesRead);
+            while((bytesRead = httpIn.read(buf)) != -1) {
+                synchronized (this) {
+                    if(!isStopped()) {
+                        fileOut.write(buf, 0, bytesRead);
+                    }else{
+                        break;
+                    }
+                }
+
+
                 currentTime = System.currentTimeMillis();
                 synchronized (this) {
                     downloadedSoFar += bytesRead;
@@ -254,34 +284,55 @@ public class ResumableHttpDownload {
                     }
                 }
             }
-            fileOut.flush();
 
-            completed = downloadedSoFar == totalSize;
+            synchronized (this){
+                if(!isStopped()) {
+                    fileOut.flush();
+                }
+                completed = downloadedSoFar == totalSize;
+            }
         }catch(IOException e) {
             ioe = e;
         }finally {
             UMIOUtils.closeInputStream(propertiesIn);
             UMIOUtils.closeOutputStream(propertiesOut);
             UMIOUtils.closeInputStream(httpIn);
-            UMIOUtils.closeOutputStream(fileOut);
-
+            httpIn = null;
+            synchronized (this) {
+                UMIOUtils.closeOutputStream(fileOut);
+                fileOut = null;
+            }
 
             if(con != null) {
                 con.disconnect();
+                con = null;
             }
         }
 
         if(completed) {
-            File destinationFile = new File(this.destinationFile);
-            if(overwriteDestination && destinationFile.exists()){
-                destinationFile.delete();
-            }
+            UstadMobileSystemImpl.l(UMLog.INFO, 0, mkLogPrefix() + " completed, downloaded " +
+                    downloadedSoFar + "bytes");
+            synchronized (this) {
+                File destinationFile = new File(this.destinationFile);
+                if(overwriteDestination && destinationFile.exists()){
+                    UstadMobileSystemImpl.l(UMLog.INFO, 0, mkLogPrefix() +
+                            " download complete, overwrite enabled, deleting existing file" +
+                            destinationFile.getAbsolutePath());
+                    destinationFile.delete();
+                }
 
-            if(!dlPartFile.renameTo(destinationFile)) {
-                throw new IllegalStateException("Unable to rename completed download part file to destination file");
-            }
+                if(dlPartFile.renameTo(destinationFile)) {
+                    UstadMobileSystemImpl.l(UMLog.INFO, 0,
+                            mkLogPrefix() + " download completed, moved " +
+                            dlInfoFile.getAbsolutePath() + " to " + destinationFile.getAbsolutePath());
+                }else {
+                    throw new IllegalStateException(
+                            mkLogPrefix() + "Unable to rename completed download part file to destination file from"
+                                    + dlPartFile.getAbsolutePath() + " to " + destinationFile.getAbsolutePath());
+                }
 
-            dlInfoFile.delete();
+                dlInfoFile.delete();
+            }
         }
 
         UMIOUtils.throwIfNotNullIO(ioe);
@@ -374,8 +425,37 @@ public class ResumableHttpDownload {
         return totalSize;
     }
 
-    public synchronized void stop() {
+    /**
+     * Stop this download. Everything downloaded so far will be written to disk, and the file will
+     * be closed. This method is thread safe, and no reading or writing of the output file will
+     * take place after this method returns.
+     *
+     * @return the number of bytes downloaded
+     */
+    public synchronized long stop() {
         stopped = true;
+        UstadMobileSystemImpl.l(UMLog.DEBUG, 0, mkLogPrefix() + " stop() called");
+
+        //close the file output stream
+        if(fileOut != null) {
+            try {
+                fileOut.flush();
+                UstadMobileSystemImpl.l(UMLog.DEBUG, 0, mkLogPrefix() + "stop: flushed fileout OK");
+            }catch(IOException e) {
+                UstadMobileSystemImpl.l(UMLog.ERROR, 0, mkLogPrefix() + "stop: exception flushing fileOut", e);
+            }
+
+            try {
+                fileOut.close();
+                UstadMobileSystemImpl.l(UMLog.DEBUG, 0, mkLogPrefix() + "stop: closed fileout OK");
+            }catch(IOException e) {
+                UstadMobileSystemImpl.l(UMLog.ERROR, 0, mkLogPrefix() + "stop: exception closing fileout", e);
+            }finally {
+                fileOut = null;
+            }
+        }
+
+        return downloadedSoFar;
     }
 
     protected synchronized boolean isStopped() {
@@ -388,5 +468,18 @@ public class ResumableHttpDownload {
 
     public void setConnectionOpener(URLConnectionOpener connectionOpener) {
         this.connectionOpener = connectionOpener;
+    }
+
+    private final String mkLogPrefix(){
+        return logPrefix;
+    }
+
+    /**
+     * Get the http response code (if the response has started)
+     *
+     * @return HTTP response code (if the ressponse has started)
+     */
+    public int getResponseCode() {
+        return responseCode;
     }
 }

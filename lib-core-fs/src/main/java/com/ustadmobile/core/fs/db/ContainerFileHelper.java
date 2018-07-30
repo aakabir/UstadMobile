@@ -1,6 +1,6 @@
 package com.ustadmobile.core.fs.db;
 
-import com.ustadmobile.core.db.DbManager;
+import com.ustadmobile.core.db.UmAppDatabase;
 import com.ustadmobile.lib.db.entities.ContainerFile;
 import com.ustadmobile.lib.db.entities.ContainerFileEntryWithContainerFile;
 
@@ -23,20 +23,25 @@ public class ContainerFileHelper {
     }
 
     public boolean deleteContainerFile(Object context, ContainerFile containerFile){
-        DbManager.getInstance(context).getContainerFileDao().deleteContainerFileAndRelations(
+        UmAppDatabase.getInstance(context).getContainerFileDao().deleteContainerFileAndRelations(
                 context,containerFile);
         File file = new File(containerFile.getNormalizedPath());
         return file.delete();
     }
 
     public int deleteAllContainerFilesByEntryId(Object context, String entryId){
-        List<ContainerFileEntryWithContainerFile> containerFileEntries = DbManager.getInstance(context)
+        List<ContainerFileEntryWithContainerFile> containerFileEntries = UmAppDatabase.getInstance(context)
                 .getContainerFileEntryDao().findContainerFileEntriesWithContainerFileByEntryId(entryId);
 
         int deleteCount = 0;
         for(ContainerFileEntryWithContainerFile containerFileEntry : containerFileEntries) {
-            if(deleteContainerFile(context, containerFileEntry.getContainerFile()))
+            if(deleteContainerFile(context, containerFileEntry.getContainerFile())) {
                 deleteCount++;
+            }
+        }
+
+        if(deleteCount > 0 && deleteCount == containerFileEntries.size()){//All entries have been deleted
+            UmAppDatabase.getInstance(context).getOpdsEntryStatusCacheDao().handleContainerDeleted(entryId);
         }
 
         return deleteCount;

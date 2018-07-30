@@ -1,40 +1,51 @@
 package com.ustadmobile.port.sharedse.networkmanager;
 
-import com.ustadmobile.core.db.DbManager;
+import com.ustadmobile.core.db.UmAppDatabase;
+import com.ustadmobile.core.db.dao.CrawlJobDao;
 import com.ustadmobile.core.db.dao.DownloadJobDao;
+import com.ustadmobile.core.db.dao.DownloadSetDao;
 import com.ustadmobile.core.db.dao.NetworkNodeDao;
+import com.ustadmobile.core.fs.db.ContainerFileHelper;
 import com.ustadmobile.core.impl.UMLog;
 import com.ustadmobile.core.impl.UmCallback;
+import com.ustadmobile.core.impl.UmResultCallback;
 import com.ustadmobile.core.impl.UstadMobileSystemImpl;
 import com.ustadmobile.core.networkmanager.AcquisitionListener;
 import com.ustadmobile.core.networkmanager.AvailabilityMonitorRequest;
+import com.ustadmobile.core.networkmanager.DownloadTaskListener;
 import com.ustadmobile.core.networkmanager.EntryCheckResponse;
 import com.ustadmobile.core.networkmanager.NetworkManagerCore;
 import com.ustadmobile.core.networkmanager.NetworkManagerListener;
 import com.ustadmobile.core.networkmanager.NetworkManagerTaskListener;
 import com.ustadmobile.lib.db.entities.ContainerFileEntry;
+import com.ustadmobile.lib.db.entities.CrawlJob;
+import com.ustadmobile.lib.db.entities.CrawlJobItem;
 import com.ustadmobile.lib.db.entities.DownloadJob;
-import com.ustadmobile.lib.db.entities.DownloadJobItem;
-import com.ustadmobile.lib.db.entities.DownloadJobWithRelations;
+import com.ustadmobile.lib.db.entities.DownloadJobItemWithDownloadSetItem;
+import com.ustadmobile.lib.db.entities.DownloadJobWithDownloadSet;
+import com.ustadmobile.lib.db.entities.DownloadSet;
+import com.ustadmobile.lib.db.entities.DownloadSetItem;
 import com.ustadmobile.lib.db.entities.EntryStatusResponse;
 import com.ustadmobile.lib.db.entities.NetworkNode;
 import com.ustadmobile.core.networkmanager.NetworkTask;
-import com.ustadmobile.core.opds.UstadJSOPDSFeed;
 import com.ustadmobile.core.util.UMFileUtil;
 import com.ustadmobile.core.util.UMIOUtils;
 import com.ustadmobile.lib.db.entities.OpdsEntry;
 import com.ustadmobile.lib.db.entities.OpdsEntryParentToChildJoin;
+import com.ustadmobile.lib.db.entities.OpdsEntryWithChildEntries;
 import com.ustadmobile.lib.db.entities.OpdsEntryWithRelations;
 import com.ustadmobile.lib.db.entities.OpdsEntryWithRelationsAndContainerMimeType;
 import com.ustadmobile.lib.db.entities.OpdsLink;
 import com.ustadmobile.lib.util.UmUuidUtil;
-import com.ustadmobile.nanolrs.http.NanoLrsHttpd;
+import com.ustadmobile.port.sharedse.impl.http.CatalogUriResponder;
 import com.ustadmobile.port.sharedse.impl.http.EmbeddedHTTPD;
 import com.ustadmobile.port.sharedse.impl.http.MountedZipHandler;
-import com.ustadmobile.port.sharedse.impl.http.OPDSFeedUriResponder;
+import com.ustadmobile.port.sharedse.impl.http.SharedEntryResponder;
 
+import org.xmlpull.v1.XmlPullParser;
 import org.xmlpull.v1.XmlPullParserException;
 
+import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
 import java.net.HttpURLConnection;
@@ -45,6 +56,7 @@ import java.util.Arrays;
 import java.util.Calendar;
 import java.util.HashMap;
 import java.util.HashSet;
+import java.util.Hashtable;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -79,7 +91,7 @@ import static com.ustadmobile.core.buildconfig.CoreBuildConfig.WIFI_P2P_INSTANCE
  */
 
 public abstract class NetworkManager implements NetworkManagerCore, NetworkManagerTaskListener,
-        LocalMirrorFinder, EntryStatusTask.NetworkNodeListProvider, EmbeddedHTTPD.ResponseListener {
+        LocalMirrorFinder, DownloadTaskListener, EntryStatusTask.NetworkNodeListProvider, EmbeddedHTTPD.ResponseListener {
 
     protected ExecutorService dbExecutorService;
 
@@ -160,8 +172,11 @@ public abstract class NetworkManager implements NetworkManagerCore, NetworkManag
         new Vector<>(), new Vector<>()
     };
 
-    private Set<DownloadTask> activeDownloadTasks;
+    //Map of ID (integer) -> downloadTask
+//    @Deprecated
+//    private HashMap<Integer, DownloadTask> activeDownloadTasks;
 
+    private Hashtable<Class, Map<Integer, ? extends NetworkTask>> activeNetworkTasks = new Hashtable<>();
 
     private Vector<NetworkManagerListener> networkManagerListeners = new Vector<>();
 
@@ -267,6 +282,10 @@ public abstract class NetworkManager implements NetworkManagerCore, NetworkManag
 
     protected URLConnectionOpener wifiUrlConnectionOpener;
 
+    private List<ConnectivityListener> connectivityListeners = new Vector<>();
+
+    private int connectivityState;
+
     /**
      * The time that the shared feed will be available
      */
@@ -301,7 +320,7 @@ public abstract class NetworkManager implements NetworkManagerCore, NetworkManag
 
 
     public NetworkManager() {
-        activeDownloadTasks = new HashSet<>();
+//        activeDownloadTasks = new HashMap<>();
     }
 
     /**
@@ -333,6 +352,8 @@ public abstract class NetworkManager implements NetworkManagerCore, NetworkManag
 
         dbExecutorService = Executors.newCachedThreadPool();
 
+        activeNetworkTasks.put(DownloadTask.class, new HashMap<Integer, DownloadTask>());
+
         try {
             /*
              * Do not use .l logging method here: when running sharedse mock tests, this gets called in the
@@ -340,7 +361,6 @@ public abstract class NetworkManager implements NetworkManagerCore, NetworkManag
              * stack overflow.
              */
             httpd = new EmbeddedHTTPD(0, mContext);
-            NanoLrsHttpd.mountXapiEndpointsOnServer(httpd, mContext, "/xapi/");
             httpd.start();
             System.out.println("Started main http server on port: " + httpd.getListeningPort());
         }catch(IOException e) {
@@ -425,7 +445,7 @@ public abstract class NetworkManager implements NetworkManagerCore, NetworkManag
 
     @Override
     public List<NetworkNode> getNetworkNodes() {
-        return DbManager.getInstance(getContext()).getNetworkNodeDao().findAllActiveNodes();
+        return UmAppDatabase.getInstance(getContext()).getNetworkNodeDao().findAllActiveNodes();
     }
 
     public long requestFileStatus(String[] entryIds, boolean useBluetooth, boolean useHttp) {
@@ -447,37 +467,109 @@ public abstract class NetworkManager implements NetworkManagerCore, NetworkManag
         return requestFileStatus(entryIds, mContext, nodeList, true, true);
     }
 
-    public DownloadJob buildDownloadJob(List<OpdsEntryWithRelations> rootEntries, String destintionDir,
+
+    /**
+     * {@inheritDoc}
+     */
+    public CrawlJob prepareDownload(DownloadSet downloadSet, CrawlJob crawlJob,
+                                    boolean allowDownloadOverMeteredNetwork) {
+        UmAppDatabase dbManager = UmAppDatabase.getInstance(getContext());
+        DownloadSetDao setDao = dbManager.getDownloadSetDao();
+        DownloadJobDao jobDao = dbManager.getDownloadJobDao();
+
+        if(crawlJob.getRootEntryUuid() == null && crawlJob.getRootEntryUri() == null)
+            throw new IllegalArgumentException("CrawlJob has no root uuid or uri!");
+
+        //see if this downloadset already exists
+        if(crawlJob.getRootEntryUuid() == null){
+            //we need to load the root item using the OpdsRepository
+            OpdsEntryWithRelations rootEntry = UstadMobileSystemImpl.getInstance()
+                    .getOpdsAtomFeedRepository(getContext())
+                    .getEntryByUrlStatic(crawlJob.getRootEntryUri());
+            crawlJob.setRootEntryUuid(rootEntry.getUuid());
+        }
+
+
+        DownloadSet existingSet = dbManager.getDownloadSetDao().findByRootEntry(
+                crawlJob.getRootEntryUuid());
+        if(existingSet != null) {
+            //TODO: Move downloaded items between folders if needed
+            existingSet.setDestinationDir(downloadSet.getDestinationDir());
+            downloadSet = existingSet;
+        }else{
+            downloadSet.setRootOpdsUuid(crawlJob.getRootEntryUuid());
+        }
+
+        downloadSet.setId((int)setDao.insertOrReplace(downloadSet));
+
+        //Now create a new download job
+        DownloadJob downloadJob = new DownloadJob(downloadSet, System.currentTimeMillis());
+        downloadJob.setAllowMeteredDataUsage(allowDownloadOverMeteredNetwork);
+        downloadJob.setStatus(UstadMobileSystemImpl.DLSTATUS_NOT_STARTED);
+
+
+        downloadJob.setDownloadJobId((int)jobDao.insert(downloadJob));
+
+        CrawlJobDao crawlJobDao = dbManager.getCrawlJobDao();
+        crawlJob.setContainersDownloadJobId(downloadJob.getDownloadJobId());
+        crawlJob.setCrawlJobId((int)crawlJobDao.insert(crawlJob));
+
+
+        //Insert the root crawl item
+        OpdsEntryWithRelations entry = new OpdsEntryWithRelations();
+        entry.setUuid(crawlJob.getRootEntryUuid());
+        UmAppDatabase.getInstance(getContext()).getDownloadJobCrawlItemDao().insert(
+                new CrawlJobItem(crawlJob.getCrawlJobId(), entry, NetworkTask.STATUS_QUEUED, 0));
+
+        CrawlTask task = new CrawlTask(crawlJob, dbManager, this);
+        task.start();
+
+        return crawlJob;
+    }
+
+    /**
+     * {@inheritDoc}
+     */
+    public void prepareDownloadAsync(DownloadSet downloadSet, CrawlJob crawlJob,
+                                     boolean allowDownloadOverMeteredNetwork,
+                                     UmResultCallback<CrawlJob> resultCallback) {
+        dbExecutorService.execute(() -> resultCallback.onDone(prepareDownload(downloadSet, crawlJob,
+                allowDownloadOverMeteredNetwork)));
+    }
+
+
+    @Deprecated
+    public DownloadSet buildDownloadJob(List<OpdsEntryWithRelations> rootEntries, String destintionDir,
                                         boolean recursive, boolean wifiDirectEnabled,
                                         boolean localWifiEnabled) {
-        DownloadJobDao jobDao = DbManager.getInstance(getContext()).getDownloadJobDao();
+        DownloadSetDao jobDao = UmAppDatabase.getInstance(getContext()).getDownloadSetDao();
 
-        DownloadJob job = new DownloadJob();
+        DownloadSet job = new DownloadSet();
         job.setDestinationDir(destintionDir);
-        job.setStatus(UstadMobileSystemImpl.DLSTATUS_NOT_STARTED);
+//        job.setStatus(UstadMobileSystemImpl.DLSTATUS_NOT_STARTED);
         job.setLanDownloadEnabled(localWifiEnabled);
         job.setWifiDirectDownloadEnabled(wifiDirectEnabled);
         job.setId((int)jobDao.insert(job));
 
 
 
-        ArrayList<DownloadJobItem> jobItems = new ArrayList<>();
+        ArrayList<DownloadSetItem> jobItems = new ArrayList<>();
         for(OpdsEntryWithRelations entry : rootEntries) {
-            jobItems.add(new DownloadJobItem(entry, job));
+            jobItems.add(new DownloadSetItem(entry, job));
         }
-        DbManager.getInstance(getContext()).getDownloadJobItemDao().insertList(jobItems);
+        UmAppDatabase.getInstance(getContext()).getDownloadSetItemDao().insertList(jobItems);
 
         return job;
     }
 
     public void buildDownloadJobAsync(List<OpdsEntryWithRelations> rootEntries, String destintionDir,
                                       boolean recursive, boolean wifiDirectEnabled,
-                                      boolean localWifiEnabled, UmCallback<DownloadJob> callback) {
+                                      boolean localWifiEnabled, UmCallback<DownloadSet> callback) {
         dbExecutorService.execute(() -> callback.onSuccess(buildDownloadJob(rootEntries, destintionDir,
                 recursive, wifiDirectEnabled, localWifiEnabled)));
     }
 
-    public DownloadJob buildDownloadJob(List<OpdsEntryWithRelations> rootEntries, String destinationDir,
+    public DownloadSet buildDownloadJob(List<OpdsEntryWithRelations> rootEntries, String destinationDir,
                                         boolean recursive){
         return buildDownloadJob(rootEntries,  destinationDir, recursive, true, true);
     }
@@ -485,65 +577,173 @@ public abstract class NetworkManager implements NetworkManagerCore, NetworkManag
 
     public void queueDownloadJob(int downloadJobId) {
         //just set the status of the job and let it be found using a query
+        UstadMobileSystemImpl.l(UMLog.INFO, 0, "Queuing download job #" + downloadJobId);
         dbExecutorService.execute(() -> {
-            DbManager.getInstance(getContext()).getDownloadJobDao().queueDownload(
-                    downloadJobId, NetworkTask.STATUS_QUEUED, System.currentTimeMillis());
+            UmAppDatabase dbManager = UmAppDatabase.getInstance(getContext());
+            dbManager.getDownloadJobItemDao().updateUnpauseItemsByDownloadJob(downloadJobId);
+            dbManager.getDownloadJobDao().queueDownload(downloadJobId, NetworkTask.STATUS_QUEUED,
+                    System.currentTimeMillis());
+            int[] downloadJobItemIds = dbManager.getDownloadJobItemDao().findAllIdsByDownloadJob(
+                    downloadJobId);
+            //TODO: filter the above to handle only those items that are not completed
+            for(int downloadJobItemId : downloadJobItemIds) {
+                dbManager.getOpdsEntryStatusCacheDao().handleDownloadJobQueued(downloadJobItemId);
+            }
             checkDownloadJobQueue();
         });
+    }
+
+    private DownloadTask stopDownloadAndSetStatus(int downloadJobId, int statusAfterStop) {
+        NetworkTask downloadTask = activeNetworkTasks.get(DownloadTask.class).get(downloadJobId);
+        if(downloadTask == null) {
+            UstadMobileSystemImpl.l(UMLog.WARN, 0, "stopDownloadAndSetStatus: " +
+                    " download job #" + downloadJobId + " is not active");
+            return null;
+        }
+
+        downloadTask.stop(statusAfterStop);
+
+        return (DownloadTask)downloadTask;
+    }
+
+    public <T extends NetworkTask> T getActiveTask(int taskId, Class<T> taskType) {
+        Map<Integer, ? extends NetworkTask> taskTypeMap = activeNetworkTasks.get(taskType);
+        NetworkTask task = taskTypeMap.get(taskId);
+        if(task != null) {
+            return (T)task;
+        }else {
+            return null;
+        }
+    }
+
+
+    @Override
+    public boolean pauseDownloadJob(int downloadJobId) {
+        DownloadTask downloadTask = stopDownloadAndSetStatus(downloadJobId, NetworkTask.STATUS_PAUSED);
+        //TODO: this should likely go, it should be possible to pause a download that is not currently running
+        if(downloadTask == null)
+            return false;
+
+        UmAppDatabase dbManager = UmAppDatabase.getInstance(getContext());
+        List<DownloadJobItemWithDownloadSetItem> pausedItems = dbManager.getDownloadJobItemDao()
+                .findByDownloadJobAndStatusRange(downloadJobId, NetworkTask.STATUS_WAITING_MIN,
+                        NetworkTask.STATUS_COMPLETE_MIN);
+        UstadMobileSystemImpl.l(UMLog.DEBUG, 0, "Setting status to paused on " +
+                pausedItems.size() + " items");
+        for(DownloadJobItemWithDownloadSetItem pausedItem : pausedItems) {
+            dbManager.getDownloadJobItemDao().updateStatus(pausedItem.getDownloadJobItemId(),
+                    NetworkTask.STATUS_PAUSED);
+            dbManager.getOpdsEntryStatusCacheDao().handleContainerDownloadPaused(
+                    pausedItem.getDownloadSetItem().getEntryId());
+        }
+
+        return true;
+    }
+
+    @Override
+    public void pauseDownloadJobAsync(int downloadJobId, UmResultCallback<Boolean> callback) {
+        dbExecutorService.execute(() -> callback.onDone(pauseDownloadJob(downloadJobId)));
+    }
+
+    @Override
+    public boolean cancelDownloadJob(int downloadJobId) {
+        UmAppDatabase dbManager = UmAppDatabase.getInstance(getContext());
+        DownloadTask downloadTask = stopDownloadAndSetStatus(downloadJobId,
+                NetworkTask.STATUS_CANCELED);
+        UstadMobileSystemImpl.l(UMLog.INFO, 0, "cancelDownloadJob #" + downloadJobId +
+            " task running: " + (downloadTask != null));
+
+        //go through all downloads that have been completed, and delete them
+        List<DownloadJobItemWithDownloadSetItem> downloadedItems =  dbManager
+                .getDownloadJobItemDao().findAllWithDownloadSet(downloadJobId);
+
+        for(DownloadJobItemWithDownloadSetItem item : downloadedItems) {
+            if(item.getStatus() < NetworkTask.STATUS_COMPLETE_MIN) {
+                UstadMobileSystemImpl.l(UMLog.INFO, 0, "cancelDownloadJob #"
+                        + downloadJobId + " : item #" + item.getDownloadJobItemId() +
+                        " : " + item.getDownloadSetItem().getEntryId() + " : handleContainerDownloadAborted");
+                dbManager.getOpdsEntryStatusCacheDao().handleContainerDownloadAborted(item
+                        .getDownloadSetItem().getEntryId());
+
+                //check for any file leftovers
+                if(item.getDestinationFile() != null) {
+                    File file = new File(item.getDestinationFile());
+                    if(file.exists())
+                        file.delete();
+
+                    file = new File(item.getDestinationFile() + ResumableHttpDownload.DLPART_EXTENSION);
+                    if(file.exists())
+                        file.delete();
+                }
+            }else {
+                UstadMobileSystemImpl.l(UMLog.INFO, 0, "cancelDownloadJob #"
+                        + " : item #" + item.getDownloadJobItemId() +
+                        " : " + item.getDownloadSetItem().getEntryId() + ": deleteContainer");
+                ContainerFileHelper.getInstance().deleteAllContainerFilesByEntryId(getContext(),
+                        item.getDownloadSetItem().getEntryId());
+            }
+
+        }
+
+        UstadMobileSystemImpl.l(UMLog.INFO, 0, "cancelDownloadJob #" + downloadJobId +
+                " cancel complete");
+        return downloadTask != null;
+    }
+
+    @Override
+    public void cancelDownloadJobAsync(int downloadJobId, UmResultCallback<Boolean> callback) {
+        dbExecutorService.execute(() -> callback.onDone(cancelDownloadJob(downloadJobId)));
     }
 
     /**
      *
      */
     public void checkDownloadJobQueue(){
-        if(activeDownloadTasks.isEmpty()){
-            DownloadJobWithRelations job = DbManager.getInstance(getContext())
-                    .getDownloadJobDao().findNextDownloadJobAndSetStartingStatus();
-            if(job == null)
-                return;//nothing to do
+        @SuppressWarnings("unchecked")
+        Map<Integer, DownloadTask> taskMap = (Map<Integer, DownloadTask>)activeNetworkTasks.get(
+                DownloadTask.class);
 
-            DownloadTask task = new DownloadTask(job, this);
+        int connectivityState = getConnectivityState();
+        if(taskMap.isEmpty() && connectivityState != CONNECTIVITY_STATE_DISCONNECTED){
+            DownloadJobWithDownloadSet job = UmAppDatabase.getInstance(getContext())
+                    .getDownloadJobDao()
+                    .findNextDownloadJobAndSetStartingStatus(connectivityState == CONNECTIVITY_STATE_METERED);
+            if(job == null) {
+                UstadMobileSystemImpl.l(UMLog.DEBUG, 0, "checkDownloadJobQueue: no pending download jobs");
+                return;//nothing to do
+            }
+
+            UstadMobileSystemImpl.l(UMLog.DEBUG, 0, "checkDownloadJobQueue: starting download job #" +
+                    job.getDownloadJobId());
+            DownloadTask task = new DownloadTask(job, this, this,
+                    dbExecutorService);
+            taskMap.put(job.getDownloadJobId(), task);
             task.start();
+        }else {
+            UstadMobileSystemImpl.l(UMLog.DEBUG, 0,
+            "checkDownloadJobQueue: not looking for new downloads: " +
+                    (!taskMap.isEmpty() ? " There are currently active tasks" : "Network is disconnected"));
         }
     }
 
-
-    public void handleDownloadTaskStatusChanged() {
-
+    public void checkDownloadJobQueueAsync(UmResultCallback<Void> callback){
+        dbExecutorService.execute(() -> {
+            checkDownloadJobQueue();
+            if(callback != null)
+                callback.onDone(null);
+        });
     }
 
 
-
-
-    /**
-     * Method which invoked when making file acquisition request.
-     * @param feed OPDS file feed
-     * @param localNetworkEnabled Whether to involve local network as means of acquiring,
-     *                            TRUE if yes, FALSE otherwise.
-     * @param mirrorFinder Normally the NetworkManager itself but can be any other object implementing
-     *                     the interface (e.g. for testing purposes)
-     * @param wifiDirectEnabled Whether to involve Wi-Fi direct group as means of acquiring,
-     *                          TRUE if yes , otherwise FALSE.
-     * @return
-     */
-    public long requestAcquisition(UstadJSOPDSFeed feed, LocalMirrorFinder mirrorFinder,
-                                              boolean localNetworkEnabled, boolean wifiDirectEnabled){
-
-
-
-//        DownloadTask task=new DownloadTask(feed,this);
-//        task.setMirrorFinder(mirrorFinder);
-//        task.setTaskType(QUEUE_ENTRY_ACQUISITION);
-//        task.setLocalNetworkDownloadEnabled(localNetworkEnabled);
-//        task.setWifiDirectDownloadEnabled(wifiDirectEnabled);
-//        queueTask(task);
-//        return task.getTaskId();
-        return 0;
+    @Override
+    public void handleDownloadTaskStatusChanged(NetworkTask task, int status) {
+        if(task.getStatus() >= NetworkTask.STATUS_COMPLETE_MIN || task.getStatus() < NetworkTask.STATUS_RUNNING_MIN){
+            //this task has finished or has to wait (e.g. for a connection to be available)
+            activeNetworkTasks.get(DownloadTask.class).remove(task.getTaskId());
+            checkDownloadJobQueue();
+        }
     }
 
-    public long requestAcquisition(UstadJSOPDSFeed feed, boolean localNetworkEnabled, boolean wifiDirectEnabled){
-        return requestAcquisition(feed, this, localNetworkEnabled, wifiDirectEnabled);
-    }
 
     public void startMonitoringAvailability(AvailabilityMonitorRequest request, boolean checkKnownNodes){
         synchronized (availabilityMonitorRequests) {
@@ -664,7 +864,7 @@ public abstract class NetworkManager implements NetworkManagerCore, NetworkManag
                 boolean newNode = false;
                 NetworkNode node = null;
                 synchronized (knownNodesLock) {
-                    NetworkNodeDao networkNodeDao = DbManager.getInstance(getContext()).getNetworkNodeDao();
+                    NetworkNodeDao networkNodeDao = UmAppDatabase.getInstance(getContext()).getNetworkNodeDao();
                     node = networkNodeDao.findNodeByIpOrWifiDirectMacAddress(ipAddr, senderMacAddr);
 
                     if(node == null) {
@@ -713,21 +913,19 @@ public abstract class NetworkManager implements NetworkManagerCore, NetworkManag
     }
 
     protected void fireWifiDirectPeersChanged() {
-//        TODO: re-enable this for db based version
-//        synchronized (peerChangeListeners) {
-//            for(WifiP2pListener listener: peerChangeListeners) {
-//                listener.peersChanged(knownPeers);
-//            }
-//        }
+        synchronized (peerChangeListeners) {
+            for(WifiP2pListener listener: peerChangeListeners) {
+                listener.peersChanged(knownPeers);
+            }
+        }
     }
 
     protected void fireWifiP2pConnectionChanged(boolean connected) {
-//        TODO: re-enable this for db based version
-//        synchronized (peerChangeListeners) {
-//            for(WifiP2pListener listener : peerChangeListeners) {
-//                listener.wifiP2pConnectionChanged(connected);
-//            }
-//        }
+        synchronized (peerChangeListeners) {
+            for(WifiP2pListener listener : peerChangeListeners) {
+                listener.wifiP2pConnectionChanged(connected);
+            }
+        }
     }
 
     protected void fireWifiP2pConnectionResult(String macAddress, boolean successful) {
@@ -782,7 +980,7 @@ public abstract class NetworkManager implements NetworkManagerCore, NetworkManag
                     return;
 
 
-                DbManager dbManager = DbManager.getInstance(getContext());
+                UmAppDatabase dbManager = UmAppDatabase.getInstance(getContext());
                 node = dbManager.getNetworkNodeDao().findNodeByIpAddress(ipAddress);
 
 //            node = getNodeByIpAddress(ipAddress);
@@ -962,50 +1160,9 @@ public abstract class NetworkManager implements NetworkManagerCore, NetworkManag
                     responseTime,0, false));
         }
 
-        DbManager.getInstance(getContext()).getEntryStatusResponseDao().insert(entryStatusResponses);
+        UmAppDatabase.getInstance(getContext()).getEntryStatusResponseDao().insert(entryStatusResponses);
         fireFileStatusCheckInformationAvailable(entryIds);
     }
-
-//    /**
-//     * Method which invoked when entry status responses is are received
-//     * @param node NetworkNode on which entry status check task was executed on.
-//     * @param entryIds List of all entries
-//     * @param status List of all entries status
-//     */
-//    public void handleEntriesStatusUpdate(NetworkNode node, List<String> entryIds, List<Boolean> status) {
-//        ArrayList<EntryStatusResponse> entryStatusResponses = new ArrayList<>();
-//        long responseTime = System.currentTimeMillis();
-//        for(int i = 0; i < entryIds.size(); i++) {
-//            entryStatusResponses.add(new EntryStatusResponse(entryIds.get(i), node.getId(),
-//                    responseTime, 0, status.get(i)));
-//        }
-//
-//        DbManager.getInstance(getContext()).getEntryStatusResponseDao().insert(entryStatusResponses);
-//        fireFileStatusCheckInformationAvailable(entryIds);
-//
-////        List<EntryCheckResponse> responseList;
-////        EntryCheckResponse checkResponse;
-////        long timeNow = Calendar.getInstance().getTimeInMillis();
-////        for (int position=0;position<fileIds.size();position++){
-////            checkResponse = getEntryResponse(fileIds.get(position), node);
-////
-////            responseList=getEntryResponses().get(fileIds.get(position));
-////            if(responseList==null){
-////                responseList=new ArrayList<>();
-////                entryResponses.put(fileIds.get(position),responseList);
-////            }
-////
-////            if(checkResponse == null) {
-////                checkResponse = new EntryCheckResponse(node);
-////                responseList.add(checkResponse);
-////            }
-////
-////            checkResponse.setFileAvailable(status.get(position));
-////            checkResponse.setLastChecked(timeNow);
-////        }
-////
-////        fireFileStatusCheckInformationAvailable(fileIds);
-//    }
 
     /**
      * Method which get particular entry status response on a specific node from list of responses.
@@ -1062,6 +1219,7 @@ public abstract class NetworkManager implements NetworkManagerCore, NetworkManag
      * @param downloadSource File source, which might be from cloud,
      *                       peer on the same network or peer on different network
      */
+    @Deprecated
     public void handleFileAcquisitionInformationAvailable(String entryId,long downloadId,int downloadSource){
         fireFileAcquisitionInformationAvailable(entryId,downloadId,downloadSource);
     }
@@ -1202,48 +1360,56 @@ public abstract class NetworkManager implements NetworkManagerCore, NetworkManag
 
     @Override
     public void networkTaskStatusChanged(NetworkTask task) {
-        int taskType = task.getTaskType();
-        int taskId = task.getTaskId();
-        if(currentTaskIndex[taskType] != -1
-                && taskId == tasksQueues[taskType].get(currentTaskIndex[taskType]).getTaskId()){
-            int status = task.getStatus();
-            switch(status) {
-                case NetworkTask.STATUS_COMPLETE:
-                case NetworkTask.STATUS_FAILED:
-                case NetworkTask.STATUS_STOPPED:
-                    //task is finished
-                    tasksQueues[taskType].remove(currentTaskIndex[taskType]);
-                    currentTaskIndex[taskType] = -1;
-                    checkTaskQueue(taskType);
+        if(task instanceof DownloadTask) {
 
-                    /*
-                     * If this task is associated with an availability monitor request, update the
-                     * tracking information. We won't need to go and stop this task when the monitor
-                     * is stopped if the task has actually already finished.
-                     */
-                    synchronized (availabilityMonitorRequests) {
-                        if(availabilityMonitorTaskIdToRequestMap.containsKey(taskId)) {
-                            AvailabilityMonitorRequest request =
-                                    availabilityMonitorTaskIdToRequestMap.get(taskId);
-                            availabilityMonitorTaskIdToRequestMap.remove(taskId);
-                            List<Long> availabilityTaskIds = availabilityMonitorRequestToTaskIdMap.get(request);
-                            if(availabilityTaskIds != null && availabilityTaskIds.contains(taskId)) {
-                                availabilityTaskIds.remove(availabilityTaskIds.indexOf(taskId));
+        }else{
+
+
+            int taskType = task.getTaskType();
+            int taskId = task.getTaskId();
+            if(currentTaskIndex[taskType] != -1
+                    && taskId == tasksQueues[taskType].get(currentTaskIndex[taskType]).getTaskId()){
+                int status = task.getStatus();
+                switch(status) {
+                    case NetworkTask.STATUS_COMPLETE:
+                    case NetworkTask.STATUS_FAILED:
+                    case NetworkTask.STATUS_STOPPED:
+                        //task is finished
+                        tasksQueues[taskType].remove(currentTaskIndex[taskType]);
+                        currentTaskIndex[taskType] = -1;
+                        checkTaskQueue(taskType);
+
+                        /*
+                         * If this task is associated with an availability monitor request, update the
+                         * tracking information. We won't need to go and stop this task when the monitor
+                         * is stopped if the task has actually already finished.
+                         */
+                        synchronized (availabilityMonitorRequests) {
+                            if(availabilityMonitorTaskIdToRequestMap.containsKey(taskId)) {
+                                AvailabilityMonitorRequest request =
+                                        availabilityMonitorTaskIdToRequestMap.get(taskId);
+                                availabilityMonitorTaskIdToRequestMap.remove(taskId);
+                                List<Long> availabilityTaskIds = availabilityMonitorRequestToTaskIdMap.get(request);
+                                if(availabilityTaskIds != null && availabilityTaskIds.contains(taskId)) {
+                                    availabilityTaskIds.remove(availabilityTaskIds.indexOf(taskId));
+                                }
                             }
                         }
-                    }
 
 
-                    break;
-                case NetworkTask.STATUS_RETRY_LATER:
-                    //put task to back of queue
-                    NetworkTask retryTask = tasksQueues[taskType].remove(currentTaskIndex[taskType]);
-                    tasksQueues[taskType].addElement(retryTask);
-                    currentTaskIndex[taskType] = -1;
-                    checkTaskQueue(taskType);
-                    break;
+                        break;
+                    case NetworkTask.STATUS_RETRY_LATER:
+                        //put task to back of queue
+                        NetworkTask retryTask = tasksQueues[taskType].remove(currentTaskIndex[taskType]);
+                        tasksQueues[taskType].addElement(retryTask);
+                        currentTaskIndex[taskType] = -1;
+                        checkTaskQueue(taskType);
+                        break;
+                }
             }
+
         }
+
 
         fireNetworkTaskStatusChanged(task);
     }
@@ -1502,51 +1668,6 @@ public abstract class NetworkManager implements NetworkManagerCore, NetworkManag
         acquisitionListeners.remove(listener);
     }
 
-    /**
-     * Fire acquisition progress updates to the listening part of the app
-     * @param entryId
-     */
-    protected void fireAcquisitionProgressUpdate(String entryId, DownloadTask task){
-        synchronized (acquisitionListeners) {
-            for(AcquisitionListener listener : acquisitionListeners){
-                listener.acquisitionProgressUpdate(entryId, task.getStatusByEntryId(entryId));
-            }
-        }
-    }
-
-    /**
-     * This method is to be called when other components (e.g. directory scanner etc) discover
-     * new content, or catalog discover content that was previously thought to have been acquired
-     * is no longer around (e.g. the user manually deleted or moved files)
-     *
-     * @param entryId Entry id for which status has been discovered
-     */
-    public void handleEntryStatusChangeDiscovered(String entryId, int acquisitionStatus) {
-        DownloadTask.Status status = new DownloadTask.Status();
-        status.setStatus(acquisitionStatus);
-        UstadMobileSystemImpl.l(UMLog.DEBUG, 645, "handleEntryStatusChangeDiscovered: " + entryId +
-                " : " + status.getStatus());
-    }
-
-    /**
-     * Find the acquisition task for the given entry id
-     *
-     * @param entryId Entry ID to find
-     *
-     * @return The task carrying out acquisition of this entry, or null if it's not being acquired by any known task
-     */
-    public DownloadTask getAcquisitionTaskByEntryId(String entryId) {
-        synchronized (tasksQueues[QUEUE_ENTRY_ACQUISITION]) {
-            DownloadTask acquisitionTask;
-            for(int i = 0; i < tasksQueues[QUEUE_ENTRY_ACQUISITION].size(); i++) {
-                acquisitionTask = (DownloadTask)tasksQueues[QUEUE_ENTRY_ACQUISITION].get(i);
-                if(acquisitionTask.taskIncludesEntry(entryId))
-                    return acquisitionTask;
-            }
-        }
-
-        return null;
-    }
 
     /**
      * Get a network task by id and queue type
@@ -1556,6 +1677,7 @@ public abstract class NetworkManager implements NetworkManagerCore, NetworkManag
      *
      * @return
      */
+    @Deprecated
     @Override
     public NetworkTask getTaskById(long taskId, int queueType) {
         if(taskId == -1)
@@ -1570,6 +1692,40 @@ public abstract class NetworkManager implements NetworkManagerCore, NetworkManag
         }
 
         return null;
+    }
+
+//    public DownloadTask getActiveDownloadTask(int taskId){
+//        return
+//    }
+
+    public void addConnectivityListener(ConnectivityListener listener) {
+        connectivityListeners.add(listener);
+    }
+
+    public void removeConnectivityListener(ConnectivityListener listener) {
+        connectivityListeners.remove(listener);
+    }
+
+    protected void fireOnConnectivityChanged(int state) {
+        for(ConnectivityListener listener : connectivityListeners) {
+            listener.onConnectivityChanged(state);
+        }
+    }
+
+    protected void handleConnectivityChanged(int state) {
+        setConnectivityState(state);
+        fireOnConnectivityChanged(state);
+
+        if(state == CONNECTIVITY_STATE_METERED || state == CONNECTIVITY_STATE_UNMETERED)
+            checkDownloadJobQueueAsync(null);
+    }
+
+    protected synchronized void setConnectivityState(int connectivityState) {
+        this.connectivityState = connectivityState;
+    }
+
+    public synchronized int getConnectivityState() {
+        return connectivityState;
     }
 
 
@@ -1683,7 +1839,7 @@ public abstract class NetworkManager implements NetworkManagerCore, NetworkManag
     /**
      * Sets the shared http endpoint catalog.
      *
-     * @param sharedFeed
+     * @param sharedFeedUuid
      */
     public void setSharedFeed(String sharedFeedUuid) {
         synchronized (sharedFeedLock) {
@@ -1708,8 +1864,8 @@ public abstract class NetworkManager implements NetworkManagerCore, NetworkManag
                     sharedFeedHttpd.removeRoute("(.*)");
                 }
 
-                sharedFeedHttpd.addRoute("(.*)", OPDSFeedUriResponder.class, sharedFeedUuid, this, getContext());
-
+                sharedFeedHttpd.addRoute("(.*)", SharedEntryResponder.class, sharedFeedUuid,
+                    getContext(), getHttpListeningPort());
                 updateClientServices();
             }else if(sharedFeedUuid == null) {
                 UstadMobileSystemImpl.l(UMLog.INFO, 301, "setSharedFeed: shared feed is now null");
@@ -1765,6 +1921,7 @@ public abstract class NetworkManager implements NetworkManagerCore, NetworkManag
      *
      * @param uuids
      */
+    @Deprecated
     public void setSharedFeed(String[] uuids, String title) {
         //TODO: replace this hardcoded value with something generic that gets replaced by client
 
@@ -1776,11 +1933,16 @@ public abstract class NetworkManager implements NetworkManagerCore, NetworkManag
         sharedFeed.setTitle(title);
         sharedFeed.setUuid(UmUuidUtil.encodeUuidWithAscii85(UUID.randomUUID()));
 
+        OpdsLink p2pSelfLink = new OpdsLink(sharedFeed.getUuid(), OpdsEntry.TYPE_OPDS_ACQUISITION_FEED,
+                "p2p://groupowner:" + getHttpListeningPort() + "/", OpdsEntry.LINK_REL_P2P_SELF);
+
         List<OpdsEntryParentToChildJoin> joinList = new ArrayList<>();
         List<OpdsEntry> sharedEntries = new ArrayList<>();
         List<OpdsLink> sharedLinks = new ArrayList<>();
+        sharedLinks.add(p2pSelfLink);
+
         dbExecutorService.execute(() -> {
-            List<OpdsEntryWithRelationsAndContainerMimeType> entriesToShareSrc = DbManager.getInstance(getContext())
+            List<OpdsEntryWithRelationsAndContainerMimeType> entriesToShareSrc = UmAppDatabase.getInstance(getContext())
                     .getOpdsEntryWithRelationsDao().findByUuidsWithContainerMimeType(Arrays.asList(uuids));
 
 
@@ -1796,9 +1958,12 @@ public abstract class NetworkManager implements NetworkManagerCore, NetworkManag
                     continue;
                 }
 
+                String entryIdEncoded = CatalogUriResponder.doubleUrlEncode(entry.getEntryId());
+
                 OpdsLink link = new OpdsLink(sharedEntry.getUuid(), entry.getContainerMimeType(),
-                        UMFileUtil.joinPaths(CATALOG_HTTP_ENDPOINT_PREFIX, "entry",
-                                entry.getEntryId()), OpdsEntry.LINK_REL_ACQUIRE);
+                        UMFileUtil.joinPaths(CATALOG_HTTP_ENDPOINT_PREFIX,
+                                CatalogUriResponder.CONTAINER_DL_PATH_COMPONENT, entryIdEncoded),
+                        OpdsEntry.LINK_REL_ACQUIRE);
 
                 sharedEntries.add(sharedEntry);
                 sharedLinks.add(link);
@@ -1807,7 +1972,7 @@ public abstract class NetworkManager implements NetworkManagerCore, NetworkManag
             }
 
             //persist to the database
-            DbManager dbManager = DbManager.getInstance(getContext());
+            UmAppDatabase dbManager = UmAppDatabase.getInstance(getContext());
             dbManager.getOpdsEntryDao().insert(sharedFeed);
             dbManager.getOpdsEntryDao().insertList(sharedEntries);
             dbManager.getOpdsLinkDao().insert(sharedLinks);
@@ -1875,17 +2040,18 @@ public abstract class NetworkManager implements NetworkManagerCore, NetworkManag
     /**
      * Share the given feed using WiFi direct to the specified destination mac address.
      *
-     * @param feed
+     * @param feedUuid
      * @param destinationMacAddr
      */
-//    public void shareFeed(UstadJSOPDSFeed feed, String destinationMacAddr) {
-//        setSharedFeed(feed);
-//        if(!isWifiDirectConnectionEstablished(destinationMacAddr))
-//            connectToWifiDirectNode(destinationMacAddr);
-//    }
+    public void shareFeed(String feedUuid, String destinationMacAddr) {
+        setSharedFeed(feedUuid);
+        if(!isWifiDirectConnectionEstablished(destinationMacAddr))
+            connectToWifiDirectNode(destinationMacAddr);
+    }
 
-    public void shareEntries(String[] entryIds, String title, String destinationMacAddr) {
-        setSharedFeed(entryIds, title);
+    @Deprecated
+    public void shareEntries(String[] uuids, String title, String destinationMacAddr) {
+        setSharedFeed(uuids, title);
         if(!isWifiDirectConnectionEstablished(destinationMacAddr))
             connectToWifiDirectNode(destinationMacAddr);
     }
@@ -1896,7 +2062,7 @@ public abstract class NetworkManager implements NetworkManagerCore, NetworkManag
      *
      * @return
      */
-    public UstadJSOPDSFeed getOpdsFeedSharedByWifiP2pGroupOwner()throws IOException, XmlPullParserException {
+    public OpdsEntryWithChildEntries getOpdsFeedSharedByWifiP2pGroupOwner()throws IOException, XmlPullParserException {
         String groupOwner = getWifiDirectGroupOwnerIp();
         if(groupOwner == null) {
             UstadMobileSystemImpl.l(UMLog.ERROR, 664,
@@ -1910,7 +2076,7 @@ public abstract class NetworkManager implements NetworkManagerCore, NetworkManag
         IOException ioe = null;
         XmlPullParserException xe = null;
         InputStream feedIn = null;
-        UstadJSOPDSFeed feed = null;
+        OpdsEntryWithChildEntries feed = null;
         String feedUrl = "http://" + groupOwner + ":" + NetworkManager.SHARED_FEED_PORT +"/";
 
 
@@ -1919,10 +2085,13 @@ public abstract class NetworkManager implements NetworkManagerCore, NetworkManag
             URL feedUrlObj = new URL(feedUrl);
             feedConnection = (HttpURLConnection)feedUrlObj.openConnection(Proxy.NO_PROXY);
             feedConnection.setUseCaches(false);
-            feedConnection.setConnectTimeout(3000);
-            feedConnection.setReadTimeout(3000);
+            feedConnection.setConnectTimeout(15000);
+            feedConnection.setReadTimeout(15000);
             feedIn = feedConnection.getInputStream();
-            feed = new UstadJSOPDSFeed(feedUrl, feedIn, "UTF-8");
+            feed = new OpdsEntryWithChildEntries();
+            feed.setUrl(feedUrl);
+            XmlPullParser xpp = UstadMobileSystemImpl.getInstance().newPullParser(feedIn, "UTF-8");
+            feed.load(xpp, null);
         }catch(IOException e) {
             ioe = e;
             UstadMobileSystemImpl.l(UMLog.ERROR, 665, "Exception loading opds shared feed", e);

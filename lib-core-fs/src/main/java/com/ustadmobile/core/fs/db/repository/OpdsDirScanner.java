@@ -1,7 +1,7 @@
 package com.ustadmobile.core.fs.db.repository;
 
 import com.ustadmobile.core.catalog.contenttype.ContentTypePlugin;
-import com.ustadmobile.core.db.DbManager;
+import com.ustadmobile.core.db.UmAppDatabase;
 import com.ustadmobile.core.fs.contenttype.ContentTypePluginFs;
 import com.ustadmobile.core.impl.UstadMobileSystemImpl;
 import com.ustadmobile.core.util.UMFileUtil;
@@ -13,7 +13,9 @@ import com.ustadmobile.lib.db.entities.OpdsEntryWithRelations;
 
 import java.io.File;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
 /**
  * Created by mike on 1/26/18.
@@ -21,24 +23,24 @@ import java.util.List;
 
 public class OpdsDirScanner implements Runnable{
 
-    private DbManager dbManager;
+    private UmAppDatabase dbManager;
 
     private List<String> dirNames;
 
     private OpdsEntry.OpdsItemLoadCallback callback;
 
-    public OpdsDirScanner(DbManager dbManager, List<String> dirNames,
+    public OpdsDirScanner(UmAppDatabase dbManager, List<String> dirNames,
                           OpdsEntry.OpdsItemLoadCallback callback) {
         this.dbManager = dbManager;
         this.dirNames = dirNames;
         this.callback = callback;
     }
 
-    public OpdsDirScanner(DbManager dbManager, List<String> dirNames) {
+    public OpdsDirScanner(UmAppDatabase dbManager, List<String> dirNames) {
         this(dbManager, dirNames, null);
     }
 
-    public OpdsDirScanner(DbManager dbManager) {
+    public OpdsDirScanner(UmAppDatabase dbManager) {
         this.dbManager = dbManager;
     }
 
@@ -49,7 +51,7 @@ public class OpdsDirScanner implements Runnable{
             File dirFile = new File(dirName);
 
             //make sure entries that are in the database in this directory are actually still there
-            List<ContainerFile> containerFilesInDir = DbManager.getInstance(dbManager.getContext())
+            List<ContainerFile> containerFilesInDir = UmAppDatabase.getInstance(dbManager.getContext())
                     .getContainerFileDao().findFilesByDirectory(dirFile.getAbsolutePath());
 
             File file = null;
@@ -81,6 +83,8 @@ public class OpdsDirScanner implements Runnable{
                 .findContainerFileByPath(file.getAbsolutePath());
         ArrayList<ContainerFileEntry> containerFileEntries = new ArrayList<>();
 
+        List<OpdsEntryWithRelations> oldEntriesInFile = null;
+        Map<String, OpdsEntryWithRelations> oldEntryIdToEntryMap = null;
         if(containerFile == null){
             containerFile = new ContainerFileWithRelations();
             containerFile.setNormalizedPath(file.getAbsolutePath());
@@ -89,6 +93,16 @@ public class OpdsDirScanner implements Runnable{
             return containerFile;
         }
 
+//        else {
+//            oldEntriesInFile = dbManager.getOpdsEntryWithRelationsDao()
+//                    .findEntriesByContainerFileNormalizedPath(file.getAbsolutePath());
+//            oldEntryIdToEntryMap = new HashMap<>();
+//            for(OpdsEntryWithRelations oldEntry : oldEntriesInFile) {
+//                oldEntryIdToEntryMap.put(oldEntry.getEntryId(), oldEntry);
+//            }
+//        }
+
+        //find entries as they are known now
 
 
         for(ContentTypePlugin plugin : UstadMobileSystemImpl.getInstance().getSupportedContentTypePlugins()) {
@@ -113,23 +127,9 @@ public class OpdsDirScanner implements Runnable{
                 containerFile.setId((int)containerFileId);
             }
 
-            for(OpdsEntry entry : entriesInFile) {
-                ContainerFileEntry fileEntry = new ContainerFileEntry();
-                fileEntry.setOpdsEntryUuid(entry.getUuid());
-                fileEntry.setContainerFileId(containerFile.getId());
-                fileEntry.setContainerEntryId(entry.getEntryId());
-                containerFileEntries.add(fileEntry);
-            }
-
-            containerFile.setEntries(containerFileEntries);
-
             //delete old entry info on this file
             dbManager.getContainerFileEntryDao()
                     .deleteOpdsAndContainerFileEntriesByContainerFile(containerFile.getId());
-
-
-            //now persist everything for this file
-            dbManager.getContainerFileEntryDao().insert(containerFileEntries);
 
             for(OpdsEntryWithRelations entry : entriesInFile) {
                 if(entry.getLinks() != null)
@@ -138,6 +138,23 @@ public class OpdsDirScanner implements Runnable{
 
             dbManager.getOpdsEntryDao().insertList(new ArrayList<>(entriesInFile));
 
+            for(OpdsEntryWithRelations entry : entriesInFile) {
+                ContainerFileEntry fileEntry = new ContainerFileEntry();
+                fileEntry.setOpdsEntryUuid(entry.getUuid());
+                fileEntry.setContainerFileId(containerFile.getId());
+                fileEntry.setContainerEntryId(entry.getEntryId());
+                containerFileEntries.add(fileEntry);
+
+                dbManager.getOpdsEntryStatusCacheDao().handleContainerFoundOnDisk(dbManager, entry,
+                        containerFile);
+            }
+
+            //now persist everything for this file
+            dbManager.getContainerFileEntryDao().insert(containerFileEntries);
+
+            containerFile.setEntries(containerFileEntries);
+
+//            TODO: check that we update the file size
             dbManager.getContainerFileDao().updateLastUpdatedById(containerFile.getId(),
                     System.currentTimeMillis());
             break;

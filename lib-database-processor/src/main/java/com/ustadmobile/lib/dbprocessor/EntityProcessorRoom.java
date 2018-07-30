@@ -149,6 +149,12 @@ public class EntityProcessorRoom {
     }
 
     public static void main(String[] args) throws Exception{
+        File outDir = new File(args[1]);
+        if(!outDir.exists()) {
+            if(!outDir.mkdirs())
+                throw  new IllegalStateException("Out directory " + outDir.getAbsolutePath() + " does not exist, and cannot be created!");
+        }
+
         processorDir(new File(args[0]), new File(args[1]));
     }
 

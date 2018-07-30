@@ -4,6 +4,7 @@ import com.ustadmobile.core.impl.http.UmHttpRequest;
 import com.ustadmobile.core.impl.http.UmHttpResponse;
 import com.ustadmobile.core.util.UMCalendarUtil;
 import com.ustadmobile.core.util.UMIOUtils;
+import com.ustadmobile.lib.db.entities.HttpCachedEntry;
 
 import java.io.ByteArrayInputStream;
 import java.io.FileOutputStream;
@@ -32,7 +33,7 @@ import java.io.PipedOutputStream;
 
 public class HttpCacheResponse extends AbstractCacheResponse implements Runnable{
 
-    private HttpCacheEntry entry;
+    private HttpCachedEntry entry;
 
     private PipedInputStream bufferPipeIn;
 
@@ -55,11 +56,12 @@ public class HttpCacheResponse extends AbstractCacheResponse implements Runnable
         void onResponseComplete(HttpCacheResponse response);
     }
 
-    public HttpCacheResponse(HttpCacheEntry entry, UmHttpRequest request) {
+    public HttpCacheResponse(HttpCachedEntry entry, UmHttpRequest request) {
         this.entry = entry;
         this.request = request;
         setCacheResponse(MISS);
     }
+
 
 
     protected void setNetworkResponse(UmHttpResponse response) {
@@ -94,7 +96,8 @@ public class HttpCacheResponse extends AbstractCacheResponse implements Runnable
         try {
             bufferedPipeOut= new PipedOutputStream(bufferPipeIn);
         }catch(IOException e) {
-
+            UstadMobileSystemImpl.l(UMLog.ERROR, 0,
+                    "HttpCacheResponse: Exception with pipe init");
         }
     }
 
@@ -159,7 +162,7 @@ public class HttpCacheResponse extends AbstractCacheResponse implements Runnable
             case UmHttpRequest.HEADER_CONTENT_TYPE:
                 return entry.getContentType();
             case UmHttpRequest.HEADER_ETAG:
-                return entry.geteTag();
+                return entry.getEtag();
             case UmHttpRequest.HEADER_EXPIRES:
                 return UMCalendarUtil.makeHTTPDate(entry.getExpiresTime());
 
@@ -177,6 +180,9 @@ public class HttpCacheResponse extends AbstractCacheResponse implements Runnable
 
     @Override
     public byte[] getResponseBody() throws IOException {
+        if(!hasResponseBody())
+            throw new IOException("getResponseBody called on response that has no body");
+
         markBodyReturned();
         if(networkResponse == null) {
             return UMIOUtils.readStreamToByteArray(UstadMobileSystemImpl.getInstance().openFileInputStream(
@@ -190,6 +196,9 @@ public class HttpCacheResponse extends AbstractCacheResponse implements Runnable
 
     @Override
     public InputStream getResponseAsStream() throws IOException {
+        if(!hasResponseBody())
+            throw new IOException("getResponseAsStream called on response that has no body");
+
         markBodyReturned();
         if(networkResponse == null) {
             return UstadMobileSystemImpl.getInstance().openFileInputStream(entry.getFileUri());
@@ -210,7 +219,6 @@ public class HttpCacheResponse extends AbstractCacheResponse implements Runnable
         return entry.getStatusCode();
     }
 
-
     public String getFileUri() {
         return entry.getFileUri();
     }
@@ -219,7 +227,7 @@ public class HttpCacheResponse extends AbstractCacheResponse implements Runnable
         this.responseCompleteListener = responseCompleteListener;
     }
 
-    public HttpCacheEntry getEntry() {
+    public HttpCachedEntry getEntry() {
         return entry;
     }
 
@@ -229,11 +237,20 @@ public class HttpCacheResponse extends AbstractCacheResponse implements Runnable
 
     @Override
     public boolean isFresh(int timeToLive) {
-        return entry.isFresh(timeToLive);
+        return HttpCache.isFresh(entry, timeToLive);
     }
 
     @Override
     public boolean isFresh() {
-        return entry.isFresh();
+        return HttpCache.isFresh(entry);
+    }
+
+    /**
+     * Single point to determine if this response has a request body.
+     *
+     * @return true if there is an http body attached with this request, false otherwise.
+     */
+    protected boolean hasResponseBody() {
+        return !UmHttpRequest.METHOD_HEAD.equals(request.getMethod()) && entry.getStatusCode() != 204;
     }
 }

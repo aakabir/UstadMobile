@@ -1,6 +1,8 @@
 package com.ustadmobile.lib.db.entities;
 
 import com.ustadmobile.lib.database.annotation.UmEntity;
+import com.ustadmobile.lib.database.annotation.UmIndex;
+import com.ustadmobile.lib.database.annotation.UmIndexField;
 import com.ustadmobile.lib.database.annotation.UmPrimaryKey;
 
 import org.xmlpull.v1.XmlPullParser;
@@ -44,6 +46,7 @@ public class OpdsEntry {
     /**
      * The entryId as defined by the id element in an OPDS feed
      */
+    @UmIndexField
     private String entryId;
 
 
@@ -54,6 +57,8 @@ public class OpdsEntry {
 
     protected String title;
 
+//    TODO: re-enable this index
+//    @UmIndexField
     protected String updated;
 
     protected String summary;
@@ -68,6 +73,13 @@ public class OpdsEntry {
 
     protected String url;
 
+    private int entryType;
+
+    public static final int ENTRY_TYPE_OPDS_FEED = 1;
+
+    public static final int ENTRY_TYPE_OPDS_FEED_ENTRY = 2;
+
+    public static final int ENTRY_TYPE_OPDS_ENTRY_STANDALONE = 3;
 
     protected static final String ATTR_REL = "rel";
 
@@ -135,6 +147,10 @@ public class OpdsEntry {
      */
     public static final String LINK_REL_ACQUIRE = "http://opds-spec.org/acquisition";
 
+    public static final String LINK_REL_P2P_SELF = "http://www.ustadmobile.com/ns/opds/p2p-self";
+
+    public static final String LINK_REL_SUBSECTION = "subsection";
+
     /**
      * Type to be used to represent an OPDS entry as per the opds spec
      *
@@ -142,6 +158,10 @@ public class OpdsEntry {
      */
     public static final String TYPE_ENTRY_OPDS =
             "application/atom+xml;type=entry;profile=opds-catalog";
+
+    public static final String TYPE_OPDS_ACQUISITION_FEED = "application/atom+xml;profile=opds-catalog;kind=acquisition";
+
+    public static final String TYPE_OPDS_NAVIGATION_FEED = "application/atom+xml;profile=opds-catalog;kind=navigation";
 
     public static final String ENTRY_PROTOCOL = "entry:///";
 
@@ -163,6 +183,17 @@ public class OpdsEntry {
         void onError(OpdsEntry item, Throwable cause);
 
     }
+
+    public OpdsEntry(String uuid, String entryId, String title) {
+        this.uuid = uuid;
+        this.entryId = entryId;
+        this.title = title;
+    }
+
+    public OpdsEntry() {
+
+    }
+
 
 
     /**
@@ -256,6 +287,13 @@ public class OpdsEntry {
         this.url = url;
     }
 
+    public int getEntryType() {
+        return entryType;
+    }
+
+    public void setEntryType(int entryType) {
+        this.entryType = entryType;
+    }
 
     public void load(XmlPullParser xpp, OpdsItemLoadCallback callback) throws IOException, XmlPullParserException {
         int evtType;
@@ -268,8 +306,19 @@ public class OpdsEntry {
         while((evtType = xpp.next()) != XmlPullParser.END_DOCUMENT) {
             if(evtType == XmlPullParser.START_TAG) {
                 name = xpp.getName();
+
+                //TODO: Test this with standalone entry OPDS file
+                if(getEntryType() == 0) {
+                    if (name.equals(TAG_ENTRY))
+                        setEntryType(ENTRY_TYPE_OPDS_ENTRY_STANDALONE);
+                    else if (name.equals(TAG_FEED))
+                        setEntryType(ENTRY_TYPE_OPDS_FEED);
+                }
+
+
                 if(name.equals(TAG_ENTRY)) {
                     OpdsEntryWithRelations newEntry = new OpdsEntryWithRelations();
+                    newEntry.setEntryType(ENTRY_TYPE_OPDS_FEED_ENTRY);
                     newEntry.load(xpp, callback);
                     entryCount++;
 
@@ -369,7 +418,7 @@ public class OpdsEntry {
 
     public OpdsLink getAcquisitionLink(String mimeType, boolean mimeTypeByPrefix) {
         List<OpdsLink> result = getLinks(LINK_REL_ACQUIRE, mimeType, null, true, mimeTypeByPrefix, false, 1);
-        if(!result.isEmpty())
+        if(result != null && !result.isEmpty())
             return result.get(0);
         else
             return null;
@@ -383,11 +432,15 @@ public class OpdsEntry {
             return null;
         }
 
+        OpdsEntryWithRelations thisWithRelations = (OpdsEntryWithRelations)this;
+        if(thisWithRelations.getLinks() == null)
+            return null;
+
         List<OpdsLink> result = new ArrayList<>();
 
         boolean matchRel, matchType, matchHref;
         int matches = 0;
-        for(OpdsLink link : ((OpdsEntryWithRelations)this).getLinks()){
+        for(OpdsLink link : thisWithRelations.getLinks()){
             matchRel = true;
             matchType = true;
             matchHref = true;
@@ -444,4 +497,46 @@ public class OpdsEntry {
         return link;
     }
 
+    @Override
+    public boolean equals(Object o) {
+        if (this == o) return true;
+        if (!(o instanceof OpdsEntry)) return false;
+
+        OpdsEntry opdsEntry = (OpdsEntry) o;
+
+        if (entryType != opdsEntry.entryType) return false;
+        if (uuid != null ? !uuid.equals(opdsEntry.uuid) : opdsEntry.uuid != null) return false;
+        if (entryId != null ? !entryId.equals(opdsEntry.entryId) : opdsEntry.entryId != null)
+            return false;
+        if (title != null ? !title.equals(opdsEntry.title) : opdsEntry.title != null) return false;
+        if (updated != null ? !updated.equals(opdsEntry.updated) : opdsEntry.updated != null)
+            return false;
+        if (summary != null ? !summary.equals(opdsEntry.summary) : opdsEntry.summary != null)
+            return false;
+        if (content != null ? !content.equals(opdsEntry.content) : opdsEntry.content != null)
+            return false;
+        if (contentType != null ? !contentType.equals(opdsEntry.contentType) : opdsEntry.contentType != null)
+            return false;
+        if (publisher != null ? !publisher.equals(opdsEntry.publisher) : opdsEntry.publisher != null)
+            return false;
+        if (language != null ? !language.equals(opdsEntry.language) : opdsEntry.language != null)
+            return false;
+        return url != null ? url.equals(opdsEntry.url) : opdsEntry.url == null;
+    }
+
+    @Override
+    public int hashCode() {
+        int result = uuid != null ? uuid.hashCode() : 0;
+        result = 31 * result + (entryId != null ? entryId.hashCode() : 0);
+        result = 31 * result + (title != null ? title.hashCode() : 0);
+        result = 31 * result + (updated != null ? updated.hashCode() : 0);
+        result = 31 * result + (summary != null ? summary.hashCode() : 0);
+        result = 31 * result + (content != null ? content.hashCode() : 0);
+        result = 31 * result + (contentType != null ? contentType.hashCode() : 0);
+        result = 31 * result + (publisher != null ? publisher.hashCode() : 0);
+        result = 31 * result + (language != null ? language.hashCode() : 0);
+        result = 31 * result + (url != null ? url.hashCode() : 0);
+        result = 31 * result + entryType;
+        return result;
+    }
 }

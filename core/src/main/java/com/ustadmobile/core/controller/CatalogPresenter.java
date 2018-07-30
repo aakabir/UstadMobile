@@ -1,6 +1,6 @@
 package com.ustadmobile.core.controller;
 
-import com.ustadmobile.core.db.DbManager;
+import com.ustadmobile.core.db.UmAppDatabase;
 import com.ustadmobile.core.db.UmLiveData;
 import com.ustadmobile.core.db.UmObserver;
 import com.ustadmobile.core.db.UmProvider;
@@ -8,13 +8,8 @@ import com.ustadmobile.core.generated.locale.MessageID;
 import com.ustadmobile.core.impl.UMLog;
 import com.ustadmobile.core.impl.UMStorageDir;
 import com.ustadmobile.core.impl.UmCallback;
+import com.ustadmobile.core.impl.UmResultCallback;
 import com.ustadmobile.core.impl.UstadMobileSystemImpl;
-import com.ustadmobile.core.networkmanager.AcquisitionListener;
-import com.ustadmobile.core.networkmanager.AcquisitionTaskStatus;
-import com.ustadmobile.core.opds.UstadJSOPDSEntry;
-import com.ustadmobile.core.opds.UstadJSOPDSFeed;
-import com.ustadmobile.core.opds.UstadJSOPDSItem;
-import com.ustadmobile.core.opds.entities.UmOpdsLink;
 import com.ustadmobile.core.util.UMFileUtil;
 import com.ustadmobile.core.view.AddFeedDialogView;
 import com.ustadmobile.core.view.AppView;
@@ -22,7 +17,9 @@ import com.ustadmobile.core.view.CatalogEntryView;
 import com.ustadmobile.core.view.CatalogView;
 import com.ustadmobile.lib.db.entities.OpdsEntry;
 import com.ustadmobile.lib.db.entities.OpdsEntryWithRelations;
+import com.ustadmobile.lib.db.entities.OpdsEntryWithStatusCache;
 import com.ustadmobile.lib.db.entities.OpdsLink;
+
 
 import java.util.ArrayList;
 import java.util.HashSet;
@@ -40,18 +37,15 @@ import java.util.Vector;
  * Created by mike on 9/30/17.
  */
 
-public class CatalogPresenter extends BaseCatalogPresenter implements AcquisitionListener  {
+public class CatalogPresenter extends BaseCatalogPresenter  {
 
     private CatalogView mView;
-
-    @Deprecated
-    private UstadJSOPDSFeed feed;
 
     private UmLiveData<OpdsEntryWithRelations> feedLiveData;
 
     private String loadedFeedId;
 
-    private UmProvider<OpdsEntryWithRelations> entryProvider;
+    private UmProvider<OpdsEntryWithStatusCache> entryProvider;
 
     /**
      * Constant that can be used in the buildconfig to set the bottom button to be a download all
@@ -159,14 +153,14 @@ public class CatalogPresenter extends BaseCatalogPresenter implements Acquisitio
 
 
         if(opdsUri.startsWith("https://") || opdsUri.startsWith("http://")) {
-            feedLiveData = DbManager.getInstance(getContext()).getOpdsEntryWithRelationsRepository()
+            feedLiveData = UstadMobileSystemImpl.getInstance().getOpdsAtomFeedRepository(getContext())
                     .getEntryByUrl(opdsUri);
             feedLiveData.observe(this, this::handleParentFeedLoaded);
         }else if(opdsUri.equals("entries:///my_library")) {
             final String libraryUuid = "my_library";
-            UmLiveData<Boolean> libraryPresent = DbManager.getInstance(getContext())
+            UmLiveData<Boolean> libraryPresent = UmAppDatabase.getInstance(getContext())
                     .getOpdsEntryDao().isEntryPresent(libraryUuid);
-            feedLiveData = DbManager.getInstance(getContext()).getOpdsEntryWithRelationsDao()
+            feedLiveData = UmAppDatabase.getInstance(getContext()).getOpdsEntryWithRelationsDao()
                     .getEntryByUuid(libraryUuid);
             feedLiveData.observe(CatalogPresenter.this,
                     CatalogPresenter.this::handleParentFeedLoaded);
@@ -176,7 +170,7 @@ public class CatalogPresenter extends BaseCatalogPresenter implements Acquisitio
                     if(!present){
                         String presetUrl = UstadMobileSystemImpl.getInstance().getAppConfigString(
                                 APPCONFIG_DEFAULT_MY_LIBRARY, null, getContext());
-                        DbManager.getInstance(getContext()).getOpdsEntryWithRelationsRepository()
+                        UstadMobileSystemImpl.getInstance().getOpdsAtomFeedRepository(getContext())
                                 .getEntryByUrl(presetUrl, libraryUuid);
                         libraryPresent.removeObserver(this);
                     }
@@ -194,40 +188,69 @@ public class CatalogPresenter extends BaseCatalogPresenter implements Acquisitio
                 dirsToList.add(storageDirs[i].getDirURI());
             }
 
-            entryProvider = DbManager.getInstance(getContext()).getOpdsEntryWithRelationsRepository()
+            entryProvider = UstadMobileSystemImpl.getInstance().getOpdsAtomFeedRepository(getContext())
                     .findEntriesByContainerFileDirectoryAsProvider(dirsToList, null);
             mView.setEntryProvider(entryProvider);
             title = UstadMobileSystemImpl.getInstance().getString(MessageID.downloaded, getContext());
+        }else if(opdsUri.equals("entries:///downloadSetEntries")) {
+            entryProvider = UmAppDatabase.getInstance(getContext()).getOpdsEntryWithRelationsDao()
+                    .getEntriesWithDownloadSet();
+            mView.setEntryProvider(entryProvider);
+            title = UstadMobileSystemImpl.getInstance().getString(MessageID.downloaded, getContext());
         }
-
-
-        feed = new UstadJSOPDSFeed();
-
-        UstadMobileSystemImpl.getInstance().getNetworkManager().addAcquisitionTaskListener(this);
     }
 
     public void onDestroy() {
         super.onDestroy();
-        UstadMobileSystemImpl.getInstance().getNetworkManager().removeAcquisitionTaskListener(this);
     }
 
     private void handleParentFeedLoaded(OpdsEntryWithRelations opdsFeed) {
         if(opdsFeed != null && (loadedFeedId == null || !loadedFeedId.equals(opdsFeed.getUuid()))) {
             loadedFeedId = opdsFeed.getUuid();
             title = opdsFeed.getTitle();
-            entryProvider = DbManager.getInstance(getContext()).getOpdsEntryWithRelationsDao()
-                    .getEntriesByParent(loadedFeedId);
+            entryProvider = UmAppDatabase.getInstance(getContext()).getOpdsEntryWithRelationsDao()
+                    .getEntriesWithStatusCacheByParent(loadedFeedId);
             mView.setEntryProvider(entryProvider);
         }
     }
 
-    public String resolveLink(String href) {
+    public String resolveLink(String href, OpdsEntry entry) {
         //TODO: refactor this to using a base href variable instead
-        if(feedLiveData != null && feedLiveData.getValue() != null)
+        if(entry != null && entry.getUrl() != null){
+            return UMFileUtil.resolveLink(entry.getUrl(), href);
+        }else if(feedLiveData != null && feedLiveData.getValue() != null)
             return UMFileUtil.resolveLink(feedLiveData.getValue().getUrl(), href);
         else
             return href;
     }
+
+    public void resolveLink(String href, OpdsEntry entry, UmResultCallback<String> callback) {
+        if(UMFileUtil.isUriAbsolute(href)){
+            callback.onDone(href);
+        }else if(entry != null && entry.getUrl() != null){
+            callback.onDone(UMFileUtil.resolveLink(entry.getUrl(), href));
+        }else if(feedLiveData != null && feedLiveData.getValue() != null) {
+            callback.onDone(UMFileUtil.resolveLink(feedLiveData.getValue().getUrl(), href));
+        }else {
+            UmAppDatabase.getInstance(getContext()).getOpdsEntryWithRelationsDao()
+                    .findParentUrlByChildUuid(entry.getUuid(), new UmCallback<String>() {
+                        @Override
+                        public void onSuccess(String parentHref) {
+                            if(parentHref != null)
+                                callback.onDone(UMFileUtil.resolveLink(parentHref, href));
+                            else
+                                callback.onDone(null);//no parent and could not resolve
+
+                        }
+
+                        @Override
+                        public void onFailure(Throwable exception) {
+
+                        }
+                    });
+        }
+    }
+
 
     public int getResourceMode() {
         return resourceMode;
@@ -287,6 +310,13 @@ public class CatalogPresenter extends BaseCatalogPresenter implements Acquisitio
             return;
         }
 
+        if(entry.getEntryType() == OpdsEntry.ENTRY_TYPE_OPDS_FEED) {
+            //this entry is itself a feed - we could have also looked for child entries
+            args.put(ARG_URL, entry.getUrl());
+            UstadMobileSystemImpl.getInstance().go(CatalogView.VIEW_NAME, args, getContext());
+            return;
+        }
+
         Hashtable args = new Hashtable();
 
         List<OpdsLink> opdsLinks = entry.getLinks();
@@ -307,13 +337,15 @@ public class CatalogPresenter extends BaseCatalogPresenter implements Acquisitio
                 return;
             }
 
-            if(linkType.contains("kind=navigation")) {
+            if(linkType.contains("kind=navigation") || linkType.contains("kind=acquisition")) {
                 args.put(ARG_URL, UMFileUtil.resolveLink(feedLiveData.getValue().getUrl(),
                         link.getHref()));
                 UstadMobileSystemImpl.getInstance().go(CatalogView.VIEW_NAME, args, getContext());
                 return;
             }
         }
+
+
 
         //no relevant link found - but perhaps this is a file entry
     }
@@ -329,37 +361,6 @@ public class CatalogPresenter extends BaseCatalogPresenter implements Acquisitio
             args.put(CatalogEntryPresenter.ARG_TITLEBAR_TEXT, title);
 
         UstadMobileSystemImpl.getInstance().go(CatalogEntryView.VIEW_NAME, args, getContext());
-    }
-
-
-    /**
-     * Triggered when the user selects an entry from the catalog. This could
-     * be another OPDS catalog Feed to display or it could be a container
-     * entry.
-     *
-     * @param entryId
-     */
-    public void handleClickEntry(final String entryId) {
-        UstadJSOPDSEntry entry = feed.getEntryById(entryId);
-
-        final UstadMobileSystemImpl impl = UstadMobileSystemImpl.getInstance();
-
-
-
-        if(!entry.getParentFeed().isAcquisitionFeed()) {
-            //we are loading another opds catalog
-            Vector entryLinks = entry.getLinks(null, UstadJSOPDSItem.TYPE_ATOMFEED,
-                    true, true);
-
-            if(entryLinks.size() > 0) {
-                UmOpdsLink firstLink = (UmOpdsLink) entryLinks.elementAt(0);
-                handleCatalogSelected(UMFileUtil.resolveLink(entry.getParentFeed().getHref(),
-                        firstLink.getHref()));
-            }
-        }else {
-            //Go to the entry view
-            handleOpenEntryView(entry, entry.getParentFeed().getTitle());
-        }
     }
 
     public void handleClickAdd() {
@@ -383,29 +384,46 @@ public class CatalogPresenter extends BaseCatalogPresenter implements Acquisitio
     }
 
     public void handleClickAlternativeLanguage(int langIndex) {
-        String[] altLangLinks = (String[])alternativeTranslationLinks.elementAt(langIndex);
-        String alternativeUrl = UMFileUtil.resolveLink(feed.getHref(),
-                altLangLinks[UstadJSOPDSItem.ATTR_HREF]);
-        handleCatalogSelected(alternativeUrl);
+//        TODO: re-implement for #dbarch2
+//        String[] altLangLinks = (String[])alternativeTranslationLinks.elementAt(langIndex);
+//        String alternativeUrl = UMFileUtil.resolveLink(feed.getHref(),
+//                altLangLinks[UstadJSOPDSItem.ATTR_HREF]);
+//        handleCatalogSelected(alternativeUrl);
     }
 
     public void handleClickFooterButton() {
         if(FOOTER_BUTTON_DOWNLOADALL.equals(footerButtonUrl)) {
-            handleClickDownloadAll();
+//            TODO: Re-implement for #dbarch2
+//            handleClickDownloadAll();
         }else {
             handleCatalogSelected(footerButtonUrl);
         }
     }
 
+    public void handleClickDownload(List<OpdsEntryWithRelations> entries) {
+        ArrayList<String> entryUris = new ArrayList<>();
+        for(int i = 0; i < entries.size(); i++) {
+            List<OpdsLink> subsectionLinks = entries.get(i).getLinks(OpdsEntry.LINK_REL_SUBSECTION,
+                    null, null, false, false, false, 1);
+            if(subsectionLinks != null && !subsectionLinks.isEmpty()){
+                entryUris.add(resolveLink(subsectionLinks.get(0).getHref(), null));
+            }
+        }
 
-    /**
-     * Triggered by the view when the user has selected the download all button
-     * for this feed
-     *
-     */
-    public void handleClickDownloadAll() {
-        handleClickDownload(feed, feed.getAllEntries());
+        String[] entryUrisArray = new String[entryUris.size()];
+        entryUrisArray = entryUris.toArray(entryUrisArray);
+        Hashtable args = new Hashtable();
+        args.put("r_uris", entryUrisArray);
+        UstadMobileSystemImpl.getInstance().go("DownloadDialog", args, getContext());
     }
+
+    public void handleClickDownload(OpdsEntryWithRelations entry) {
+        String[] uuidArr = {entry.getUuid()};
+        Hashtable args = new Hashtable();
+        args.put("r_uuids", uuidArr);
+        UstadMobileSystemImpl.getInstance().go("DownloadDialog", args, getContext());
+    }
+
 
     public void handleClickDelete() {
         if(selectedEntries.size() > 0 && deleteEntryFromFeedEnabled) {
@@ -413,7 +431,7 @@ public class CatalogPresenter extends BaseCatalogPresenter implements Acquisitio
                 MessageID.delete, MessageID.delete_q, MessageID.ok, MessageID.cancel, 0,
                     (commandId, choice) -> {
                         if(choice == AppView.CHOICE_POSITIVE) {
-                            DbManager.getInstance(getContext()).getOpdsEntryParentToChildJoinDao()
+                            UmAppDatabase.getInstance(getContext()).getOpdsEntryParentToChildJoinDao()
                                     .deleteByParentIdAndChildIdAsync(feedLiveData.getValue().getUuid(),
                                             new ArrayList<>(selectedEntries), new UmCallback<Integer>() {
                                                 @Override
@@ -439,51 +457,28 @@ public class CatalogPresenter extends BaseCatalogPresenter implements Acquisitio
      */
     public void handleClickShare() {
         //share all those in catalog that have been acquired
-        Vector acquiredEntryIds = new Vector();
-        CatalogEntryInfo entryInfo;
-        for(int i = 0; i < feed.size(); i++) {
-            entryInfo = getEntryInfo(feed.getEntry(i).getItemId(), CatalogPresenter.ALL_RESOURCES,
-                    getContext());
-            if(entryInfo != null && entryInfo.acquisitionStatus == CatalogPresenter.STATUS_ACQUIRED) {
-                acquiredEntryIds.addElement(feed.getEntry(i).getItemId());
-            }
-        }
-
-        if(acquiredEntryIds.size() == 0) {
-            //nothing downloaded...
-            return;
-        }
-
-        String[] idsToShare = new String[acquiredEntryIds.size()];
-        acquiredEntryIds.copyInto(idsToShare);
-        Hashtable shareArgs = new Hashtable();
-        shareArgs.put("entries", idsToShare);
-        shareArgs.put("title", feed.getTitle());
-        UstadMobileSystemImpl.getInstance().go("SendCourse", shareArgs, getContext());
-    }
-
-
-    @Override
-    public void acquisitionProgressUpdate(String entryId, AcquisitionTaskStatus status) {
-        UstadJSOPDSEntry entry=  feed.getEntryById(entryId);
-        if(entry != null) {
-            float progress = (float)((double)status.getDownloadedSoFar() / (double)status.getTotalSize());
-            mView.updateDownloadEntryProgress(entryId, progress, formatDownloadStatusText(status));
-        }
-    }
-
-    @Override
-    public void acquisitionStatusChanged(String entryId, AcquisitionTaskStatus status) {
-        switch(status.getStatus()){
-            case UstadMobileSystemImpl.DLSTATUS_RUNNING:
-                mView.setEntryStatus(entryId, CatalogPresenter.STATUS_ACQUISITION_IN_PROGRESS);
-                mView.setDownloadEntryProgressVisible(entryId, true);
-                break;
-            case UstadMobileSystemImpl.DLSTATUS_SUCCESSFUL:
-                mView.setDownloadEntryProgressVisible(entryId, false);
-                mView.setEntryStatus(entryId, CatalogPresenter.STATUS_ACQUIRED);
-                break;
-        }
+//        TODO: Re-implement for #dbarch2
+//        Vector acquiredEntryIds = new Vector();
+//        CatalogEntryInfo entryInfo;
+//        for(int i = 0; i < feed.size(); i++) {
+//            entryInfo = getEntryInfo(feed.getEntry(i).getItemId(), CatalogPresenter.ALL_RESOURCES,
+//                    getContext());
+//            if(entryInfo != null && entryInfo.acquisitionStatus == CatalogPresenter.STATUS_ACQUIRED) {
+//                acquiredEntryIds.addElement(feed.getEntry(i).getItemId());
+//            }
+//        }
+//
+//        if(acquiredEntryIds.size() == 0) {
+//            //nothing downloaded...
+//            return;
+//        }
+//
+//        String[] idsToShare = new String[acquiredEntryIds.size()];
+//        acquiredEntryIds.copyInto(idsToShare);
+//        Hashtable shareArgs = new Hashtable();
+//        shareArgs.put("entries", idsToShare);
+//        shareArgs.put("title", feed.getTitle());
+//        UstadMobileSystemImpl.getInstance().go("SendCourse", shareArgs, getContext());
     }
 
     public void handleRefresh() {
@@ -495,7 +490,7 @@ public class CatalogPresenter extends BaseCatalogPresenter implements Acquisitio
                 dirsToList.add(storageDirs[i].getDirURI());
             }
 
-            DbManager.getInstance(getContext()).getOpdsEntryWithRelationsRepository()
+            UstadMobileSystemImpl.getInstance().getOpdsAtomFeedRepository(getContext())
                     .findEntriesByContainerFileDirectoryAsProvider(dirsToList, new OpdsEntry.OpdsItemLoadCallback() {
                         @Override
                         public void onDone(OpdsEntry item) {

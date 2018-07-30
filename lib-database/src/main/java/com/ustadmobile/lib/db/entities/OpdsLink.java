@@ -1,6 +1,7 @@
 package com.ustadmobile.lib.db.entities;
 
 import com.ustadmobile.lib.database.annotation.UmEntity;
+import com.ustadmobile.lib.database.annotation.UmIndex;
 import com.ustadmobile.lib.database.annotation.UmIndexField;
 import com.ustadmobile.lib.database.annotation.UmPrimaryKey;
 
@@ -8,6 +9,7 @@ import com.ustadmobile.lib.database.annotation.UmPrimaryKey;
 /**
  * Created by mike on 1/13/18.
  */
+//TODO: re-enable this index (indices = {@UmIndex(name = "idx_uuid_linkIndex", unique = true, value = {"entryUuid", "linkIndex"})})
 @UmEntity
 public class OpdsLink {
 
@@ -23,6 +25,7 @@ public class OpdsLink {
 
     private String href;
 
+    @UmIndexField
     private String rel;
 
     private long length;
@@ -113,5 +116,40 @@ public class OpdsLink {
 
     public void setTitle(String title) {
         this.title = title;
+    }
+
+    @Override
+    public boolean equals(Object o) {
+        if (this == o) return true;
+        if (!(o instanceof OpdsLink)) return false;
+
+        OpdsLink opdsLink = (OpdsLink) o;
+
+        if (linkIndex != opdsLink.linkIndex) return false;
+        if (length != opdsLink.length) return false;
+        if (!id.equals(opdsLink.id)) return false;
+        if (entryUuid != null ? !entryUuid.equals(opdsLink.entryUuid) : opdsLink.entryUuid != null)
+            return false;
+        if (mimeType != null ? !mimeType.equals(opdsLink.mimeType) : opdsLink.mimeType != null)
+            return false;
+        if (href != null ? !href.equals(opdsLink.href) : opdsLink.href != null) return false;
+        if (rel != null ? !rel.equals(opdsLink.rel) : opdsLink.rel != null) return false;
+        if (hreflang != null ? !hreflang.equals(opdsLink.hreflang) : opdsLink.hreflang != null)
+            return false;
+        return title != null ? title.equals(opdsLink.title) : opdsLink.title == null;
+    }
+
+    @Override
+    public int hashCode() {
+        int result = id.hashCode();
+        result = 31 * result + (entryUuid != null ? entryUuid.hashCode() : 0);
+        result = 31 * result + linkIndex;
+        result = 31 * result + (mimeType != null ? mimeType.hashCode() : 0);
+        result = 31 * result + (href != null ? href.hashCode() : 0);
+        result = 31 * result + (rel != null ? rel.hashCode() : 0);
+        result = 31 * result + (int) (length ^ (length >>> 32));
+        result = 31 * result + (hreflang != null ? hreflang.hashCode() : 0);
+        result = 31 * result + (title != null ? title.hashCode() : 0);
+        return result;
     }
 }

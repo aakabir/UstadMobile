@@ -1,7 +1,7 @@
 package com.ustadmobile.core.fs.contenttype;
 
 import com.ustadmobile.core.catalog.contenttype.H5PContentType;
-import com.ustadmobile.core.db.DbManager;
+import com.ustadmobile.core.db.UmAppDatabase;
 import com.ustadmobile.core.util.UMFileUtil;
 import com.ustadmobile.core.util.UMIOUtils;
 import com.ustadmobile.lib.db.entities.OpdsEntryWithRelations;
@@ -22,7 +22,11 @@ import java.util.zip.ZipEntry;
 import java.util.zip.ZipFile;
 
 /**
- * Created by mike on 2/15/18.
+ * ContentTypePluginFs implementation for H5P files.
+ *
+ * If the H5P file's h5p.json contains "entryId" - this will be used as the entry id attribute. This
+ * is non-standard and not part of the H5P spec. It's thus difficult to match up what is described in
+ * a feed and the actual file. If entryId is not in the h5p.json file, we use the file path.
  */
 
 public class H5PContentTypeFs extends H5PContentType implements ContentTypePluginFs {
@@ -43,7 +47,7 @@ public class H5PContentTypeFs extends H5PContentType implements ContentTypePlugi
             JSONObject h5pJsonObj = new JSONObject(UMIOUtils.readStreamToString(entryIn));
 
             String fileUri = file.toURI().toString();
-            entry = DbManager.getInstance(context)
+            entry = UmAppDatabase.getInstance(context)
                     .getOpdsEntryWithRelationsDao().getEntryByUrlStatic(fileUri);
             if(entry == null) {
                 entry = new OpdsEntryWithRelations();
@@ -94,7 +98,13 @@ public class H5PContentTypeFs extends H5PContentType implements ContentTypePlugi
 //            }
 
             //This is not an ideal solution
-            entry.setEntryId(fileUri);
+
+            String entryId = h5pJsonObj.optString("entryId", null);
+            if(entryId != null) {
+                entry.setEntryId(entryId);
+            }else {
+                entry.setEntryId(fileUri);
+            }
         }catch(IOException e) {
             e.printStackTrace();
         }finally{

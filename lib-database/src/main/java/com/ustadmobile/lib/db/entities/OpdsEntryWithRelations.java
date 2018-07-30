@@ -10,6 +10,7 @@ import org.xmlpull.v1.XmlSerializer;
 
 import java.io.ByteArrayInputStream;
 import java.io.IOException;
+import java.util.ArrayList;
 import java.util.List;
 
 /**
@@ -34,6 +35,13 @@ public class OpdsEntryWithRelations extends OpdsEntry{
 
     public List<ContainerFileEntry> getContainerFileEntries() {
         return containerFileEntries;
+    }
+
+    public OpdsEntryWithRelations(String uuid, String entryId, String title) {
+        super(uuid, entryId, title);
+    }
+
+    public OpdsEntryWithRelations() {
     }
 
     public void setContainerFileEntries(List<ContainerFileEntry> containerFileEntries) {
@@ -171,5 +179,31 @@ public class OpdsEntryWithRelations extends OpdsEntry{
         xs.setPrefix("", NS_ATOM);
         xs.setPrefix("dc", NS_DC);
         xs.setPrefix("opds", NS_OPDS);
+    }
+
+    public static List<OpdsEntry> toOpdsEntryList(List<OpdsEntryWithRelations> entryWithRelList) {
+        ArrayList<OpdsEntry> entryList = new ArrayList<>(entryWithRelList);
+
+        return entryList;
+    }
+
+    @Override
+    public boolean equals(Object o) {
+        if (this == o) return true;
+        if (!(o instanceof OpdsEntryWithRelations)) return false;
+        if (!super.equals(o)) return false;
+
+        OpdsEntryWithRelations that = (OpdsEntryWithRelations) o;
+
+        if (links != null ? !links.equals(that.links) : that.links != null) return false;
+        return containerFileEntries != null ? containerFileEntries.equals(that.containerFileEntries) : that.containerFileEntries == null;
+    }
+
+    @Override
+    public int hashCode() {
+        int result = super.hashCode();
+        result = 31 * result + (links != null ? links.hashCode() : 0);
+        result = 31 * result + (containerFileEntries != null ? containerFileEntries.hashCode() : 0);
+        return result;
     }
 }

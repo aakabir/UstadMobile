@@ -36,11 +36,8 @@ package com.ustadmobile.core.fs;
     /* $endif$ */
 
 import com.ustadmobile.core.controller.CatalogPresenter;
-import com.ustadmobile.core.fs.db.HttpCacheDbEntry;
-import com.ustadmobile.core.fs.db.HttpCacheDbManager;
 import com.ustadmobile.core.impl.AbstractCacheResponse;
 import com.ustadmobile.core.impl.HttpCache;
-import com.ustadmobile.core.impl.HttpCacheEntry;
 import com.ustadmobile.core.impl.HttpCacheResponse;
 import com.ustadmobile.core.impl.UstadMobileSystemImpl;
 import com.ustadmobile.core.impl.http.UmHttpCall;
@@ -49,8 +46,10 @@ import com.ustadmobile.core.impl.http.UmHttpResponse;
 import com.ustadmobile.core.impl.http.UmHttpResponseCallback;
 import com.ustadmobile.core.util.UMFileUtil;
 import com.ustadmobile.core.util.UMIOUtils;
+import com.ustadmobile.lib.db.entities.HttpCachedEntry;
 import com.ustadmobile.test.core.ResourcesHttpdTestServer;
 import com.ustadmobile.test.core.UMTestUtil;
+import com.ustadmobile.test.core.annotation.ImplementationRequiredTest;
 import com.ustadmobile.test.core.impl.PlatformTestUtil;
 
 
@@ -72,14 +71,16 @@ import java.util.zip.ZipEntry;
 import java.util.zip.ZipFile;
 
 import fi.iki.elonen.router.RouterNanoHTTPD;
+import okhttp3.mockwebserver.MockResponse;
+import okhttp3.mockwebserver.MockWebServer;
 
 
 /**
  *
  * @author mike
  */
+@ImplementationRequiredTest
 public class TestHttpCache {
-    
 
     private static RouterNanoHTTPD resourcesHttpd;
 
@@ -394,38 +395,76 @@ public class TestHttpCache {
 
     @Test
     public void testFreshness() {
-        final Object context = PlatformTestUtil.getTargetContext();
-
         //Make up an entry that expires in 10 minutes, where it was last checked 9 minutes ago
-        HttpCacheDbEntry dbEntry = HttpCacheDbManager.getInstance().makeNewEntry(context);
-        dbEntry.setCacheControl("max-age=600");
-        dbEntry.setLastChecked(System.currentTimeMillis() - (9 * 60 * 1000));
-        HttpCacheEntry entry = new HttpCacheEntry(dbEntry);
+        HttpCachedEntry entry = new HttpCachedEntry();
+        entry.setCacheControl("max-age=600");
+        entry.setLastChecked(System.currentTimeMillis() - (9 * 60 * 1000));
         Assert.assertTrue("Cache-control header maxage=10min, last checked 9mins ago, isFresh",
-                entry.isFresh(0));
+                HttpCache.isFresh(entry, 0));
 
-        dbEntry.setLastChecked(System.currentTimeMillis() - (11 * 60 * 1000));
+        entry.setLastChecked(System.currentTimeMillis() - (11 * 60 * 1000));
         Assert.assertTrue("Cache-control header maxage=10min, last checked 1mins ago, is stale",
-                !entry.isFresh(0));
+                !HttpCache.isFresh(entry,0));
 
         //Test interpreting freshness using expires header
-        dbEntry.setCacheControl(null);
-        dbEntry.setExpiresTime(System.currentTimeMillis() + 1000);
+        entry.setCacheControl(null);
+        entry.setExpiresTime(System.currentTimeMillis() + 1000);
         Assert.assertTrue("Entry is considered fresh if without cache-control header, with expires header in future",
-                entry.isFresh());
-        dbEntry.setExpiresTime(System.currentTimeMillis() - 1000);
+                HttpCache.isFresh(entry));
+        entry.setExpiresTime(System.currentTimeMillis() - 1000);
         Assert.assertTrue("Entry is considered stale if without cache-control header, with expires header in past",
-                !entry.isFresh());
+                !HttpCache.isFresh(entry));
 
         //test using time to live default
-        dbEntry.setExpiresTime(-1);
-        dbEntry.setLastChecked(System.currentTimeMillis());
+        entry.setExpiresTime(-1);
+        entry.setLastChecked(System.currentTimeMillis());
         Assert.assertTrue("Entry without headers is considered fresh by default with a time to live",
-                entry.isFresh(10000));
+                HttpCache.isFresh(entry, 10000));
         Assert.assertTrue("Entry without headers is considered stale if no time to live given",
-                !entry.isFresh(0));
+                !HttpCache.isFresh(entry, 0));
+    }
 
+    @Test
+    public void testHeadRequest() throws IOException {
+        String httpURL = UMFileUtil.joinPaths(new String[] {ResourcesHttpdTestServer.getHttpRoot(),
+                "phonepic-smaller.png"});
+        UmHttpRequest headRequest = new UmHttpRequest(PlatformTestUtil.getTargetContext(), httpURL);
+        headRequest.setMethod(UmHttpRequest.METHOD_HEAD);
+        UmHttpResponse headResponse = httpCache.getSync(headRequest);
+        Assert.assertTrue("Content-Length on head request is > 0",
+                Long.parseLong(headResponse.getHeader("content-length")) > 0);
+        IOException exception = null;
+        try {
+            byte[] responseByte = headResponse.getResponseBody();
+        }catch(IOException e) {
+            exception = e;
+        }
 
+        Assert.assertNotNull("Requesting body on head request throws exception", exception);
+    }
+
+    @Test
+    public void givenNoCacheResponseHeader_whenRequested_shouldNotBeCached() throws IOException{
+        MockWebServer server = new MockWebServer();
+        server.start();
+        MockResponse noCacheResponse = new MockResponse().setBody("hello world")
+                .addHeader("Content-Type", "text/plain")
+                .addHeader("Cache-Control", "no-cache");
+        server.enqueue(noCacheResponse);
+        server.enqueue(noCacheResponse);
+
+        UmHttpRequest request = new UmHttpRequest(PlatformTestUtil.getTargetContext(),
+                server.url("/").toString());
+
+        AbstractCacheResponse response1 = (AbstractCacheResponse)httpCache.getSync(request);
+        AbstractCacheResponse response2 = (AbstractCacheResponse)httpCache.getSync(request);
+
+        Assert.assertEquals("When no-cache header is provided by response 1, entry is not cached",
+                AbstractCacheResponse.MISS, response1.getCacheResponse());
+        Assert.assertEquals("When no-cache header is provided by response 2, entry is not cached",
+                AbstractCacheResponse.MISS, response2.getCacheResponse());
+
+        server.close();
     }
 
 }

@@ -1,6 +1,7 @@
 import java.util.concurrent.atomic.AtomicInteger
 import java.nio.file.Files
 import java.nio.file.Path
+import java.io.File
 
 /**
  * Core module build script : see buildconfig.core.default.gradle for configuration
@@ -29,6 +30,7 @@ jar {
     exclude("com/ustadmobile/core/impl/*Factory.class")
     exclude("com/ustadmobile/core/db/impl/*Factory.class")
     exclude("com/ustadmobile/core/db/entities/*.class")
+    exclude("com/ustadmobile/core/db/*_Factory.class")
 }
 
 task sourceJar(type: Jar) {
@@ -44,24 +46,24 @@ repositories {
 }
 
 dependencies {
-    implementation "org.json:json:20160212"
-    implementation "net.sf.kxml:kxml2:2.3.0"
-    implementation 'com.ustadmobile.qrcodelibomrfork:qrcode-core:1.0-SNAPSHOT'
+    implementation "org.json:json:$version_json"
+    implementation "net.sf.kxml:kxml2:$version_kxml"
+    implementation "com.ustadmobile.qrcodelibomrfork:qrcode-core:$version_qrcodelibfork"
     compileOnly project(":lib-database")
     implementation project(":lib-database-annotation")
     implementation project(":lib-util")
 
-    project.ext.nanoLrsVersion = rootProject.ext.nanoLrsVersion
-    api "com.ustadmobile.nanolrs:nanolrs-core:$nanoLrsVersion"
+    annotationProcessor project(":lib-database-annotation-processor-core")
+
 
     testImplementation project(":core-tests")
     testImplementation project(":sharedse")
     testImplementation project(":app-javase")
     testImplementation project(":lib-core-fs-tests")
-    testImplementation 'org.nanohttpd:nanohttpd:2.3.1'
-    testImplementation 'org.nanohttpd:nanohttpd-nanolets:2.3.1'
+    testImplementation "org.nanohttpd:nanohttpd:$version_nanohttpd"
+    testImplementation "org.nanohttpd:nanohttpd-nanolets:$version_nanohttpd"
     testImplementation project(":sharedse-tests")
-    testImplementation 'junit:junit:4.12'
+    testImplementation "junit:junit:$version_junit"
 }
 
 
@@ -364,7 +366,7 @@ task generateLocaleAsPropertiesFiles {
             msgInterface.append("\n}\n")
             msgHelper.append("\t\t}\n\t}\n}")
 
-            File pkgDir = new File(outDirs[i], "java/com/ustadmobile/core/generated/locale")
+            File pkgDir = new File(outDirs[i], "com/ustadmobile/core/generated/locale")
             if(!pkgDir.exists()) {
                 pkgDir.mkdirs()
             }
@@ -376,14 +378,60 @@ task generateLocaleAsPropertiesFiles {
             Files.write(msgHelperPath, msgHelper.toString().getBytes("UTF-8"))
         }
 
-
-
-
-
     }
-
-
 }
+
+/**
+ * Convert app config properties to XML properties. By default this will convert
+ *  src/main/assets/com/ustadmobile/core/appconfig.properties
+ *  src/localconfig/assets/com/ustadmobile/core/appconfig.properties
+ *
+ *  and place XML properties files into build/generated/properties-appconfig .
+ *
+ *  This is used for appconfig on GWT as GWT does not support reading normal .properties files.
+ */
+task convertAppConfigToPropertiesXml {
+    doLast{
+        String appConfigPropertiesInStr
+        String pathSep = String.valueOf(java.io.File.pathSeparator)
+        if(project.hasProperty("appConfigPropertiesIn")){
+            appConfigPropertiesInStr = appConfigPropertiesIn
+        }else {
+            appConfigPropertiesInStr = "${projectDir}/src/main/assets/com/ustadmobile/core/appconfig.properties" +
+                 pathSep + "${projectDir}/src/localconfig/assets/com/ustadmobile/core/appconfig.properties"
+        }
+
+        String xmlConfigOutDir = null
+        if(project.hasProperty("appConfigPropertiesXmlOutDir")){
+            xmlConfigOutDir = appConfigPropertiesXmlOutDir
+        }else {
+            xmlConfigOutDir = "${projectDir}/build/generated/properties-appconfig/main/assets/com/ustadmobile/core/" +
+                    pathSep + "${projectDir}/build/generated/properties-appconfig/localconfig/assets/com/ustadmobile/core/"
+        }
+
+        String[] appConfigPropertiesInArr = appConfigPropertiesInStr.split(pathSep)
+        String[] appConfigPropertiesXmlOutDirArr = xmlConfigOutDir.split(pathSep)
+
+        for(int i = 0; i < appConfigPropertiesInArr.length; i++) {
+            Properties props = new Properties();
+            File propertiesInFile = new File(appConfigPropertiesInArr[i])
+            props.load(new FileInputStream(propertiesInFile))
+
+            File outDir = new File(appConfigPropertiesXmlOutDirArr[i])
+            if(!outDir.exists()) {
+                outDir.mkdirs()
+            }
+
+            File outFile = new File(outDir, propertiesInFile.getName() + ".xml")
+            FileOutputStream fout = new FileOutputStream(outFile)
+            props.storeToXML(fout, "appconfig.properties", "UTF-8")
+            fout.flush()
+            fout.close()
+            System.out.println("Wrote properties to : " + outFile.getAbsolutePath())
+        }
+    }
+}
+
 
 /*
  * Added to overcome limitation on Android studio as per:

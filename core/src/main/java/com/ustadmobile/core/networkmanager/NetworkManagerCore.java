@@ -1,8 +1,9 @@
 package com.ustadmobile.core.networkmanager;
 
 import com.ustadmobile.core.impl.UmCallback;
-import com.ustadmobile.core.opds.UstadJSOPDSFeed;
-import com.ustadmobile.lib.db.entities.DownloadJob;
+import com.ustadmobile.core.impl.UmResultCallback;
+import com.ustadmobile.lib.db.entities.CrawlJob;
+import com.ustadmobile.lib.db.entities.DownloadSet;
 import com.ustadmobile.lib.db.entities.OpdsEntryWithRelations;
 
 import java.util.List;
@@ -30,23 +31,96 @@ public interface NetworkManagerCore {
      */
     public static final int QUEUE_ENTRY_ACQUISITION=1;
 
+    /**
+     * The network is completely disconnected.
+     */
+    int CONNECTIVITY_STATE_DISCONNECTED = 0;
+
+    /**
+     * A connection is established for local connections only (e.g. for a WiFi direct download).
+     */
+    int CONNECTIVITY_STATE_LOCAL_ONLY = 1;
+
+    /**
+     * A metered (e.g. mobile data) connection is available.
+     */
+    int CONNECTIVITY_STATE_METERED = 2;
+
+    /**
+     * An unmetered Internet connection is available (e.g. 'normal' wifi).
+     */
+    int CONNECTIVITY_STATE_UNMETERED = 3;
 
     void setSuperNodeEnabled(Object context,boolean enabled);
 
-    long requestAcquisition(UstadJSOPDSFeed feed, boolean localNetworkEnabled, boolean wifiDirectEnabled);
-
-    DownloadJob buildDownloadJob(List<OpdsEntryWithRelations> rootEntries, String destinationDir,
+    DownloadSet buildDownloadJob(List<OpdsEntryWithRelations> rootEntries, String destinationDir,
                                  boolean recursive);
 
-    DownloadJob buildDownloadJob(List<OpdsEntryWithRelations> rootEntries, String destintionDir,
+    @Deprecated
+    DownloadSet buildDownloadJob(List<OpdsEntryWithRelations> rootEntries,
+                                 String destintionDir,
                                  boolean recursive, boolean wifiDirectEnabled,
                                  boolean localWifiEnabled);
 
+    @Deprecated
     void buildDownloadJobAsync(List<OpdsEntryWithRelations> rootEntries, String destintionDir,
                                boolean recursive, boolean wifiDirectEnabled,
-                               boolean localWifiEnabled, UmCallback<DownloadJob> callback);
+                               boolean localWifiEnabled, UmCallback<DownloadSet> callback);
+
+
+    /**
+     * Prepare for a DownloadJob to run. The preparation is mutli-threaded and includes crawling
+     * catalogs recursively and making HTTP HEAD requests where needed to determine the download size
+     * of each entry.
+     *
+     * @param downloadSet The Download Job that is to be prepared. This should have the destination
+     *                    dir set. It should NOT have been inserted into the database yet.
+     * @param crawlJob The Crawl Job that will prepare this download. This should be used to set any
+     *                 preferences about how the download is going to be prepared (e.g. recursive or
+     *                 not etc).
+     * @param allowDownloadOverMeteredNetwork if true, allow the download to run over a metered network.
+     *
+     * @return The CrawlJob object as per the crawlJob argument, that is then executing to build the
+     *          download job.
+     *
+     *          TODO: Remove this signature - from now on each downloadset has only one root entry
+     */
+    CrawlJob prepareDownload(DownloadSet downloadSet, CrawlJob crawlJob,
+                             boolean allowDownloadOverMeteredNetwork);
+
+
+
+    /**
+     * Prepare for a DownloadJob to run. The preparation is mutli-threaded and includes crawling
+     * catalogs recursively and making HTTP HEAD requests where needed to determine the download size
+     * of each entry.
+     *
+     * This is the asynchronous equivalent of prepareDownload
+     *
+     * @param downloadSet The Download Job that is to be prepared. This should have the destination
+     *                    dir set. It should NOT have been inserted into the database yet.
+     * @param crawlJob The Crawl Job that will prepare this download. This should be used to set any
+     *                 preferences about how the download is going to be prepared (e.g. recursive or
+     *                 not etc).
+     * @param allowDownloadOverMeteredNetwork if true, allow the download to run over a metered network.
+     * @param resultCallback A callback to be called once the CrawlJob has started.
+     *
+     * @return The CrawlJob object as per the crawlJob argument, that is then executing to build the
+     *          download job.
+     */
+    void prepareDownloadAsync(DownloadSet downloadSet, CrawlJob crawlJob,
+                              boolean allowDownloadOverMeteredNetwork,
+                              UmResultCallback<CrawlJob> resultCallback);
 
     void queueDownloadJob(int downloadJobId);
+
+    void pauseDownloadJobAsync(int downloadJobId, UmResultCallback<Boolean> callback);
+
+    boolean pauseDownloadJob(int downloadJobId);
+
+    boolean cancelDownloadJob(int downloadJobId);
+
+    void cancelDownloadJobAsync(int downloadJobId, UmResultCallback<Boolean> callback);
 
     void addAcquisitionTaskListener(AcquisitionListener listener);
 
@@ -74,12 +148,4 @@ public interface NetworkManagerCore {
 
     NetworkTask getTaskById(long taskId, int queueType);
 
-    /**
-     * This method is to be called when other components (e.g. directory scanner etc) discover
-     * new content, or catalog discover content that was previously thought to have been acquired
-     * is no longer around (e.g. the user manually deleted or moved files)
-     *
-     * @param entryId Entry id for which status has been discovered
-     */
-    public void handleEntryStatusChangeDiscovered(String entryId, int acquisitionStatus);
 }

@@ -60,21 +60,21 @@ import com.ustadmobile.core.buildconfig.CoreBuildConfig;
 import com.ustadmobile.core.catalog.contenttype.*;
 import com.ustadmobile.core.controller.CatalogPresenter;
 import com.ustadmobile.core.controller.UserSettingsController;
+import com.ustadmobile.core.db.UmAppDatabase;
+import com.ustadmobile.core.db.dao.OpdsEntryStatusCacheDao;
 import com.ustadmobile.core.fs.contenttype.EpubTypePluginFs;
 import com.ustadmobile.core.fs.contenttype.H5PContentTypeFs;
 import com.ustadmobile.core.fs.contenttype.ScormTypePluginFs;
 import com.ustadmobile.core.fs.contenttype.XapiPackageTypePluginFs;
+import com.ustadmobile.core.fs.db.ContainerFileHelper;
 import com.ustadmobile.core.impl.ContainerMountRequest;
-import com.ustadmobile.core.impl.TinCanQueueListener;
 import com.ustadmobile.core.impl.UMDownloadCompleteReceiver;
 import com.ustadmobile.core.impl.UMLog;
 import com.ustadmobile.core.impl.UmCallback;
 import com.ustadmobile.core.impl.UstadMobileSystemImpl;
-import com.ustadmobile.core.opds.db.UmOpdsDbManager;
 import com.ustadmobile.core.tincan.TinCanResultListener;
 import com.ustadmobile.core.util.UMFileUtil;
 import com.ustadmobile.core.util.UMIOUtils;
-import com.ustadmobile.core.util.UMTinCanUtil;
 import com.ustadmobile.core.view.AboutView;
 import com.ustadmobile.core.view.AddFeedDialogView;
 import com.ustadmobile.core.view.AppView;
@@ -92,25 +92,16 @@ import com.ustadmobile.core.view.UserSettingsView;
 import com.ustadmobile.core.view.UserSettingsView2;
 import com.ustadmobile.core.view.WelcomeView;
 import com.ustadmobile.core.view.XapiPackageView;
-import com.ustadmobile.nanolrs.core.endpoints.XapiAgentEndpoint;
-import com.ustadmobile.nanolrs.core.endpoints.XapiStatementsForwardingEndpoint;
-import com.ustadmobile.nanolrs.core.endpoints.XapiStatementsForwardingListener;
-import com.ustadmobile.nanolrs.core.manager.UserCustomFieldsManager;
-import com.ustadmobile.nanolrs.core.manager.UserManager;
-import com.ustadmobile.nanolrs.core.model.User;
-import com.ustadmobile.nanolrs.core.persistence.PersistenceManager;
 import com.ustadmobile.port.android.generated.MessageIDMap;
 import com.ustadmobile.port.android.impl.http.UmHttpCachePicassoRequestHandler;
 import com.ustadmobile.port.android.netwokmanager.NetworkManagerAndroid;
 import com.ustadmobile.port.android.netwokmanager.NetworkServiceAndroid;
-import com.ustadmobile.port.android.opds.db.UmOpdsDbManagerAndroid;
 import com.ustadmobile.port.android.util.UMAndroidUtil;
 import com.ustadmobile.port.android.view.*;
 import com.ustadmobile.port.sharedse.view.*;
 import com.ustadmobile.port.sharedse.impl.UstadMobileSystemImplSE;
 import com.ustadmobile.port.sharedse.networkmanager.NetworkManager;
 
-import org.json.JSONObject;
 import org.xmlpull.v1.XmlSerializer;
 
 import java.io.File;
@@ -123,9 +114,11 @@ import java.net.URLConnection;
 import java.sql.SQLException;
 import java.text.Format;
 import java.text.SimpleDateFormat;
+import java.util.ArrayList;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.Hashtable;
+import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.Timer;
@@ -177,11 +170,7 @@ public class UstadMobileSystemImplAndroid extends UstadMobileSystemImplSE {
         //Account settings:
         //viewNameToAndroidImplMap.put(AccountSettingsView.VIEW_NAME, AccountSettingsActivity.class);
         viewNameToAndroidImplMap.put(BasePointView.VIEW_NAME, BasePointActivity.class);
-        viewNameToAndroidImplMap.put(ClassManagementView.VIEW_NAME, ClassManagementActivity.class);
-        viewNameToAndroidImplMap.put(EnrollStudentView.VIEW_NAME, EnrollStudentActivity.class);
-        viewNameToAndroidImplMap.put(ClassManagementView2.VIEW_NAME, ClassManagementActivity2.class);
         viewNameToAndroidImplMap.put(AboutView.VIEW_NAME, AboutActivity.class);
-        viewNameToAndroidImplMap.put(AttendanceView.VIEW_NAME, AttendanceActivity.class);
         viewNameToAndroidImplMap.put(CatalogEntryView.VIEW_NAME, CatalogEntryActivity.class);
         viewNameToAndroidImplMap.put(UserSettingsView2.VIEW_NAME, UserSettingsActivity2.class);
         viewNameToAndroidImplMap.put(WelcomeView.VIEW_NAME, WelcomeDialogFragment.class);
@@ -192,6 +181,7 @@ public class UstadMobileSystemImplAndroid extends UstadMobileSystemImplSE {
         viewNameToAndroidImplMap.put(AddFeedDialogView.VIEW_NAME, AddFeedDialogFragment.class);
         viewNameToAndroidImplMap.put(ScormPackageView.VIEW_NAME, ScormPackageActivity.class);
         viewNameToAndroidImplMap.put(H5PContentView.VIEW_NAME, H5PContentActivity.class);
+        viewNameToAndroidImplMap.put(DownloadDialogView.VIEW_NAME, DownloadDialogFragment.class);
     }
 
 
@@ -216,13 +206,6 @@ public class UstadMobileSystemImplAndroid extends UstadMobileSystemImplSE {
     private HashMap<UMDownloadCompleteReceiver, BroadcastReceiver> downloadCompleteReceivers;
 
     private Timer sendStatementsTimer;
-
-    /**
-     * Map of TinCanQueueListeners to the XapiQueueStatusListeners used by NanoLRS
-     */
-    private HashMap<TinCanQueueListener, XapiStatementsForwardingListener> queueStatusListeners;
-
-    private UmOpdsDbManagerAndroid opdsDbManager;
 
     private static final ContentTypePlugin[] SUPPORTED_CONTENT_TYPES = new ContentTypePlugin[] {
             new EpubTypePluginFs(), new ScormTypePluginFs(), new XapiPackageTypePluginFs(),
@@ -381,10 +364,8 @@ public class UstadMobileSystemImplAndroid extends UstadMobileSystemImplSE {
         logger = new UMLogAndroid();
         appViews = new WeakHashMap<>();
         downloadCompleteReceivers = new HashMap<>();
-        queueStatusListeners = new HashMap<>();
         networkManagerAndroid = new NetworkManagerAndroid();
         networkManagerAndroid.setServiceConnectionMap(networkServiceConnections);
-        opdsDbManager = new UmOpdsDbManagerAndroid();
     }
 
     /**
@@ -399,13 +380,15 @@ public class UstadMobileSystemImplAndroid extends UstadMobileSystemImplSE {
         super.init(context);
 
         if(!initRan) {
-            try {
-                if(!dirExists(getSystemBaseDir(context))){
-                    makeDirectoryRecursive(getSystemBaseDir(context));
+            File systemBaseDir = new File(getSystemBaseDir(context));
+            if(!systemBaseDir.exists()) {
+                if(systemBaseDir.mkdirs()){
+                    l(UMLog.INFO, 0, "Created base system dir: " +
+                            systemBaseDir.getAbsolutePath());
+                }else {
+                    l(UMLog.CRITICAL, 0, "Failed to created system base dir" +
+                        systemBaseDir.getAbsolutePath());
                 }
-                initRan = true;
-            }catch (IOException e) {
-                l(UMLog.CRITICAL, 0, "Failed to make base system dir");
             }
 
             Context appContext = ((Context)context).getApplicationContext();
@@ -413,6 +396,7 @@ public class UstadMobileSystemImplAndroid extends UstadMobileSystemImplSE {
             Picasso.Builder picassoBuilder = new Picasso.Builder(appContext);
             picassoBuilder.addRequestHandler(new UmHttpCachePicassoRequestHandler(appContext));
             Picasso.setSingletonInstance(picassoBuilder.build());
+            initRan = true;
         }
 
         if(context instanceof Activity) {
@@ -462,8 +446,9 @@ public class UstadMobileSystemImplAndroid extends UstadMobileSystemImplSE {
         currentUsername = appPrefs.getString(KEY_CURRENTUSER, null);
         currentAuth = appPrefs.getString(KEY_CURRENTAUTH, null);
         if(currentUsername != null) {
-            xapiAgent = XapiAgentEndpoint.createOrUpdate(context, null, currentUsername,
-                    UMTinCanUtil.getXapiServer(context));
+//            TODO: Handle users ROOM ORM style
+//            xapiAgent = XapiAgentEndpoint.createOrUpdate(context, null, currentUsername,
+//                    UMTinCanUtil.getXapiServer(context));
         }
         this.userPreferences = null;
         return true;
@@ -474,39 +459,6 @@ public class UstadMobileSystemImplAndroid extends UstadMobileSystemImplSE {
         return null;
     }
 
-
-
-    @Override
-    public boolean queueTinCanStatement(final JSONObject stmtObj, final Object context) {
-
-        //String xapiServer = "http://umcloud1.ustadmobile.com/umlrs/";
-        String xapiServer = getAppPref(
-                UstadMobileSystemImpl.PREFKEY_XAPISERVER,
-                CoreBuildConfig.DEFAULT_XAPI_SERVER, context);
-
-        XapiStatementsForwardingEndpoint.putAndQueueStatement(context, stmtObj,
-                xapiServer, getActiveUser(context), getActiveUserAuth(context));
-
-        l(UMLog.INFO, 304, null);
-
-        return true;
-    }
-
-    /**
-     * @inheritDoc
-     */
-    @Override
-    public void addTinCanQueueStatusListener(final TinCanQueueListener listener) {
-
-    }
-
-    /**
-     * @inheritDoc
-     */
-    @Override
-    public void removeTinCanQueueListener(TinCanQueueListener listener) {
-        queueStatusListeners.remove(listener);
-    }
 
     /**
      * To be called by activities as the first matter of business in the onCreate method
@@ -953,35 +905,6 @@ public class UstadMobileSystemImplAndroid extends UstadMobileSystemImplSE {
     }
 
     @Override
-    public String getUserDetail(String username, int field, Object dbContext){
-
-        try {
-            UserCustomFieldsManager customFieldsManager =
-                    PersistenceManager.getInstance().getManager(UserCustomFieldsManager.class);
-            UserManager userManager =
-                    PersistenceManager.getInstance().getManager(UserManager.class);
-            User user = userManager.findByUsername(dbContext, username);
-            String value = customFieldsManager.getUserField(user, field, dbContext);
-            if (value == null) {
-                return "";
-            }
-            return value;
-        }catch(SQLException s){
-            s.printStackTrace();
-            System.out.println("Unable to get user detail: " + field +
-                " for user: " + username);
-            return "";
-        }
-
-
-    }
-
-    @Override
-    public UmOpdsDbManager getOpdsDbManager() {
-        return opdsDbManager;
-    }
-
-    @Override
     public void mountContainer(final ContainerMountRequest request, final int id,
                                final UmCallback callback) {
 
@@ -1009,4 +932,33 @@ public class UstadMobileSystemImplAndroid extends UstadMobileSystemImplSE {
         Format format = new SimpleDateFormat("yyyy MM dd HH:mm:ss");
         return format.format(date);
     }
+
+    @Override
+    public void deleteEntries(Object context, List<String> entryIds, boolean recursive) {
+        OpdsEntryStatusCacheDao entryStatusCacheDao = UmAppDatabase.getInstance(context).getOpdsEntryStatusCacheDao();
+        List<String> entryIdsToDelete = entryIds;
+        if(recursive) {
+            entryIdsToDelete = new ArrayList<>();
+            for(String entryId : entryIds) {
+                entryIdsToDelete.add(entryId);
+                entryIdsToDelete.addAll(entryStatusCacheDao.findAllKnownDescendantEntryIds(entryId));
+            }
+        }
+
+        for(String descendantEntryId: entryIdsToDelete) {
+            ContainerFileHelper.getInstance().deleteAllContainerFilesByEntryId(context, descendantEntryId);
+        }
+
+
+    }
+
+    @Override
+    public void deleteEntriesAsync(Object context, final List<String> entryIds, boolean recursive, UmCallback<Void> callback) {
+        bgExecutorService.execute(() -> {
+            deleteEntries(context, entryIds, recursive);
+            callback.onSuccess(null);
+        });
+
+    }
+
 }

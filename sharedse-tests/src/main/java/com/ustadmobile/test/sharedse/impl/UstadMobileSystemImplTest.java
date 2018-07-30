@@ -5,7 +5,6 @@ import com.ustadmobile.core.catalog.contenttype.EPUBTypePlugin;
 import com.ustadmobile.core.impl.ContainerMountRequest;
 import com.ustadmobile.core.impl.UMLog;
 import com.ustadmobile.core.impl.UmCallback;
-import com.ustadmobile.core.opds.UstadJSOPDSFeed;
 import com.ustadmobile.core.opds.db.UmOpdsDbManager;
 import com.ustadmobile.core.tincan.TinCanResultListener;
 import com.ustadmobile.core.view.AppView;
@@ -24,6 +23,7 @@ import java.net.URL;
 import java.net.URLConnection;
 import java.util.HashMap;
 import java.util.Hashtable;
+import java.util.List;
 import java.util.Properties;
 import java.util.Set;
 
@@ -248,19 +248,10 @@ public class UstadMobileSystemImplTest extends UstadMobileSystemImplSE {
         return null;
     }
 
-    @Override
-    public String getUserDetail(String username, int field, Object dbContext) {
-        return null;
-    }
 
     @Override
     public void mountContainer(ContainerMountRequest request, int id, UmCallback callback) {
         //do nothing at the moment
-    }
-
-    @Override
-    public UmOpdsDbManager getOpdsDbManager() {
-        return null;
     }
 
     @Override
@@ -271,5 +262,15 @@ public class UstadMobileSystemImplTest extends UstadMobileSystemImplSE {
     @Override
     public InputStream getAssetSync(Object context, String path) throws IOException {
         return null;
+    }
+
+    @Override
+    public void deleteEntriesAsync(Object context, List<String> entryId, boolean recursive, UmCallback<Void> callback) {
+        //not implemented here
+    }
+
+    @Override
+    public void deleteEntries(Object context, List<String> entryId, boolean recursive) {
+
     }
 }

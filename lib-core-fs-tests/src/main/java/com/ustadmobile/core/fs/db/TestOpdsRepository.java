@@ -1,14 +1,16 @@
 package com.ustadmobile.core.fs.db;
 
-import com.ustadmobile.core.db.DbManager;
+import com.ustadmobile.core.db.UmAppDatabase;
 import com.ustadmobile.core.db.UmLiveData;
 import com.ustadmobile.core.db.UmObserver;
-import com.ustadmobile.core.db.dao.OpdsEntryWithRelationsDao;
-import com.ustadmobile.core.fs.db.repository.OpdsEntryRepository;
+import com.ustadmobile.core.db.dao.OpdsAtomFeedRepository;
+import com.ustadmobile.core.fs.db.repository.OpdsAtomFeedRepositoryImpl;
+import com.ustadmobile.core.impl.UstadMobileSystemImpl;
 import com.ustadmobile.core.util.UMFileUtil;
 import com.ustadmobile.core.util.UMIOUtils;
 import com.ustadmobile.lib.db.entities.OpdsEntry;
 import com.ustadmobile.lib.db.entities.OpdsEntryWithRelations;
+import com.ustadmobile.lib.db.entities.OpdsEntryWithStatusCache;
 import com.ustadmobile.lib.db.entities.OpdsLink;
 import com.ustadmobile.test.core.ResourcesHttpdTestServer;
 import com.ustadmobile.test.core.TestCaseCallbackHelper;
@@ -48,8 +50,8 @@ public class TestOpdsRepository extends TestCase {
 
     @Test
     public void testOpdsRepositoryLoadFromFeed() {
-        OpdsEntryWithRelationsDao repository = DbManager.getInstance(PlatformTestUtil.getTargetContext())
-                .getOpdsEntryWithRelationsRepository();
+        OpdsAtomFeedRepository repository = UstadMobileSystemImpl.getInstance()
+                .getOpdsAtomFeedRepository(PlatformTestUtil.getTargetContext());
 
         String opdsUrl = UMFileUtil.joinPaths(new String[] {
                 ResourcesHttpdTestServer.getHttpRoot(), "com/ustadmobile/test/core/acquire-multi.opds"});
@@ -90,7 +92,7 @@ public class TestOpdsRepository extends TestCase {
                     "http://umcloud1.ustadmobile.com/opds/courseid/6CM",
                     parent.getEntryId());
 
-            UmLiveData<List<OpdsEntryWithRelations>> childEntryListLiveData = DbManager
+            UmLiveData<List<OpdsEntryWithRelations>> childEntryListLiveData = UmAppDatabase
                     .getInstance(PlatformTestUtil.getTargetContext()).getOpdsEntryWithRelationsDao()
                     .getEntriesByParentAsList(parent.getUuid());
             UmObserver<List<OpdsEntryWithRelations>> observer = new UmObserver<List<OpdsEntryWithRelations>>() {
@@ -125,14 +127,14 @@ public class TestOpdsRepository extends TestCase {
         fout.flush();
         fout.close();
 
-        OpdsEntryRepository repository = (OpdsEntryRepository)DbManager
-                .getInstance(PlatformTestUtil.getTargetContext()).getOpdsEntryWithRelationsRepository();
+        OpdsAtomFeedRepositoryImpl repository = (OpdsAtomFeedRepositoryImpl) UstadMobileSystemImpl
+                .getInstance().getOpdsAtomFeedRepository(PlatformTestUtil.getTargetContext());
 
         ArrayList<OpdsEntryWithRelations> entriesInDir = new ArrayList<>();
-        UmLiveData<List<OpdsEntryWithRelations>> entriesInDirLiveData = repository
+        UmLiveData<List<OpdsEntryWithStatusCache>> entriesInDirLiveData = repository
                 .findEntriesByContainerFileDirectoryAsList(Arrays.asList(tmpDir.getAbsolutePath()),
                         null);
-        UmObserver<List<OpdsEntryWithRelations>> observer = (entriesInDirList) -> {
+        UmObserver<List<OpdsEntryWithStatusCache>> observer = (entriesInDirList) -> {
             if(entriesInDirList != null && !entriesInDirList.isEmpty()) {
                 synchronized (TestOpdsRepository.this) {
                     entriesInDir.clear();
