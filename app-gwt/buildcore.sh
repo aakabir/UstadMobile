@@ -5,10 +5,8 @@ rm -rf core-src
 rm -rf lib-database-annotation-src
 rm -rf lib-database-src
 rm -rf lib-util-src
-rm -rf sharedse-src
 
 #    api project(':core')
-#    api project(':sharedse')
 #    implementation project(":lib-database-annotation")
 #    implementation project(":lib-util")
 
@@ -16,12 +14,10 @@ mkdir core-src
 mkdir lib-database-annotation-src
 mkdir lib-database-src
 mkdir lib-util-src
-mkdir sharedse-src
 
 echo "Copying sources.."
 
 cp -r ../core/src/main core-src/
-cp -r ../sharedse/src/main sharedse-src/
 cp -r ../lib-database-annotation/src/main lib-database-annotation-src/
 cp -r ../lib-database/src/main lib-database-src/
 cp -r ../lib-util/src/main lib-util-src/

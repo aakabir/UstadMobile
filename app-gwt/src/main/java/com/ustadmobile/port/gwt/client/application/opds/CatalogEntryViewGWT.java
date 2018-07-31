@@ -12,7 +12,9 @@ import com.google.gwt.user.client.ui.TextBox;
 import com.google.gwt.user.client.ui.Widget;
 import com.gwtplatform.mvp.client.ViewWithUiHandlers;
 import com.ustadmobile.core.controller.CatalogPresenter;
+/* Aug 2018 : Disabled new master merge
 import com.ustadmobile.core.db.DbManager;
+*/
 import com.ustadmobile.core.db.UmLiveData;
 import com.ustadmobile.core.db.UmObserver;
 import com.ustadmobile.core.db.dao.OpdsEntryDao;
@@ -26,8 +28,9 @@ import com.ustadmobile.lib.db.entities.OpdsEntry;
 import com.ustadmobile.lib.db.entities.OpdsEntry.OpdsItemLoadCallback;
 import com.ustadmobile.lib.db.entities.OpdsEntryWithRelations;
 import com.ustadmobile.lib.db.entities.OpdsLink;
+/* Aug 2018 : Disabled new master merge
 import com.ustadmobile.port.gwt.client.db.repository.OpdsEntryRepositoryGWT;
-
+*/
 import gwt.material.design.client.ui.MaterialImage;
 import gwt.material.design.client.ui.MaterialLabel;
 import gwt.material.design.client.ui.MaterialLink;
@@ -162,14 +165,8 @@ public class CatalogEntryViewGWT extends ViewWithUiHandlers
 	
 	public void setArguments(Hashtable args) {
 		this.args = args;
+		System.out.print("DISABLED CLASS>> PLEASE CHECK CODE>>");
 		
-		if(args != null && args.get("url") != null) {
-			repository = DbManager.getInstance(this)
-					.getOpdsEntryWithRelationsRepository();
-			
-			//String url = (String)args.get("url");
-			
-		}
 	}
 	
 	/*

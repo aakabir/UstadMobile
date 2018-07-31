@@ -6,6 +6,7 @@ import java.io.OutputStream;
 import java.util.HashMap;
 import java.util.Hashtable;
 import java.util.LinkedHashMap;
+import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
@@ -28,6 +29,7 @@ import com.gwtplatform.mvp.shared.proxy.PlaceRequest;
 import com.ustadmobile.port.gwt.client.impl.http.UmHttpResponseGWT;
 import com.ustadmobile.port.gwt.client.place.NameTokens;
 import com.ustadmobile.core.catalog.contenttype.ContentTypePlugin;
+import com.ustadmobile.core.db.dao.OpdsAtomFeedRepository;
 import com.ustadmobile.core.impl.AppConfig;
 import com.ustadmobile.core.impl.ContainerMountRequest;
 import com.ustadmobile.core.impl.TinCanQueueListener;
@@ -139,24 +141,6 @@ public class UstadMobileSystemImplGWT extends UstadMobileSystemImpl{
 	public boolean isHttpsSupported() {
 		// TODO Auto-generated method stub
 		return false;
-	}
-
-	@Override
-	public boolean queueTinCanStatement(JSONObject stmt, Object context) {
-		// TODO Auto-generated method stub
-		return false;
-	}
-
-	@Override
-	public void addTinCanQueueStatusListener(TinCanQueueListener listener) {
-		// TODO Auto-generated method stub
-		
-	}
-
-	@Override
-	public void removeTinCanQueueListener(TinCanQueueListener listener) {
-		// TODO Auto-generated method stub
-		
 	}
 
 	@Override
@@ -508,30 +492,6 @@ public class UstadMobileSystemImplGWT extends UstadMobileSystemImpl{
 	}
 
 	@Override
-	public int registerUser(String username, String password, Hashtable fields, Object context) {
-		// TODO Auto-generated method stub
-		return 0;
-	}
-
-	@Override
-	public int updateUser(String username, String password, Hashtable fields, Object context) {
-		// TODO Auto-generated method stub
-		return 0;
-	}
-
-	@Override
-	public boolean handleLoginLocally(String username, String password, Object context) {
-		// TODO Auto-generated method stub
-		return false;
-	}
-
-	@Override
-	public boolean createUserLocally(String username, String password, String uuid, Object context) {
-		// TODO Auto-generated method stub
-		return false;
-	}
-
-	@Override
 	public ContentTypePlugin[] getSupportedContentTypePlugins() {
 		// TODO Auto-generated method stub
 		return null;
@@ -560,41 +520,6 @@ public class UstadMobileSystemImplGWT extends UstadMobileSystemImpl{
 		return appConfigString;
 	}
 
-	@Override
-	public String getUserDetail(String username, int field, Object dbContext) {
-		// TODO Auto-generated method stub
-		return null;
-	}
-
-	@Override
-	public UmOpdsDbManager getOpdsDbManager() {
-		// TODO Auto-generated method stub
-		return null;
-	}
-
-	@Override
-	public LinkedHashMap<String, String> getSyncHistory(Object node, Object context) {
-		// TODO Auto-generated method stub
-		return null;
-	}
-
-	@Override
-	public LinkedHashMap<String, String> getMainNodeSyncHistory(Object context) {
-		// TODO Auto-generated method stub
-		return null;
-	}
-
-	@Override
-	public long getMainNodeLastSyncDate(Object context) {
-		// TODO Auto-generated method stub
-		return 0;
-	}
-
-	@Override
-	public void triggerSync(Object context) throws Exception {
-		// TODO Auto-generated method stub
-		
-	}
 
 	@Override
 	public String convertTimeToReadableTime(long time) {
@@ -616,6 +541,24 @@ public class UstadMobileSystemImplGWT extends UstadMobileSystemImpl{
 		// TODO Auto-generated method stub
 		GWT.log("ERROR!: impl.getUserContentDirectory(context, username)"
 				+ " NOT IMPLEMENTED> SOMETHING IS CALLING IT!");
+		return null;
+	}
+
+	@Override
+	public void deleteEntriesAsync(Object context, List<String> entryId, boolean recursive, UmCallback<Void> callback) {
+		// TODO Auto-generated method stub
+		
+	}
+
+	@Override
+	public void deleteEntries(Object context, List<String> entryId, boolean recursive) {
+		// TODO Auto-generated method stub
+		
+	}
+
+	@Override
+	public OpdsAtomFeedRepository getOpdsAtomFeedRepository(Object context) {
+		// TODO Auto-generated method stub
 		return null;
 	}
 	

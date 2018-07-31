@@ -9,7 +9,9 @@ import com.google.gwt.user.client.ui.SimplePanel;
 import com.google.gwt.user.client.ui.TextBox;
 import com.google.gwt.user.client.ui.Widget;
 import com.gwtplatform.mvp.client.ViewWithUiHandlers;
+/* Aug 2018 : Disabled new master merge
 import com.ustadmobile.core.db.DbManager;
+ */
 import com.ustadmobile.core.db.UmLiveData;
 import com.ustadmobile.core.db.UmObserver;
 import com.ustadmobile.core.db.UmProvider;
@@ -21,10 +23,12 @@ import com.ustadmobile.core.opds.OpdsFilterOptions;
 import com.ustadmobile.lib.db.entities.OpdsEntry;
 import com.ustadmobile.lib.db.entities.OpdsEntry.OpdsItemLoadCallback;
 import com.ustadmobile.lib.db.entities.OpdsEntryWithRelations;
+import com.ustadmobile.lib.db.entities.OpdsEntryWithStatusCache;
 import com.ustadmobile.lib.db.entities.OpdsLink;
 import com.ustadmobile.port.gwt.client.application.opds.CatalogEntryViewGWT;
+/* Aug 2018 : Disabled new master merge
 import com.ustadmobile.port.gwt.client.db.repository.OpdsEntryRepositoryGWT;
-
+*/
 import java.util.Hashtable;
 import java.util.List;
 import java.util.Set;
@@ -69,53 +73,7 @@ public class CatalogViewGWT extends ViewWithUiHandlers
 	
 	public void setArguments(Hashtable args) {
 		this.args = args;
-		
-		if(args != null && args.get("url") != null) {
-			repository = DbManager.getInstance(this)
-					.getOpdsEntryWithRelationsRepository();
-			String url = (String)args.get("url");
-			
-			this.baseURL = url;
-			
-			///*
-			UmLiveData<OpdsEntryWithRelations> dataLive = 
-					repository.getEntryByUrl(url, null, new OpdsItemLoadCallback() {
-				
-				@Override
-				public void onLinkAdded(OpdsLink link, OpdsEntry parentItem, int position) {
-					// TODO Auto-generated method stub
-					GWT.log("CatalogView: Link Aded..");
-					
-				}
-				
-				@Override
-				public void onError(OpdsEntry item, Throwable cause) {
-					// TODO Auto-generated method stub
-					GWT.log("CatalogView: ERROR!");
-					
-				}
-				
-				@Override
-				public void onEntryAdded(OpdsEntryWithRelations childEntry, OpdsEntry parentFeed, int position) {
-					// TODO Auto-generated method stu
-					GWT.log("CatalogView: Entry added..");
-				}
-				
-				@Override
-				public void onDone(OpdsEntry item) {
-					// TODO Auto-generated method stub
-					String itemTitle = item.getTitle();
-					GWT.log("CatalogView:setArguments():getEntryByUrl:onDone(): "
-							+ "Its done. Item: " + itemTitle);
-					
-				}
-			});
-			
-			GWT.log("CatalogView: ObserveForever..");
-			dataLive.observeForever(this::handleEntryChanged);
-			
-			
-		}
+		System.out.println("DISABLED CLASS>> PLEASE CHECK CODE>>");
 	}
 	
 	public void handleEntryChanged(OpdsEntryWithRelations entry) {
@@ -258,11 +216,14 @@ public class CatalogViewGWT extends ViewWithUiHandlers
 		
 	}
 
+	/* Aug 2018 : Disabled new master merge
 	@Override
 	public void setEntryProvider(UmProvider<OpdsEntryWithRelations> entryProvider) {
 		// TODO Auto-generated method stub
 		
 	}
+	*/
+	
 	/* END OF CORE VIEW OVERRIDE */
 	
 	
@@ -303,6 +264,12 @@ public class CatalogViewGWT extends ViewWithUiHandlers
 
 	@Override
 	public void runOnUiThread(Runnable r) {
+		// TODO Auto-generated method stub
+		
+	}
+
+	@Override
+	public void setEntryProvider(UmProvider<OpdsEntryWithStatusCache> entryProvider) {
 		// TODO Auto-generated method stub
 		
 	}

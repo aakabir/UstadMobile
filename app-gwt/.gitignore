@@ -8,3 +8,7 @@ lib-database-annotation-src/
 lib-database-src/
 lib-util-src/
 gwt-unitCache/
+sharedse-src/
+www-test/
+war/
+target/

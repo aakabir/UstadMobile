@@ -48,6 +48,11 @@ import gwt.material.design.client.ui.MaterialRow;
 import gwt.material.design.client.ui.MaterialTab;
 import gwt.material.design.client.ui.MaterialTabItem;
 
+/**
+ * TODO REMOVE REDUNDANT AND CLEAN THIS UP
+ * @author Varuna
+ *
+ */
 public class BaseView extends ViewWithUiHandlers<CoreBasePointPresenterHandler> 
   implements BasePresenter.MyView {
 	
