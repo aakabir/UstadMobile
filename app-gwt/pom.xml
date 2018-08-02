@@ -54,7 +54,17 @@
         <kxml2-version>2.3.0</kxml2-version>
         <!-- JSON version -->
         <json-version>20171018</json-version>
-
+        
+        <!-- REST Dispatch for GWTP Version -->
+        <!-- 
+        <gwtp-dispatch-rest-version>1.6</gwtp-dispatch-rest-version>
+        <gwtp-dispatch-rest-shared-version>1.6</gwtp-dispatch-rest-shared-version>
+		-->
+		<!-- JAVA WS-RS API for POST/GET/PUT/DELETE Annotations -->
+		<javax.ws.rs-api-version>2.0</javax.ws.rs-api-version>
+		<!-- resty-gwt -->
+		<restygwt-version>2.2.3</restygwt-version>
+		
         <webappDirectory>${project.build.directory}/${project.build.finalName}</webappDirectory>
     </properties>
 
@@ -316,16 +326,35 @@
 		    <version>${selenium-chrome-driver-version}</version>
 		</dependency>
 				
-				
-				
-		<!--  
+		<!-- REST Dispatch for GWTP -->
+		<!--
 		<dependency>
-		    <groupId>org.eclipse.jetty</groupId>
-		    <artifactId>jetty-jsp</artifactId>
-		    <version>9.3.0.M1</version>
+			<groupId>com.gwtplatform</groupId>
+			<artifactId>gwtp-dispatch-rest</artifactId>
+			<version>${gwtp-dispatch-rest-version}</version>
+			<scope>provided</scope>
 		</dependency>
+		<dependency>
+			<groupId>com.gwtplatform</groupId>
+			<artifactId>gwtp-dispatch-rest-shared</artifactId>
+			<version>${gwtp-dispatch-rest-shared-version}</version>
+			<scope>compile</scope>
+		</dependency>	
 		-->
 		
+		<!-- Java WS-RS API for POST/GET/DELETE/PUT Annotations -->
+		<dependency>
+			<groupId>javax.ws.rs</groupId>
+			<artifactId>javax.ws.rs-api</artifactId>
+			<version>${javax.ws.rs-api-version}</version>
+		</dependency>
+		
+		<!-- resty-gwt -->
+		<dependency>
+			<groupId>org.fusesource.restygwt</groupId>
+			<artifactId>restygwt</artifactId>
+			<version>${restygwt-version}</version>
+		</dependency>
 				
     </dependencies>
 </project>

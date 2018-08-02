@@ -18,37 +18,41 @@ import com.gwtplatform.mvp.client.gin.AbstractPresenterModule;
 import com.gwtplatform.mvp.client.gin.DefaultModule;
 
 public class ClientModule extends AbstractPresenterModule {
-    @Override
+    
+	/**
+	 * The Server's REST API url
+	 */
+	String REST_SERVER_API = "/api/v1";
+	
+	@Override
     protected void configure() {
+    
     	
     	/*
-    	 * We need to install the default module or else PlaceManager will not be able
+    	 * GWTP: We need to install the default module or else PlaceManager will not be able
     	 * to inject 
     	 */
-        /*
-    	install(new DefaultModule
-                .Builder()
-                .defaultPlace(NameTokens.LOGIN)
-                .errorPlace(NameTokens.LOGIN)
-                .unauthorizedPlace(NameTokens.LOGIN)
-                .build());
-        */
-    	
     	install(new DefaultModule
                 .Builder()
                 .defaultPlace(NameTokens.BASE)
                 .errorPlace(NameTokens.BASE)
                 .unauthorizedPlace(NameTokens.BASE)
                 .build());
+    	/**
+    	 * TODO: Change to .LOGIN when Login functionality ? 
+    	 * Or let startUI do that?
+    	 * 
+    	 * NameTokens.LOGIN
+    	 */
     	
+    	/**
+    	 * GWTP: Install the Root Module
+    	 */
         install(new ApplicationModule());
-
-        /*
-        bindConstant().annotatedWith(DefaultPlace.class).to(NameTokens.LOGIN);
-        bindConstant().annotatedWith(ErrorPlace.class).to(NameTokens.LOGIN);
-        bindConstant().annotatedWith(UnauthorizedPlace.class).to(NameTokens.LOGIN);
-        */
         
+        /**
+         * GWTP: Load and inject CSS resources
+         */
         bind(ResourceLoader.class).asEagerSingleton();
     }
 }

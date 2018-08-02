@@ -4,6 +4,17 @@
          xsi:schemaLocation="http://java.sun.com/xml/ns/javaee http://java.sun.com/xml/ns/javaee/web-app_2_5.xsd"
          version="2.5">
 
+	<servlet>
+        <servlet-name>hello-service</servlet-name>
+        <servlet-class>com.ustadmobile.port.gwt.server.HelloServlet</servlet-class>
+    </servlet>
+    
+
+    <servlet-mapping>
+        <servlet-name>hello-service</servlet-name>
+        <url-pattern>/gwtapp/hello-service/*</url-pattern>
+    </servlet-mapping>
+	
     <welcome-file-list>
         <welcome-file>index.html</welcome-file>
     </welcome-file-list>

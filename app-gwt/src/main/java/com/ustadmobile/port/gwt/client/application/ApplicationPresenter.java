@@ -1,5 +1,7 @@
 package com.ustadmobile.port.gwt.client.application;
 
+import org.fusesource.restygwt.client.Method;
+import org.fusesource.restygwt.client.MethodCallback;
 import org.json.JSONException;
 import org.json.JSONObject;
 import org.xmlpull.v1.XmlPullParser;
@@ -26,6 +28,8 @@ import com.gwtplatform.mvp.client.proxy.PlaceManager;
 import com.gwtplatform.mvp.client.proxy.Proxy;
 import com.gwtplatform.mvp.shared.proxy.PlaceRequest;
 import com.ustadmobile.port.gwt.client.place.NameTokens;
+import com.ustadmobile.port.gwt.client.rest.HelloConfirmation;
+import com.ustadmobile.port.gwt.client.rest.HelloService;
 import com.gwtplatform.mvp.client.presenter.slots.NestedSlot;
 import com.ustadmobile.core.buildconfig.CoreBuildConfig;
 import com.ustadmobile.core.controller.LoginController;
@@ -55,28 +59,9 @@ public class ApplicationPresenter
     
     //Main Content slot
     public static final NestedSlot SLOT_CONTENT = new NestedSlot();
-
-    /*
-    //The Presenter main slot
-    public static final NestedSlot SLOT_MAIN = new NestedSlot();
     
-    //The About page slot
-    public static final NestedSlot SLOT_ABOUT = new NestedSlot();
-    
-    //The Presenter login slot
-    public static final NestedSlot SLOT_LOGIN = new NestedSlot();
-    
-    //The Presenter core login slot
-    public static final NestedSlot SLOT_CORELOGIN = new NestedSlot();
-    
-    //The Base page slot
-    public static final NestedSlot SLOT_BASE = new NestedSlot();
-    */
-    
+    //TODO: Add logger functionality
     //public static Logger logger = Logger.getLogger("NameOfYourLogger");
-    
-    //like so:
-    //private static ReplaceWithThis bindingTest = GWT.create(ReplaceWithThis.class);
 
     @Inject
     ApplicationPresenter(
@@ -88,6 +73,30 @@ public class ApplicationPresenter
         
         this.placeManager = placeManager;
 
+        /*
+         * Testing resty gwt
+         * 
+         */
+        HelloService service = GWT.create(HelloService.class);
+        service.say( new MethodCallback<String>() {
+            
+
+			@Override
+			public void onFailure(Method method, Throwable exception) {
+				// TODO Auto-generated method stub
+				System.out.println("FAILED!");
+				
+			}
+
+			@Override
+			public void onSuccess(Method method, String response) {
+				// TODO Auto-generated method stub
+				System.out.println("SUCCESS!");
+				
+			}
+        });
+        
+        
         //Start BasePoint:
         UstadMobileSystemImpl impl = UstadMobileSystemImpl.getInstance();
         //impl.go(CoreBuildConfig.FIRST_DESTINATION, placeManager);
