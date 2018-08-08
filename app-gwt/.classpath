@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <classpath>
-	<classpathentry kind="src" path="src/main/java"/>
 	<classpathentry kind="src" path="core-src/main/java"/>
+	<classpathentry kind="src" path="src/main/java"/>
 	<classpathentry kind="src" path="lib-database-annotation-src/main/java"/>
 	<classpathentry kind="src" path="lib-database-src/main/java"/>
 	<classpathentry kind="src" path="lib-util-src/main/java"/>

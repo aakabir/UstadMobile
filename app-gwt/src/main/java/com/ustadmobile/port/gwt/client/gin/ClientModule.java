@@ -32,23 +32,26 @@ public class ClientModule extends AbstractPresenterModule {
     	 * GWTP: We need to install the default module or else PlaceManager will not be able
     	 * to inject 
     	 */
+		/*
     	install(new DefaultModule
                 .Builder()
                 .defaultPlace(NameTokens.BASE)
                 .errorPlace(NameTokens.BASE)
                 .unauthorizedPlace(NameTokens.BASE)
                 .build());
-    	/**
-    	 * TODO: Change to .LOGIN when Login functionality ? 
-    	 * Or let startUI do that?
-    	 * 
-    	 * NameTokens.LOGIN
-    	 */
-    	
+    	*/
+		install(new DefaultModule
+                .Builder()
+                .defaultPlace(NameTokens.LOGIN) //Will load the Presenter and the View's constructor. 
+                .errorPlace(NameTokens.BASE)
+                .unauthorizedPlace(NameTokens.BASE)
+                .build());
+		
+		
     	/**
     	 * GWTP: Install the Root Module
     	 */
-        install(new ApplicationModule());
+        install(new ApplicationModule()); //Will load the Presenter and the View's constructor.
         
         /**
          * GWTP: Load and inject CSS resources

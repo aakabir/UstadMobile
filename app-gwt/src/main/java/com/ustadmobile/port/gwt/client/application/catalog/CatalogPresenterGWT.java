@@ -8,13 +8,10 @@ import com.ustadmobile.port.gwt.client.place.NameTokens;
 import com.google.gwt.core.client.GWT;
 import com.google.inject.Inject;
 import com.google.web.bindery.event.shared.EventBus;
-import com.gwtplatform.mvp.client.HasUiHandlers;
 import com.gwtplatform.mvp.client.Presenter;
-import com.gwtplatform.mvp.client.UiHandlers;
 import com.gwtplatform.mvp.client.View;
 import com.gwtplatform.mvp.client.annotations.NameToken;
 import com.gwtplatform.mvp.client.annotations.NoGatekeeper;
-import com.gwtplatform.mvp.client.annotations.ProxyStandard;
 import com.gwtplatform.mvp.client.proxy.PlaceManager;
 import com.gwtplatform.mvp.client.proxy.ProxyPlace;
 
@@ -34,9 +31,10 @@ public class CatalogPresenterGWT
   extends Presenter<CatalogPresenterGWT.MyView, CatalogPresenterGWT.MyProxy> {
 	
 	/**
-     * This class extends the core controller/presenter and implements UiHandler (if present)
-     * This class is extended by CatalogPresenterGWT's view interface so it indirectly 
-     * also implements UiHandler (if present)
+     * This class extends the CORE's controller/presenter and implements 
+     * UiHandler (if present)
+     * This class is extended by CatalogPresenterGWT's view interface so 
+     * it indirectly also implements UiHandler (if present)
      * 
      * @author varuna
      *

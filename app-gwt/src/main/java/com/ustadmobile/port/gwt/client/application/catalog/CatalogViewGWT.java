@@ -3,37 +3,20 @@ package com.ustadmobile.port.gwt.client.application.catalog;
 import com.google.gwt.core.client.GWT;
 import com.google.gwt.uibinder.client.UiBinder;
 import com.google.gwt.uibinder.client.UiField;
-import com.google.gwt.user.client.ui.Button;
 import com.google.gwt.user.client.ui.FlowPanel;
-import com.google.gwt.user.client.ui.SimplePanel;
-import com.google.gwt.user.client.ui.TextBox;
 import com.google.gwt.user.client.ui.Widget;
 import com.gwtplatform.mvp.client.ViewWithUiHandlers;
-/* Aug 2018 : Disabled new master merge
-import com.ustadmobile.core.db.DbManager;
- */
-import com.ustadmobile.core.db.UmLiveData;
 import com.ustadmobile.core.db.UmObserver;
 import com.ustadmobile.core.db.UmProvider;
-import com.ustadmobile.core.db.dao.OpdsEntryDao;
 import com.ustadmobile.core.db.dao.OpdsEntryWithRelationsDao;
-import com.ustadmobile.core.impl.UmCallback;
 import com.ustadmobile.core.model.CourseProgress;
 import com.ustadmobile.core.opds.OpdsFilterOptions;
-import com.ustadmobile.lib.db.entities.OpdsEntry;
-import com.ustadmobile.lib.db.entities.OpdsEntry.OpdsItemLoadCallback;
 import com.ustadmobile.lib.db.entities.OpdsEntryWithRelations;
 import com.ustadmobile.lib.db.entities.OpdsEntryWithStatusCache;
-import com.ustadmobile.lib.db.entities.OpdsLink;
 import com.ustadmobile.port.gwt.client.application.opds.CatalogEntryViewGWT;
-/* Aug 2018 : Disabled new master merge
-import com.ustadmobile.port.gwt.client.db.repository.OpdsEntryRepositoryGWT;
-*/
 import java.util.Hashtable;
 import java.util.List;
 import java.util.Set;
-
-import javax.inject.Inject;
 
 
 public class CatalogViewGWT extends ViewWithUiHandlers
@@ -100,11 +83,9 @@ public class CatalogViewGWT extends ViewWithUiHandlers
 				}
 			});
 			
-			
 		}else{
 			GWT.log("CatalogView.handleEntryChanged: ERROR. entry is null!");
 		}
-		
 		
 	}
 	
@@ -123,7 +104,6 @@ public class CatalogViewGWT extends ViewWithUiHandlers
 		// TODO Auto-generated method stub
 		
 	}
-
 
 
 	@Override
@@ -215,14 +195,6 @@ public class CatalogViewGWT extends ViewWithUiHandlers
 		// TODO Auto-generated method stub
 		
 	}
-
-	/* Aug 2018 : Disabled new master merge
-	@Override
-	public void setEntryProvider(UmProvider<OpdsEntryWithRelations> entryProvider) {
-		// TODO Auto-generated method stub
-		
-	}
-	*/
 	
 	/* END OF CORE VIEW OVERRIDE */
 	

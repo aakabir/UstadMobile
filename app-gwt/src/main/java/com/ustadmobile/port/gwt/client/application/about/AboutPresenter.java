@@ -3,10 +3,7 @@ package com.ustadmobile.port.gwt.client.application.about;
 
 import com.ustadmobile.core.view.AboutView;
 import com.ustadmobile.port.gwt.client.application.ApplicationPresenter;
-import com.ustadmobile.port.gwt.client.application.base.BasePresenter;
 import com.ustadmobile.port.gwt.client.place.NameTokens;
-
-import java.util.Hashtable;
 
 import com.google.gwt.core.client.GWT;
 import com.google.inject.Inject;
@@ -20,7 +17,6 @@ import com.gwtplatform.mvp.client.annotations.NoGatekeeper;
 import com.gwtplatform.mvp.client.annotations.ProxyStandard;
 import com.gwtplatform.mvp.client.proxy.PlaceManager;
 import com.gwtplatform.mvp.client.proxy.ProxyPlace;
-import com.gwtplatform.mvp.shared.proxy.PlaceRequest;
 
 
 /**
@@ -68,23 +64,18 @@ public class AboutPresenter
     interface MyProxy extends ProxyPlace<AboutPresenter> {
     }
     
-    private String currentUser;
     private PlaceManager placeManager;
     private com.ustadmobile.core.controller.AboutController mController;
 
     //Constructor with GWTP Inject 
     @Inject
-    AboutPresenter(EventBus eventBus, 
-    		MyView view, 
-    		MyProxy proxy, 
-    		PlaceManager placeManager) {
+    AboutPresenter(EventBus eventBus, MyView view, 
+    		MyProxy proxy, PlaceManager placeManager) {
         super(eventBus, view, proxy, 
-        		//ApplicationPresenter.SLOT_ABOUT
         		ApplicationPresenter.SLOT_CONTENT
         		);
         
         this.placeManager = placeManager;
-        //getView().setUiHandlers(this);
         
         mController = new CoreAboutPresenterHandler(placeManager, (AboutView) view);
         
@@ -96,7 +87,7 @@ public class AboutPresenter
     }
     
 	@Override
-	public void dummyHandler() {
+	public void dummyAboutUiHandler() {
 		GWT.log("Alora!");
 	}
 }

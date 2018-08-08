@@ -29,6 +29,7 @@ import com.gwtplatform.mvp.client.gin.AbstractPresenterModule;
  */
 public class AboutModule extends AbstractPresenterModule {
 	
+	//Initialising the Module, setting Presetners and Views
     @Override
     protected void configure() {
         bindPresenter(AboutPresenter.class, 

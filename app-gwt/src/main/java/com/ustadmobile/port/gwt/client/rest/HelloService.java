@@ -15,7 +15,7 @@ public interface HelloService extends RestService {
 	@POST
     //@Path("/listen")
     public void listen(Listen request, 
-                      MethodCallback<HelloConfirmation> callback);
+                      MethodCallback<UMMessage> callback);
 	
 	@GET
 	@Path("/say")

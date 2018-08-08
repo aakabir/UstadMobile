@@ -3,18 +3,88 @@
              xmlns:m="urn:import:gwt.material.design.client.ui">
            
     
-    <m:MaterialPanel>		
+	<ui:import field="com.ustadmobile.port.gwt.client.place.NameTokens.ABOUT"/>
+	<ui:import field="com.ustadmobile.port.gwt.client.place.NameTokens.BASE"/>
+
+    <m:MaterialPanel>
+    
+        <!-- The header of the view. Its mostly the title. -->
+        <m:MaterialHeader ui:id="header" ui:field="header">
         
-        <!-- Add base point content here -->
-	    <m:MaterialRow  ui:field="tabrow">    
-			
-			<m:MaterialTab ui:field="tab" indicatorColor="YELLOW" shadow="1">
-					<!-- Test tab will be put in on onAttach() -->
-			</m:MaterialTab>
-			
-			<m:MaterialRow ui:field="dynamicTabsRow"/>			
+        	<!-- Heading -->
+            <m:MaterialNavBar ui:id="base_header_navbar" activates="sidenavDrawer" backgroundColor="BLUE" shadow="1">
+                <m:MaterialNavBrand ui:id="base_header_navbrand" paddingLeft="60" text="BaseView" />
+                
+                <!-- Extra icons on the header  -->
+                <m:MaterialLink ui:id = "header_user" href="#" iconPosition="RIGHT" iconType="PERSON" layoutPosition="RELATIVE">
+				</m:MaterialLink>
+				<m:MaterialLink ui:id="header_search" href="#" iconPosition="RIGHT" iconType="SEARCH" layoutPosition="RELATIVE">
+				</m:MaterialLink>
+				
+            </m:MaterialNavBar>
+        </m:MaterialHeader>
+        
+        
+        <!-- The Content -->
+	    <m:MaterialRow ui:id="base_material_row" ui:field="materialrow">   	
+	    
+	    	<!-- The Tabs go here -->
+			<m:MaterialTab ui:id="base_material_row_tab" ui:field="tab" indicatorColor="YELLOW" shadow="1" />
+
+			<!-- The content in the Tabs go here -->
+			<m:MaterialRow ui:id="base_material_row_row" ui:field="contentRow"/>
+					
 		</m:MaterialRow>
             
+
+		<!-- The footer: Bottom Navigation -->
+        <m:MaterialFooter ui:id="base_footer" >
+	         
+			<!-- Tab with Icons -->
+			<!-- 
+			<m:MaterialTab ui:id="base_footer_tabs" width="100%" type="ICON" shadow="0" indicatorColor="YELLOW">
+				<m:MaterialTabItem ui:id="base_footer_tabs_item_feed" ui:field="base_footer_tabs_item_about" waves="YELLOW" grid="s4">
+					<m:MaterialLink ui:id="base_footer_tabs_link_feed" 
+									iconType="DASHBOARD" text="Feed" 
+									href="#{ABOUT}" textColor="WHITE"/>
+				</m:MaterialTabItem>
+				<m:MaterialTabItem ui:id="base_footer_tabs_item_people" waves="YELLOW" grid="s4">
+					<m:MaterialLink ui:id="base_footer_tabs_link_people" 
+									iconType="PEOPLE" text="People" 
+									href="#{ABOUT}" textColor="WHITE"/>
+				</m:MaterialTabItem>
+				<m:MaterialTabItem ui:id="base_footer_tabs_item_stats" waves="YELLOW" grid="s4">
+					<m:MaterialLink ui:id="base_footer_tabs_link_stats" 
+									iconType="TRENDING_UP" text="Statistics" 
+									href="#{BASE}" textColor="WHITE"/>
+				</m:MaterialTabItem>
+				<m:MaterialTabItem ui:id="base_footer_tabs_item_lessons" waves="YELLOW" grid="s4">
+					<m:MaterialLink ui:id="base_footer_tabs_link_lessons" 
+									iconType="COLLECTIONS_BOOKMARK" text="Lessons" 
+									href="#{BASE}" textColor="WHITE"/>
+				</m:MaterialTabItem>
+			</m:MaterialTab>
+			-->
+			 
+			<!-- Buttons! -->
+			<m:MaterialButton ui:id="base_footer_button_feed" 
+									ui:field="button_feed" size="LARGE"
+									iconType="DASHBOARD" text="Feed" 
+									href="#{ABOUT}" textColor="WHITE"/>
+			<m:MaterialButton ui:id="base_footer_button_people" 
+									ui:field="button_people" size="LARGE"
+									iconType="PEOPLE" text="People" 
+									href="#{ABOUT}" textColor="WHITE"/>
+			<m:MaterialButton ui:id="base_footer_button_stats" 
+									ui:field="button_stats" size="LARGE"
+									iconType="TRENDING_UP" text="Statistics" 
+									href="#{BASE}" textColor="WHITE"/>
+			<m:MaterialButton ui:id="base_footer_button_lessons" 
+									ui:field="button_lessons" size="LARGE"
+									iconType="COLLECTIONS_BOOKMARK" text="Lessons" 
+									href="#{BASE}" textColor="WHITE"/>
+			 
+        </m:MaterialFooter>
         
     </m:MaterialPanel>
    

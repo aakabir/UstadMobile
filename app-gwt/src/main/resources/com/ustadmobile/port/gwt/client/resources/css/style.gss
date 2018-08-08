@@ -1,0 +1,20 @@
+
+  
+ footer {
+   position: fixed;
+   left: 0;
+   bottom: 0;
+   width: 100%;
+   background-color: red;
+   color: white;
+   text-align: center;
+   padding-top: 10px;
+}    
+
+page-footer {
+	padding-top: 10px;
+}
+
+container { 
+	width: 100%;
+}

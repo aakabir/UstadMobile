@@ -26,15 +26,13 @@ import com.google.gwt.event.dom.client.ClickEvent;
 import com.google.gwt.uibinder.client.UiBinder;
 import com.google.gwt.uibinder.client.UiField;
 import com.google.gwt.uibinder.client.UiHandler;
-import com.google.gwt.user.client.ui.Button;
-import com.google.gwt.user.client.ui.PasswordTextBox;
-import com.google.gwt.user.client.ui.TextArea;
-import com.google.gwt.user.client.ui.TextBox;
 import com.google.gwt.user.client.ui.Widget;
 
 import com.gwtplatform.mvp.client.ViewWithUiHandlers;
-import com.ustadmobile.core.controller.LoginController;
 import com.ustadmobile.port.gwt.client.application.about.AboutPresenter.CoreAboutPresenterHandler;
+
+import gwt.material.design.client.ui.MaterialTextArea;
+import gwt.material.design.client.ui.MaterialTextBox;
 
 public class AboutView extends ViewWithUiHandlers<CoreAboutPresenterHandler> 
   implements AboutPresenter.MyView {
@@ -46,10 +44,10 @@ public class AboutView extends ViewWithUiHandlers<CoreAboutPresenterHandler>
     }
     
     @UiField
-    TextBox textBox;
+    MaterialTextBox textBox;
     
     @UiField
-    TextArea version;
+    MaterialTextArea version;
     
     //This method initializes any DOM elements
     @Inject

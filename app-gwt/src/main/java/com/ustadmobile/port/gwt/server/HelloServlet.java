@@ -19,6 +19,7 @@
 package com.ustadmobile.port.gwt.server;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.ustadmobile.port.gwt.client.rest.UMMessage;
 
 import java.io.IOException;
 import java.io.StringWriter;
@@ -53,8 +54,9 @@ public class HelloServlet extends HttpServlet {
         try {
             ObjectMapper mapper = new ObjectMapper();
 
-            ArrayList<String> all_hellos = new ArrayList<String>();
-            all_hellos.add("Hello from the outisdeee");
+            ArrayList<UMMessage> all_hellos = new ArrayList<UMMessage>();
+            all_hellos.add(new UMMessage("Hello from the other side", "Adele"));
+            all_hellos.add(new UMMessage("Hello, is it me you're looking for", "Lionel Richie"));
 
             StringWriter sw = new StringWriter();
             mapper.writeValue(sw, all_hellos);

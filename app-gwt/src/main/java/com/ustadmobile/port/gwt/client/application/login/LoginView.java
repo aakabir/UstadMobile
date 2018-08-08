@@ -51,6 +51,7 @@ public class LoginView extends ViewWithUiHandlers<LoginUiHandlers>
     
     @Inject
     LoginView(Binder uiBinder) {
+    	GWT.log("LoginView()");
     	//This method initialises any DOM elements
         initWidget(uiBinder.createAndBindUi(this));
     }

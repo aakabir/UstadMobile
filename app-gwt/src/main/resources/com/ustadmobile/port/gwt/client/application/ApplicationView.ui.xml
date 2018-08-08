@@ -2,72 +2,21 @@
         xmlns:g='urn:import:com.google.gwt.user.client.ui'
         xmlns:m="urn:import:gwt.material.design.client.ui">
 
-    <ui:with field="res" type="com.ustadmobile.port.gwt.client.resources.AppResources"/>
+	<!-- Loading resources if needed. -->
+    <ui:with field="res" type="com.ustadmobile.port.gwt.client.resources.AppResources"/>   
     
-    <ui:import field="com.ustadmobile.port.gwt.client.place.NameTokens.HOME"/>
-	<ui:import field="com.ustadmobile.port.gwt.client.place.NameTokens.LOGIN"/>
-	<ui:import field="com.ustadmobile.port.gwt.client.place.NameTokens.ABOUT"/>
-	<ui:import field="com.ustadmobile.port.gwt.client.place.NameTokens.CORELOGIN"/>
-	<ui:import field="com.ustadmobile.port.gwt.client.place.NameTokens.BASE"/>
-	<ui:import field="com.ustadmobile.port.gwt.client.place.NameTokens.COURSE_UPLOAD" />
-    
-    
-    <m:MaterialPanel>
-        <m:MaterialHeader ui:field="header">
-            <m:MaterialNavBar activates="sidenavDrawer" backgroundColor="BLUE" shadow="1">
-                <m:MaterialNavBrand paddingLeft="60" text="Ustad Mobile" />
-            </m:MaterialNavBar>
-        </m:MaterialHeader>
-
-        <m:MaterialSideNavDrawer m:id="sidenavDrawer" ui:field="sideNav" width="300">
-        	<m:MaterialLink m:id = "homeSideLink" iconType="HOME" href="#{BASE}" text="Libraries" />
-            <m:MaterialLink m:id = "aboutSideLink" iconType="INFO_OUTLINE" href="#{ABOUT}" text="About"/>
-			<m:MaterialLink m:id = "uploadSideLink" iconType="CLOUD_UPLOAD" href="#{COURSE_UPLOAD}" text="Upload"/>
-			<!--  <m:MaterialLink iconType="FILE_UPLOAD" href="#{COURSE_UPLOAD}" text="Upload"/> -->
-        </m:MaterialSideNavDrawer>
-
-        <m:MaterialContainer>
-        	
-        	<!--  
-            <m:MaterialPanel textAlign="CENTER">
-                <m:MaterialIcon marginTop="120" textColor="BLUE_DARKEN_1" iconType="POLYMER" iconSize="LARGE"/>
-                <m:MaterialLabel text="GMD 2.0" textColor="BLUE" fontSize="2em"/>
-                <m:MaterialLabel text="UstadMobile GWTP Material" textColor="BLUE" fontSize="0.8em"/>
-            </m:MaterialPanel>
-            -->
-            
-            <m:MaterialPanel ui:field="content">
+    <!-- This is the Parent View. Anything in the UI that goes along all the views goes here. -->
+    <m:MaterialPanel ui:id="applicaiton_material_panel">
+    	
+		<!-- The container between the header and footer.-->
+        <m:MaterialContainer ui:id="application_container">
+        
+        	<!-- The content -->
+            <m:MaterialPanel ui:id="application_panel_content" ui:field="content">
             	<m:MaterialLabel>Content Material Label</m:MaterialLabel>
-            </m:MaterialPanel>
+            </m:MaterialPanel> 	
             
-            <!--  
-            <m:MaterialPanel ui:field="base">
-            	<m:MaterialLabel>Base Material Label</m:MaterialLabel>
-            </m:MaterialPanel>
-            
-            
-            <m:MaterialPanel ui:field="main">
-        		<m:MaterialLabel>Main Material Panel</m:MaterialLabel>
-        	</m:MaterialPanel>
-        	
-        	<m:MaterialPanel></m:MaterialPanel>
-        	
-        	<m:MaterialPanel ui:field="about">
-        		<m:MaterialLabel>About Material Panel</m:MaterialLabel>
-        	</m:MaterialPanel>
-        	
-        	<m:MaterialPanel ui:field="login">
-        		<m:MaterialLabel>Login Material Panel</m:MaterialLabel>
-        	</m:MaterialPanel>        	
-        	
-        	<m:MaterialPanel ui:field="corelogin">
-        		<m:MaterialLabel>Core Login Material Panel</m:MaterialLabel>
-        	</m:MaterialPanel>
-        	-->
-        	
         </m:MaterialContainer>
-
     </m:MaterialPanel>
-    
     
 </ui:UiBinder>

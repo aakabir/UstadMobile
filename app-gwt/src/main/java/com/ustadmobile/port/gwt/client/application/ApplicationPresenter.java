@@ -1,24 +1,6 @@
 package com.ustadmobile.port.gwt.client.application;
 
-import org.fusesource.restygwt.client.Method;
-import org.fusesource.restygwt.client.MethodCallback;
-import org.json.JSONException;
-import org.json.JSONObject;
-import org.xmlpull.v1.XmlPullParser;
-import org.xmlpull.v1.XmlPullParserException;
-
-import java.io.IOException;
-import java.util.Hashtable;
-
-//testing deferred binding
-import com.ustadmobile.port.gwt.client.util.ReplaceWithThis;
-import com.ustadmobile.port.gwt.xmlpull.XmlPullParserGWT;
 import com.google.gwt.core.client.GWT;
-import com.google.gwt.xml.client.DOMException;
-import com.google.gwt.xml.client.Document;
-import com.google.gwt.xml.client.Element;
-import com.google.gwt.xml.client.Node;
-import com.google.gwt.xml.client.XMLParser;
 import com.google.inject.Inject;
 import com.google.web.bindery.event.shared.EventBus;
 import com.gwtplatform.mvp.client.Presenter;
@@ -26,20 +8,17 @@ import com.gwtplatform.mvp.client.View;
 import com.gwtplatform.mvp.client.annotations.ProxyStandard;
 import com.gwtplatform.mvp.client.proxy.PlaceManager;
 import com.gwtplatform.mvp.client.proxy.Proxy;
-import com.gwtplatform.mvp.shared.proxy.PlaceRequest;
-import com.ustadmobile.port.gwt.client.place.NameTokens;
-import com.ustadmobile.port.gwt.client.rest.HelloConfirmation;
-import com.ustadmobile.port.gwt.client.rest.HelloService;
 import com.gwtplatform.mvp.client.presenter.slots.NestedSlot;
-import com.ustadmobile.core.buildconfig.CoreBuildConfig;
-import com.ustadmobile.core.controller.LoginController;
-import com.ustadmobile.port.gwt.client.test.TestInterface;
-
-import com.ustadmobile.core.impl.UmCallback;
 import com.ustadmobile.core.impl.UstadMobileSystemImpl;
+
 /**
  * This is the top level presenter of the hierarchy ApplicationPresenter. 
  * Other presenters reveal themselves within this Presenter. 
+ * 
+ * This is triggered from ClientModule where GWTP "Injects" something to start this.
+ * 
+ * Each GWTP Presenter has to extend: 
+ * 	Presenter<..that takes in.. View and Proxy interfaces for some reason> 
  * 
  * @author varuna
  *
@@ -47,12 +26,29 @@ import com.ustadmobile.core.impl.UstadMobileSystemImpl;
 public class ApplicationPresenter
         extends Presenter<ApplicationPresenter.MyView, ApplicationPresenter.MyProxy> {
 	
-	//The Presenter's View
+	/**
+	 * A PlaceManager is used to go between Places. 
+	 * A place manager "reveals" a place via a PlaceRequest. 
+	 * 	A place request is created from the NameTokens as such:
+	 * eg:
+	 * Building a place request:
+	 	PlaceRequest placeRequest = new PlaceRequest.Builder()
+	                .nameToken(NameTokens.LOGIN)
+	                .build();
+	 * Using the PlaceManager to go to the place mentioned in the place request. 
+		 placeManager.revealPlace(placeRequest); 
+		 
+	 * How is the NameToken mapped to a particular Module/Presenter/View? 
+	 * 	In The Module's Presenter's Proxy Interface with the Annotation: 
+	 * 	@NameToken(NameTokens.ABOUT). 
+	 */
+	private PlaceManager placeManager;
+	
+	//This Presenter's View Interface
     interface MyView extends View {
     }
     
-    private PlaceManager placeManager;
-
+    //This is the Presenter's Proxy Interface. 
     @ProxyStandard
     interface MyProxy extends Proxy<ApplicationPresenter> {
     }
@@ -63,6 +59,14 @@ public class ApplicationPresenter
     //TODO: Add logger functionality
     //public static Logger logger = Logger.getLogger("NameOfYourLogger");
 
+    /**
+     * The Main Application's Presenter's Constructor is the first
+     *  thing initialised in GWTP. 
+     * @param eventBus
+     * @param view
+     * @param proxy
+     * @param placeManager
+     */
     @Inject
     ApplicationPresenter(
             EventBus eventBus,
@@ -71,80 +75,16 @@ public class ApplicationPresenter
             PlaceManager placeManager) {
         super(eventBus, view, proxy, RevealType.Root);
         
+        GWT.log("ApplicationPresenter()");
+        //Setting the placeManager so it can be used throughout 
+        // the lifecycle of the application.
         this.placeManager = placeManager;
-
-        /*
-         * Testing resty gwt
-         * 
-         */
-        HelloService service = GWT.create(HelloService.class);
-        service.say( new MethodCallback<String>() {
-            
-
-			@Override
-			public void onFailure(Method method, Throwable exception) {
-				// TODO Auto-generated method stub
-				System.out.println("FAILED!");
-				
-			}
-
-			@Override
-			public void onSuccess(Method method, String response) {
-				// TODO Auto-generated method stub
-				System.out.println("SUCCESS!");
-				
-			}
-        });
         
-        
-        //Start BasePoint:
+        //Start based on startUI: This starts the remaining UstadMobile bits. 
         UstadMobileSystemImpl impl = UstadMobileSystemImpl.getInstance();
-        //impl.go(CoreBuildConfig.FIRST_DESTINATION, placeManager);
         impl.startUI(placeManager);
         
-        //If you have, 
-        //view.setUiHanders(this);
+        //If you have, set view's UI Handler like: view.setUiHanders(this);
     }
 
-    public void goToHome(){
-    	// Navigate to the HomePresenter
-    	System.out.println("Going home..");
-    	PlaceRequest placeRequest = new PlaceRequest.Builder()
-	            .nameToken(NameTokens.HOME)
-	            .build();
-    	placeManager.revealPlace(placeRequest);			 
-    }
-    
-    public void goToLogin(){
-		// Navigate to the HomePresenter
-		 System.out.println("Going to login..");
-		 PlaceRequest placeRequest = new PlaceRequest.Builder()
-	                .nameToken(NameTokens.LOGIN)
-	                .build();
-		 placeManager.revealPlace(placeRequest);
-    			 
-    }
-    
-    public void goToAbout(){
-		// Navigate to the AboutPresenter
-		 System.out.println("Going to about..");
-		 PlaceRequest placeRequest = new PlaceRequest.Builder()
-	                .nameToken(NameTokens.ABOUT)
-	                .build();
-		 placeManager.revealPlace(placeRequest);
-    			 
-    }
-    
-    public void goToCoreLogin(){
-		// Navigate to the HomePresenter
-		 System.out.println("Going to login..");
-		 PlaceRequest placeRequest = new PlaceRequest.Builder()
-	                .nameToken(NameTokens.CORELOGIN)
-	                .build();
-		 placeManager.revealPlace(placeRequest);
-    			 
-    }
-    
-    
-    
 }

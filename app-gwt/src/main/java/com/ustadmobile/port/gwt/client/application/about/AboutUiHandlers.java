@@ -4,6 +4,6 @@ import com.gwtplatform.mvp.client.UiHandlers;
 
 public interface AboutUiHandlers extends UiHandlers{
 	
-	void dummyHandler();
+	void dummyAboutUiHandler();
 
 }

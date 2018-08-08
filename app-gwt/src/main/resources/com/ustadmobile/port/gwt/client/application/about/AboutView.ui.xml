@@ -1,13 +1,29 @@
 <ui:UiBinder xmlns:ui='urn:ui:com.google.gwt.uibinder'
-             xmlns:g='urn:import:com.google.gwt.user.client.ui'>
+             xmlns:g='urn:import:com.google.gwt.user.client.ui'
+             xmlns:m="urn:import:gwt.material.design.client.ui">
              
+   <!-- Everything's gotta be in a panel. -->
+    <m:MaterialPanel>
     
-    
-    <g:HTMLPanel>
-    	<p>Hello AboutView!</p>
-        <g:TextBox ui:field="textBox"/><br/>
-        <g:TextArea ui:field="version"/><br/>
-        <g:Button ui:field="updateText" text="Update Text"/>
-    </g:HTMLPanel>
+        <!-- The header of the view. Its mostly the title. -->
+        <m:MaterialHeader ui:id="header" ui:field="header">
+        
+        	<!-- Heading -->
+            <m:MaterialNavBar ui:id="about_header_navbar" activates="sidenavDrawer" backgroundColor="BLUE" shadow="1">
+                <m:MaterialNavBrand ui:id="about_header_navbrand" paddingLeft="60" text="AboutView" />
+                <!-- Back button  -->
+                <m:MaterialLink ui:id = "header_back" href="javascript:history.back()" iconType="ARROW_BACK" layoutPosition="RELATIVE">
+				</m:MaterialLink>
+            </m:MaterialNavBar>
+        </m:MaterialHeader>
+        
+        
+        <!-- The Content -->
+	    <m:MaterialTextBox ui:id="about_textbox" ui:field="textBox"/>
+	    <m:MaterialTextArea ui:id="about_textarea" ui:field="version"/>
+	    <m:MaterialButton ui:id="about_button" ui:field="updateText" text="Update Text"/>
+     
+        
+    </m:MaterialPanel>
     
 </ui:UiBinder>

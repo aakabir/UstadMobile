@@ -78,6 +78,8 @@ public class LoginPresenter
         		ApplicationPresenter.SLOT_CONTENT
         		);
         
+        GWT.log("LoginPresenter()");
+        
         this.placeManager = placeManager;
         getView().setUiHandlers(this);
         

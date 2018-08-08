@@ -64,13 +64,10 @@ public class UstadMobileSystemImplGWT extends UstadMobileSystemImpl{
 	private UMLogGWT logger;
 	
 	public UstadMobileSystemImplGWT(){
-		GWT.log("Hello impl..");
 		logger = new UMLogGWT();
 		localStorage = Storage.getLocalStorageIfSupported();
-		if(localStorage != null) {
-			GWT.log("Got storage ok");
-		}else {
-			GWT.log("Got storage NOT OK!");
+		if(localStorage == null) {
+			GWT.log("GWT ERROR: Got storage NOT OK!");
 		}
 		Object context = null;
 		
@@ -326,7 +323,6 @@ public class UstadMobileSystemImplGWT extends UstadMobileSystemImpl{
 
 	@Override
 	public String getAppPref(String key, Object context) {
-		GWT.log("Getting app pref: " + key);
 		return localStorage.getItem(key);
 	}
 
@@ -342,7 +338,6 @@ public class UstadMobileSystemImplGWT extends UstadMobileSystemImpl{
 
 	@Override
 	public void setAppPref(String key, String value, Object context) {
-		GWT.log("Setting app pref: " + key);
 		localStorage.setItem(key, value);
 		
 	}
@@ -511,7 +506,6 @@ public class UstadMobileSystemImplGWT extends UstadMobileSystemImpl{
 
 	@Override
 	public String getAppConfigString(String key, String defaultVal, Object context) {
-		GWT.log("Get app config string: " + key);
 		String appConfigString = getAppPref(key, context);
 		if(appConfigString == null) {
 			GWT.log("Key value not found. Returning default value");

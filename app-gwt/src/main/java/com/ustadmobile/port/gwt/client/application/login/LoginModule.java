@@ -19,6 +19,7 @@
  */
 package com.ustadmobile.port.gwt.client.application.login;
 
+import com.google.gwt.core.client.GWT;
 import com.gwtplatform.mvp.client.gin.AbstractPresenterModule;
 
 /**
@@ -31,9 +32,11 @@ public class LoginModule extends AbstractPresenterModule {
 	
     @Override
     protected void configure() {
+    	GWT.log("LoginModule.configure()");
         bindPresenter(LoginPresenter.class, 
         		LoginPresenter.MyView.class, 
         		LoginView.class, 
         		LoginPresenter.MyProxy.class);
+        GWT.log("LoginModule.configure() post");
     }
 }

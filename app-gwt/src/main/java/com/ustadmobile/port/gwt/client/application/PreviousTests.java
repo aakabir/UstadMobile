@@ -3,6 +3,9 @@ package com.ustadmobile.port.gwt.client.application;
 import java.io.IOException;
 import java.util.Hashtable;
 
+import org.fusesource.restygwt.client.Method;
+import org.fusesource.restygwt.client.MethodCallback;
+import org.fusesource.restygwt.client.Resource;
 import org.json.JSONException;
 import org.json.JSONObject;
 import org.xmlpull.v1.XmlPullParser;
@@ -16,6 +19,7 @@ import com.google.gwt.xml.client.Node;
 import com.google.gwt.xml.client.XMLParser;
 import com.ustadmobile.core.controller.LoginController;
 import com.ustadmobile.core.impl.UmCallback;
+import com.ustadmobile.port.gwt.client.rest.HelloService;
 import com.ustadmobile.port.gwt.client.test.TestInterface;
 import com.ustadmobile.port.gwt.client.util.ReplaceWithThis;
 import com.ustadmobile.port.gwt.xmlpull.XmlPullParserGWT;
@@ -47,6 +51,34 @@ public class PreviousTests {
     	  return null;
     	}
     
+    public void testRESTy() {
+    	/*
+         * Testing resty gwt over here.
+         * 
+         */
+        Resource helloResource = new Resource(GWT.getModuleBaseURL() + "hello-service");
+ 
+        HelloService service = GWT.create(HelloService.class);
+        //(RestServiceProxy)service).setResource(helloResource);
+        service.say( new MethodCallback<String>() {
+            
+
+			@Override
+			public void onFailure(Method method, Throwable exception) {
+				// TODO Auto-generated method stub
+				GWT.log("FAILED!");
+				
+			}
+
+			@Override
+			public void onSuccess(Method method, String response) {
+				// TODO Auto-generated method stub
+				GWT.log("SUCCESS!");
+				
+			}
+        });
+        //Done testing resty-gwt. 
+    }
 	public void testMe(){
 		JSONObject jsonObject = new JSONObject();
 	    try {
