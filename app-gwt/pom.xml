@@ -106,15 +106,25 @@
 						</goals>
 						<configuration>
 							<sources>
-								<!-- <source>src/main/generated</source> -->
+								<!-- Main sources and a few extra ones separated out for clarity -->
 								<source>${project.basedir}/src/main/java</source>
 								<source>${project.basedir}/src-json/main/java</source>
 								<source>${project.basedir}/src-jre/main/java</source>
 								<source>${project.basedir}/src-xpp/main/java</source>
+								
+								<!-- Using copied Core source since we have some overrides -->
 								<source>${project.basedir}/core-src/main/java</source>
-								<source>${project.basedir}/lib-database-annotation-src/main/java</source>
-								<source>${project.basedir}/lib-database-src/main/java</source>
+
+								<!-- Using Lib Source directly -->
+								<source>${project.basedir}/../lib-database-annotation/src/main/java</source>
+								<source>${project.basedir}/../lib-database/src/main/java</source>
+								
+								<!-- Except lib-util cause of UmUuidUtil.java needs to be overriden -->
 								<source>${project.basedir}/lib-util-src/main/java</source>
+								
+								<!-- Ignoring main source cause we need to override UmUuidUtil class
+								<source>${project.basedir}/../lib-util/src/main/java</source>
+								-->
 							</sources>
 						</configuration>
 					</execution>

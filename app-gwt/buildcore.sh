@@ -11,15 +11,11 @@ rm -rf lib-util-src
 #    implementation project(":lib-util")
 
 mkdir core-src
-mkdir lib-database-annotation-src
-mkdir lib-database-src
 mkdir lib-util-src
 
 echo "Copying sources.."
 
 cp -r ../core/src/main core-src/
-cp -r ../lib-database-annotation/src/main lib-database-annotation-src/
-cp -r ../lib-database/src/main lib-database-src/
 cp -r ../lib-util/src/main lib-util-src/
 
 echo "Copied. Moving files to be replaced.."
@@ -39,3 +35,6 @@ mv core-src/main/java/com/ustadmobile/core/db/impl/DbManagerFactory.java core-sr
 echo "..OK."
 echo ""
 echo "Now you can build the maven project: mvn install, or the usual eclipse + GWT + maven way"
+echo "Exiting in 5 seconds.."
+
+sleep 5
