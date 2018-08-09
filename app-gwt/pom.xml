@@ -121,10 +121,6 @@
 								
 								<!-- Except lib-util cause of UmUuidUtil.java needs to be overriden -->
 								<source>${project.basedir}/lib-util-src/main/java</source>
-								
-								<!-- Ignoring main source cause we need to override UmUuidUtil class
-								<source>${project.basedir}/../lib-util/src/main/java</source>
-								-->
 							</sources>
 						</configuration>
 					</execution>

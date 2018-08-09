@@ -113,7 +113,7 @@ If you want to link external source's jar files (that do NOT have ```*.java``` f
 	
 ```
 
-For step by step procedure, check out the section: Adding an external class/package to the GWT client. 
+For step by step procedure, check out the section: [Adding an external class/package to the GWT client](#Adding an external class/package to the GWT client)
 
 
 #### Project Structure ####
@@ -202,13 +202,16 @@ The ```com.ustadmobile.port.client``` package has all GWT client classes to make
 The packages and classes outside ```client``` are related to GWT but are not part of running GWT and its components. 
 
 #### Application components ####
-Note: This project is using GWTP and GWT-Material (for UI). For more understanding, refer to their turorial: https://dev.arcbees.com/gwtp/tutorials/index.html
+Note: This project is using GWTP and GWT-Material (for UI). For more understanding, refer to their tutorial: https://dev.arcbees.com/gwtp/tutorials/index.html
 
 All the application components lie in the package ```com.ustadmobile.port.gwt.client.application```. Every page/view has a module associated with it that is declared and linked by the class: ApplicationModule.java. This "installs" the module to the application. 
 
 ```
 configure(){
 	...
+	/**
+	* GWTP: Install the Root Module
+	*/
 	install(new AboutModule());
 	...
 }
@@ -243,7 +246,7 @@ The main ApplicationPresenter class has the logic for everything to do with GWT 
 
 The presenters for the individual views in their packages are child Presenters here. For eg: AboutPresenter is the child presenter of Application Presenter. It uses its parent presenter (ApplicationPresenter)'s slot to reveal itself. 
 
- ###### What does a GWT Presenter do ? ######
+ ###### GWTP Presenter and linking to Core Presenters/Controllers   ######
 
  The way to link a Core Presenter to this GWT Presenter is to create a new CorePresenterHandler class (inside the GWT Presenter) that extends the Core Presenter and implements any UiHandlers. In this nested class's constructor we call super with the context and view passed to it. 
 
@@ -504,22 +507,40 @@ Re build the project: ```mvn clean``` and ```mvn install```.
 
 #### Database & Repository ####
 
-All the GWT DB components lie in the sub package ```db```. 
+The application and soon the server is going to be part of the same code base and share the same entities between the mobile app and the server. This allows us to develop once for every platform and have similar feature set, experience and look throughout the modern platform. 
 
-TODO: this
+The UstadMobile mobile app uses a local database in the following ways:
+
+1. When an OPDS is loaded, the OPDS entries are entries in a database. They are linked to each other and are also linked to users of that device (another table). The opds file url is also persisted. 
+2. The User and its Management, role, organization in a basic form is an entity in the local database. The analytics of course usage is also local and the whole database is synced to a MAIN servlet. 
+3. Every type of interaction is handled by Data Access Objects (DAOs) and are separated from implementations so that we can have multiple clients for the same DB framework.
+
+Our aim with UstadMobile and GWT is to have as much of the application on the client side as we can. This includes the rendering, presenters and basically any core logic along with the UI. There is however two things that the browser (JavaScript+html+CSS) does not support : File system and Databases. While there are cross browser database libraries they only serve well local to the browser and would need to be synced up with the main server which adds another layer of work. While you can do local file system on the browser, again that does not allow us to fetch files stored on the main server. 
+
+The solution to those two limitations is handled in GWT via the concept of server side code and client side code. Since both of our code is within our core code, we have decided to completely separate out the server side independent of GWT. GWT's server side code essentially runs a servlet of sorts where the client has direct communication with. We are separating the server side outside of GWT. It will be a separate module within the UstadMobile project and its purpose will be to serve the database over HTTP REST. 
+
+The GWT client can then communicate with the database over simple HTTP REST API calls which GWT has a nice plugin called ```resty-gwt```. The Database servlet will serve the purpose of a central Main server that serves and hosts both uploaded assets (epub, pdf, etc.) as well as repository for storing main analytics and multiple organization's analytics data securely. It will also be responsible for authentication overall,  issuing sessions to devices and responding to requests filtered by role and user. 
+
+The Core code is structured in a way that the database implementation is flexible. On Android, the database implementation returns ```room``` calls and on this additional servlet module the database implementation will be a ```jdbc``` servlet. Similarly on GWT, this database implementation will be HTTP REST API calls. 
+
+There are two kinds of content requests in this scenario. On the mobile application there is a plain OPDS over HTTP and then there is JSON Sync over REST API to the main servlet. On GWT, we persist the OPDS of HTTP to the servlet database and continue working via HTTP REST. 
 
 ...
 
-#### GWT Implementation of Core ####
-All the implementations specific to GWT lie in the ```impl``` sub package, etc.
-
-TODO: this.
-
-...
+*Currently in development. More information to follow as it gets developed.* 
 
 ##### Overall Flow of the Application #####
 ![OPDS Catalog](images/UstadMobileGWT03.PNG "Application Flow")
 
+This is roughly the flow of the application in the first  run:
+
+````
+GWT starts > GWTP system is used > ClientModule GIN > ApplicationModule GIN + Application Presenter > Application Presenter's constructor: Initialise UstadMobileSystemImplGWT > AppConfig set (including FIRST_DEST) > UstadMobileSystemImpl.startUI > go(FIRST_DEST) > PlaceRequest.revealPlace(FIRST_DEST) > Goes to First destination (BasePoint most likely) > BaseModule > BasePresenter > Inject on Content> Create CoreBasePointPresenterHandler from Core's BasePointController > call core Presenter constructor > Core Presenter onCreate() > Also BaseView.onAttach() > Get catalog from argument > add to Core BasePoint View 's addTab() > BaseView.addTab() > BaseView GWT's addTab() > Add Content to MaterialTab in UI > Render on Display.
+````
+
+Here is a graph to show it better:
+
+![OPDS Catalog](images/UstadMobileGWT04.PNG "GWTP UstadMobile code + Core Flow")
 
 #### Testing on GWT ####
 
@@ -590,8 +611,6 @@ This way of separation was adopted from GWTP's own testing samples here : https:
 Now when we build ```mvn install``` or test ```mvn test``` the application, all tests will run separately OK. We can also right click the tests themselves in Eclipse > Run As > JUnit Test / GWT JUnit Test all OK.
 
 Note: We are not adding JUnit based test sources as a resource in the ```resources``` tag of the POM since we do not want it to be included in the client as JUnit isn't going to be made available on client. 
-
-...
 
 
 Since the presenters are being unit tested (which are part of core) separate to GWT, we are focusing on GWT's implementation / GWT specific unit tests. The major chunk of testing will be functional testing the web server. 
