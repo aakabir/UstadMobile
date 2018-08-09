@@ -9,8 +9,24 @@ import com.ustadmobile.port.gwt.client.application.login.LoginUiHandlers;
 import com.ustadmobile.port.gwt.client.application.upload.UploadCourseModule;
 import com.gwtplatform.mvp.client.gin.AbstractPresenterModule;
 
+/**
+ * The main entry point for the GWTP app. This is installed at ClientModule class.
+ * 
+ * Every Module extends GWTP's AbstractPresenterModule. 
+ * 
+ * @author Varuna Singh
+ *
+ */
 public class ApplicationModule extends AbstractPresenterModule {
     
+	/**
+	 * This gets automatically run from ClientModule. This method installs all 
+	 * sub-Modules - which are all the screens (+core presenters+core view) of 
+	 * this application. 
+	 * 
+	 * This method also binds the ApplicationPresenter and ApplicationView to this
+	 * module. 
+	 */
 	@Override
     protected void configure() {
 		

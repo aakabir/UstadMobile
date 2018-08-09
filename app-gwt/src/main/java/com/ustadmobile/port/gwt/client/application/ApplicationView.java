@@ -15,6 +15,7 @@ import gwt.material.design.client.ui.MaterialPanel;
  * will be sub presenters and modules to this View which can have 
  * global UI bits like hamburger menu, etc in here. 
  * 
+ * This class's constructor sets itself in the SLOT of the VIEW XML
  * @author Varuna Singh
  *
  */

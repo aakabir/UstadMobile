@@ -102,8 +102,7 @@ public class BaseView extends ViewWithUiHandlers<CoreBasePointPresenterHandler>
     	GWT.log("BaseView:onFeed(): Feed button clicked..sending to About for now.."
     			+ "via Override in BasePresenter via UiHandler()..");
     	
-    	//TODO: CHeck why getUiHandlers() is null:
-    	//getUiHandlers().feedClicked();
+    	//TODO: CHeck why getUiHandlers() is null: getUiHandlers().feedClicked();
     	presenterUiHandler.feedClicked();
     }
 	
@@ -158,7 +157,6 @@ public class BaseView extends ViewWithUiHandlers<CoreBasePointPresenterHandler>
             //Set navigation menu item's icon:
             
         }
-		
 	}
 
 	@Override

@@ -34,6 +34,14 @@ import com.ustadmobile.port.gwt.client.application.about.AboutPresenter.CoreAbou
 import gwt.material.design.client.ui.MaterialTextArea;
 import gwt.material.design.client.ui.MaterialTextBox;
 
+/**
+ * This is the GWT View for About Page. 
+ * The View extends CoreAboutPresenterHandler and AboutPresenter's MyView 
+ * 	interface that extends the Core About View. 
+ * 
+ * @author Varuna Singh
+ *
+ */
 public class AboutView extends ViewWithUiHandlers<CoreAboutPresenterHandler> 
   implements AboutPresenter.MyView {
 	
@@ -60,11 +68,6 @@ public class AboutView extends ViewWithUiHandlers<CoreAboutPresenterHandler>
     	GWT.log("GWT:AboutView:onConfirm():UiHandler's updateText button handling..");
     	String newText = "Html updated from click in GWT's View";    	
     	setAboutHTML(newText);
-    	
-    	//Testing getView 
-    	com.ustadmobile.core.view.AboutView coreView = 
-    			(com.ustadmobile.core.view.AboutView) this.getUiHandlers().getView();
-    	//coreView.setAboutHTML(newText); //Update: Did not work.
     	
     }
     
