@@ -29,6 +29,7 @@ import com.ustadmobile.core.impl.UMLog;
 import com.ustadmobile.core.impl.UstadMobileSystemImpl;
 import com.ustadmobile.core.view.BasePointMenuItem;
 import com.ustadmobile.core.view.BasePointView;
+import com.ustadmobile.core.view.ContentEditorView;
 import com.ustadmobile.core.view.DialogResultListener;
 import com.ustadmobile.core.view.DismissableDialog;
 import com.ustadmobile.port.android.util.UMAndroidUtil;
@@ -122,6 +123,7 @@ public class BasePointActivity extends UstadBaseActivity implements BasePointVie
         mBasePointController = new BasePointController(this, this);
         mBasePointController.onCreate(UMAndroidUtil.bundleToHashtable(getIntent().getExtras()),
                 UMAndroidUtil.bundleToHashtable(savedInstanceState));
+
 
     }
 

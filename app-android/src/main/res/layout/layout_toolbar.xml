@@ -6,7 +6,7 @@
     app:theme="@style/ThemeOverlay.AppCompat.Dark.ActionBar"
     app:popupTheme="@style/ThemeOverlay.AppCompat.Light"
     android:id="@+id/toolbar"
-    android:layout_height="60dp">
+    android:layout_height="wrap_content">
     <TextView
         android:text="@string/data_usage"
         android:gravity="center_vertical"

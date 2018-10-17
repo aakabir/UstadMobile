@@ -46,6 +46,7 @@ import android.view.MenuItem;
 
 import com.toughra.ustadmobile.R;
 import com.ustadmobile.core.impl.UstadMobileSystemImpl;
+import com.ustadmobile.core.view.ContentEditorView;
 
 
 public class SplashScreenActivity extends AppCompatActivity implements DialogInterface.OnClickListener, ActivityCompat.OnRequestPermissionsResultCallback{
@@ -92,7 +93,9 @@ public class SplashScreenActivity extends AppCompatActivity implements DialogInt
         new Handler().postDelayed(new Runnable() {
             @Override
             public void run() {
-                UstadMobileSystemImpl.getInstance().startUI(SplashScreenActivity.this);
+                //UstadMobileSystemImpl.getInstance().startUI(SplashScreenActivity.this);
+                //TODO: Remove this after finishing content editing logic
+                UstadMobileSystemImpl.getInstance().go(ContentEditorView.VIEW_NAME,SplashScreenActivity.this);
             }
         }, 0);
     }

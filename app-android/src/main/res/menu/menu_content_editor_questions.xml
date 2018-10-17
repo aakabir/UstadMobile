@@ -1,0 +1,17 @@
+<?xml version="1.0" encoding="utf-8"?>
+<menu xmlns:android="http://schemas.android.com/apk/res/android">
+    <item
+        android:id="@+id/action_insert_multiple_choice"
+        android:icon="@drawable/ic_format_list_numbered_black_24dp"
+        android:title="@string/content_editor_multiple_choice" />
+
+    <item
+        android:id="@+id/action_insert_fill_the_blanks"
+        android:icon="@drawable/ic_create_black_24dp"
+        android:title="@string/content_editor_multiple_fill_the_blanks" />
+    <item
+        android:id="@+id/action_insert_multimedia"
+        android:icon="@drawable/ic_perm_media_black_24dp"
+        android:title="@string/content_editor_multiple_multimedia" />
+
+</menu>

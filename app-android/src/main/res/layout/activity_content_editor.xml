@@ -1,9 +1,32 @@
 <?xml version="1.0" encoding="utf-8"?>
-<android.support.constraint.ConstraintLayout xmlns:android="http://schemas.android.com/apk/res/android"
-    xmlns:app="http://schemas.android.com/apk/res-auto"
-    xmlns:tools="http://schemas.android.com/tools"
+<android.support.design.widget.CoordinatorLayout
+    xmlns:android="http://schemas.android.com/apk/res/android"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
-    tools:context="com.ustadmobile.port.android.view.ContentEditorActivity">
+    xmlns:custom="http://schemas.android.com/apk/res-auto">
 
-</android.support.constraint.ConstraintLayout>
+    <android.support.design.widget.AppBarLayout
+        android:id="@+id/appbarLayout"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:elevation="@dimen/dimen_4dp">
+
+        <include layout="@layout/layout_toolbar" />
+    </android.support.design.widget.AppBarLayout>
+
+    <!-- Main content -->
+    <include layout="@layout/content_editor_content_main" />
+
+    <!-- Bottom Sheet -->
+    <include layout="@layout/content_editor_bottom_sheets_main" />
+
+
+    <com.github.ag.floatingactionmenu.OptionsFabLayout
+        android:id="@+id/insert_content_types"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        custom:color="@color/colorAccent"
+        custom:options_color="@color/colorPrimary"
+        custom:options_menu="@menu/menu_content_editor_questions"
+        custom:src="@drawable/ic_add_white_24dp" />
+</android.support.design.widget.CoordinatorLayout>

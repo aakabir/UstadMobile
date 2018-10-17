@@ -533,6 +533,9 @@ dependencies {
     implementation "org.nanohttpd:nanohttpd-nanolets:$version_nanohttpd"
 
     testImplementation "junit:junit:$version_junit"
+
+    //android fab menu
+    implementation "com.github.arthurghazaryan:floatingactionmenu:$version_android_fab_menu"
 }
 
 task sourceJar(type: Jar) {
