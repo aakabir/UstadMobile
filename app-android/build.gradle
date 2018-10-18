@@ -429,12 +429,20 @@ task generateCoreStringToAndroidResMap {
 assemble.dependsOn(generateCoreStringToAndroidResMap)
 
 configurations.all {
-    resolutionStrategy {
-        force "android.arch.lifecycle:livedata-core:$version_android_lifecycle"
-        force "android.arch.lifecycle:runtime:$version_android_lifecycle"
-        force "android.arch.core:runtime:$version_android_lifecycle"
+    resolutionStrategy.eachDependency { details ->
+        if (details.requested.group == 'android.arch.lifecycle'
+                || details.requested.group == 'android.arch.core'  ) {
+            details.useVersion "$version_android_lifecycle"
+        }
+
+        if (details.requested.group == 'com.android.support'
+                && !details.requested.name.contains('multidex') ) {
+            details.useVersion "$version_android_support_lib"
+        }
     }
 }
+
+
 
 dependencies {
     api project(':core')
@@ -534,8 +542,8 @@ dependencies {
 
     testImplementation "junit:junit:$version_junit"
 
-    //android fab menu
-    implementation "com.github.arthurghazaryan:floatingactionmenu:$version_android_fab_menu"
+    implementation 'com.github.clans:fab:1.6.4'
+
 }
 
 task sourceJar(type: Jar) {

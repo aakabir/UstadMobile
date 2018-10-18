@@ -1,17 +1,39 @@
 <?xml version="1.0" encoding="utf-8"?>
-<menu xmlns:android="http://schemas.android.com/apk/res/android">
+<menu xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto">
     <item
-        android:id="@+id/action_insert_multiple_choice"
-        android:icon="@drawable/ic_format_list_numbered_black_24dp"
-        android:title="@string/content_editor_multiple_choice" />
+        app:showAsAction="always"
+        android:id="@+id/content_action_undo"
+        android:icon="@drawable/ic_undo_white_24dp"
+        android:title="" />
 
     <item
-        android:id="@+id/action_insert_fill_the_blanks"
-        android:icon="@drawable/ic_create_black_24dp"
-        android:title="@string/content_editor_multiple_fill_the_blanks" />
+        app:showAsAction="always"
+        android:id="@+id/content_action_redo"
+        android:icon="@drawable/ic_redo_white_24dp"
+        android:title="" />
     <item
-        android:id="@+id/action_insert_multimedia"
-        android:icon="@drawable/ic_perm_media_black_24dp"
-        android:title="@string/content_editor_multiple_multimedia" />
+        app:showAsAction="always"
+        android:id="@+id/content_action_format"
+        android:icon="@drawable/ic_text_format_white_24dp"
+        android:title="" />
+
+    <item
+        app:showAsAction="always"
+        android:id="@+id/content_action_direction"
+        android:icon="@drawable/ic_format_textdirection_l_to_r_white_24dp"
+        android:title="" />
+
+    <item
+        app:showAsAction="always"
+        android:id="@+id/content_action_editor"
+        android:icon="@drawable/ic_editor_action"
+        android:title="" />
+
+    <item
+        app:showAsAction="always"
+        android:id="@+id/content_action_pages"
+        android:icon="@drawable/ic_menu_white_24dp"
+        android:title="" />
 
 </menu>

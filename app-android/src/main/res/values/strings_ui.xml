@@ -245,8 +245,8 @@
 
     <string name="catalog_language">Catalog Language</string>
     <string name="also_available_in">Also available in</string>
-    <string name="content_editor_multiple_multimedia">Multimedia</string>
-    <string name="content_editor_multiple_choice">Multiple choice</string>
-    <string name="content_editor_multiple_fill_the_blanks">Fill in the blanks</string>
+    <string name="content_type_multimedia">Multimedia</string>
+    <string name="content_type_multiple_choice">Multiple choice</string>
+    <string name="content_type_fill_the_blanks">Fill in the blanks</string>
 
 </resources>

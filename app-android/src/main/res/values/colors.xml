@@ -8,6 +8,7 @@
     <color name="primary_dark">#00796B</color>
     <color name="primary_light">#B2DFDB</color>
     <color name="accent">#FF9800</color>
+    <color name="accent_dark">#e18601</color>
     <color name="primary_text">#FFFFFF</color>
     <color name="secondary_text">#727272</color>
 
@@ -51,5 +52,10 @@
     <color name="entry_learner_progresss_failed">#ffa904</color>
 
     <color name="entry_learner_progress_passed">#6bb865</color>
+
+    <!--content editor screen colors-->
+    <color name="content_overlay_color">#50000000</color>
+    <color name="content_white_btn_ripple">#50BDBDBD</color>
+    <color name="content_white_fab_pressed">#fcfcfc</color>
 
 </resources>
