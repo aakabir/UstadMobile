@@ -248,5 +248,7 @@
     <string name="content_type_multimedia">Multimedia</string>
     <string name="content_type_multiple_choice">Multiple choice</string>
     <string name="content_type_fill_the_blanks">Fill in the blanks</string>
+    <string name="content_format_text">TEXT</string>
+    <string name="content_format_paragraph">PARAGRAPH</string>
 
 </resources>

@@ -27,15 +27,6 @@
         <!-- Bottom Sheet -->
         <include layout="@layout/content_editor_bottom_sheets_main" />
 
-        <RelativeLayout
-            android:layout_width="match_parent"
-            android:layout_height="match_parent">
-
-
-
-        </RelativeLayout>
-
-
         <com.github.clans.fab.FloatingActionButton
             android:id="@+id/content_editor_preview"
             android:layout_width="wrap_content"

@@ -11,6 +11,10 @@ public class ContentEditorPresenter extends UstadBaseController<ContentEditorVie
         super(context, arguments, view);
     }
 
+    public void handleFormattTypeClicked(String formatType){
+
+    }
+
     @Override
     public void setUIStrings() {
 

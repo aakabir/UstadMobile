@@ -1,11 +1,34 @@
 <?xml version="1.0" encoding="utf-8"?>
-<LinearLayout
+<android.support.v4.widget.NestedScrollView
+    android:elevation="@dimen/dimen_16dp"
     xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:app="http://schemas.android.com/apk/res-auto"
     android:id="@+id/bottom_sheet_container"
-    android:orientation="vertical"
     android:layout_width="match_parent"
-    android:layout_height="match_parent"
+    android:layout_height="wrap_content"
+    android:background="@color/icons"
+    android:clipToPadding="true"
+    app:behavior_hideable="true"
+    app:behavior_peekHeight="0dp"
     app:layout_behavior="@string/bottom_sheet_behavior">
+    <LinearLayout
+        android:orientation="vertical"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content">
+        <android.support.design.widget.TabLayout
+            android:id="@+id/content_types_tabs"
+            android:layout_width="match_parent"
+            android:layout_height="60dp"
+            style="@style/TabLayoutStyle"/>
+        <View
+            android:background="@color/divider_faint"
+            android:layout_width="match_parent"
+            android:layout_height="1dp"/>
+        <android.support.v4.view.ViewPager
+            android:id="@+id/content_types_viewpager"
+            android:layout_width="match_parent"
+            android:layout_height="190dp"/>
+    </LinearLayout>
 
-</LinearLayout>
+
+</android.support.v4.widget.NestedScrollView>
