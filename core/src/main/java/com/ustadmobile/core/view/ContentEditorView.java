@@ -19,6 +19,47 @@ public interface ContentEditorView extends UstadView {
     String PARAGRAPH_FORMAT_INDENT_INCREASE = "increate_indent";
     String PARAGRAPH_FORMAT_INDENT_DECREASE = "decrease_indent";
 
+    String ACTION_REDO = "action_redo";
+    String ACTION_UNDO = "action_undo";
+    String ACTION_TEXT_RECTION = "action_text_direction";
 
-    void setBoldFormatting();
+    void setContentBold();
+
+    void setContentItalic();
+
+    void setContentUnderlined();
+
+    void setContentStrikeThrough();
+
+    void setContentFontSize(String fontSize);
+
+    void setContentSuperscript();
+
+    void setContentSubScript();
+
+    void updateActiveFormats();
+
+    void setContentJustified();
+
+    void setContentCenterAlign();
+
+    void setContentLeftAlign();
+
+    void setContentRightAlign();
+
+    void setContentOrderedList();
+
+    void setContentUnOrderList();
+
+    void setContentIncreaseIndent();
+
+    void setContentDecreaseIndent();
+
+    void setContentRedo();
+
+    void setContentUndo();
+
+    void setContentTextDirection(boolean right);
+
+
 }

@@ -22,7 +22,11 @@
         </android.support.design.widget.AppBarLayout>
 
         <!-- Main content -->
-        <include layout="@layout/content_editor_content_main" />
+        <WebView
+            android:layout_marginTop="?actionBarSize"
+            android:id="@+id/editor_content"
+            android:layout_width="match_parent"
+            android:layout_height="match_parent"/>
 
         <!-- Bottom Sheet -->
         <include layout="@layout/content_editor_bottom_sheets_main" />
@@ -43,8 +47,8 @@
         <com.github.clans.fab.FloatingActionMenu
             android:layout_gravity="bottom|end"
             android:id="@+id/content_editor_insert"
-            android:layout_width="match_parent"
-            android:layout_height="match_parent"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
             android:paddingEnd="@dimen/dimen_16dp"
             android:paddingBottom="@dimen/dimen_16dp"
             fab:menu_fab_size="normal"
@@ -74,7 +78,7 @@
             fab:menu_labels_maxLines="-1"
             fab:menu_labels_position="left"
             fab:menu_openDirection="up"
-            fab:menu_backgroundColor="@color/content_overlay_color"
+            fab:menu_backgroundColor="@android:color/transparent"
             tools:ignore="RtlSymmetry">
 
             <com.github.clans.fab.FloatingActionButton

@@ -524,7 +524,7 @@ public class CatalogOPDSFragment extends UstadBaseFragment implements View.OnCli
     }
 
     /**
-     * Handle when the user selects to refresh
+     * Handle when the user selects to refreshViews
      */
     @Override
     public void onRefresh() {

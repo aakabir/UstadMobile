@@ -57,6 +57,7 @@
     <!--content editor screen colors-->
     <color name="content_overlay_color">#50000000</color>
     <color name="content_white_btn_ripple">#50BDBDBD</color>
+    <color name="content_icon_active">#263238</color>
     <color name="content_white_fab_pressed">#fcfcfc</color>
 
 </resources>

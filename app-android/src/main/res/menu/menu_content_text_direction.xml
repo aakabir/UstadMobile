@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="utf-8"?>
+<menu xmlns:android="http://schemas.android.com/apk/res/android">
+    <item
+        android:icon="@drawable/ic_format_textdirection_r_to_l_black_24dp"
+        android:id="@+id/direction_rightToLeft"
+        android:title="@string/content_direction_ltr" />
+    <item
+        android:icon="@drawable/ic_format_textdirection_l_to_r_black_24dp"
+        android:id="@+id/direction_leftToRight"
+        android:title="@string/content_direction_rtl" />
+</menu>

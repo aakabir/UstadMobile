@@ -7,12 +7,14 @@
     android:layout_height="wrap_content">
 
     <RelativeLayout
+        android:layout_marginStart="@dimen/dimen_10dp"
+        android:layout_centerVertical="true"
         android:clickable="true"
         android:foreground="?android:attr/selectableItemBackground"
         android:layout_marginBottom="@dimen/dimen_10dp"
         android:padding="@dimen/dimen_10dp"
         android:id="@+id/format_holder"
-        android:layout_width="80dp"
+        android:layout_width="50dp"
         android:layout_height="wrap_content"
         android:focusable="true"
         tools:ignore="UselessParent">
@@ -21,8 +23,8 @@
             android:src="@drawable/ic_list_multiple_choice_20dp"
             android:tint="@color/text_secondary"
             android:id="@+id/format_icon"
-            android:layout_width="@dimen/dimen_30dp"
-            android:layout_height="@dimen/dimen_30dp"
+            android:layout_width="@dimen/dimen_20dp"
+            android:layout_height="@dimen/dimen_20dp"
             android:layout_centerInParent="true" />
     </RelativeLayout>
 

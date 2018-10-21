@@ -1,0 +1,62 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+    <link href="styles/ustadmobile-styles.css" rel="stylesheet" />
+    <script src="js/jquery3.3.1.min.js"></script>
+    <script src="js/plugins/ustadmobile/UstadWidgets.js" type="text/javascript"></script>
+    <script src="js/tinymce.min.js"></script>
+    <script src="js/QuestionFormatting.js"></script>
+    <script>
+
+        var inlineConfig = {
+
+            selector: '#mce-editor',
+            menubar: false,
+            inline: true,
+            plugins: [
+                'ustadmobile','directionality','lists','noneditable','visualblocks'
+            ],
+            toolbar: [
+                'undo redo | rtl ltr ',' bold italic underline strikethrough superscript subscript fontsizeselect','ustadmobile',
+                'alignleft aligncenter alignright alignfull outdent indent  bullist numlist'
+            ],
+            valid_styles: {
+                '*': 'font-size,font-family,color,text-decoration,text-align'
+            },
+            content_css: [
+                '//fonts.googleapis.com/css?family=Lato:300,300i,400,400i',
+            ],
+            extended_valid_elements : 'label[class],div[onclick|class|data-um-correct|data-um-widget|id],option[selected|value]',
+            theme: 'modern',
+            setup:function(ed) {
+                ed.on('change', function() {
+                    QuestionWidget.handleListeners();
+                });
+            },
+            style_formats: [{ title: 'Containers', items: [
+                    { title: 'section', block: 'section', wrapper: true, merge_siblings: false },
+                    { title: 'article', block: 'article', wrapper: true, merge_siblings: false },
+                    { title: 'blockquote', block: 'blockquote', wrapper: true },
+                    { title: 'hgroup', block: 'hgroup', wrapper: true },
+                    { title: 'aside', block: 'aside', wrapper: true },
+                    { title: 'figure', block: 'figure', wrapper: true }
+                ]
+            }]
+        };
+        tinymce.init(inlineConfig).then(function () {
+            formatting.init(tinymce.activeEditor);
+            QuestionWidget.handleListeners();
+        });
+
+
+    </script>
+
+</head>
+<body>
+
+<div id="mce-editor" style="height: auto;">
+
+</div>
+</body>
+</html>

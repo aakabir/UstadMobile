@@ -250,5 +250,14 @@
     <string name="content_type_fill_the_blanks">Fill in the blanks</string>
     <string name="content_format_text">TEXT</string>
     <string name="content_format_paragraph">PARAGRAPH</string>
+    <string name="content_direction_ltr">Left To Right</string>
+    <string name="content_direction_rtl">Right To Left</string>
+    <string name="content_font_8">8pt</string>
+    <string name="content_font_10">10pt</string>
+    <string name="content_font_12">12pt</string>
+    <string name="content_font_14">14pt</string>
+    <string name="content_font_18">18pt</string>
+    <string name="content_font_24">24pt</string>
+    <string name="content_font_36">36pt</string>
 
 </resources>

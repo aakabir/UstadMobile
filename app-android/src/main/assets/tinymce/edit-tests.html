@@ -1,0 +1,74 @@
+<!--
+Test using mocha-chrome use  mocha-chrome edit-tests.html --timeout 3000
+-->
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="utf-8">
+    <title>Test results</title>
+    <link href="styles/mocha-style.css" rel="stylesheet" />
+    <script src="js/tinymce.min.js"></script>
+    <script>
+
+        /*default tinymce configuration*/
+        const inlineConfig = {
+            selector: '#mce-editor',
+            menubar: false,
+            inline: true,
+            plugins: [
+                'ustadmobile','directionality','lists'
+            ],
+            toolbar:false,
+            valid_styles: {
+                '*': 'font-size,font-family,color,text-decoration,text-align'
+            },
+            setup: function (editor) {
+                editor.on('init', function () {
+                    editor.focus();
+                    editor.execCommand('mceInsertContent', false, "<span>Test started</span>",{format: 'raw'});
+                    formatting.init(editor);
+                });
+            }
+        };
+        tinymce.init(inlineConfig);
+
+    </script>
+</head>
+<body>
+
+<!--Container to show test results-->
+<div id="mocha"></div>
+
+<!--Container for the TinyMCE editor-->
+<div id="mce-editor">
+    Lorem Ipsum is simply dummy text of the printing and typesetting industry.Lorem Ipsum is simply dummy text of the
+    printing and typesetting industry.Lorem Ipsum is simply dummy text of the printing and typesetting industry.Lorem
+    Ipsum is simply dummy text of the printing and typesetting industry.Lorem Ipsum is simply dummy text of the printing
+    and typesetting industry.
+</div>
+<!-- Editor event invocation-->
+<script src="js/QuestionFormatting.js"></script>
+<!--Assertion library-->
+<script src="js/chai.js"></script>
+<!--Testing framework-->
+<script src="js/mocha.js"></script>
+<!--Setting up mocha testing framework-->
+<script>mocha.setup('bdd')</script>
+<!--All test cases for test formatting-->
+<script src="test/test.text.js"></script>
+<!--All test cases for paragraph formatting-->
+<script src="test/test.paragraph.js"></script>
+<!--All test cases for text direction-->
+<script src="test/test.text-direction.js"></script>
+<!--All test cases for font size-->
+<script src="test/test.font-size.js"></script>
+<!--All test cases for editor actions-->
+<script src="test/test.editor-action.js"></script>
+<script>
+    mocha.checkLeaks();
+    setTimeout(function(){mocha.run();}, 900);
+
+</script>
+</body>
+</html>
