@@ -11,12 +11,12 @@
         android:layout_centerVertical="true"
         android:clickable="true"
         android:foreground="?android:attr/selectableItemBackground"
+        android:focusable="true"
         android:layout_marginBottom="@dimen/dimen_10dp"
         android:padding="@dimen/dimen_10dp"
         android:id="@+id/format_holder"
         android:layout_width="50dp"
         android:layout_height="wrap_content"
-        android:focusable="true"
         tools:ignore="UselessParent">
 
         <ImageView

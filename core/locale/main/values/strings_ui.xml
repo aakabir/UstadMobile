@@ -259,5 +259,6 @@
     <string name="content_font_18">18pt</string>
     <string name="content_font_24">24pt</string>
     <string name="content_font_36">36pt</string>
-
+    <string name="content_source_camera">From Camera</string>
+    <string name="content_source_device">From Device</string>
 </resources>

@@ -337,6 +337,8 @@ public class ContentEditorActivity extends UstadBaseActivity implements
         });
 
         mInsertContent.setOnMenuToggleListener(this);
+
+
         sourceBottomSheetBehavior.setBottomSheetCallback(new BottomSheetBehavior.BottomSheetCallback() {
             @Override
             public void onStateChanged(@NonNull View bottomSheet, int newState) {
