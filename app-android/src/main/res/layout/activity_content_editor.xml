@@ -28,8 +28,11 @@
             android:layout_width="match_parent"
             android:layout_height="match_parent"/>
 
-        <!-- Bottom Sheet -->
+        <!-- Bottom Sheet formatting-->
         <include layout="@layout/content_editor_bottom_sheets_main" />
+
+        <!-- Bottom Sheet formatting-->
+        <include layout="@layout/content_multimedia_sources_bottom_sheets_main" />
 
         <com.github.clans.fab.FloatingActionButton
             android:id="@+id/content_editor_preview"
@@ -126,6 +129,7 @@
         android:layout_height="match_parent"
         android:layout_gravity="end"
         android:fitsSystemWindows="true"/>
+
 
 
 </android.support.v4.widget.DrawerLayout>

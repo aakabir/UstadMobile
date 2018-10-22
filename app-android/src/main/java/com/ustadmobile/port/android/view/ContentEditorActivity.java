@@ -1,10 +1,10 @@
 package com.ustadmobile.port.android.view;
 
 import android.annotation.SuppressLint;
-import android.content.Context;
 import android.os.Bundle;
 import android.support.annotation.NonNull;
 import android.support.annotation.Nullable;
+import android.support.annotation.VisibleForTesting;
 import android.support.design.widget.BottomSheetBehavior;
 import android.support.design.widget.TabLayout;
 import android.support.v4.app.Fragment;
@@ -14,7 +14,6 @@ import android.support.v4.content.ContextCompat;
 import android.support.v4.view.GravityCompat;
 import android.support.v4.view.ViewPager;
 import android.support.v4.widget.DrawerLayout;
-import android.support.v7.view.ContextThemeWrapper;
 import android.support.v7.view.menu.MenuBuilder;
 import android.support.v7.view.menu.MenuPopupHelper;
 import android.support.v7.widget.GridLayoutManager;
@@ -22,6 +21,7 @@ import android.support.v7.widget.PopupMenu;
 import android.support.v7.widget.RecyclerView;
 import android.support.v7.widget.Toolbar;
 import android.util.DisplayMetrics;
+import android.util.SparseArray;
 import android.view.Display;
 import android.view.Gravity;
 import android.view.LayoutInflater;
@@ -31,6 +31,7 @@ import android.view.View;
 import android.view.ViewGroup;
 import android.webkit.ConsoleMessage;
 import android.webkit.JavascriptInterface;
+import android.webkit.JsResult;
 import android.webkit.WebChromeClient;
 import android.webkit.WebSettings;
 import android.webkit.WebView;
@@ -55,7 +56,8 @@ public class ContentEditorActivity extends UstadBaseActivity implements
         ContentEditorView, FloatingActionMenu.OnMenuToggleListener {
 
     private static ContentEditorPresenter presenter;
-    private BottomSheetBehavior bottomSheetBehavior;
+    private BottomSheetBehavior formattingBottomSheetBehavior;
+    private BottomSheetBehavior sourceBottomSheetBehavior;
     private FloatingActionMenu mInsertContent;
     private FloatingActionButton mPreviewContent;
     private FloatingActionButton mInsertMultipleChoice;
@@ -64,7 +66,8 @@ public class ContentEditorActivity extends UstadBaseActivity implements
     private WebView editorContent;
     private DrawerLayout mContentPageDrawer;
     private boolean isFromFormatting = false;
-    private static HashMap<Integer,List<ContentFormat>> mFormatting = new HashMap<>();
+    public static HashMap<Integer,List<ContentFormat>> mFormatting = new HashMap<>();
+    public String returnValue = null;
 
 
     /**
@@ -119,12 +122,19 @@ public class ContentEditorActivity extends UstadBaseActivity implements
                     "Consoled a message "+consoleMessage.message());
             return true;
         }
+
+        @Override
+        public boolean onJsAlert(WebView view, String url, String message, JsResult result) {
+            UstadMobileSystemImpl.l(UMLog.DEBUG,700,
+                    "Consoled a message "+result.toString());
+            return super.onJsAlert(view, url, message, result);
+        }
     }
 
     /**
      * Class which represents a single formatting type
      */
-    private class ContentFormat {
+    public class ContentFormat {
 
         private int formatIcon;
 
@@ -225,7 +235,7 @@ public class ContentEditorActivity extends UstadBaseActivity implements
                         popupMenu.getMenu().getItem(0).setChecked(true);
                         popupMenu.setOnMenuItemClickListener(item -> {
                             presenter.handleFormatTypeClicked(format.getFormatTag(),
-                                    item.getTitle()+"");
+                                    item.getTitle().toString().replace("pt",""));
                             return true;
                         });
 
@@ -265,8 +275,6 @@ public class ContentEditorActivity extends UstadBaseActivity implements
                     getSpanCount(100));
             mRecyclerView.setLayoutManager(mLayoutManager);
             mRecyclerView.setAdapter(adapter);
-
-            ((ContentEditorActivity)getActivity()).updateActiveFormats();
             return  rootView;
 
         }
@@ -294,7 +302,10 @@ public class ContentEditorActivity extends UstadBaseActivity implements
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_content_editor);
-        bottomSheetBehavior = BottomSheetBehavior.from(findViewById(R.id.bottom_sheet_container));
+        formattingBottomSheetBehavior =
+                BottomSheetBehavior.from(findViewById(R.id.bottom_sheet_container));
+        sourceBottomSheetBehavior =
+                BottomSheetBehavior.from(findViewById(R.id.bottom_multimedia_source_sheet_container));
         TextView toolbarTitle = findViewById(R.id.toolbarTitle);
         mInsertContent = findViewById(R.id.content_editor_insert);
         mPreviewContent = findViewById(R.id.content_editor_preview);
@@ -326,7 +337,30 @@ public class ContentEditorActivity extends UstadBaseActivity implements
         });
 
         mInsertContent.setOnMenuToggleListener(this);
-        bottomSheetBehavior.setBottomSheetCallback(new BottomSheetBehavior.BottomSheetCallback() {
+        sourceBottomSheetBehavior.setBottomSheetCallback(new BottomSheetBehavior.BottomSheetCallback() {
+            @Override
+            public void onStateChanged(@NonNull View bottomSheet, int newState) {
+                if(newState == BottomSheetBehavior.STATE_EXPANDED){
+                    mInsertContent.close(true);
+                    mPreviewContent.hide(true);
+                }
+
+                if(newState == BottomSheetBehavior.STATE_COLLAPSED){
+                    mInsertContent.showMenu(true);
+                    mPreviewContent.show(true);
+                }
+            }
+
+            @Override
+            public void onSlide(@NonNull View bottomSheet, float slideOffset) {
+
+            }
+        });
+
+        mInsertMultimedia.setOnClickListener(v ->
+                sourceBottomSheetBehavior.setState(BottomSheetBehavior.STATE_EXPANDED));
+
+        formattingBottomSheetBehavior.setBottomSheetCallback(new BottomSheetBehavior.BottomSheetCallback() {
             @Override
             public void onStateChanged(@NonNull View bottomSheet, int newState) {
                 if(newState == BottomSheetBehavior.STATE_EXPANDED){
@@ -346,6 +380,7 @@ public class ContentEditorActivity extends UstadBaseActivity implements
             }
         });
 
+
         ContentFormattingPagerAdapter adapter =
                 new ContentFormattingPagerAdapter(getSupportFragmentManager());
         mViewPager.setAdapter(adapter);
@@ -362,6 +397,8 @@ public class ContentEditorActivity extends UstadBaseActivity implements
         editorContent.clearHistory();
         editorContent.addJavascriptInterface(new WebViewInterface(), "android");
         editorContent.loadUrl("file:///android_asset/tinymce/index.html");
+
+
     }
 
     @Override
@@ -395,10 +432,11 @@ public class ContentEditorActivity extends UstadBaseActivity implements
                 isFromFormatting = true;
                 mInsertContent.close(true);
             }else{
-                boolean isSheetOpened =
-                        bottomSheetBehavior.getState() == BottomSheetBehavior.STATE_EXPANDED;
+                boolean isSheetOpened = formattingBottomSheetBehavior.getState()
+                        == BottomSheetBehavior.STATE_EXPANDED;
+                sourceBottomSheetBehavior.setState(BottomSheetBehavior.STATE_COLLAPSED);
 
-                bottomSheetBehavior.setState(isSheetOpened ?
+                formattingBottomSheetBehavior.setState(isSheetOpened ?
                         BottomSheetBehavior.STATE_COLLAPSED:BottomSheetBehavior.STATE_EXPANDED);
             }
         }else if(itemId == R.id.content_action_undo){
@@ -445,21 +483,32 @@ public class ContentEditorActivity extends UstadBaseActivity implements
         if(opened){
             mPreviewContent.hide(true);
         }else{
-            mPreviewContent.show(true);
+            if(sourceBottomSheetBehavior.getState() == BottomSheetBehavior.STATE_COLLAPSED){
+                mPreviewContent.show(true);
+            }
             if(isFromFormatting){
                 isFromFormatting = false;
-                bottomSheetBehavior.setState(BottomSheetBehavior.STATE_EXPANDED);
+                formattingBottomSheetBehavior.setState(BottomSheetBehavior.STATE_EXPANDED);
             }
         }
     }
 
+    @VisibleForTesting
+    public BottomSheetBehavior getFormattingBottomSheetBehavior() {
+        return formattingBottomSheetBehavior;
+    }
+
+    @VisibleForTesting
+    public BottomSheetBehavior getSourceBottomSheetBehavior() {
+        return sourceBottomSheetBehavior;
+    }
 
     /**
      * Invoke javascript call from android
      * @param functionName name of the javascript function
      * @param params javascript function params
      */
-    private void callJavaScriptFunction(String functionName,@Nullable String ...params){
+    public void callJavaScriptFunction(String functionName,@Nullable String ...params){
         StringBuilder mBuilder = new StringBuilder();
         mBuilder.append("javascript:try{");
         mBuilder.append(functionName);
@@ -481,7 +530,11 @@ public class ContentEditorActivity extends UstadBaseActivity implements
         }
         mBuilder.append(")}catch(error){console.error(error.message);}");
         final String call = mBuilder.toString();
-        editorContent.loadUrl(call);
+        editorContent.evaluateJavascript(call, value -> {
+            returnValue = value;
+            UstadMobileSystemImpl.l(UMLog.DEBUG,700,
+                    "Value returned from js function "+value);
+        });
     }
 
 
@@ -518,11 +571,6 @@ public class ContentEditorActivity extends UstadBaseActivity implements
     @Override
     public void setContentSubScript() {
         callJavaScriptFunction("formatting.textFormattingSubScript", (String) null);
-    }
-
-    @Override
-    public void updateActiveFormats() {
-
     }
 
     @Override

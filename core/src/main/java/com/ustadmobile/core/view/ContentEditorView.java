@@ -2,26 +2,26 @@ package com.ustadmobile.core.view;
 
 public interface ContentEditorView extends UstadView {
     String VIEW_NAME = "ContentEditor";
-    String TEXT_FORMAT_TYPE_BOLD = "bold";
-    String TEXT_FORMAT_TYPE_UNDERLINE= "underline";
-    String TEXT_FORMAT_TYPE_ITALIC = "italic";
-    String TEXT_FORMAT_TYPE_STRIKE = "strikeThrough";
-    String TEXT_FORMAT_TYPE_FONT = "font";
-    String TEXT_FORMAT_TYPE_SUP = "superscript";
-    String TEXT_FORMAT_TYPE_SUB= "subscript";
+    String TEXT_FORMAT_TYPE_BOLD = "Bold";
+    String TEXT_FORMAT_TYPE_UNDERLINE= "Underline";
+    String TEXT_FORMAT_TYPE_ITALIC = "Italic";
+    String TEXT_FORMAT_TYPE_STRIKE = "Strikethrough";
+    String TEXT_FORMAT_TYPE_FONT = "FontSize";
+    String TEXT_FORMAT_TYPE_SUP = "Superscript";
+    String TEXT_FORMAT_TYPE_SUB= "Subscript";
 
-    String PARAGRAPH_FORMAT_ALIGN_CENTER = "align_center";
-    String PARAGRAPH_FORMAT_ALIGN_LEFT = "align_left";
-    String PARAGRAPH_FORMAT_ALIGN_RIGHT = "align_right";
-    String PARAGRAPH_FORMAT_ALIGN_JUSTIFY = "align_justify";
-    String PARAGRAPH_FORMAT_LIST_ORDERED = "list_ordered";
-    String PARAGRAPH_FORMAT_LIST_UNORDERED = "list_unordered";
-    String PARAGRAPH_FORMAT_INDENT_INCREASE = "increate_indent";
-    String PARAGRAPH_FORMAT_INDENT_DECREASE = "decrease_indent";
+    String PARAGRAPH_FORMAT_ALIGN_CENTER = "JustifyCenter";
+    String PARAGRAPH_FORMAT_ALIGN_LEFT = "JustifyLeft";
+    String PARAGRAPH_FORMAT_ALIGN_RIGHT = "JustifyRight";
+    String PARAGRAPH_FORMAT_ALIGN_JUSTIFY = "JustifyFull";
+    String PARAGRAPH_FORMAT_LIST_ORDERED = "InsertOrderedList";
+    String PARAGRAPH_FORMAT_LIST_UNORDERED = "InsertUnorderedList";
+    String PARAGRAPH_FORMAT_INDENT_INCREASE = "Indent";
+    String PARAGRAPH_FORMAT_INDENT_DECREASE = "Outdent";
 
-    String ACTION_REDO = "action_redo";
-    String ACTION_UNDO = "action_undo";
-    String ACTION_TEXT_RECTION = "action_text_direction";
+    String ACTION_REDO = "Redo";
+    String ACTION_UNDO = "Undo";
+    String ACTION_TEXT_RECTION = "mceDirectionLTR";
 
     void setContentBold();
 
@@ -36,8 +36,6 @@ public interface ContentEditorView extends UstadView {
     void setContentSuperscript();
 
     void setContentSubScript();
-
-    void updateActiveFormats();
 
     void setContentJustified();
 

@@ -37,7 +37,7 @@ formatting.getActiveEditorContent = function(){
  * @returns {string | * | void}
  */
 formatting.setFontSize = function(fontSize){
-    this.activeEditor.execCommand("FontSize",false,fontSize);
+    this.activeEditor.execCommand("FontSize",false,""+fontSize+"pt");
     return this.activeEditor.queryCommandValue("FontSize");
 };
 
