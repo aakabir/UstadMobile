@@ -3,10 +3,11 @@
 <head>
     <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
     <link href="styles/ustadmobile-styles.css" rel="stylesheet" />
+    <link href="styles/bootstrap.min.css" rel="stylesheet" />
     <script src="js/jquery3.3.1.min.js"></script>
     <script src="js/plugins/ustadmobile/UstadWidgets.js" type="text/javascript"></script>
     <script src="js/tinymce.min.js"></script>
-    <script src="js/QuestionFormatting.js"></script>
+    <script src="js/ContentFormatting.js"></script>
     <script>
 
         var inlineConfig = {
@@ -50,10 +51,23 @@
     </script>
 
 </head>
-<body>
 
-<div id="mce-editor" style="height: auto;">
+<body onload="resizeWindow()">
 
+<div class="container-fluid">
+    <div class="row">
+        <div id="mce-editor" class="col-sm-12 col-md-12 col-lg-12" style="margin: 2%; padding: 0; border:1px solid white;">
+
+        </div>
+    </div>
 </div>
+
+<script src="js/bootstrap.min.js"></script>
+<script>
+    function resizeWindow(){
+        let w = $(window).width();
+        $('#mce-editor').css('width', w);
+    }
+</script>
 </body>
 </html>

@@ -33,7 +33,8 @@ import static org.hamcrest.core.AllOf.allOf;
 @RunWith(AndroidJUnit4.class)
 public class ContentEditorActivityTest {
 
-    private BottomSheetBehavior bottomSheetBehavior;
+    private BottomSheetBehavior formattingBottomSheetBehavior;
+    private BottomSheetBehavior mediaSourceBottomSheetBehavior;
 
     private final static int RECYCLER_ITEM_INDEX = 0;
 
@@ -43,14 +44,17 @@ public class ContentEditorActivityTest {
 
     @Before
     public void beforeStartingTheTests(){
-        bottomSheetBehavior = mActivityRule.getActivity().getFormattingBottomSheetBehavior();
+        formattingBottomSheetBehavior = mActivityRule.getActivity().getFormattingBottomSheetBehavior();
+        mediaSourceBottomSheetBehavior = mActivityRule.getActivity().getMediaSourceBottomSheetBehavior();
     }
     @Test
     public void givenFormatIconIsClicked_whenBottomSheetIsCollapsed_thenShouldExpandTheBottomSheet() {
         onView(withId(R.id.content_action_format)).perform(click());
-        assertTrue("The BottomSheet should be settling or expanded",
-                bottomSheetBehavior.getState() <= BottomSheetBehavior.STATE_EXPANDED);
+        assertTrue("Formatting BottomSheet should be settling or expanded",
+                formattingBottomSheetBehavior.getState() <=
+                        BottomSheetBehavior.STATE_EXPANDED);
     }
+
 
     @Test
     public void givenFormatTypeButtonIsClickedOnList_whenEditingIsEnabled_thenShouldActivateAndApplyFormatting(){
@@ -59,7 +63,7 @@ public class ContentEditorActivityTest {
         onView(matcher)
                 .perform(RecyclerViewActions.actionOnItemAtPosition(RECYCLER_ITEM_INDEX, click()));
         List<ContentEditorActivity.ContentFormat> formats =
-                ContentEditorActivity.mFormatting.get(RECYCLER_ITEM_INDEX);
+                ContentEditorActivity.getFormatting().get(RECYCLER_ITEM_INDEX);
         assertTrue("Formatting type should be applied and button should be activated",
                 formats.get(RECYCLER_ITEM_INDEX).isActive());
     }

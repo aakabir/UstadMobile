@@ -1,16 +1,16 @@
-function QuestionFormatting() {if (!(this instanceof QuestionFormatting))
-    return new QuestionFormatting();}
+function ContentFormatting() {if (!(this instanceof ContentFormatting))
+    return new ContentFormatting();}
 
-const formatting = new QuestionFormatting();
+const formatting = new ContentFormatting();
 let activeEditor = null;
 
 /**
- * Initialize QuestionFormatting with active editor instance
+ * Initialize ContentFormatting with active editor instance
  * @param activeEditor TinyMCE active editor instance
  */
 formatting.init = function(activeEditor){
     this.activeEditor = activeEditor;
-    console.log("QuestionFormatting controls initialized");
+    console.log("ContentFormatting controls initialized");
 };
 
 /**
@@ -203,6 +203,23 @@ formatting.textFormattingSuperScript = function(){
 formatting.textFormattingSubScript = function(){
     this.activeEditor.execCommand("Subscript",false,null);
     return this.isToolBarButtonActive("Subscript");
+};
+
+/**
+ * Get content from the active content edtor
+ * @returns {*|void}
+ */
+formatting.getContent = function(){
+    return this.activeEditor.getContent().getHtml();
+};
+
+/**
+ * Request formatting focus to the active editor
+ * @returns {boolean}
+ */
+formatting.requestFocus = function () {
+    this.activeEditor.execCommand("mceFocus",false,null);
+    return this.isToolBarButtonActive("mceFocus")
 };
 
 

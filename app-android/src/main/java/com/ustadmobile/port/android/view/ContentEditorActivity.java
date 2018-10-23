@@ -30,11 +30,12 @@ import android.view.MenuItem;
 import android.view.View;
 import android.view.ViewGroup;
 import android.webkit.ConsoleMessage;
-import android.webkit.JavascriptInterface;
 import android.webkit.JsResult;
 import android.webkit.WebChromeClient;
+import android.webkit.WebResourceRequest;
 import android.webkit.WebSettings;
 import android.webkit.WebView;
+import android.webkit.WebViewClient;
 import android.widget.ImageView;
 import android.widget.RelativeLayout;
 import android.widget.TextView;
@@ -46,10 +47,14 @@ import com.ustadmobile.core.controller.ContentEditorPresenter;
 import com.ustadmobile.core.impl.UMLog;
 import com.ustadmobile.core.impl.UstadMobileSystemImpl;
 import com.ustadmobile.core.view.ContentEditorView;
+import com.ustadmobile.port.android.impl.http.AndroidAssetsHandler;
 import com.ustadmobile.port.android.util.UMAndroidUtil;
+import com.ustadmobile.port.sharedse.impl.http.EmbeddedHTTPD;
 
+import java.io.IOException;
+import java.text.SimpleDateFormat;
 import java.util.ArrayList;
-import java.util.HashMap;
+import java.util.Date;
 import java.util.List;
 
 public class ContentEditorActivity extends UstadBaseActivity implements
@@ -57,7 +62,7 @@ public class ContentEditorActivity extends UstadBaseActivity implements
 
     private static ContentEditorPresenter presenter;
     private BottomSheetBehavior formattingBottomSheetBehavior;
-    private BottomSheetBehavior sourceBottomSheetBehavior;
+    private BottomSheetBehavior mediaSourceBottomSheetBehavior;
     private FloatingActionMenu mInsertContent;
     private FloatingActionButton mPreviewContent;
     private FloatingActionButton mInsertMultipleChoice;
@@ -66,9 +71,11 @@ public class ContentEditorActivity extends UstadBaseActivity implements
     private WebView editorContent;
     private DrawerLayout mContentPageDrawer;
     private boolean isFromFormatting = false;
-    public static HashMap<Integer,List<ContentFormat>> mFormatting = new HashMap<>();
-    public String returnValue = null;
-
+    private static final int FORMATTING_TEXT_INDEX = 0;
+    private static final int FORMATTING_PARAGRAPH_INDEX = 1;
+    private static final int FORMATTING_ACTIONS_INDEX = 2;
+    private static SparseArray<List<ContentFormat>> formattingList = new SparseArray<>();
+    private  String baseUrl = null;
 
     /**
      * UI implementation of formatting type as pager.
@@ -101,16 +108,6 @@ public class ContentEditorActivity extends UstadBaseActivity implements
         }
     }
 
-    /**
-     * Interface class which is used to interact with javascript functions
-     */
-    private class WebViewInterface {
-        @JavascriptInterface
-        public void processReturnValue(int index, String value) {
-            UstadMobileSystemImpl.l(UMLog.DEBUG,700,
-                    "Returned value from js function: "+value);
-        }
-    }
 
     /**
      * Web chrome client
@@ -128,6 +125,22 @@ public class ContentEditorActivity extends UstadBaseActivity implements
             UstadMobileSystemImpl.l(UMLog.DEBUG,700,
                     "Consoled a message "+result.toString());
             return super.onJsAlert(view, url, message, result);
+        }
+    }
+
+    private class WebClient extends WebViewClient {
+
+        @Override
+        public boolean shouldOverrideUrlLoading(WebView view, String url) {
+            view.loadUrl(url);
+            return true;
+        }
+
+        @Override
+        public void onPageFinished(WebView view, String url) {
+            super.onPageFinished(view, url);
+            //request focus to the editor after the page has loaded 100%
+            requestFocus();
         }
     }
 
@@ -225,7 +238,7 @@ public class ContentEditorActivity extends UstadBaseActivity implements
                 mLayout.setOnClickListener(v -> {
                     if(!format.getFormatTag().equals(TEXT_FORMAT_TYPE_FONT)){
                         format.setActive(!format.isActive());
-                        mFormatting.put(formatType, contentFormats);
+                        formattingList.put(formatType, contentFormats);
                         presenter.handleFormatTypeClicked(format.getFormatTag(),null);
                         notifyDataSetChanged();
                     }else{
@@ -270,7 +283,7 @@ public class ContentEditorActivity extends UstadBaseActivity implements
                     container, false);
             RecyclerView mRecyclerView = rootView.findViewById(R.id.formats_list);
             adapter = new FormatsAdapter(formattingType);
-            adapter.setContentFormats(mFormatting.get(formattingType));
+            adapter.setContentFormats(formattingList.get(formattingType));
             GridLayoutManager mLayoutManager = new GridLayoutManager(getContext(),
                     getSpanCount(100));
             mRecyclerView.setLayoutManager(mLayoutManager);
@@ -282,7 +295,7 @@ public class ContentEditorActivity extends UstadBaseActivity implements
 
 
         /**
-         * Automatically get number of rows to be displayed as per screen size
+         * Automatically gets number of rows to be displayed as per screen size
          * @param width Width of a single item
          * @return number of columns
          */
@@ -304,7 +317,7 @@ public class ContentEditorActivity extends UstadBaseActivity implements
         setContentView(R.layout.activity_content_editor);
         formattingBottomSheetBehavior =
                 BottomSheetBehavior.from(findViewById(R.id.bottom_sheet_container));
-        sourceBottomSheetBehavior =
+        mediaSourceBottomSheetBehavior =
                 BottomSheetBehavior.from(findViewById(R.id.bottom_multimedia_source_sheet_container));
         TextView toolbarTitle = findViewById(R.id.toolbarTitle);
         mInsertContent = findViewById(R.id.content_editor_insert);
@@ -315,6 +328,7 @@ public class ContentEditorActivity extends UstadBaseActivity implements
         mInsertFillBlanks = findViewById(R.id.content_type_fill_blanks);
         mContentPageDrawer = findViewById(R.id.content_page_drawer);
         editorContent = findViewById(R.id.editor_content);
+
         ViewPager mViewPager = findViewById(R.id.content_types_viewpager);
         TabLayout mTabLayout = findViewById(R.id.content_types_tabs);
 
@@ -330,16 +344,23 @@ public class ContentEditorActivity extends UstadBaseActivity implements
                 UMAndroidUtil.bundleToHashtable(getIntent().getExtras()),this);
         presenter.onCreate(UMAndroidUtil.bundleToHashtable(savedInstanceState));
 
-        mInsertContent.setOnClickListener(v -> {
+        mInsertContent.setOnMenuButtonClickListener(v -> {
+            mPreviewContent.hide(true);
+            handleFABMenuButton(!mInsertContent.isOpened());
+            if(mPreviewContent.isHidden()){
+                mInsertContent.open(true);
+            }
+
             if(mInsertContent.isOpened()){
-                mPreviewContent.hide(true);
+                mInsertContent.close(true);
             }
         });
 
+        mPreviewContent.setOnClickListener(v -> previewContent());
+
         mInsertContent.setOnMenuToggleListener(this);
 
-
-        sourceBottomSheetBehavior.setBottomSheetCallback(new BottomSheetBehavior.BottomSheetCallback() {
+        mediaSourceBottomSheetBehavior.setBottomSheetCallback(new BottomSheetBehavior.BottomSheetCallback() {
             @Override
             public void onStateChanged(@NonNull View bottomSheet, int newState) {
                 if(newState == BottomSheetBehavior.STATE_EXPANDED){
@@ -360,7 +381,7 @@ public class ContentEditorActivity extends UstadBaseActivity implements
         });
 
         mInsertMultimedia.setOnClickListener(v ->
-                sourceBottomSheetBehavior.setState(BottomSheetBehavior.STATE_EXPANDED));
+                mediaSourceBottomSheetBehavior.setState(BottomSheetBehavior.STATE_EXPANDED));
 
         formattingBottomSheetBehavior.setBottomSheetCallback(new BottomSheetBehavior.BottomSheetCallback() {
             @Override
@@ -382,7 +403,6 @@ public class ContentEditorActivity extends UstadBaseActivity implements
             }
         });
 
-
         ContentFormattingPagerAdapter adapter =
                 new ContentFormattingPagerAdapter(getSupportFragmentManager());
         mViewPager.setAdapter(adapter);
@@ -393,20 +413,23 @@ public class ContentEditorActivity extends UstadBaseActivity implements
         webSettings.setAllowFileAccess(true);
         webSettings.setRenderPriority(WebSettings.RenderPriority.HIGH);
         editorContent.setWebChromeClient(new WebChrome());
-
+        editorContent.setWebViewClient(new WebClient());
         editorContent.setLayerType(View.LAYER_TYPE_HARDWARE, null);
         editorContent.clearCache(true);
         editorContent.clearHistory();
-        editorContent.addJavascriptInterface(new WebViewInterface(), "android");
-        editorContent.loadUrl("file:///android_asset/tinymce/index.html");
 
+        startWebServer();
 
+        if(baseUrl != null){
+            editorContent.loadUrl(baseUrl+"index.html");
+            requestFocus();
+        }
     }
 
     @Override
     public void onStart() {
         super.onStart();
-        prepareFormattingTypes();
+        prepareFormattingTypeLists();
     }
 
     @Override
@@ -418,7 +441,7 @@ public class ContentEditorActivity extends UstadBaseActivity implements
     @Override
     public boolean onPrepareOptionsMenu(Menu menu) {
         menu.findItem(R.id.content_action_direction)
-                .setIcon(mFormatting.get(2).get(0).getFormatIcon());
+                .setIcon(formattingList.get(FORMATTING_ACTIONS_INDEX).get(0).getFormatIcon());
         return super.onPrepareOptionsMenu(menu);
     }
 
@@ -429,6 +452,10 @@ public class ContentEditorActivity extends UstadBaseActivity implements
         int itemId = item.getItemId();
         if (itemId == R.id.content_action_pages) {
             mContentPageDrawer.openDrawer(GravityCompat.END);
+
+        }else if(itemId == android.R.id.home){
+            handleExpandableViews();
+
         }else if(itemId == R.id.content_action_format){
             if(mInsertContent.isOpened()){
                 isFromFormatting = true;
@@ -436,27 +463,30 @@ public class ContentEditorActivity extends UstadBaseActivity implements
             }else{
                 boolean isSheetOpened = formattingBottomSheetBehavior.getState()
                         == BottomSheetBehavior.STATE_EXPANDED;
-                sourceBottomSheetBehavior.setState(BottomSheetBehavior.STATE_COLLAPSED);
+                mediaSourceBottomSheetBehavior.setState(BottomSheetBehavior.STATE_COLLAPSED);
 
                 formattingBottomSheetBehavior.setState(isSheetOpened ?
                         BottomSheetBehavior.STATE_COLLAPSED:BottomSheetBehavior.STATE_EXPANDED);
             }
+
         }else if(itemId == R.id.content_action_undo){
             presenter.handleFormatTypeClicked(ACTION_UNDO,null);
+
         }else if(itemId == R.id.content_action_redo){
             presenter.handleFormatTypeClicked(ACTION_REDO,null);
+
         }else if(itemId == R.id.content_action_direction){
             View menuItemView = findViewById(R.id.content_action_direction);
             PopupMenu popupMenu = new PopupMenu(this, menuItemView);
             popupMenu.inflate(R.menu.menu_content_text_direction);
             popupMenu.getMenu().getItem(0).setChecked(true);
             popupMenu.setOnMenuItemClickListener(popupItem -> {
-                List<ContentFormat> format = mFormatting.get(2);
+                List<ContentFormat> format = formattingList.get(FORMATTING_ACTIONS_INDEX);
                 format.get(0).setActive(true);
                 format.get(0).setFormatIcon(popupItem.getItemId() == R.id.direction_leftToRight ?
                         R.drawable.ic_format_textdirection_l_to_r_white_24dp:
                         R.drawable.ic_format_textdirection_r_to_l_white_24dp);
-                mFormatting.put(2,format);
+                formattingList.put(FORMATTING_ACTIONS_INDEX,format);
                 presenter.handleFormatTypeClicked(ACTION_TEXT_RECTION,
                         popupItem.getItemId() == R.id.direction_leftToRight ? "false":"true");
                 return true;
@@ -473,11 +503,7 @@ public class ContentEditorActivity extends UstadBaseActivity implements
 
     @Override
     public void onBackPressed() {
-        if(mContentPageDrawer.isDrawerOpen(GravityCompat.END)){
-            mContentPageDrawer.closeDrawer(GravityCompat.END);
-        }else{
-            finish();
-        }
+        handleExpandableViews();
     }
 
     @Override
@@ -485,7 +511,8 @@ public class ContentEditorActivity extends UstadBaseActivity implements
         if(opened){
             mPreviewContent.hide(true);
         }else{
-            if(sourceBottomSheetBehavior.getState() == BottomSheetBehavior.STATE_COLLAPSED){
+            handleFABMenuButton(false);
+            if(mediaSourceBottomSheetBehavior.getState() == BottomSheetBehavior.STATE_COLLAPSED){
                 mPreviewContent.show(true);
             }
             if(isFromFormatting){
@@ -495,14 +522,82 @@ public class ContentEditorActivity extends UstadBaseActivity implements
         }
     }
 
+    /**
+     * Collapse all expandable views before moving out of the activity (User experience)
+     */
+    private void handleExpandableViews(){
+        boolean isSourceExpanded = mediaSourceBottomSheetBehavior.getState() ==
+                BottomSheetBehavior.STATE_EXPANDED;
+
+        boolean isFormattingExpanded = formattingBottomSheetBehavior.getState() ==
+                BottomSheetBehavior.STATE_EXPANDED;
+
+        boolean isDrawerOpen = mContentPageDrawer.isDrawerOpen(GravityCompat.END);
+
+        boolean isFabMenuOpen = mInsertContent.isOpened();
+
+        if(isDrawerOpen){
+            mContentPageDrawer.closeDrawer(GravityCompat.END);
+        }
+
+        if(isSourceExpanded){
+            mediaSourceBottomSheetBehavior.setState(BottomSheetBehavior.STATE_COLLAPSED);
+        }
+
+        if(isFormattingExpanded){
+            formattingBottomSheetBehavior.setState(BottomSheetBehavior.STATE_COLLAPSED);
+        }
+
+        if(isFabMenuOpen){
+            mInsertContent.close(true);
+        }
+
+        if(!isSourceExpanded && !isFormattingExpanded && !isFabMenuOpen && !isDrawerOpen){
+            finish();
+        }
+    }
+
+    /**
+     * Show and hide FAB Menu according to the state of the editor
+     * @param show Show when TRUE otherwise hide menus
+     */
+    private void handleFABMenuButton(boolean show){
+        mInsertMultimedia.setVisibility(show ? View.VISIBLE:View.GONE);
+        mInsertMultipleChoice.setVisibility(show ? View.VISIBLE:View.GONE);
+        mInsertFillBlanks.setVisibility(show ? View.VISIBLE:View.GONE);
+    }
+
+    /**
+     * Start local web server which serves purpose of editing contents
+     */
+    private void startWebServer(){
+        EmbeddedHTTPD embeddedHTTPD = new EmbeddedHTTPD(0, this);
+        String assetsPath = "/assets-" +
+                new SimpleDateFormat("yyyyMMddHHmmss").format(new Date()) + '/';
+        embeddedHTTPD.addRoute( assetsPath+"(.)+",  AndroidAssetsHandler.class, this);
+        try {
+            embeddedHTTPD.start();
+            if(embeddedHTTPD.isAlive()){
+                baseUrl =  "http://127.0.0.1:"+embeddedHTTPD.getListeningPort()+assetsPath+"tinymce/";
+            }
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+    }
+
     @VisibleForTesting
     public BottomSheetBehavior getFormattingBottomSheetBehavior() {
         return formattingBottomSheetBehavior;
     }
 
     @VisibleForTesting
-    public BottomSheetBehavior getSourceBottomSheetBehavior() {
-        return sourceBottomSheetBehavior;
+    public static SparseArray<List<ContentFormat>> getFormatting(){
+        return formattingList;
+    }
+
+    @VisibleForTesting
+    public BottomSheetBehavior getMediaSourceBottomSheetBehavior() {
+        return mediaSourceBottomSheetBehavior;
     }
 
     /**
@@ -533,10 +628,19 @@ public class ContentEditorActivity extends UstadBaseActivity implements
         mBuilder.append(")}catch(error){console.error(error.message);}");
         final String call = mBuilder.toString();
         editorContent.evaluateJavascript(call, value -> {
-            returnValue = value;
+            processReturnedValue(value);
             UstadMobileSystemImpl.l(UMLog.DEBUG,700,
                     "Value returned from js function "+value);
         });
+    }
+
+
+
+    private void processReturnedValue(String returnValue){
+        if(returnValue.length() > 5){
+            editorContent.loadDataWithBaseURL(null, returnValue,
+                    "text/html", "UTF-8", null);
+        }
     }
 
 
@@ -633,10 +737,18 @@ public class ContentEditorActivity extends UstadBaseActivity implements
         invalidateOptionsMenu();
     }
 
+    private void previewContent(){
+        callJavaScriptFunction("formatting.getContent", (String) null);
+    }
+
+    private void requestFocus(){
+        callJavaScriptFunction("formatting.requestFocus", (String) null);
+    }
+
     /**
      * Prepare lis of all formatting types
      */
-    private void prepareFormattingTypes(){
+    private void prepareFormattingTypeLists(){
         List<ContentFormat> mText = new ArrayList<>();
         List<ContentFormat> mDirection = new ArrayList<>();
         List<ContentFormat> mParagraph = new ArrayList<>();
@@ -670,13 +782,11 @@ public class ContentEditorActivity extends UstadBaseActivity implements
                 PARAGRAPH_FORMAT_INDENT_INCREASE,false));
         mParagraph.add(new ContentFormat(R.drawable.ic_format_indent_decrease_black_24dp,
                 PARAGRAPH_FORMAT_INDENT_DECREASE,false));
+        mDirection.add(new ContentFormat(R.drawable.ic_format_textdirection_l_to_r_white_24dp,
+                ACTION_TEXT_RECTION,false));
 
-        ContentFormat directionRtL = new ContentFormat(R.drawable.ic_format_textdirection_l_to_r_white_24dp,
-                ACTION_TEXT_RECTION,false);
-
-        mDirection.add(directionRtL);
-        mFormatting.put(0,mText);
-        mFormatting.put(1,mParagraph);
-        mFormatting.put(2,mDirection);
+        formattingList.put(FORMATTING_TEXT_INDEX,mText);
+        formattingList.put(FORMATTING_PARAGRAPH_INDEX,mParagraph);
+        formattingList.put(FORMATTING_ACTIONS_INDEX,mDirection);
     }
 }

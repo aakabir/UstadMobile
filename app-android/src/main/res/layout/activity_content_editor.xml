@@ -85,6 +85,7 @@
             tools:ignore="RtlSymmetry">
 
             <com.github.clans.fab.FloatingActionButton
+                android:visibility="gone"
                 android:id="@+id/content_type_multiple_choice"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
@@ -96,6 +97,7 @@
                 fab:fab_label="@string/content_type_multiple_choice" />
 
             <com.github.clans.fab.FloatingActionButton
+                android:visibility="gone"
                 android:id="@+id/content_type_fill_blanks"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
@@ -107,6 +109,7 @@
                 fab:fab_label="@string/content_type_fill_the_blanks" />
 
             <com.github.clans.fab.FloatingActionButton
+                android:visibility="gone"
                 android:id="@+id/content_type_multimedia"
                 android:layout_width="wrap_content"
                 android:tint="@color/text_secondary"

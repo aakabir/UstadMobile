@@ -24,11 +24,10 @@ import static com.ustadmobile.core.view.ContentEditorView.TEXT_FORMAT_TYPE_SUP;
 import static com.ustadmobile.core.view.ContentEditorView.TEXT_FORMAT_TYPE_UNDERLINE;
 
 public class ContentEditorPresenter extends UstadBaseController<ContentEditorView> {
-
-
     public ContentEditorPresenter(Object context, Hashtable arguments, ContentEditorView view) {
         super(context, arguments, view);
     }
+
 
     public void handleFormatTypeClicked(String formatType, String param){
         view.runOnUiThread(() -> {
