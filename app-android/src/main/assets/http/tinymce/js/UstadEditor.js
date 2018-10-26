@@ -1,16 +1,16 @@
-function ContentFormatting() {if (!(this instanceof ContentFormatting))
-    return new ContentFormatting();}
+function UstadEditor() {if (!(this instanceof UstadEditor))
+    return new UstadEditor();}
 
-const formatting = new ContentFormatting();
+const ustadEditor = new UstadEditor();
 let activeEditor = null;
 
 /**
- * Initialize ContentFormatting with active editor instance
+ * Initialize UstadEditor with active editor instance
  * @param activeEditor TinyMCE active editor instance
  */
-formatting.init = function(activeEditor){
+ustadEditor.init = function(activeEditor){
     this.activeEditor = activeEditor;
-    console.log("ContentFormatting controls initialized");
+    console.log("UstadEditor controls initialized");
 };
 
 /**
@@ -19,7 +19,7 @@ formatting.init = function(activeEditor){
  * {@link https://www.tiny.cloud/docs/advanced/editor-command-identifiers/}
  * @returns {boolean} TRUE if is active otherwise FALSE
  */
-formatting.isToolBarButtonActive = function(buttonIdentifier){
+ustadEditor.isToolBarButtonActive = function(buttonIdentifier){
     return this.activeEditor.queryCommandState(buttonIdentifier) != null
 };
 
@@ -27,7 +27,7 @@ formatting.isToolBarButtonActive = function(buttonIdentifier){
  * Get content of the active Editor
  * @returns {*|void} Current content on editor
  */
-formatting.getActiveEditorContent = function(){
+ustadEditor.getActiveEditorContent = function(){
     return this.activeEditor.getContent();
 };
 
@@ -36,7 +36,7 @@ formatting.getActiveEditorContent = function(){
  * @param fontSize Size to change to
  * @returns {string | * | void}
  */
-formatting.setFontSize = function(fontSize){
+ustadEditor.setFontSize = function(fontSize){
     this.activeEditor.execCommand("FontSize",false,""+fontSize+"pt");
     return this.activeEditor.queryCommandValue("FontSize");
 };
@@ -45,7 +45,7 @@ formatting.setFontSize = function(fontSize){
  * Undo previously performed action
  * @returns {boolean} TRUE if succeed FALSE otherwise
  */
-formatting.editorActionUndo = function(){
+ustadEditor.editorActionUndo = function(){
     this.activeEditor.execCommand("Undo",false,null);
     return this.isToolBarButtonActive("Undo");
 };
@@ -54,7 +54,7 @@ formatting.editorActionUndo = function(){
  * Redo previously performed action
  * @returns {boolean} TRUE if succeed FALSE otherwise
  */
-formatting.editorActionRedo = function(){
+ustadEditor.editorActionRedo = function(){
     this.activeEditor.execCommand("Redo",false,null);
     return this.isToolBarButtonActive("Redo");
 };
@@ -63,7 +63,7 @@ formatting.editorActionRedo = function(){
  * Set text direction from Left to Right
  * @returns {boolean} TRUE if direction changed otherwise FALSE
  */
-formatting.textDirectionLeftToRight = function(){
+ustadEditor.textDirectionLeftToRight = function(){
     this.activeEditor.execCommand("mceDirectionLTR",false,null);
     return this.isToolBarButtonActive("mceDirectionLTR");
 };
@@ -72,7 +72,7 @@ formatting.textDirectionLeftToRight = function(){
  * Set text direction from Right to Left
  * @returns {boolean} TRUE if direction changed otherwise FALSE
  */
-formatting.textDirectionRightToLeft = function(){
+ustadEditor.textDirectionRightToLeft = function(){
     this.activeEditor.execCommand("mceDirectionRTL",false,null);
     return this.isToolBarButtonActive("mceDirectionRTL");
 };
@@ -81,7 +81,7 @@ formatting.textDirectionRightToLeft = function(){
  * Remove or insert un-ordered list
  * @returns {boolean} TRUE inserted and FALSE otherwise
  */
-formatting.paragraphUnOrderedListFormatting = function(){
+ustadEditor.paragraphUnOrderedListFormatting = function(){
     this.activeEditor.execCommand("InsertUnorderedList",false,null);
     return this.isToolBarButtonActive("InsertUnorderedList");
 };
@@ -90,7 +90,7 @@ formatting.paragraphUnOrderedListFormatting = function(){
  * Remove or insert ordered list
  * @returns {boolean} TRUE inserted and FALSE otherwise
  */
-formatting.paragraphOrderedListFormatting = function(){
+ustadEditor.paragraphOrderedListFormatting = function(){
     this.activeEditor.execCommand("InsertOrderedList",false,null);
     return this.isToolBarButtonActive("InsertOrderedList");
 };
@@ -99,7 +99,7 @@ formatting.paragraphOrderedListFormatting = function(){
  * Justify left editor content
  * @returns {boolean} TRUE if justified FALSE otherwise
  */
-formatting.paragraphLeftJustification = function(){
+ustadEditor.paragraphLeftJustification = function(){
     this.activeEditor.execCommand("JustifyLeft",false,null);
     return this.isToolBarButtonActive("JustifyLeft");
 };
@@ -109,7 +109,7 @@ formatting.paragraphLeftJustification = function(){
  * Justify left editor content
  * @returns {boolean} TRUE if justified FALSE otherwise
  */
-formatting.paragraphRightJustification = function(){
+ustadEditor.paragraphRightJustification = function(){
     this.activeEditor.execCommand("JustifyRight",false,null);
     return this.isToolBarButtonActive("JustifyRight");
 };
@@ -118,7 +118,7 @@ formatting.paragraphRightJustification = function(){
  * Justify fully editor content
  * @returns {boolean} TRUE if justified FALSE otherwise
  */
-formatting.paragraphFullJustification = function(){
+ustadEditor.paragraphFullJustification = function(){
     this.activeEditor.execCommand("JustifyFull",false,null);
     return this.isToolBarButtonActive("JustifyFull");
 };
@@ -127,7 +127,7 @@ formatting.paragraphFullJustification = function(){
  * Justify center editor content
  * @returns {boolean} TRUE if justified FALSE otherwise
  */
-formatting.paragraphCenterJustification = function(){
+ustadEditor.paragraphCenterJustification = function(){
     this.activeEditor.execCommand("JustifyCenter",false,null);
     return this.isToolBarButtonActive("JustifyCenter");
 };
@@ -137,7 +137,7 @@ formatting.paragraphCenterJustification = function(){
  * Indent editor content
  * @returns {boolean} TRUE if justified FALSE otherwise
  */
-formatting.paragraphOutDent = function(){
+ustadEditor.paragraphOutDent = function(){
     this.activeEditor.execCommand("Outdent",false,null);
     return this.isToolBarButtonActive("Outdent");
 };
@@ -146,61 +146,61 @@ formatting.paragraphOutDent = function(){
  * Indent editor content
  * @returns {boolean} TRUE if justified FALSE otherwise
  */
-formatting.paragraphIndent = function(){
+ustadEditor.paragraphIndent = function(){
     this.activeEditor.execCommand("Indent",false,null);
     return this.isToolBarButtonActive("Indent");
 };
 
 /**
- * Apply bold formatting to a text
+ * Apply bold ustadEditor to a text
  * @returns {boolean} TRUE if applied otherwise FALSE
  */
-formatting.textFormattingBold = function(){
+ustadEditor.textFormattingBold = function(){
     this.activeEditor.execCommand("Bold",false,null);
     return this.isToolBarButtonActive("Bold");
 };
 
 /**
- * Apply italic formatting to a text
+ * Apply italic ustadEditor to a text
  * @returns {boolean} TRUE if applied otherwise FALSE
  */
-formatting.textFormattingItalic = function(){
+ustadEditor.textFormattingItalic = function(){
     this.activeEditor.execCommand("Italic",false,null);
     return this.isToolBarButtonActive("Italic");
 };
 
 /**
- * Apply underline formatting to a text
+ * Apply underline ustadEditor to a text
  * @returns {boolean} TRUE if applied otherwise FALSE
  */
-formatting.textFormattingUnderline = function(){
+ustadEditor.textFormattingUnderline = function(){
     this.activeEditor.execCommand("Underline",false,null);
     return this.isToolBarButtonActive("Underline");
 };
 
 /**
- * Apply strike-through formatting to a text
+ * Apply strike-through ustadEditor to a text
  * @returns {boolean} TRUE if applied otherwise FALSE
  */
-formatting.textFormattingStrikeThrough = function(){
+ustadEditor.textFormattingStrikeThrough = function(){
     this.activeEditor.execCommand("Strikethrough",false,null);
     return this.isToolBarButtonActive("Strikethrough");
 };
 
 /**
- * Apply superscript formatting to a text
+ * Apply superscript ustadEditor to a text
  * @returns {boolean} TRUE if applied otherwise FALSE
  */
-formatting.textFormattingSuperScript = function(){
+ustadEditor.textFormattingSuperScript = function(){
     this.activeEditor.execCommand("Superscript",false,null);
     return this.isToolBarButtonActive("Superscript");
 };
 
 /**
- * Apply subscript formatting to a text
+ * Apply subscript ustadEditor to a text
  * @returns {boolean} TRUE if applied otherwise FALSE
  */
-formatting.textFormattingSubScript = function(){
+ustadEditor.textFormattingSubScript = function(){
     this.activeEditor.execCommand("Subscript",false,null);
     return this.isToolBarButtonActive("Subscript");
 };
@@ -209,17 +209,72 @@ formatting.textFormattingSubScript = function(){
  * Get content from the active content edtor
  * @returns {*|void}
  */
-formatting.getContent = function(){
+ustadEditor.getContent = function(){
     return this.activeEditor.getContent().getHtml();
 };
 
 /**
- * Request formatting focus to the active editor
+ * Request ustadEditor focus to the active editor
  * @returns {boolean}
  */
-formatting.requestFocus = function () {
+ustadEditor.requestFocus = function () {
     this.activeEditor.execCommand("mceFocus",false,null);
-    return this.isToolBarButtonActive("mceFocus")
+    return this.isToolBarButtonActive("mceFocus");
+};
+
+/**
+ * Insert multiple choice question template to the editor
+ */
+ustadEditor.insertMultipleChoiceQuestionTemplate = function () {
+    document.getElementById("multiple-choice").click();
+};
+
+/**
+ * Insert fill in the blanks question template to the editor
+ */
+ustadEditor.insertFillInTheBlanksQuestionTemplate = function () {
+    document.getElementById("fill-the-blanks").click();
+};
+
+/**
+ * Start previewing the content
+ */
+ustadEditor.startPreviewing = function () {
+    document.getElementById("editor-off").click();
+};
+
+ustadEditor.getContent = function(){
+    console.log(this.activeEditor.getContent());
+};
+
+
+/**
+ * Hide ustad toolbar menu after successfully initializing the editor
+ */
+ustadEditor.hideUstadMenu = function () {
+    $("#ustadmobile-menu").click();
+    $("#mceu_0").hide();
+    $("#mceu_4").hide();
+    $("#mce-editor").on('click',function () {
+        $("#mceu_0").hide();
+        $("#mceu_4").hide();
+    });
+};
+
+ustadEditor.loadFileIntoTheEditor = function (fileName) {
+    $.ajax({url: "content/"+fileName, success: function(fileContent){
+        const container = document.createElement("div");
+        container.innerHTML = fileContent;
+        const questionList = container.querySelectorAll(".question");
+        let questionContent = "";
+        for(let question in questionList){
+            if(!questionList.hasOwnProperty(question))
+                continue;
+            questionContent = questionContent + $(questionList[question]).prop('outerHTML');
+        }
+        tinymce.activeEditor.execCommand('mceInsertContent', false,
+            questionContent,{format: 'raw'});
+    }});
 };
 
 

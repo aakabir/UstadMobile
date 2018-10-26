@@ -2,14 +2,13 @@
 <html>
 <head>
     <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-    <link href="styles/ustadmobile-styles.css" rel="stylesheet" />
+    <link href="styles/ustadmobile.css" rel="stylesheet" />
     <link href="styles/bootstrap.min.css" rel="stylesheet" />
     <script src="js/jquery3.3.1.min.js"></script>
     <script src="js/plugins/ustadmobile/UstadWidgets.js" type="text/javascript"></script>
     <script src="js/tinymce.min.js"></script>
-    <script src="js/ContentFormatting.js"></script>
+    <script src="js/UstadEditor.js"></script>
     <script>
-
         var inlineConfig = {
 
             selector: '#mce-editor',
@@ -18,7 +17,7 @@
             plugins: [
                 'ustadmobile','directionality','lists','noneditable','visualblocks'
             ],
-            toolbar: false,
+            toolbar: ['ustadmobile'],
             valid_styles: {
                 '*': 'font-size,font-family,color,text-decoration,text-align'
             },
@@ -29,6 +28,7 @@
             theme: 'modern',
             setup:function(ed) {
                 ed.on('change', function() {
+                    ustadEditor.hideUstadMenu();
                     QuestionWidget.handleListeners();
                 });
             },
@@ -43,8 +43,10 @@
             }]
         };
         tinymce.init(inlineConfig).then(function () {
-            formatting.init(tinymce.activeEditor);
+            ustadEditor.init(tinymce.activeEditor);
             QuestionWidget.handleListeners();
+            setTimeout(ustadEditor.requestFocus(), 100);
+            setTimeout(ustadEditor.hideUstadMenu(), 101);
         });
 
 
@@ -53,10 +55,9 @@
 </head>
 
 <body onload="resizeWindow()">
-
 <div class="container-fluid">
     <div class="row">
-        <div id="mce-editor" class="col-sm-12 col-md-12 col-lg-12" style="margin: 2%; padding: 0; border:1px solid white;">
+        <div id="mce-editor" class="col-sm-12 col-md-12 col-lg-12" style="margin: 2%; padding: 0;">
 
         </div>
     </div>

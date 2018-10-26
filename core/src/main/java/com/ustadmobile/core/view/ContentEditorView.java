@@ -19,9 +19,12 @@ public interface ContentEditorView extends UstadView {
     String PARAGRAPH_FORMAT_INDENT_INCREASE = "Indent";
     String PARAGRAPH_FORMAT_INDENT_DECREASE = "Outdent";
 
+    String ACTION_PREVIEW = "Preview";
     String ACTION_REDO = "Redo";
     String ACTION_UNDO = "Undo";
-    String ACTION_TEXT_RECTION = "mceDirectionLTR";
+    String ACTION_TEXT_DIRECTION = "mceDirectionLTR";
+    String CONTENT_INSERT_MULTIPLE_CHOICE_QN = "MultipleChoice";
+    String CONTENT_INSERT_FILLTHEBLANKS_QN = "FillTheBlanks";
 
     void setContentBold();
 
@@ -58,6 +61,14 @@ public interface ContentEditorView extends UstadView {
     void setContentUndo();
 
     void setContentTextDirection(boolean right);
+
+    void insertMultipleChoiceQuestion();
+
+    void insertFillTheBlanksQuestion();
+
+    void startContentPreview();
+
+    void handleContentMenu();
 
 
 }

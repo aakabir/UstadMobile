@@ -32,7 +32,6 @@ import android.view.ViewGroup;
 import android.webkit.ConsoleMessage;
 import android.webkit.JsResult;
 import android.webkit.WebChromeClient;
-import android.webkit.WebResourceRequest;
 import android.webkit.WebSettings;
 import android.webkit.WebView;
 import android.webkit.WebViewClient;
@@ -139,8 +138,7 @@ public class ContentEditorActivity extends UstadBaseActivity implements
         @Override
         public void onPageFinished(WebView view, String url) {
             super.onPageFinished(view, url);
-            //request focus to the editor after the page has loaded 100%
-            requestFocus();
+
         }
     }
 
@@ -356,7 +354,8 @@ public class ContentEditorActivity extends UstadBaseActivity implements
             }
         });
 
-        mPreviewContent.setOnClickListener(v -> previewContent());
+        mPreviewContent.setOnClickListener(v ->
+                presenter.handleFormatTypeClicked(ACTION_PREVIEW,null));
 
         mInsertContent.setOnMenuToggleListener(this);
 
@@ -383,7 +382,15 @@ public class ContentEditorActivity extends UstadBaseActivity implements
         mInsertMultimedia.setOnClickListener(v ->
                 mediaSourceBottomSheetBehavior.setState(BottomSheetBehavior.STATE_EXPANDED));
 
-        formattingBottomSheetBehavior.setBottomSheetCallback(new BottomSheetBehavior.BottomSheetCallback() {
+        mInsertMultipleChoice.setOnClickListener(v ->
+                presenter.handleFormatTypeClicked(CONTENT_INSERT_MULTIPLE_CHOICE_QN,null));
+
+        mInsertFillBlanks.setOnClickListener(v ->
+                presenter.handleFormatTypeClicked(CONTENT_INSERT_FILLTHEBLANKS_QN,null));
+
+
+        formattingBottomSheetBehavior.setBottomSheetCallback(
+                new BottomSheetBehavior.BottomSheetCallback() {
             @Override
             public void onStateChanged(@NonNull View bottomSheet, int newState) {
                 if(newState == BottomSheetBehavior.STATE_EXPANDED){
@@ -422,7 +429,6 @@ public class ContentEditorActivity extends UstadBaseActivity implements
 
         if(baseUrl != null){
             editorContent.loadUrl(baseUrl+"index.html");
-            requestFocus();
         }
     }
 
@@ -487,7 +493,7 @@ public class ContentEditorActivity extends UstadBaseActivity implements
                         R.drawable.ic_format_textdirection_l_to_r_white_24dp:
                         R.drawable.ic_format_textdirection_r_to_l_white_24dp);
                 formattingList.put(FORMATTING_ACTIONS_INDEX,format);
-                presenter.handleFormatTypeClicked(ACTION_TEXT_RECTION,
+                presenter.handleFormatTypeClicked(ACTION_TEXT_DIRECTION,
                         popupItem.getItemId() == R.id.direction_leftToRight ? "false":"true");
                 return true;
             });
@@ -646,104 +652,121 @@ public class ContentEditorActivity extends UstadBaseActivity implements
 
     @Override
     public void setContentBold() {
-        callJavaScriptFunction("formatting.textFormattingBold", (String[]) null);
+        callJavaScriptFunction("ustadEditor.textFormattingBold", (String[]) null);
     }
 
     @Override
     public void setContentItalic() {
-        callJavaScriptFunction("formatting.textFormattingItalic", (String) null);
+        callJavaScriptFunction("ustadEditor.textFormattingItalic", (String) null);
     }
 
     @Override
     public void setContentUnderlined() {
-        callJavaScriptFunction("formatting.textFormattingUnderline", (String) null);
+        callJavaScriptFunction("ustadEditor.textFormattingUnderline", (String) null);
     }
 
     @Override
     public void setContentStrikeThrough() {
-        callJavaScriptFunction("formatting.textFormattingStrikeThrough", (String) null);
+        callJavaScriptFunction("ustadEditor.textFormattingStrikeThrough", (String) null);
     }
 
     @Override
     public void setContentFontSize(String fontSize) {
-        callJavaScriptFunction("formatting.setFontSize", fontSize);
+        callJavaScriptFunction("ustadEditor.setFontSize", fontSize);
     }
 
     @Override
     public void setContentSuperscript() {
-        callJavaScriptFunction("formatting.textFormattingSuperScript", (String) null);
+        callJavaScriptFunction("ustadEditor.textFormattingSuperScript", (String) null);
     }
 
     @Override
     public void setContentSubScript() {
-        callJavaScriptFunction("formatting.textFormattingSubScript", (String) null);
+        callJavaScriptFunction("ustadEditor.textFormattingSubScript", (String) null);
     }
 
     @Override
     public void setContentJustified() {
-        callJavaScriptFunction("formatting.paragraphFullJustification",
+        callJavaScriptFunction("ustadEditor.paragraphFullJustification",
                 (String) null);
     }
 
     @Override
     public void setContentCenterAlign() {
-        callJavaScriptFunction("formatting.paragraphCenterJustification", (String) null);
+        callJavaScriptFunction("ustadEditor.paragraphCenterJustification", (String) null);
     }
 
     @Override
     public void setContentLeftAlign() {
-        callJavaScriptFunction("formatting.paragraphLeftJustification", (String) null);
+        callJavaScriptFunction("ustadEditor.paragraphLeftJustification", (String) null);
     }
 
     @Override
     public void setContentRightAlign() {
-        callJavaScriptFunction("formatting.paragraphRightJustification", (String) null);
+        callJavaScriptFunction("ustadEditor.paragraphRightJustification", (String) null);
     }
 
     @Override
     public void setContentOrderedList() {
-        callJavaScriptFunction("formatting.paragraphOrderedListFormatting", (String) null);
+        callJavaScriptFunction("ustadEditor.paragraphOrderedListFormatting", (String) null);
     }
 
     @Override
     public void setContentUnOrderList() {
-        callJavaScriptFunction("formatting.paragraphUnOrderedListFormatting", (String) null);
+        callJavaScriptFunction("ustadEditor.paragraphUnOrderedListFormatting", (String) null);
     }
 
     @Override
     public void setContentIncreaseIndent() {
-        callJavaScriptFunction("formatting.paragraphIndent", (String) null);
+        callJavaScriptFunction("ustadEditor.paragraphIndent", (String) null);
     }
 
     @Override
     public void setContentDecreaseIndent() {
-        callJavaScriptFunction("formatting.paragraphOutDent", (String) null);
+        callJavaScriptFunction("ustadEditor.paragraphOutDent", (String) null);
     }
 
     @Override
     public void setContentRedo() {
-        callJavaScriptFunction("formatting.editorActionRedo", (String) null);
+        callJavaScriptFunction("ustadEditor.editorActionRedo", (String) null);
     }
 
     @Override
     public void setContentUndo() {
-        callJavaScriptFunction("formatting.editorActionUndo", (String) null);
+        callJavaScriptFunction("ustadEditor.editorActionUndo", (String) null);
     }
 
     @Override
     public void setContentTextDirection(boolean right) {
-        callJavaScriptFunction(right ? "formatting.textDirectionRightToLeft":
-                "formatting.textDirectionLeftToRight", (String) null);
+        callJavaScriptFunction(right ? "ustadEditor.textDirectionRightToLeft":
+                "ustadEditor.textDirectionLeftToRight", (String) null);
         invalidateOptionsMenu();
     }
 
-    private void previewContent(){
-        callJavaScriptFunction("formatting.getContent", (String) null);
+    @Override
+    public void insertMultipleChoiceQuestion() {
+        callJavaScriptFunction("ustadEditor.insertMultipleChoiceQuestionTemplate",
+                (String) null);
     }
 
-    private void requestFocus(){
-        callJavaScriptFunction("formatting.requestFocus", (String) null);
+    @Override
+    public void insertFillTheBlanksQuestion() {
+        callJavaScriptFunction("ustadEditor.insertFillInTheBlanksQuestionTemplate",
+                (String) null);
     }
+
+    @Override
+    public void startContentPreview() {
+        callJavaScriptFunction("ustadEditor.startPreviewing", (String) null);
+    }
+
+    @Override
+    public void handleContentMenu() {
+        if(mInsertContent.isOpened()){
+            mInsertContent.close(true);
+        }
+    }
+
 
     /**
      * Prepare lis of all formatting types
@@ -783,7 +806,7 @@ public class ContentEditorActivity extends UstadBaseActivity implements
         mParagraph.add(new ContentFormat(R.drawable.ic_format_indent_decrease_black_24dp,
                 PARAGRAPH_FORMAT_INDENT_DECREASE,false));
         mDirection.add(new ContentFormat(R.drawable.ic_format_textdirection_l_to_r_white_24dp,
-                ACTION_TEXT_RECTION,false));
+                ACTION_TEXT_DIRECTION,false));
 
         formattingList.put(FORMATTING_TEXT_INDEX,mText);
         formattingList.put(FORMATTING_PARAGRAPH_INDEX,mParagraph);

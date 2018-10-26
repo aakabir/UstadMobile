@@ -10,9 +10,21 @@ QuestionWidget.WIDGET_NAME_FILL_BLANKS = "fill-the-blanks";
 
 QuestionWidget.prototype.init = function() {};
 
-QuestionWidget.prototype.editOn = function(){};
+QuestionWidget.prototype.editOn = function(){
+    $(this.element).find("label").remove();
+    $(this.element).find(".question-retry-option")
+        .before("<label class='um-labels col-sm-12 col-lg-10'>Can be retried?</label><br/>");
+    $(this.element).find(".question-retry-option").removeClass("hide-element").addClass("show-element");
+    $(this.element).find(".question-choice-answer").removeClass("hide-element").addClass("show-element");
+    $(this.element).find('[data-um-preview="main"]').removeClass("preview-main default-margin-top");
+    $(this.element).find('[data-um-preview="alert"]').removeClass("preview-alert default-margin-top");
+    $(this.element).find('[data-um-preview="support"]').removeClass("preview-support default-margin-top");
+    $(this.element).find(".question-body").before("<label class='um-labels'>Question Text</label><br/>");
+};
 
-QuestionWidget.prototype.addListeners = function(){};
+QuestionWidget.prototype.addListeners = function(){
+    $(".question-retry-option select").on("change",this.setRetryOption.bind(this));
+};
 
 
 /**
@@ -162,9 +174,9 @@ MultiChoiceQuestionWidget.prototype = Object.create(QuestionWidget.prototype);
  */
 MultiChoiceQuestionWidget.prototype.attachEditListeners = function() {
     QuestionWidget.prototype.addListeners.apply(this, arguments);
+    $(".question-add-choice-btn button.add-choice").on('click', this.addChoice.bind(this));
     $("button.add-choice").on('click', this.addChoice.bind(this));
     $("select").on("change",this.setCorrectChoice.bind(this));
-    $(".question-retry select").on("change",this.setRetryOption.bind(this));
 };
 
 /**
@@ -172,7 +184,6 @@ MultiChoiceQuestionWidget.prototype.attachEditListeners = function() {
  */
 FillTheBlanksQuestionWidget.prototype.attachEditListeners = function() {
     QuestionWidget.prototype.addListeners.apply(this, arguments);
-    $(".question-retry select").on("change",this.setRetryOption.bind(this));
 };
 
 
@@ -182,6 +193,7 @@ FillTheBlanksQuestionWidget.prototype.attachEditListeners = function() {
 MultiChoiceQuestionWidget.prototype.attachPreviewListeners = function() {
     QuestionWidget.prototype.addListeners.apply(this, arguments);
     $(".question-choice-body").on('click', this.handleClickAnswer.bind(this));
+    $(".qn-retry").on('click', this.handleClickQuestionRetry.bind(this));
 };
 
 /**
@@ -189,7 +201,8 @@ MultiChoiceQuestionWidget.prototype.attachPreviewListeners = function() {
  */
 FillTheBlanksQuestionWidget.prototype.attachPreviewListeners = function() {
     QuestionWidget.prototype.addListeners.apply(this, arguments);
-    $(".fill-the-blanks-input").on('mouseleave', this.handleFillAnswer.bind(this));
+    $(".fill-the-blanks-check").on('click', this.handleProvidedAnswer.bind(this));
+    $(".qn-retry").on('click', this.handleClickQuestionRetry.bind(this));
 };
 
 
@@ -198,14 +211,11 @@ FillTheBlanksQuestionWidget.prototype.attachPreviewListeners = function() {
  */
 MultiChoiceQuestionWidget.prototype.editOn = function() {
     QuestionWidget.prototype.editOn.apply(this, arguments);
-    $(this.element).find("label").remove();
     $(this.element).find("button.btn-default.add-choice").remove();
-    $("<button class='btn-default add-choice'>Add Choice</button>").appendTo(this.element);
-    $(this.element).find(".question-body").before("<label class='um-labels'>Question Text</label><br/>");
+    $("<button class='btn btn-primary float-right default-margin-top add-choice show-element'>Add Choice</button>").appendTo(this.element);
     $(this.element).find(".question-choice-body").before("<label class='um-labels'>Choice Text</label><br/>");
     $(this.element).find(".question-choice-feedback").before("<label class='um-labels'>Feedback Text</label><br/>");
     $(this.element).find(".question-choice-answer").before("<label class='um-labels'>is right answer?</label><br/>");
-    $(this.element).find(".question-retry").before("<label class='um-labels'>Can be retried?</label><br/>");
     return this.element;
 };
 
@@ -216,11 +226,9 @@ MultiChoiceQuestionWidget.prototype.editOn = function() {
  */
 FillTheBlanksQuestionWidget.prototype.editOn = function() {
     QuestionWidget.prototype.editOn.apply(this, arguments);
-    $(this.element).find("label").remove();
-    $(this.element).find(".question-body").before("<label class='um-labels'>Question Text</label><br/>");
+    $(this.element).find(".fill-blanks").removeClass("hide-element").addClass("show-element");
     $(this.element).find(".question-choice-body").before("<label class='um-labels'>Question Answer</label><br/>");
-    $(this.element).find(".question-retry").before("<label class='um-labels'>Can be retried?</label><br/>");
-    $(this.element).find(".fill-the-blanks-input").before("<label class='um-labels'>Input Answer</label><br/>");
+    $(this.element).find(".input-group").before("<label class='um-labels '>Input Answer</label><br/>");
     $(this.element).find(".question-choice-feedback-correct").before("<label class='um-labels'>Right input feedback</label><br/>");
     $(this.element).find(".question-choice-feedback-wrong").before("<label class='um-labels'>Wrong input feedback</label><br/>");
     return this.element;
@@ -232,20 +240,19 @@ FillTheBlanksQuestionWidget.prototype.editOn = function() {
  * @param event
  */
 MultiChoiceQuestionWidget.prototype.addChoice = function(event) {
-    const choiceUiHolder = "<div class=\"question-choice\" data-um-correct=\"false\">\n"
-        +"        <div class=\"question-choice-body\">A. Dar es salaam</div>\n"
-        +"        <div class=\"question-choice-feedback\" data-um-edit-only=\"true\">"
-        +"         What a choice, you need to read more about this country.</div>\n"
-        +"        <div class=\"question-choice-answer\" data-um-edit-only=\"true\">\n"
-        +"            <select>\n"
-        +"                <option value=\"true\">Yes</option>\n"
-        +"                <option value=\"false\" selected=\"selected\">No</option>\n"
-        +"            </select>\n"
-        +"        </div>\n"
-        +"    </div>";
+    const choiceUiHolder = "<div class=\"question-choice\" data-um-correct=\"false\">" +
+        "<label class=\"um-labels\">Choice Text</label><br>" +
+        "<div class=\"question-choice-body\" data-um-preview=\"support\">B. Dar es salaam</div>" +
+        "<label class=\"um-labels\">Feedback Text</label><br>" +
+        "<div class=\"question-choice-feedback\" data-um-edit-only=\"true\">" +
+        "What a choice, you need to read more about this country.</div>" +
+        "<label class=\"um-labels\">is right answer?</label><br>" +
+        "<div class=\"question-choice-answer select-option col-sm-3 show-element col-lg-3\">" +
+        "<select><option value=\"true\">Yes</option>" +
+        "<option selected=\"selected\" value=\"false\">No</option>" +
+        "</select></div></div>";
     this.editOn();
-   $(event.target).prev().prev().before(choiceUiHolder);
-
+    $(event.target).prev().prev().before(choiceUiHolder);
 };
 
 /**
@@ -259,8 +266,12 @@ MultiChoiceQuestionWidget.prototype.handleClickAnswer = function(event) {
     const feedbackText = $(choiceElement).find(".question-choice-feedback").text();
     const feedbackContainer = $(questionElement).find(".question-feedback-container");
     $(feedbackContainer).find(".question-feedback-container-text").html(feedbackText);
-    $(feedbackContainer).removeClass("hide-element show-element correct-choice wrong-choice");
-    $(feedbackContainer).addClass((isCorrectChoice ? "correct-choice":"wrong-choice")+ " show-element");
+    $(feedbackContainer).removeClass("hide-element show-element alert-success alert-danger alert-warning");
+    $(feedbackContainer).addClass((isCorrectChoice ? "alert-success":"alert-danger")+ " show-element");
+    const canBeRetried = questionElement.attr("data-um-retry")==='true';
+    if(!isCorrectChoice && canBeRetried){
+        $(questionElement).find(".question-retry-btn").removeClass("hide-element").addClass("show-element");
+    }
 };
 
 
@@ -268,18 +279,25 @@ MultiChoiceQuestionWidget.prototype.handleClickAnswer = function(event) {
  * Handle when user fill the answer on the input filed
  * @param event
  */
-FillTheBlanksQuestionWidget.prototype.handleFillAnswer = function(event){
+FillTheBlanksQuestionWidget.prototype.handleProvidedAnswer = function(event){
     const questionElement = $(event.target).closest("div div.question");
-    const choiceElement = $(questionElement).find(".question-choice");
-    const wrongChoice = $(choiceElement).find(".question-choice-feedback-wrong").text();
-    const correctChoice = $(choiceElement).find(".question-choice-feedback-correct").text();
-    const choiceBody = $(choiceElement).find(".question-choice-body").text();
+    const choiceElement = $(questionElement).find(".fill-blanks");
+    const wrongChoiceText = $(choiceElement).find(".question-choice-feedback-wrong").text();
+    const correctChoiceText = $(choiceElement).find(".question-choice-feedback-correct").text();
+    const defaultAnswerText = $(choiceElement).find(".question-choice-body").text().toLowerCase();
+    const userAnswerText = $(questionElement).find(".fill-the-blanks-input").val().toLowerCase();
     const feedbackContainer = $(questionElement).find(".question-feedback-container");
-    const isCorrectChoice = choiceBody === $(event.target).val();
-    $(feedbackContainer).find(".question-feedback-container-text").html(
-        isCorrectChoice ? correctChoice: wrongChoice);
-    $(feedbackContainer).removeClass("hide-element show-element correct-choice wrong-choice");
-    $(feedbackContainer).addClass((isCorrectChoice ? "correct-choice":"wrong-choice")+ " show-element");
+    const isCorrectChoice = defaultAnswerText === userAnswerText;
+    const message = userAnswerText.length > 0 ?
+        (isCorrectChoice ? correctChoiceText: wrongChoiceText):"<b>Sorry!</b> please type your answer before submitting it";
+    $(feedbackContainer).find(".question-feedback-container-text").html(message);
+    $(feedbackContainer).removeClass("hide-element show-element alert-success alert-danger alert-warning");
+    $(feedbackContainer).addClass(userAnswerText.length > 0 ? (isCorrectChoice ? "alert-success":"alert-danger")
+        :"alert-info"+ " show-element");
+    const canBeRetried = questionElement.attr("data-um-retry")==='true';
+    if((!isCorrectChoice  || userAnswerText.length <= 0) && canBeRetried){
+        $(questionElement).find(".question-retry-btn").removeClass("hide-element").addClass("show-element");
+    }
 };
 
 /**
@@ -297,13 +315,9 @@ MultiChoiceQuestionWidget.prototype.setCorrectChoice = function(event){
  */
 QuestionWidget.prototype.setRetryOption = function(event){
     const questionElement = $(event.target).closest("div div.question");
-    $(questionElement).attr("data-um-retry",$(event.target).val());
-    $(questionElement).find("button.retry").remove();
+    const canBeRetried = $(event.target).val() === 'true';
+    $(questionElement).attr("data-um-retry",canBeRetried);
     $(this.element).find("br").remove();
-    if($(event.target).val() === 'true'){
-        $("<button class='btn-default retry'>Try Again</button>")
-            .appendTo(questionElement).on('click', this.handleClickQuestionRetry.bind(this));
-    }
 };
 
 /**
@@ -311,9 +325,9 @@ QuestionWidget.prototype.setRetryOption = function(event){
  * @param event onClick event from button
  */
 QuestionWidget.prototype.handleClickQuestionRetry = function(event){
-    const topElement = $(event.target).closest("div.question");
-    $(topElement).find(".question-feedback-container").removeClass("show-element").addClass("hide-element");
-    $(event.target).removeClass("show-element").addClass("hide-element");
+    const questionElement = $(event.target).closest("div.question");
+    $(questionElement).find(".question-feedback-container").removeClass("show-element").addClass("hide-element");
+    $(questionElement).find(".question-retry-btn").removeClass("show-element").addClass("hide-element");
 };
 
 

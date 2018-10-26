@@ -4,9 +4,12 @@ import com.ustadmobile.core.view.ContentEditorView;
 
 import java.util.Hashtable;
 
+import static com.ustadmobile.core.view.ContentEditorView.ACTION_PREVIEW;
 import static com.ustadmobile.core.view.ContentEditorView.ACTION_REDO;
-import static com.ustadmobile.core.view.ContentEditorView.ACTION_TEXT_RECTION;
+import static com.ustadmobile.core.view.ContentEditorView.ACTION_TEXT_DIRECTION;
 import static com.ustadmobile.core.view.ContentEditorView.ACTION_UNDO;
+import static com.ustadmobile.core.view.ContentEditorView.CONTENT_INSERT_FILLTHEBLANKS_QN;
+import static com.ustadmobile.core.view.ContentEditorView.CONTENT_INSERT_MULTIPLE_CHOICE_QN;
 import static com.ustadmobile.core.view.ContentEditorView.PARAGRAPH_FORMAT_ALIGN_CENTER;
 import static com.ustadmobile.core.view.ContentEditorView.PARAGRAPH_FORMAT_ALIGN_JUSTIFY;
 import static com.ustadmobile.core.view.ContentEditorView.PARAGRAPH_FORMAT_ALIGN_LEFT;
@@ -83,11 +86,21 @@ public class ContentEditorPresenter extends UstadBaseController<ContentEditorVie
                 case ACTION_UNDO:
                     view.setContentUndo();
                     break;
-                case ACTION_TEXT_RECTION:
+                case ACTION_TEXT_DIRECTION:
                     view.setContentTextDirection(Boolean.parseBoolean(param));
+                    break;
+                case ACTION_PREVIEW:
+                    view.startContentPreview();
+                    break;
+                case CONTENT_INSERT_FILLTHEBLANKS_QN:
+                    view.insertFillTheBlanksQuestion();
+                    break;
+                case CONTENT_INSERT_MULTIPLE_CHOICE_QN:
+                    view.insertMultipleChoiceQuestion();
                     break;
 
             }
+            view.handleContentMenu();
         });
     }
 

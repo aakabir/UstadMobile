@@ -103,7 +103,6 @@
             android:configChanges="orientation|keyboardHidden|keyboard|screenSize"
             android:label="" />
         <activity
-            android:theme="@style/Theme.AppCompat.Light.NoActionBar"
             android:name="com.ustadmobile.port.android.view.ContentEditorActivity"/>
     </application>
 

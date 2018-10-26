@@ -9128,7 +9128,7 @@
                     return match;
                 });
 
-                // apply env-specific formatting (colors, etc.)
+                // apply env-specific ustadEditor (colors, etc.)
                 exports.formatArgs.call(self, args);
 
                 var logFn = debug.log || exports.log || console.log.bind(console);
@@ -12225,7 +12225,7 @@ OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
          *
          * Options:
          *
-         *  - `long` verbose formatting [false]
+         *  - `long` verbose ustadEditor [false]
          *
          * @param {String|Number} val
          * @param {Object} [options]

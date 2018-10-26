@@ -1,11 +1,11 @@
 <div data-um-widget="multichoice"  data-um-retry="true" class="question">
 
-    <div class="question-body">What is the capital city of Tanzania?</div>
+    <div class="question-body multichoice" data-um-preview="main">What is the capital city of Tanzania?</div>
 
-    <div class="question-choice" data-um-correct="false">
+    <div class="question-choice" data-um-correct="false" data-um-preview="support">
         <div class="question-choice-body">A. Dar es salaam</div>
-        <div class="question-choice-feedback" data-um-edit-only="true">What a choice, you need to read more about this country.</div>
-        <div class="question-choice-answer" data-um-edit-only="true">
+        <div class="question-choice-feedback show-element">What a choice, you need to read more about this country.</div>
+        <div class="question-choice-answer select-option col-sm-3 col-lg-3">
             <select>
                 <option value="true">Yes</option>
                 <option value="false" selected="selected">No</option>
@@ -14,10 +14,10 @@
     </div>
 
 
-    <div class="question-choice" data-um-correct="false">
+    <div class="question-choice" data-um-correct="false" data-um-preview="support">
         <div class="question-choice-body">B. Dar es salaam</div>
-        <div class="question-choice-feedback" data-um-edit-only="true">What a choice, you need to read more about this country.</div>
-        <div class="question-choice-answer" data-um-edit-only="true">
+        <div class="question-choice-feedback show-element">What a choice, you need to read more about this country.</div>
+        <div class="question-choice-answer select-option col-sm-3 col-lg-3">
             <select>
                 <option value="true">Yes</option>
                 <option value="false" selected="selected">No</option>
@@ -25,18 +25,24 @@
         </div>
     </div>
 
-    <div class="question-retry-holder">
-        <div class="question-retry">
+    <div class="question-feedback-container hide-element" data-um-preview="alert">
+        <div class="alert question-feedback-container-text" role="alert" data-um-preview="alert">
+
+        </div>
+    </div>
+
+
+    <div class="question-retry-holder row">
+        <div class="question-retry-option select-option col-sm-3 col-lg-3">
             <select>
                 <option value="true">Yes</option>
                 <option value="false" selected="selected">No</option>
             </select>
         </div>
-    </div>
 
-    <div class="question-feedback-container hide-element">
-        <div class="question-feedback-container-text">
-            <p> hello</p>
+        <div class="question-retry-btn col-sm-12 col-lg-12 hide-element">
+            <button class='btn btn-dark black float-right qn-retry' data-um-preview='support'>Try Again</button>
         </div>
     </div>
+
 </div>
