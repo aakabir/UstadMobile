@@ -1,6 +1,8 @@
 package com.ustadmobile.core.controller;
 
+import com.ustadmobile.core.impl.UstadMobileSystemImpl;
 import com.ustadmobile.core.view.ContentEditorView;
+import com.ustadmobile.core.view.ContentPreviewView;
 
 import java.util.Hashtable;
 
@@ -27,8 +29,11 @@ import static com.ustadmobile.core.view.ContentEditorView.TEXT_FORMAT_TYPE_SUP;
 import static com.ustadmobile.core.view.ContentEditorView.TEXT_FORMAT_TYPE_UNDERLINE;
 
 public class ContentEditorPresenter extends UstadBaseController<ContentEditorView> {
+
+    private Hashtable args;
     public ContentEditorPresenter(Object context, Hashtable arguments, ContentEditorView view) {
         super(context, arguments, view);
+        this.args = arguments;
     }
 
 
@@ -90,7 +95,7 @@ public class ContentEditorPresenter extends UstadBaseController<ContentEditorVie
                     view.setContentTextDirection(Boolean.parseBoolean(param));
                     break;
                 case ACTION_PREVIEW:
-                    view.startContentPreview();
+                    view.saveContentForPreview();
                     break;
                 case CONTENT_INSERT_FILLTHEBLANKS_QN:
                     view.insertFillTheBlanksQuestion();
@@ -102,6 +107,11 @@ public class ContentEditorPresenter extends UstadBaseController<ContentEditorVie
             }
             view.handleContentMenu();
         });
+    }
+
+    public void handleContentPreview(){
+        UstadMobileSystemImpl.getInstance()
+                .go(ContentPreviewView.VIEW_NAME,args,view.getContext());
     }
 
 

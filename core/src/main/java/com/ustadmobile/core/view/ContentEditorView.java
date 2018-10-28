@@ -66,7 +66,7 @@ public interface ContentEditorView extends UstadView {
 
     void insertFillTheBlanksQuestion();
 
-    void startContentPreview();
+    void saveContentForPreview();
 
     void handleContentMenu();
 

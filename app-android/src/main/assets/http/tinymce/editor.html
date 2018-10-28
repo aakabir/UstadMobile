@@ -9,7 +9,7 @@
     <script src="js/tinymce.min.js"></script>
     <script src="js/UstadEditor.js"></script>
     <script>
-        var inlineConfig = {
+        const inlineConfig = {
 
             selector: '#mce-editor',
             menubar: false,
@@ -28,7 +28,7 @@
             theme: 'modern',
             setup:function(ed) {
                 ed.on('change', function() {
-                    ustadEditor.hideUstadMenu();
+                    ustadEditor.hideToolbarMenu();
                     QuestionWidget.handleListeners();
                 });
             },
@@ -45,8 +45,9 @@
         tinymce.init(inlineConfig).then(function () {
             ustadEditor.init(tinymce.activeEditor);
             QuestionWidget.handleListeners();
-            setTimeout(ustadEditor.requestFocus(), 100);
-            setTimeout(ustadEditor.hideUstadMenu(), 101);
+            setTimeout(ustadEditor.requestFocus(), 20);
+            setTimeout(ustadEditor.hideToolbarMenu(), 22);
+
         });
 
 

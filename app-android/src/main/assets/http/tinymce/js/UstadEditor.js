@@ -227,6 +227,7 @@ ustadEditor.requestFocus = function () {
  */
 ustadEditor.insertMultipleChoiceQuestionTemplate = function () {
     document.getElementById("multiple-choice").click();
+    return "inserted";
 };
 
 /**
@@ -234,24 +235,37 @@ ustadEditor.insertMultipleChoiceQuestionTemplate = function () {
  */
 ustadEditor.insertFillInTheBlanksQuestionTemplate = function () {
     document.getElementById("fill-the-blanks").click();
+    return "inserted";
 };
 
 /**
  * Start previewing the content
  */
-ustadEditor.startPreviewing = function () {
+ustadEditor.startContentPreviewing = function () {
     document.getElementById("editor-off").click();
-};
-
-ustadEditor.getContent = function(){
+    const returnVal = JSON.stringify({action: 'savePreview', content: btoa(this.activeEditor.getContent())});
     console.log(this.activeEditor.getContent());
+    return returnVal;
 };
-
 
 /**
- * Hide ustad toolbar menu after successfully initializing the editor
+ * Switch ON editing mode
  */
-ustadEditor.hideUstadMenu = function () {
+ustadEditor.switchOnEditor = function () {
+    document.getElementById("editor-on").click();
+};
+
+/**
+ * Switch off editing mode
+ */
+ustadEditor.switchOffEditor = function(){
+    ustadEditor.startContentPreviewing();
+};
+
+/**
+ * Hide toolbar menu after successfully initializing the editor
+ */
+ustadEditor.hideToolbarMenu = function () {
     $("#ustadmobile-menu").click();
     $("#mceu_0").hide();
     $("#mceu_4").hide();
@@ -261,7 +275,12 @@ ustadEditor.hideUstadMenu = function () {
     });
 };
 
-ustadEditor.loadFileIntoTheEditor = function (fileName) {
+/**
+ * Load local file for editing / previewing
+ * @param fileName name of the file to be edited/previewed
+ * @param mode operation mode i.e Preview when TRUE otherwise FALSE
+ */
+ustadEditor.loadLocalFileToEditor = function (fileName, mode) {
     $.ajax({url: "content/"+fileName, success: function(fileContent){
         const container = document.createElement("div");
         container.innerHTML = fileContent;
@@ -272,8 +291,23 @@ ustadEditor.loadFileIntoTheEditor = function (fileName) {
                 continue;
             questionContent = questionContent + $(questionList[question]).prop('outerHTML');
         }
-        tinymce.activeEditor.execCommand('mceInsertContent', false,
-            questionContent,{format: 'raw'});
+
+        tinymce.activeEditor.execCommand('mceInsertContent', false, questionContent,{format: 'raw'});
+        ustadEditor.switchOnEditor();
+        if(mode === "true"){
+            ustadEditor.switchOffEditor();
+            tinymce.activeEditor.getBody().setAttribute('contenteditable', false);
+        }
+    }});
+};
+/**
+ * Load file to the preview container
+ * @param fileName
+ */
+ustadEditor.loadFileForPreview = function (fileName) {
+    $.ajax({url: "content/"+fileName, success: function(fileContent){
+        document.getElementById("ustad-preview").innerHTML = fileContent;
+        QuestionWidget.handleEditOff();
     }});
 };
 

@@ -11,6 +11,11 @@ QuestionWidget.WIDGET_NAME_FILL_BLANKS = "fill-the-blanks";
 QuestionWidget.prototype.init = function() {};
 
 QuestionWidget.prototype.editOn = function(){
+
+    tinymce.activeEditor.dom.removeClass(
+        tinymce.activeEditor.dom.select('div.question'),'card default-margin-bottom default-padding-top');
+
+    console.log($(this.element).find(".question"));
     $(this.element).find("label").remove();
     $(this.element).find(".question-retry-option")
         .before("<label class='um-labels col-sm-12 col-lg-10'>Can be retried?</label><br/>");
@@ -20,6 +25,8 @@ QuestionWidget.prototype.editOn = function(){
     $(this.element).find('[data-um-preview="alert"]').removeClass("preview-alert default-margin-top");
     $(this.element).find('[data-um-preview="support"]').removeClass("preview-support default-margin-top");
     $(this.element).find(".question-body").before("<label class='um-labels'>Question Text</label><br/>");
+
+    return this.element;
 };
 
 QuestionWidget.prototype.addListeners = function(){
@@ -136,17 +143,6 @@ QuestionWidget.getNextQuestionId = function(idLength = 8){
 };
 
 
-QuestionWidget.prototype.editOff = function(){
-    $(this.element).find("label").remove();
-    $(this.element).find("br").remove();
-    $(this.element).find("button").remove();
-    $(this.element).find(".question-choice-answer").remove();
-    $(this.element).find(".question-choice-feedback").addClass("hide-element");
-    $(this.element).find(".question-feedback-container").addClass("hide-element");
-    $(this.element).find(".question-retry").remove();
-    return this.element;
-};
-
 
 let FillTheBlanksQuestionWidget = function(element){
     QuestionWidget.apply(this, arguments);
@@ -192,7 +188,7 @@ FillTheBlanksQuestionWidget.prototype.attachEditListeners = function() {
  */
 MultiChoiceQuestionWidget.prototype.attachPreviewListeners = function() {
     QuestionWidget.prototype.addListeners.apply(this, arguments);
-    $(".question-choice-body").on('click', this.handleClickAnswer.bind(this));
+    $(".question-choice").on('click', this.handleClickAnswer.bind(this));
     $(".qn-retry").on('click', this.handleClickQuestionRetry.bind(this));
 };
 
@@ -330,10 +326,5 @@ QuestionWidget.prototype.handleClickQuestionRetry = function(event){
     $(questionElement).find(".question-retry-btn").removeClass("show-element").addClass("hide-element");
 };
 
-
-
-$(function() {
-    console.log("look for all DOM element")
-});
 
 

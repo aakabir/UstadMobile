@@ -48,6 +48,8 @@ import com.toughra.ustadmobile.R;
 import com.ustadmobile.core.impl.UstadMobileSystemImpl;
 import com.ustadmobile.core.view.ContentEditorView;
 
+import java.util.Hashtable;
+
 
 public class SplashScreenActivity extends AppCompatActivity implements DialogInterface.OnClickListener, ActivityCompat.OnRequestPermissionsResultCallback{
 
@@ -95,7 +97,7 @@ public class SplashScreenActivity extends AppCompatActivity implements DialogInt
             public void run() {
                 //UstadMobileSystemImpl.getInstance().startUI(SplashScreenActivity.this);
                 //TODO: Remove this after finishing content editing logic
-                UstadMobileSystemImpl.getInstance().go(ContentEditorView.VIEW_NAME,SplashScreenActivity.this);
+                UstadMobileSystemImpl.getInstance().go(ContentEditorView.VIEW_NAME,new Hashtable(),SplashScreenActivity.this);
             }
         }, 0);
     }

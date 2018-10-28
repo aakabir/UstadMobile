@@ -46,6 +46,7 @@ import com.ustadmobile.core.controller.ContentEditorPresenter;
 import com.ustadmobile.core.impl.UMLog;
 import com.ustadmobile.core.impl.UstadMobileSystemImpl;
 import com.ustadmobile.core.view.ContentEditorView;
+import com.ustadmobile.core.view.ContentPreviewView;
 import com.ustadmobile.port.android.impl.http.AndroidAssetsHandler;
 import com.ustadmobile.port.android.util.UMAndroidUtil;
 import com.ustadmobile.port.sharedse.impl.http.EmbeddedHTTPD;
@@ -54,6 +55,7 @@ import java.io.IOException;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Date;
+import java.util.Hashtable;
 import java.util.List;
 
 public class ContentEditorActivity extends UstadBaseActivity implements
@@ -75,6 +77,7 @@ public class ContentEditorActivity extends UstadBaseActivity implements
     private static final int FORMATTING_ACTIONS_INDEX = 2;
     private static SparseArray<List<ContentFormat>> formattingList = new SparseArray<>();
     private  String baseUrl = null;
+    private Hashtable args = null;
 
     /**
      * UI implementation of formatting type as pager.
@@ -337,9 +340,8 @@ public class ContentEditorActivity extends UstadBaseActivity implements
         getSupportActionBar().setDisplayHomeAsUpEnabled(true);
         toolbarTitle.setVisibility(View.GONE);
 
-
-        presenter = new ContentEditorPresenter(this,
-                UMAndroidUtil.bundleToHashtable(getIntent().getExtras()),this);
+        args = UMAndroidUtil.bundleToHashtable(getIntent().getExtras());
+        presenter = new ContentEditorPresenter(this,args,this);
         presenter.onCreate(UMAndroidUtil.bundleToHashtable(savedInstanceState));
 
         mInsertContent.setOnMenuButtonClickListener(v -> {
@@ -428,7 +430,7 @@ public class ContentEditorActivity extends UstadBaseActivity implements
         startWebServer();
 
         if(baseUrl != null){
-            editorContent.loadUrl(baseUrl+"index.html");
+            editorContent.loadUrl(baseUrl+"editor.html");
         }
     }
 
@@ -585,6 +587,9 @@ public class ContentEditorActivity extends UstadBaseActivity implements
             embeddedHTTPD.start();
             if(embeddedHTTPD.isAlive()){
                 baseUrl =  "http://127.0.0.1:"+embeddedHTTPD.getListeningPort()+assetsPath+"tinymce/";
+                args.put(ContentPreviewView.BASE_URL,baseUrl);
+                args.put(ContentPreviewView.FILE_NAME,"index.html");
+
             }
         } catch (IOException e) {
             e.printStackTrace();
@@ -643,9 +648,13 @@ public class ContentEditorActivity extends UstadBaseActivity implements
 
 
     private void processReturnedValue(String returnValue){
-        if(returnValue.length() > 5){
+       /* if(returnValue.equals("inserted") && !returnValue.contains("savePreview")){
             editorContent.loadDataWithBaseURL(null, returnValue,
                     "text/html", "UTF-8", null);
+        }*/
+
+        if(returnValue.contains("savePreview")){
+            UstadMobileSystemImpl.getInstance().go(ContentPreviewView.VIEW_NAME,args,this);
         }
     }
 
@@ -756,8 +765,9 @@ public class ContentEditorActivity extends UstadBaseActivity implements
     }
 
     @Override
-    public void startContentPreview() {
-        callJavaScriptFunction("ustadEditor.startPreviewing", (String) null);
+    public void saveContentForPreview() {
+        //TODO: add saving code here
+        callJavaScriptFunction("ustadEditor.startContentPreviewing", (String) null);
     }
 
     @Override

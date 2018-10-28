@@ -102,8 +102,8 @@
             android:name="com.ustadmobile.port.android.view.H5PContentActivity"
             android:configChanges="orientation|keyboardHidden|keyboard|screenSize"
             android:label="" />
-        <activity
-            android:name="com.ustadmobile.port.android.view.ContentEditorActivity"/>
+        <activity android:name="com.ustadmobile.port.android.view.ContentEditorActivity" />
+        <activity android:name="com.ustadmobile.port.android.view.ContentPreviewActivity"></activity>
     </application>
 
 </manifest>
