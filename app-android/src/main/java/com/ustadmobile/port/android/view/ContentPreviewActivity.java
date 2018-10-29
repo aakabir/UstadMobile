@@ -3,6 +3,7 @@ package com.ustadmobile.port.android.view;
 import android.os.Bundle;
 import android.support.annotation.Nullable;
 import android.support.v7.widget.Toolbar;
+import android.view.MenuItem;
 import android.view.View;
 import android.webkit.WebSettings;
 import android.webkit.WebView;
@@ -44,7 +45,7 @@ public class ContentPreviewActivity extends UstadBaseActivity implements Content
         contentPreview = findViewById(R.id.preview_content);
         toolbar = findViewById(R.id.um_toolbar);
 
-        setUMToolbar(R.id.um_toolbar);
+        setSupportActionBar(toolbar);
         getSupportActionBar().setDisplayHomeAsUpEnabled(true);
 
         WebSettings webSettings = contentPreview.getSettings();
@@ -67,10 +68,19 @@ public class ContentPreviewActivity extends UstadBaseActivity implements Content
     }
 
     @Override
-    public void startPreviewing(String filename) {
-        callJavaScriptFunction("ustadEditor.loadFileForPreview", filename);
+    public void startPreviewing(String content) {
+        callJavaScriptFunction("ustadEditor.loadContentForPreview", content);
     }
 
+    @Override
+    public boolean onOptionsItemSelected(MenuItem item) {
+        switch (item.getItemId()){
+            case android.R.id.home:
+                finish();
+                break;
+        }
+        return true;
+    }
 
     /**
      * Invoke javascript call from android

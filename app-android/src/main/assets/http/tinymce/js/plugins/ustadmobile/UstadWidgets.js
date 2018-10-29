@@ -15,7 +15,6 @@ QuestionWidget.prototype.editOn = function(){
     tinymce.activeEditor.dom.removeClass(
         tinymce.activeEditor.dom.select('div.question'),'card default-margin-bottom default-padding-top');
 
-    console.log($(this.element).find(".question"));
     $(this.element).find("label").remove();
     $(this.element).find(".question-retry-option")
         .before("<label class='um-labels col-sm-12 col-lg-10'>Can be retried?</label><br/>");

@@ -8,10 +8,9 @@ public class ContentPreviewPresenter extends UstadBaseController<ContentPreviewV
 
     private Hashtable args;
     private boolean isPreviewIndex = false;
-    private String fileToPreview;
     public ContentPreviewPresenter(Object context, Hashtable arguments, ContentPreviewView view) {
         super(context, arguments, view);
-        this.args = arguments;
+        args = arguments;
     }
 
     @Override
@@ -19,8 +18,7 @@ public class ContentPreviewPresenter extends UstadBaseController<ContentPreviewV
         super.onCreate(savedState);
         view.runOnUiThread(() -> {
             isPreviewIndex = true;
-            fileToPreview = String.valueOf(args.get(ContentPreviewView.FILE_NAME));
-            view.setTitle(fileToPreview);
+            view.setTitle(args.get(ContentPreviewView.FILE_NAME).toString());
             view.loadPreviewPage(args.get(ContentPreviewView.BASE_URL) +"preview.html");
         });
 
@@ -35,7 +33,8 @@ public class ContentPreviewPresenter extends UstadBaseController<ContentPreviewV
     }
 
     public void loadContentToPreview(){
-        view.runOnUiThread(() -> view.startPreviewing(fileToPreview));
+        view.runOnUiThread(() ->
+                view.startPreviewing(args.get(ContentPreviewView.EDITOR_CONTENT).toString()));
     }
 
     @Override

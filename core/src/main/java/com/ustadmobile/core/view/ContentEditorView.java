@@ -1,5 +1,8 @@
 package com.ustadmobile.core.view;
 
+import java.io.File;
+import java.util.HashMap;
+
 public interface ContentEditorView extends UstadView {
     String VIEW_NAME = "ContentEditor";
     String TEXT_FORMAT_TYPE_BOLD = "Bold";
@@ -22,9 +25,22 @@ public interface ContentEditorView extends UstadView {
     String ACTION_PREVIEW = "Preview";
     String ACTION_REDO = "Redo";
     String ACTION_UNDO = "Undo";
+    String ACTION_CONTENT_AQUISITION ="getEditContent";
+    String ACTION_CONTENT_CHANGED ="editorChanged";
+    String ACTION_GENERATE_FILE ="getStandaloneFile";
     String ACTION_TEXT_DIRECTION = "mceDirectionLTR";
     String CONTENT_INSERT_MULTIPLE_CHOICE_QN = "MultipleChoice";
     String CONTENT_INSERT_FILLTHEBLANKS_QN = "FillTheBlanks";
+
+    String CONTENT_ROOT_DIR = "root_dir";
+    String CONTENT_CSS_DIR = "css_dir";
+    String CONTENT_CSS_USTAD = "ustadmobile.css";
+    String CONTENT_CSS_BOOTSTRAP = "bootstrap.min.css";
+    String CONTENT_JS_DIR = "js_dir";
+    String CONTENT_JS_USTAD_WIDGET = "UstadWidgets.js";
+    String CONTENT_JS_JQUERY = "jquery3.3.1.min.js";
+
+
 
     void setContentBold();
 
@@ -66,9 +82,11 @@ public interface ContentEditorView extends UstadView {
 
     void insertFillTheBlanksQuestion();
 
-    void saveContentForPreview();
+    void requestEditorContent(boolean isPreview);
 
     void handleContentMenu();
+
+    HashMap<String,File> createContentDir();
 
 
 }

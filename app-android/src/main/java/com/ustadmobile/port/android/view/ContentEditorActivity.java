@@ -2,6 +2,7 @@ package com.ustadmobile.port.android.view;
 
 import android.annotation.SuppressLint;
 import android.os.Bundle;
+import android.os.Environment;
 import android.support.annotation.NonNull;
 import android.support.annotation.Nullable;
 import android.support.annotation.VisibleForTesting;
@@ -20,6 +21,7 @@ import android.support.v7.widget.GridLayoutManager;
 import android.support.v7.widget.PopupMenu;
 import android.support.v7.widget.RecyclerView;
 import android.support.v7.widget.Toolbar;
+import android.util.Base64;
 import android.util.DisplayMetrics;
 import android.util.SparseArray;
 import android.view.Display;
@@ -41,6 +43,7 @@ import android.widget.TextView;
 
 import com.github.clans.fab.FloatingActionButton;
 import com.github.clans.fab.FloatingActionMenu;
+import com.google.gson.Gson;
 import com.toughra.ustadmobile.R;
 import com.ustadmobile.core.controller.ContentEditorPresenter;
 import com.ustadmobile.core.impl.UMLog;
@@ -51,10 +54,12 @@ import com.ustadmobile.port.android.impl.http.AndroidAssetsHandler;
 import com.ustadmobile.port.android.util.UMAndroidUtil;
 import com.ustadmobile.port.sharedse.impl.http.EmbeddedHTTPD;
 
+import java.io.File;
 import java.io.IOException;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Date;
+import java.util.HashMap;
 import java.util.Hashtable;
 import java.util.List;
 
@@ -78,6 +83,43 @@ public class ContentEditorActivity extends UstadBaseActivity implements
     private static SparseArray<List<ContentFormat>> formattingList = new SparseArray<>();
     private  String baseUrl = null;
     private Hashtable args = null;
+
+
+    /**
+     * POJO class for log and js call return value parsing
+     */
+    private class WebResponse{
+
+        private String action;
+
+        private String content;
+
+        private String extraFlag;
+
+        public String getAction() {
+            return action;
+        }
+
+        public void setAction(String action) {
+            this.action = action;
+        }
+
+        public String getContent() {
+            return content;
+        }
+
+        public void setContent(String content) {
+            this.content = content;
+        }
+
+        public String getExtraFlag() {
+            return extraFlag;
+        }
+
+        public void setExtraFlag(String extraFlag) {
+            this.extraFlag = extraFlag;
+        }
+    }
 
     /**
      * UI implementation of formatting type as pager.
@@ -119,6 +161,9 @@ public class ContentEditorActivity extends UstadBaseActivity implements
         public boolean onConsoleMessage(ConsoleMessage consoleMessage) {
             UstadMobileSystemImpl.l(UMLog.DEBUG,700,
                     "Consoled a message "+consoleMessage.message());
+            if(consoleMessage.message().contains("action")){
+                processJsCallLogValues(consoleMessage.message());
+            }
             return true;
         }
 
@@ -335,6 +380,7 @@ public class ContentEditorActivity extends UstadBaseActivity implements
 
         if(toolbar != null){
             toolbar.setTitle("");
+            toolbar.setNavigationIcon(R.drawable.ic_check_white_24dp);
         }
         setUMToolbar(R.id.um_toolbar);
         getSupportActionBar().setDisplayHomeAsUpEnabled(true);
@@ -506,7 +552,7 @@ public class ContentEditorActivity extends UstadBaseActivity implements
             menuHelper.setGravity(Gravity.END);
             menuHelper.show();
         }
-        return super.onOptionsItemSelected(item);
+        return true;
     }
 
     @Override
@@ -639,23 +685,44 @@ public class ContentEditorActivity extends UstadBaseActivity implements
         mBuilder.append(")}catch(error){console.error(error.message);}");
         final String call = mBuilder.toString();
         editorContent.evaluateJavascript(call, value -> {
-            processReturnedValue(value);
+            processJsCallLogValues(value);
             UstadMobileSystemImpl.l(UMLog.DEBUG,700,
                     "Value returned from js function "+value);
         });
     }
 
-
-
-    private void processReturnedValue(String returnValue){
-       /* if(returnValue.equals("inserted") && !returnValue.contains("savePreview")){
-            editorContent.loadDataWithBaseURL(null, returnValue,
-                    "text/html", "UTF-8", null);
-        }*/
-
-        if(returnValue.contains("savePreview")){
-            UstadMobileSystemImpl.getInstance().go(ContentPreviewView.VIEW_NAME,args,this);
+    /**
+     * Process values returned from JS calls
+     * @param value value returned
+     */
+    private void processJsCallLogValues(String value){
+        if(value.contains("action")){
+            WebResponse response = new Gson().fromJson(value,WebResponse.class);
+            switch (response.action){
+                case ACTION_CONTENT_AQUISITION:
+                    if(Boolean.parseBoolean(response.getExtraFlag())){
+                        presenter.handleContentPreview(response.getContent());
+                    }else{
+                        callJavaScriptFunction("ustadEditor.generateStandAloneFile",
+                                response.getContent());
+                    }
+                    break;
+                case ACTION_CONTENT_CHANGED:
+                    if(response.getContent().length() <= 0){
+                        mPreviewContent.hide(true);
+                    } else{
+                        mPreviewContent.show(true);
+                    }
+                    requestEditorContent(false);
+                    break;
+                case ACTION_GENERATE_FILE:
+                    presenter.handleSavingStandAloneFile(new String(Base64.decode(response.getContent(),
+                            Base64.DEFAULT)));
+                    break;
+            }
         }
+
+
     }
 
 
@@ -765,10 +832,10 @@ public class ContentEditorActivity extends UstadBaseActivity implements
     }
 
     @Override
-    public void saveContentForPreview() {
-        //TODO: add saving code here
-        callJavaScriptFunction("ustadEditor.startContentPreviewing", (String) null);
+    public void requestEditorContent(boolean isPreview) {
+        callJavaScriptFunction("ustadEditor.getContent", String.valueOf(isPreview));
     }
+
 
     @Override
     public void handleContentMenu() {
@@ -777,6 +844,25 @@ public class ContentEditorActivity extends UstadBaseActivity implements
         }
     }
 
+    @Override
+    public HashMap<String, File> createContentDir() {
+        //this.getDir("contents", Context.MODE_PRIVATE);
+        File contentDir = new File(Environment.getExternalStorageDirectory(),"contents");
+        File stylesDir = new File(contentDir,"css/");
+        File scriptsDir = new File(contentDir,"js/");
+        if (!contentDir.exists()) {
+            if(contentDir.mkdirs()){
+                stylesDir.mkdir();
+                scriptsDir.mkdir();
+            }
+        }
+
+        HashMap<String,File> baseContentDirs = new HashMap<>();
+        baseContentDirs.put(CONTENT_ROOT_DIR,contentDir);
+        baseContentDirs.put(CONTENT_CSS_DIR,stylesDir);
+        baseContentDirs.put(CONTENT_JS_DIR,scriptsDir);
+        return baseContentDirs;
+    }
 
     /**
      * Prepare lis of all formatting types

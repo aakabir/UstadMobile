@@ -10,7 +10,6 @@ let activeEditor = null;
  */
 ustadEditor.init = function(activeEditor){
     this.activeEditor = activeEditor;
-    console.log("UstadEditor controls initialized");
 };
 
 /**
@@ -23,13 +22,6 @@ ustadEditor.isToolBarButtonActive = function(buttonIdentifier){
     return this.activeEditor.queryCommandState(buttonIdentifier) != null
 };
 
-/**
- * Get content of the active Editor
- * @returns {*|void} Current content on editor
- */
-ustadEditor.getActiveEditorContent = function(){
-    return this.activeEditor.getContent();
-};
 
 /**
  * Change editor content font size
@@ -206,11 +198,11 @@ ustadEditor.textFormattingSubScript = function(){
 };
 
 /**
- * Get content from the active content edtor
+ * Get content from the active content editor
  * @returns {*|void}
  */
-ustadEditor.getContent = function(){
-    return this.activeEditor.getContent().getHtml();
+ustadEditor.getContent = function(extraFlag){
+    return {action:'getEditContent',content:btoa(this.activeEditor.getContent()),extraFlag:extraFlag};
 };
 
 /**
@@ -230,6 +222,39 @@ ustadEditor.insertMultipleChoiceQuestionTemplate = function () {
     return "inserted";
 };
 
+
+/**
+ * Changing editor editing mode
+ */
+ustadEditor.changeEditorMode = function(mode){
+    if(mode === 'off'){
+        this.activeEditor.getBody().setAttribute('contenteditable', false);
+    }else{
+        this.activeEditor.getBody().setAttribute('contenteditable', true);
+    }
+    return mode;
+};
+
+
+/**
+ * Create a stand alone file which can be exported from the app.
+ * @param content content for preview
+ * @returns {Promise<void>} File generation promise
+ */
+ustadEditor.generateStandAloneFile = async function(content){
+    let promise = new Promise((resolve) => {
+        $.ajax({url: "templates/stand-alone-file.html", success: function(fileContent){
+                const fileContentParts = fileContent.split("<template/>");
+                const standAloneFileContent = fileContentParts[0]+atob(content)+fileContentParts[1];
+                resolve(standAloneFileContent);
+        }});
+    });
+
+    let result = await promise;
+    console.log(JSON.stringify({action:'getStandaloneFile',content:btoa(result),extraFlag:null}));
+};
+
+
 /**
  * Insert fill in the blanks question template to the editor
  */
@@ -238,29 +263,16 @@ ustadEditor.insertFillInTheBlanksQuestionTemplate = function () {
     return "inserted";
 };
 
+
+
 /**
- * Start previewing the content
+ * Start content live preview on the editor
  */
 ustadEditor.startContentPreviewing = function () {
     document.getElementById("editor-off").click();
-    const returnVal = JSON.stringify({action: 'savePreview', content: btoa(this.activeEditor.getContent())});
-    console.log(this.activeEditor.getContent());
-    return returnVal;
+    return {action: 'savePreview', content: btoa(this.activeEditor.getContent()),extraFlag:null};
 };
 
-/**
- * Switch ON editing mode
- */
-ustadEditor.switchOnEditor = function () {
-    document.getElementById("editor-on").click();
-};
-
-/**
- * Switch off editing mode
- */
-ustadEditor.switchOffEditor = function(){
-    ustadEditor.startContentPreviewing();
-};
 
 /**
  * Hide toolbar menu after successfully initializing the editor
@@ -292,24 +304,51 @@ ustadEditor.loadLocalFileToEditor = function (fileName, mode) {
             questionContent = questionContent + $(questionList[question]).prop('outerHTML');
         }
 
-        tinymce.activeEditor.execCommand('mceInsertContent', false, questionContent,{format: 'raw'});
-        ustadEditor.switchOnEditor();
+            this.activeEditor.execCommand('mceInsertContent', false, questionContent,{format: 'raw'});
+            document.getElementById("editor-on").click();
         if(mode === "true"){
-            ustadEditor.switchOffEditor();
-            tinymce.activeEditor.getBody().setAttribute('contenteditable', false);
+            ustadEditor.startContentPreviewing();
+            this.activeEditor.getBody().setAttribute('contenteditable', false);
         }
     }});
 };
+
 /**
- * Load file to the preview container
- * @param fileName
+ * Callback to listen for any changes on the active editor
  */
-ustadEditor.loadFileForPreview = function (fileName) {
-    $.ajax({url: "content/"+fileName, success: function(fileContent){
-        document.getElementById("ustad-preview").innerHTML = fileContent;
-        QuestionWidget.handleEditOff();
-    }});
+ustadEditor.handleContentChange = function(){
+    console.log(JSON.stringify({action:'editorChanged',content:btoa(this.activeEditor.getContent()),extraFlag:null}));
 };
+
+/**
+ * Load content into a preview
+ * @param fileContent base64 content to be loaded to the preview
+ */
+ustadEditor.loadContentForPreview = function (fileContent) {
+    const editorContent = $("<div/>").html($.parseHTML(atob(fileContent)));
+    $(editorContent).find("br").remove();
+    $(editorContent).find("label").remove();
+    $(editorContent).find("button.add-choice").remove();
+    $(editorContent).find('div.question-choice').addClass("question-choice-pointer").removeClass("default-margin-top");
+    $(editorContent).find('div.multichoice').addClass("default-margin-bottom").removeClass("default-margin-top");
+    $(editorContent).find('div.select-option').addClass("hide-element").removeClass("show-element");
+    $(editorContent).find('div.fill-blanks').addClass("hide-element").removeClass("show-element");
+    $(editorContent).find('div.question-choice-answer').addClass("hide-element").removeClass("show-element");
+    $(editorContent).find('.question-retry-btn').addClass("hide-element").removeClass("show-element");
+    $(editorContent).find('div.question-choice-feedback').addClass("hide-element").removeClass("show-element");
+    $(editorContent).find('div.question-answer').addClass("hide-element").removeClass("show-element");
+
+    $(editorContent).find('div.question').addClass('card col-sm-12 col-lg-12 default-padding-bottom default-margin-bottom default-padding-top');
+    $(editorContent).find('div.question-choice').addClass('alert alert-secondary');
+    $(editorContent).find('[data-um-preview="main"]').addClass('preview-main default-margin-top');
+    $(editorContent).find('[data-um-preview="alert"]').addClass('preview-alert default-margin-top');
+    $(editorContent).find('[data-um-preview="support"]').addClass('preview-support default-margin-top');
+
+    document.getElementById("ustad-preview").innerHTML = $('<div/>').html(editorContent).contents().html();
+    QuestionWidget.handleEditOff();
+};
+
+
 
 
 

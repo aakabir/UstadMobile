@@ -17,7 +17,7 @@ html {
 .um-labels{
     margin-top: 16px;
     z-index: -200;
-    color: #686868;
+    color: #767676;
     font-size: .8em;
     line-height: 1.4em;
 }
@@ -57,8 +57,13 @@ select,button :focus :active{
     line-height: 2em;
 }
 
+#mce-editor{
+    margin: 2%;
+}
+
 #ustad-preview{
-    padding: 2%;
+    margin: 2px;
+    padding-top: 16px;
 }
 
 /*data edit and data preview control classes*/

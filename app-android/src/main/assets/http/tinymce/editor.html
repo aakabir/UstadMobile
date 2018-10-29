@@ -30,7 +30,14 @@
                 ed.on('change', function() {
                     ustadEditor.hideToolbarMenu();
                     QuestionWidget.handleListeners();
+                    ustadEditor.handleContentChange();
                 });
+
+                ed.on('keyup', function() {ustadEditor.handleContentChange();});
+
+                ed.on('undo', function() {ustadEditor.handleContentChange();});
+
+                ed.on('redo', function() {ustadEditor.handleContentChange();});
             },
             style_formats: [{ title: 'Containers', items: [
                     { title: 'section', block: 'section', wrapper: true, merge_siblings: false },
@@ -55,7 +62,7 @@
 
 </head>
 
-<body onload="resizeWindow()">
+<body>
 <div class="container-fluid">
     <div class="row">
         <div id="mce-editor" class="col-sm-12 col-md-12 col-lg-12" style="margin: 2%; padding: 0;">
@@ -66,10 +73,9 @@
 
 <script src="js/bootstrap.min.js"></script>
 <script>
-    function resizeWindow(){
-        let w = $(window).width();
-        $('#mce-editor').css('width', w);
-    }
+    $(function() {
+        $('body').css('width', $(window).width());
+    });
 </script>
 </body>
 </html>
