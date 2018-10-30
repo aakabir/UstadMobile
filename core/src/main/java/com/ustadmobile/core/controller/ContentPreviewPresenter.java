@@ -7,7 +7,9 @@ import java.util.Hashtable;
 public class ContentPreviewPresenter extends UstadBaseController<ContentPreviewView> {
 
     private Hashtable args;
+
     private boolean isPreviewIndex = false;
+
     public ContentPreviewPresenter(Object context, Hashtable arguments, ContentPreviewView view) {
         super(context, arguments, view);
         args = arguments;

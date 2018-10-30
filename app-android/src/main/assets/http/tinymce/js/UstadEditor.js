@@ -268,9 +268,18 @@ ustadEditor.insertFillInTheBlanksQuestionTemplate = function () {
 /**
  * Start content live preview on the editor
  */
-ustadEditor.startContentPreviewing = function () {
+ustadEditor.startLivePreview = function () {
     document.getElementById("editor-off").click();
     return {action: 'savePreview', content: btoa(this.activeEditor.getContent()),extraFlag:null};
+};
+
+/**
+ * Start content preview away from the editor
+ * @param content content to be previewed
+ */
+ustadEditor.startLocalPreview = function(content){
+    document.getElementById("ustad-preview").innerHTML = atob(content);
+    QuestionWidget.handleEditOff();
 };
 
 
@@ -307,7 +316,7 @@ ustadEditor.loadLocalFileToEditor = function (fileName, mode) {
             this.activeEditor.execCommand('mceInsertContent', false, questionContent,{format: 'raw'});
             document.getElementById("editor-on").click();
         if(mode === "true"){
-            ustadEditor.startContentPreviewing();
+            ustadEditor.startLivePreview();
             this.activeEditor.getBody().setAttribute('contenteditable', false);
         }
     }});
@@ -324,7 +333,7 @@ ustadEditor.handleContentChange = function(){
  * Load content into a preview
  * @param fileContent base64 content to be loaded to the preview
  */
-ustadEditor.loadContentForPreview = function (fileContent) {
+ustadEditor.loadContentForPreview = function (fileContent,extraFlag) {
     const editorContent = $("<div/>").html($.parseHTML(atob(fileContent)));
     $(editorContent).find("br").remove();
     $(editorContent).find("label").remove();
@@ -343,10 +352,10 @@ ustadEditor.loadContentForPreview = function (fileContent) {
     $(editorContent).find('[data-um-preview="main"]').addClass('preview-main default-margin-top');
     $(editorContent).find('[data-um-preview="alert"]').addClass('preview-alert default-margin-top');
     $(editorContent).find('[data-um-preview="support"]').addClass('preview-support default-margin-top');
-
-    document.getElementById("ustad-preview").innerHTML = $('<div/>').html(editorContent).contents().html();
-    QuestionWidget.handleEditOff();
+     return {action:'previewContent',content:btoa($('<div/>').html(editorContent).contents().html()),extraFlag:extraFlag};
 };
+
+
 
 
 

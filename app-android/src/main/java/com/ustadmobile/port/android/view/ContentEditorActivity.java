@@ -50,6 +50,8 @@ import com.ustadmobile.core.impl.UMLog;
 import com.ustadmobile.core.impl.UstadMobileSystemImpl;
 import com.ustadmobile.core.view.ContentEditorView;
 import com.ustadmobile.core.view.ContentPreviewView;
+import com.ustadmobile.port.android.contenteditor.ContentEditorResourceHandler;
+import com.ustadmobile.port.android.contenteditor.WebJsResponse;
 import com.ustadmobile.port.android.impl.http.AndroidAssetsHandler;
 import com.ustadmobile.port.android.util.UMAndroidUtil;
 import com.ustadmobile.port.sharedse.impl.http.EmbeddedHTTPD;
@@ -67,59 +69,38 @@ public class ContentEditorActivity extends UstadBaseActivity implements
         ContentEditorView, FloatingActionMenu.OnMenuToggleListener {
 
     private static ContentEditorPresenter presenter;
+
     private BottomSheetBehavior formattingBottomSheetBehavior;
+
     private BottomSheetBehavior mediaSourceBottomSheetBehavior;
+
     private FloatingActionMenu mInsertContent;
+
     private FloatingActionButton mPreviewContent;
+
     private FloatingActionButton mInsertMultipleChoice;
+
     private FloatingActionButton mInsertFillBlanks;
+
     private FloatingActionButton mInsertMultimedia;
+
     private WebView editorContent;
+
     private DrawerLayout mContentPageDrawer;
+
     private boolean isFromFormatting = false;
+
     private static final int FORMATTING_TEXT_INDEX = 0;
+
     private static final int FORMATTING_PARAGRAPH_INDEX = 1;
+
     private static final int FORMATTING_ACTIONS_INDEX = 2;
+
     private static SparseArray<List<ContentFormat>> formattingList = new SparseArray<>();
+
     private  String baseUrl = null;
+
     private Hashtable args = null;
-
-
-    /**
-     * POJO class for log and js call return value parsing
-     */
-    private class WebResponse{
-
-        private String action;
-
-        private String content;
-
-        private String extraFlag;
-
-        public String getAction() {
-            return action;
-        }
-
-        public void setAction(String action) {
-            this.action = action;
-        }
-
-        public String getContent() {
-            return content;
-        }
-
-        public void setContent(String content) {
-            this.content = content;
-        }
-
-        public String getExtraFlag() {
-            return extraFlag;
-        }
-
-        public void setExtraFlag(String extraFlag) {
-            this.extraFlag = extraFlag;
-        }
-    }
 
     /**
      * UI implementation of formatting type as pager.
@@ -382,6 +363,7 @@ public class ContentEditorActivity extends UstadBaseActivity implements
             toolbar.setTitle("");
             toolbar.setNavigationIcon(R.drawable.ic_check_white_24dp);
         }
+        mPreviewContent.hide(true);
         setUMToolbar(R.id.um_toolbar);
         getSupportActionBar().setDisplayHomeAsUpEnabled(true);
         toolbarTitle.setVisibility(View.GONE);
@@ -635,7 +617,7 @@ public class ContentEditorActivity extends UstadBaseActivity implements
                 baseUrl =  "http://127.0.0.1:"+embeddedHTTPD.getListeningPort()+assetsPath+"tinymce/";
                 args.put(ContentPreviewView.BASE_URL,baseUrl);
                 args.put(ContentPreviewView.FILE_NAME,"index.html");
-
+                presenter.handleEditorResources();
             }
         } catch (IOException e) {
             e.printStackTrace();
@@ -679,7 +661,6 @@ public class ContentEditorActivity extends UstadBaseActivity implements
                 if(param != null){
                     mBuilder.append("\"");
                 }
-
             }
         }
         mBuilder.append(")}catch(error){console.error(error.message);}");
@@ -697,15 +678,11 @@ public class ContentEditorActivity extends UstadBaseActivity implements
      */
     private void processJsCallLogValues(String value){
         if(value.contains("action")){
-            WebResponse response = new Gson().fromJson(value,WebResponse.class);
-            switch (response.action){
-                case ACTION_CONTENT_AQUISITION:
-                    if(Boolean.parseBoolean(response.getExtraFlag())){
-                        presenter.handleContentPreview(response.getContent());
-                    }else{
-                        callJavaScriptFunction("ustadEditor.generateStandAloneFile",
-                                response.getContent());
-                    }
+            WebJsResponse response = new Gson().fromJson(value,WebJsResponse.class);
+            switch (response.getAction()){
+                case ACTION_CONTENT_REQUEST:
+                    callJavaScriptFunction("ustadEditor.loadContentForPreview",
+                            response.getContent(),response.getExtraFlag());
                     break;
                 case ACTION_CONTENT_CHANGED:
                     if(response.getContent().length() <= 0){
@@ -718,6 +695,14 @@ public class ContentEditorActivity extends UstadBaseActivity implements
                 case ACTION_GENERATE_FILE:
                     presenter.handleSavingStandAloneFile(new String(Base64.decode(response.getContent(),
                             Base64.DEFAULT)));
+                    break;
+                case ACTION_CONTENT_PREVIEW:
+                    if(Boolean.parseBoolean(response.getExtraFlag())){
+                        presenter.handleContentPreview(response.getContent());
+                    }else{
+                        callJavaScriptFunction("ustadEditor.generateStandAloneFile",
+                                response.getContent(),String.valueOf(false));
+                    }
                     break;
             }
         }
@@ -845,22 +830,43 @@ public class ContentEditorActivity extends UstadBaseActivity implements
     }
 
     @Override
+    public void handleEditorResources(HashMap<String, File> directories) {
+        new Thread(() -> {
+            ContentEditorResourceHandler resourceHandler =
+                    new ContentEditorResourceHandler(directories,baseUrl);
+            resourceHandler.with(() -> UstadMobileSystemImpl.l(UMLog.DEBUG,700,
+                    "All resources has been copied to the external dirs")).startCopying();
+        }).start();
+    }
+
+    @Override
     public HashMap<String, File> createContentDir() {
         //this.getDir("contents", Context.MODE_PRIVATE);
         File contentDir = new File(Environment.getExternalStorageDirectory(),"contents");
         File stylesDir = new File(contentDir,"css/");
         File scriptsDir = new File(contentDir,"js/");
-        if (!contentDir.exists()) {
-            if(contentDir.mkdirs()){
-                stylesDir.mkdir();
-                scriptsDir.mkdir();
-            }
+        File mediaDir = new File(contentDir,"media/");
+        if(!contentDir.exists()){
+            contentDir.mkdir();
+        }
+
+        if(contentDir.exists() && !stylesDir.exists()){
+            stylesDir.mkdir();
+        }
+
+        if(contentDir.exists() && !scriptsDir.exists()){
+            scriptsDir.mkdir();
+        }
+
+        if(contentDir.exists() && !mediaDir.exists()){
+            mediaDir.mkdir();
         }
 
         HashMap<String,File> baseContentDirs = new HashMap<>();
         baseContentDirs.put(CONTENT_ROOT_DIR,contentDir);
         baseContentDirs.put(CONTENT_CSS_DIR,stylesDir);
         baseContentDirs.put(CONTENT_JS_DIR,scriptsDir);
+        baseContentDirs.put(CONTENT_MEDIA_DIR,mediaDir);
         return baseContentDirs;
     }
 

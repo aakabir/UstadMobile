@@ -482,4 +482,14 @@ public class ResumableHttpDownload {
     public int getResponseCode() {
         return responseCode;
     }
+
+    /**
+     * Delete partially downloaded and information files
+     * @return Deletion success flag.
+     */
+    public boolean cleanup(){
+        File dlInfoFile = new File(destinationFile + DLINFO_EXTENSION);
+        File dlPartFile = new File(destinationFile + DLPART_EXTENSION);
+        return dlInfoFile.delete() && dlPartFile.delete();
+    }
 }

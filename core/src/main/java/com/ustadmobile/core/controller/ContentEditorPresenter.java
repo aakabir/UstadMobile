@@ -1,13 +1,11 @@
 package com.ustadmobile.core.controller;
 
 import com.ustadmobile.core.impl.UstadMobileSystemImpl;
-import com.ustadmobile.core.util.UMFileUtil;
 import com.ustadmobile.core.view.ContentEditorView;
 import com.ustadmobile.core.view.ContentPreviewView;
 
 import java.io.BufferedWriter;
 import java.io.File;
-import java.io.FileOutputStream;
 import java.io.FileWriter;
 import java.util.HashMap;
 import java.util.Hashtable;
@@ -39,7 +37,9 @@ import static com.ustadmobile.core.view.ContentPreviewView.FILE_NAME;
 public class ContentEditorPresenter extends UstadBaseController<ContentEditorView> {
 
     private Hashtable args;
+
     private HashMap<String,File> contentDirMap;
+
     public ContentEditorPresenter(Object context, Hashtable arguments, ContentEditorView view) {
         super(context, arguments, view);
         this.args = arguments;
@@ -133,6 +133,10 @@ public class ContentEditorPresenter extends UstadBaseController<ContentEditorVie
                 args,view.getContext());
     }
 
+    public void handleEditorResources(){
+       view.handleEditorResources(contentDirMap);
+    }
+
     /**
      * Write editor content to the file on the disk
      * @param fileContent content to be written
@@ -146,7 +150,6 @@ public class ContentEditorPresenter extends UstadBaseController<ContentEditorVie
             e.printStackTrace();
         }
     }
-
 
 
     @Override

@@ -235,9 +235,9 @@ FillTheBlanksQuestionWidget.prototype.editOn = function() {
  * @param event
  */
 MultiChoiceQuestionWidget.prototype.addChoice = function(event) {
-    const choiceUiHolder = "<div class=\"question-choice\" data-um-correct=\"false\">" +
+    const choiceUiHolder = "<div class=\"question-choice\" data-um-correct=\"false\" data-um-preview=\"support\">" +
         "<label class=\"um-labels\">Choice Text</label><br>" +
-        "<div class=\"question-choice-body\" data-um-preview=\"support\">B. Dar es salaam</div>" +
+        "<div class=\"question-choice-body\">B. Dar es salaam</div>" +
         "<label class=\"um-labels\">Feedback Text</label><br>" +
         "<div class=\"question-choice-feedback\" data-um-edit-only=\"true\">" +
         "What a choice, you need to read more about this country.</div>" +

@@ -33,11 +33,21 @@
                     ustadEditor.handleContentChange();
                 });
 
-                ed.on('keyup', function() {ustadEditor.handleContentChange();});
+                ed.on('keyup', function() {
+                    ustadEditor.handleContentChange();
+                    setTimeout(ustadEditor.hideToolbarMenu(), 22);
+                });
 
-                ed.on('undo', function() {ustadEditor.handleContentChange();});
+                ed.on('undo', function() {
+                    ustadEditor.handleContentChange();
+                    setTimeout(ustadEditor.hideToolbarMenu(), 22);
+                });
 
-                ed.on('redo', function() {ustadEditor.handleContentChange();});
+                ed.on('redo', function() {
+                    ustadEditor.handleContentChange();
+                    setTimeout(ustadEditor.hideToolbarMenu(), 22);
+                });
+
             },
             style_formats: [{ title: 'Containers', items: [
                     { title: 'section', block: 'section', wrapper: true, merge_siblings: false },

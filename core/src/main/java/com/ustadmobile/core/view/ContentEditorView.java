@@ -25,7 +25,8 @@ public interface ContentEditorView extends UstadView {
     String ACTION_PREVIEW = "Preview";
     String ACTION_REDO = "Redo";
     String ACTION_UNDO = "Undo";
-    String ACTION_CONTENT_AQUISITION ="getEditContent";
+    String ACTION_CONTENT_PREVIEW ="previewContent";
+    String ACTION_CONTENT_REQUEST ="getEditContent";
     String ACTION_CONTENT_CHANGED ="editorChanged";
     String ACTION_GENERATE_FILE ="getStandaloneFile";
     String ACTION_TEXT_DIRECTION = "mceDirectionLTR";
@@ -34,9 +35,11 @@ public interface ContentEditorView extends UstadView {
 
     String CONTENT_ROOT_DIR = "root_dir";
     String CONTENT_CSS_DIR = "css_dir";
+    String CONTENT_JS_DIR = "js_dir";
+    String CONTENT_MEDIA_DIR = "media_dir";
     String CONTENT_CSS_USTAD = "ustadmobile.css";
     String CONTENT_CSS_BOOTSTRAP = "bootstrap.min.css";
-    String CONTENT_JS_DIR = "js_dir";
+    String CONTENT_JS_BOOTSTRAP = "bootstrap.min.css";
     String CONTENT_JS_USTAD_WIDGET = "UstadWidgets.js";
     String CONTENT_JS_JQUERY = "jquery3.3.1.min.js";
 
@@ -85,6 +88,8 @@ public interface ContentEditorView extends UstadView {
     void requestEditorContent(boolean isPreview);
 
     void handleContentMenu();
+
+    void handleEditorResources(HashMap<String,File> directories);
 
     HashMap<String,File> createContentDir();
 

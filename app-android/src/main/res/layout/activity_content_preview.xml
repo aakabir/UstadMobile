@@ -30,7 +30,7 @@
         android:layout_height="match_parent"
         android:fillViewport="true">
 
-        <WebView
+        <com.ustadmobile.port.android.contenteditor.UstadNestedWebView
             android:id="@+id/preview_content"
             android:layout_width="match_parent"
             android:layout_height="match_parent" />

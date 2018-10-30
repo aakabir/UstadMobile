@@ -12,12 +12,15 @@ import android.webkit.WebViewClient;
 import com.toughra.ustadmobile.R;
 import com.ustadmobile.core.controller.ContentPreviewPresenter;
 import com.ustadmobile.core.view.ContentPreviewView;
+import com.ustadmobile.port.android.contenteditor.UstadNestedWebView;
 import com.ustadmobile.port.android.util.UMAndroidUtil;
 
 public class ContentPreviewActivity extends UstadBaseActivity implements ContentPreviewView {
 
-    private WebView contentPreview;
+    private UstadNestedWebView contentPreview;
+
     private ContentPreviewPresenter presenter;
+
     private Toolbar toolbar;
 
     private class WebClient extends WebViewClient {
@@ -69,7 +72,7 @@ public class ContentPreviewActivity extends UstadBaseActivity implements Content
 
     @Override
     public void startPreviewing(String content) {
-        callJavaScriptFunction("ustadEditor.loadContentForPreview", content);
+        callJavaScriptFunction("ustadEditor.startLocalPreview", content);
     }
 
     @Override
