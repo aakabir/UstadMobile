@@ -89,6 +89,8 @@ public interface ContentEditorView extends UstadView {
 
     void handleContentMenu();
 
+    void loadFileContentToTheEditor(String content);
+
     void handleEditorResources(HashMap<String,File> directories);
 
     HashMap<String,File> createContentDir();

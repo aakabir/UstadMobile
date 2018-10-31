@@ -33,6 +33,9 @@ package com.ustadmobile.core.util;
 import com.ustadmobile.core.impl.UMLog;
 import com.ustadmobile.core.impl.UstadMobileSystemImpl;
 
+import java.io.BufferedReader;
+import java.io.FileReader;
+import java.io.IOException;
 import java.util.Enumeration;
 import java.util.Hashtable;
 import java.util.Vector;
@@ -778,6 +781,24 @@ public class UMFileUtil {
             return false;
     }
 
-    
-    
+    /**
+     *  Read a simple text file from device storage
+     * @param fileSource location of the file to be read
+     * @return String  read contents
+     * @throws IOException Exception when failed to read the file
+     */
+    public static String readTextFile(String fileSource) throws IOException {
+        String fileOutput;
+        try (BufferedReader br = new BufferedReader(new FileReader(fileSource))) {
+            StringBuilder sb = new StringBuilder();
+            String line = br.readLine();
+            while (line != null) {
+                sb.append(line);
+                sb.append(System.lineSeparator());
+                line = br.readLine();
+            }
+            fileOutput = sb.toString();
+        }
+        return  fileOutput;
+    }
 }

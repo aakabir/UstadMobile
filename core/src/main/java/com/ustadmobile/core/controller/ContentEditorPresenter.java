@@ -1,12 +1,14 @@
 package com.ustadmobile.core.controller;
 
 import com.ustadmobile.core.impl.UstadMobileSystemImpl;
+import com.ustadmobile.core.util.UMFileUtil;
 import com.ustadmobile.core.view.ContentEditorView;
 import com.ustadmobile.core.view.ContentPreviewView;
 
 import java.io.BufferedWriter;
 import java.io.File;
 import java.io.FileWriter;
+import java.io.IOException;
 import java.util.HashMap;
 import java.util.Hashtable;
 
@@ -133,10 +135,34 @@ public class ContentEditorPresenter extends UstadBaseController<ContentEditorVie
                 args,view.getContext());
     }
 
+    /**
+     * Start copying js and css resources from assets to the external storage
+     */
     public void handleEditorResources(){
        view.handleEditorResources(contentDirMap);
     }
 
+
+    /**
+     * Load content of an existing file to the editor and start editing it.
+     */
+    public void handleLoadingExistingFileContentToEditor(File source){
+        File fileToEdit;
+        if(source == null){
+            fileToEdit = new File(contentDirMap.get(ContentEditorView.CONTENT_ROOT_DIR)
+                    .getAbsolutePath(),args.get(ContentPreviewView.FILE_NAME).toString());
+        }else{
+            fileToEdit = source;
+        }
+        if(fileToEdit.exists()){
+            try {
+                String content = UMFileUtil.readTextFile(fileToEdit.getAbsolutePath());
+                view.loadFileContentToTheEditor(content);
+            } catch (IOException e) {
+                e.printStackTrace();
+            }
+        }
+    }
     /**
      * Write editor content to the file on the disk
      * @param fileContent content to be written

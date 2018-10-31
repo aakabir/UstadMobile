@@ -239,18 +239,25 @@ ustadEditor.changeEditorMode = function(mode){
 /**
  * Create a stand alone file which can be exported from the app.
  * @param content content for preview
+ * @param isOurDoc
+ * @param isNewDoc
  * @returns {Promise<void>} File generation promise
  */
-ustadEditor.generateStandAloneFile = async function(content){
-    let promise = new Promise((resolve) => {
-        $.ajax({url: "templates/stand-alone-file.html", success: function(fileContent){
-                const fileContentParts = fileContent.split("<template/>");
-                const standAloneFileContent = fileContentParts[0]+atob(content)+fileContentParts[1];
-                resolve(standAloneFileContent);
-        }});
-    });
+ustadEditor.generateStandAloneFile = async function(content, isOurDoc, isNewDoc){
+    let result = null;
+    if(isOurDoc === "true" && isNewDoc === "true"){
+        let promise = new Promise((resolve) => {
+            $.ajax({url: "templates/stand-alone-file.html", success: function(fileContent){
+                    const fileContentParts = fileContent.split("<template/>");
+                    const standAloneFileContent = fileContentParts[0]+atob(content)+fileContentParts[1];
+                    resolve(standAloneFileContent);
+                }});
+        });
 
-    let result = await promise;
+        result = await promise;
+    }else{
+        result = atob(content);
+    }
     console.log(JSON.stringify({action:'getStandaloneFile',content:btoa(result),extraFlag:null}));
 };
 
@@ -301,58 +308,74 @@ ustadEditor.hideToolbarMenu = function () {
  * @param fileName name of the file to be edited/previewed
  * @param mode operation mode i.e Preview when TRUE otherwise FALSE
  */
-ustadEditor.loadLocalFileToEditor = function (fileName, mode) {
-    $.ajax({url: "content/"+fileName, success: function(fileContent){
-        const container = document.createElement("div");
-        container.innerHTML = fileContent;
-        const questionList = container.querySelectorAll(".question");
-        let questionContent = "";
+
+/**
+ * Load content to the editor from the file
+ * @param content content to be loaded to the editor
+ */
+ustadEditor.loadContentToTheEditor = function (content) {
+    const plainContent = atob(content);
+    const container = document.createElement("div");
+    container.innerHTML = plainContent;
+    let fileContent = "";
+    container.innerHTML = plainContent;
+    const questionList = container.querySelectorAll(".question");
+    const isOurContent = questionList.length > 0;
+    if(isOurContent){
         for(let question in questionList){
             if(!questionList.hasOwnProperty(question))
                 continue;
-            questionContent = questionContent + $(questionList[question]).prop('outerHTML');
+            fileContent = fileContent + $(questionList[question]).prop('outerHTML');
         }
-
-            this.activeEditor.execCommand('mceInsertContent', false, questionContent,{format: 'raw'});
-            document.getElementById("editor-on").click();
-        if(mode === "true"){
-            ustadEditor.startLivePreview();
-            this.activeEditor.getBody().setAttribute('contenteditable', false);
-        }
-    }});
+    }else{
+        fileContent = plainContent;
+    }
+    this.activeEditor.execCommand('mceInsertContent', false, fileContent,{format: 'raw'});
+    if(isOurContent){
+        document.getElementById("editor-on").click();
+    }
 };
 
 /**
  * Callback to listen for any changes on the active editor
  */
 ustadEditor.handleContentChange = function(){
+    //console.log(this.activeEditor.getContent());
     console.log(JSON.stringify({action:'editorChanged',content:btoa(this.activeEditor.getContent()),extraFlag:null}));
 };
 
 /**
  * Load content into a preview
  * @param fileContent base64 content to be loaded to the preview
+ * @param extraFlag
+ * @param ourDoc Flag to indicate if the content was produced from ustad app
  */
-ustadEditor.loadContentForPreview = function (fileContent,extraFlag) {
-    const editorContent = $("<div/>").html($.parseHTML(atob(fileContent)));
-    $(editorContent).find("br").remove();
-    $(editorContent).find("label").remove();
-    $(editorContent).find("button.add-choice").remove();
-    $(editorContent).find('div.question-choice').addClass("question-choice-pointer").removeClass("default-margin-top");
-    $(editorContent).find('div.multichoice').addClass("default-margin-bottom").removeClass("default-margin-top");
-    $(editorContent).find('div.select-option').addClass("hide-element").removeClass("show-element");
-    $(editorContent).find('div.fill-blanks').addClass("hide-element").removeClass("show-element");
-    $(editorContent).find('div.question-choice-answer').addClass("hide-element").removeClass("show-element");
-    $(editorContent).find('.question-retry-btn').addClass("hide-element").removeClass("show-element");
-    $(editorContent).find('div.question-choice-feedback').addClass("hide-element").removeClass("show-element");
-    $(editorContent).find('div.question-answer').addClass("hide-element").removeClass("show-element");
+ustadEditor.loadContentForPreview = function (fileContent,extraFlag,ourDoc) {
+    let contentToPreview = null;
+    if(ourDoc === "true"){
+        const editorContent = $("<div/>").html($.parseHTML(atob(fileContent)));
+        $(editorContent).find("br").remove();
+        $(editorContent).find("label").remove();
+        $(editorContent).find("button.add-choice").remove();
+        $(editorContent).find('div.question-choice').addClass("question-choice-pointer").removeClass("default-margin-top");
+        $(editorContent).find('div.multichoice').addClass("default-margin-bottom").removeClass("default-margin-top");
+        $(editorContent).find('div.select-option').addClass("hide-element").removeClass("show-element");
+        $(editorContent).find('div.fill-blanks').addClass("hide-element").removeClass("show-element");
+        $(editorContent).find('div.question-choice-answer').addClass("hide-element").removeClass("show-element");
+        $(editorContent).find('.question-retry-btn').addClass("hide-element").removeClass("show-element");
+        $(editorContent).find('div.question-choice-feedback').addClass("hide-element").removeClass("show-element");
+        $(editorContent).find('div.question-answer').addClass("hide-element").removeClass("show-element");
 
-    $(editorContent).find('div.question').addClass('card col-sm-12 col-lg-12 default-padding-bottom default-margin-bottom default-padding-top');
-    $(editorContent).find('div.question-choice').addClass('alert alert-secondary');
-    $(editorContent).find('[data-um-preview="main"]').addClass('preview-main default-margin-top');
-    $(editorContent).find('[data-um-preview="alert"]').addClass('preview-alert default-margin-top');
-    $(editorContent).find('[data-um-preview="support"]').addClass('preview-support default-margin-top');
-     return {action:'previewContent',content:btoa($('<div/>').html(editorContent).contents().html()),extraFlag:extraFlag};
+        $(editorContent).find('div.question').addClass('card col-sm-12 col-lg-12 default-padding-bottom default-margin-bottom default-padding-top');
+        $(editorContent).find('div.question-choice').addClass('alert alert-secondary');
+        $(editorContent).find('[data-um-preview="main"]').addClass('preview-main default-margin-top');
+        $(editorContent).find('[data-um-preview="alert"]').addClass('preview-alert default-margin-top');
+        $(editorContent).find('[data-um-preview="support"]').addClass('preview-support default-margin-top');
+        contentToPreview = btoa($('<div/>').html(editorContent).contents().html());
+    }else{
+        contentToPreview = fileContent;
+    }
+    return {action:'previewContent',content:contentToPreview,extraFlag:extraFlag};
 };
 
 

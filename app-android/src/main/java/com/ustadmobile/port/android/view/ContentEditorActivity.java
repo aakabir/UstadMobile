@@ -3,6 +3,7 @@ package com.ustadmobile.port.android.view;
 import android.annotation.SuppressLint;
 import android.os.Bundle;
 import android.os.Environment;
+import android.os.Handler;
 import android.support.annotation.NonNull;
 import android.support.annotation.Nullable;
 import android.support.annotation.VisibleForTesting;
@@ -51,10 +52,15 @@ import com.ustadmobile.core.impl.UstadMobileSystemImpl;
 import com.ustadmobile.core.view.ContentEditorView;
 import com.ustadmobile.core.view.ContentPreviewView;
 import com.ustadmobile.port.android.contenteditor.ContentEditorResourceHandler;
+import com.ustadmobile.port.android.contenteditor.ContentFormat;
 import com.ustadmobile.port.android.contenteditor.WebJsResponse;
 import com.ustadmobile.port.android.impl.http.AndroidAssetsHandler;
 import com.ustadmobile.port.android.util.UMAndroidUtil;
 import com.ustadmobile.port.sharedse.impl.http.EmbeddedHTTPD;
+
+import org.jsoup.Jsoup;
+import org.jsoup.nodes.Document;
+import org.jsoup.nodes.Element;
 
 import java.io.File;
 import java.io.IOException;
@@ -101,6 +107,16 @@ public class ContentEditorActivity extends UstadBaseActivity implements
     private  String baseUrl = null;
 
     private Hashtable args = null;
+
+    private boolean isOurDoc = true;
+
+    private boolean isNewDoc = true;
+
+    private  Document documentStructure = null;
+
+    public static final int CAMERA_IMAGE_CAPTURE_REQUEST = 900;
+
+    public static final int CAMERA_PERMISSION_REQUEST = 901;
 
     /**
      * UI implementation of formatting type as pager.
@@ -167,55 +183,9 @@ public class ContentEditorActivity extends UstadBaseActivity implements
         @Override
         public void onPageFinished(WebView view, String url) {
             super.onPageFinished(view, url);
-
-        }
-    }
-
-    /**
-     * Class which represents a single formatting type
-     */
-    public class ContentFormat {
-
-        private int formatIcon;
-
-        private String formatTag;
-
-        private boolean active;
-
-        private int formatId;
-
-        ContentFormat(int formatIcon, String formatTag, boolean active) {
-            this.formatIcon = formatIcon;
-            this.formatTag = formatTag;
-            this.active = active;
-        }
-
-        String getFormatTag() {
-            return formatTag;
-        }
-
-        public void setActive(boolean active) {
-            this.active = active;
-        }
-
-        public boolean isActive() {
-            return active;
-        }
-
-        public void setFormatId(int formatId) {
-            this.formatId = formatId;
-        }
-
-        public int getFormatId() {
-            return formatId;
-        }
-
-        public void setFormatIcon(int formatIcon) {
-            this.formatIcon = formatIcon;
-        }
-
-        public int getFormatIcon() {
-            return formatIcon;
+            new Handler().postDelayed(() ->
+                    presenter.handleLoadingExistingFileContentToEditor(null)
+                    ,500);
         }
     }
 
@@ -261,7 +231,7 @@ public class ContentEditorActivity extends UstadBaseActivity implements
                         format.isActive() ? R.color.icons:R.color.text_secondary));
                 mLayout.setBackgroundColor(ContextCompat.getColor(getActivity(),
                         format.isActive() ? R.color.content_icon_active:R.color.icons));
-                mIcon.setImageResource(format.formatIcon);
+                mIcon.setImageResource(format.getFormatIcon());
                 mLayout.setOnClickListener(v -> {
                     if(!format.getFormatTag().equals(TEXT_FORMAT_TYPE_FONT)){
                         format.setActive(!format.isActive());
@@ -616,7 +586,6 @@ public class ContentEditorActivity extends UstadBaseActivity implements
             if(embeddedHTTPD.isAlive()){
                 baseUrl =  "http://127.0.0.1:"+embeddedHTTPD.getListeningPort()+assetsPath+"tinymce/";
                 args.put(ContentPreviewView.BASE_URL,baseUrl);
-                args.put(ContentPreviewView.FILE_NAME,"index.html");
                 presenter.handleEditorResources();
             }
         } catch (IOException e) {
@@ -665,51 +634,22 @@ public class ContentEditorActivity extends UstadBaseActivity implements
         }
         mBuilder.append(")}catch(error){console.error(error.message);}");
         final String call = mBuilder.toString();
-        editorContent.evaluateJavascript(call, value -> {
-            processJsCallLogValues(value);
-            UstadMobileSystemImpl.l(UMLog.DEBUG,700,
-                    "Value returned from js function "+value);
-        });
-    }
 
-    /**
-     * Process values returned from JS calls
-     * @param value value returned
-     */
-    private void processJsCallLogValues(String value){
-        if(value.contains("action")){
-            WebJsResponse response = new Gson().fromJson(value,WebJsResponse.class);
-            switch (response.getAction()){
-                case ACTION_CONTENT_REQUEST:
-                    callJavaScriptFunction("ustadEditor.loadContentForPreview",
-                            response.getContent(),response.getExtraFlag());
-                    break;
-                case ACTION_CONTENT_CHANGED:
-                    if(response.getContent().length() <= 0){
-                        mPreviewContent.hide(true);
-                    } else{
-                        mPreviewContent.show(true);
-                    }
-                    requestEditorContent(false);
-                    break;
-                case ACTION_GENERATE_FILE:
-                    presenter.handleSavingStandAloneFile(new String(Base64.decode(response.getContent(),
-                            Base64.DEFAULT)));
-                    break;
-                case ACTION_CONTENT_PREVIEW:
-                    if(Boolean.parseBoolean(response.getExtraFlag())){
-                        presenter.handleContentPreview(response.getContent());
-                    }else{
-                        callJavaScriptFunction("ustadEditor.generateStandAloneFile",
-                                response.getContent(),String.valueOf(false));
-                    }
-                    break;
-            }
+        /*
+           It seems like evaluateJavascript doesn't handle well long string as params,
+           instead fall back to basic way of handling string content. since we don't
+           need its call back we have nothing to worry about.
+         */
+        if(functionName.contains("loadContentToTheEditor")){
+            editorContent.loadUrl("javascript:"+call);
+        }else{
+            editorContent.evaluateJavascript(call, value -> {
+                processJsCallLogValues(value);
+                UstadMobileSystemImpl.l(UMLog.DEBUG,700,
+                        "Value returned from js function "+value);
+            });
         }
-
-
     }
-
 
     @Override
     public void setContentBold() {
@@ -821,6 +761,29 @@ public class ContentEditorActivity extends UstadBaseActivity implements
         callJavaScriptFunction("ustadEditor.getContent", String.valueOf(isPreview));
     }
 
+    @Override
+    public void loadFileContentToTheEditor(String content) {
+        Document doc = Jsoup.parse(content);
+        Element previewElement = doc.select("#ustad-preview").first();
+        isOurDoc = previewElement != null;
+        isNewDoc = false;
+        Element docBody = doc.select("body").first();
+        docBody.select("script").remove();
+        String bodyString;
+        if(isOurDoc){
+            bodyString = previewElement.html()
+                    .replace(System.getProperty("line.separator"),"");
+        }else{
+            bodyString = docBody.html()
+                    .replace(System.getProperty("line.separator"),"");
+            documentStructure = Jsoup.parse(content);
+            documentStructure.select("div,p,a").remove();
+        }
+
+        String encoded = Base64.encodeToString(bodyString.getBytes(),Base64.DEFAULT);
+        callJavaScriptFunction("ustadEditor.loadContentToTheEditor", encoded);
+    }
+
 
     @Override
     public void handleContentMenu() {
@@ -834,8 +797,10 @@ public class ContentEditorActivity extends UstadBaseActivity implements
         new Thread(() -> {
             ContentEditorResourceHandler resourceHandler =
                     new ContentEditorResourceHandler(directories,baseUrl);
-            resourceHandler.with(() -> UstadMobileSystemImpl.l(UMLog.DEBUG,700,
-                    "All resources has been copied to the external dirs")).startCopying();
+            resourceHandler.with(
+                    () -> UstadMobileSystemImpl.l(UMLog.DEBUG,700,
+                    "All resources has been copied to the external dirs"))
+                    .startCopying();
         }).start();
     }
 
@@ -861,7 +826,6 @@ public class ContentEditorActivity extends UstadBaseActivity implements
         if(contentDir.exists() && !mediaDir.exists()){
             mediaDir.mkdir();
         }
-
         HashMap<String,File> baseContentDirs = new HashMap<>();
         baseContentDirs.put(CONTENT_ROOT_DIR,contentDir);
         baseContentDirs.put(CONTENT_CSS_DIR,stylesDir);
@@ -869,6 +833,50 @@ public class ContentEditorActivity extends UstadBaseActivity implements
         baseContentDirs.put(CONTENT_MEDIA_DIR,mediaDir);
         return baseContentDirs;
     }
+
+    /**
+     * Process values returned from JS calls
+     * @param value value returned
+     */
+    private void processJsCallLogValues(String value){
+        if(value.contains("action")){
+            WebJsResponse response = new Gson().fromJson(value,WebJsResponse.class);
+            switch (response.getAction()){
+                case ACTION_CONTENT_REQUEST:
+                    callJavaScriptFunction("ustadEditor.loadContentForPreview",
+                            response.getContent(),response.getExtraFlag(), String.valueOf(isOurDoc));
+                    break;
+                case ACTION_CONTENT_CHANGED:
+                    if(response.getContent().length() <= 0){
+                        mPreviewContent.hide(true);
+                    } else{
+                        mPreviewContent.show(true);
+                    }
+                    requestEditorContent(false);
+                    break;
+                case ACTION_GENERATE_FILE:
+                    String documentToSave = new String(Base64.decode(response.getContent(),
+                            Base64.DEFAULT));
+                    if(!isOurDoc){
+                        documentToSave = documentStructure.select("body")
+                                .prepend(documentToSave).html();
+                    }
+                    presenter.handleSavingStandAloneFile(documentToSave);
+                    break;
+                case ACTION_CONTENT_PREVIEW:
+                    if(Boolean.parseBoolean(response.getExtraFlag())){
+                        presenter.handleContentPreview(response.getContent());
+                    }else{
+                        callJavaScriptFunction("ustadEditor.generateStandAloneFile",
+                                response.getContent(),String.valueOf(false),
+                                String.valueOf(isOurDoc),String.valueOf(isNewDoc));
+                    }
+                    break;
+            }
+        }
+
+    }
+
 
     /**
      * Prepare lis of all formatting types

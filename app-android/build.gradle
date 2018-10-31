@@ -543,7 +543,11 @@ dependencies {
 
     testImplementation "junit:junit:$version_junit"
 
+    //FAB Menu
     implementation 'com.github.clans:fab:1.6.4'
+
+    //jsuop
+    implementation "org.jsoup:jsoup:$version_jsoup"
 
 }
 
