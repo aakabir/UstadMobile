@@ -31,7 +31,7 @@
         <!-- Bottom Sheet formatting-->
         <include layout="@layout/content_editor_bottom_sheets_main" />
 
-        <!-- Bottom Sheet formatting-->
+        <!-- Bottom Sheet media source-->
         <include layout="@layout/content_multimedia_sources_bottom_sheets_main" />
 
         <com.github.clans.fab.FloatingActionButton

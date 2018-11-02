@@ -546,6 +546,8 @@ dependencies {
     //FAB Menu
     implementation 'com.github.clans:fab:1.6.4'
 
+    implementation "id.zelory:compressor:${version_compressor}"
+
     //jsuop
     implementation "org.jsoup:jsoup:$version_jsoup"
 

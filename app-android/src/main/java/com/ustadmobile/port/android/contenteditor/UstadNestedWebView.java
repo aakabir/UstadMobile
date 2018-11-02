@@ -9,11 +9,22 @@ import android.util.AttributeSet;
 import android.view.MotionEvent;
 import android.webkit.WebView;
 
+/**
+ * Class which handles nested scroll behaviours on Webview hen wrapped in nested scrollview
+ *
+ * @author kileha3
+ */
+
 public class UstadNestedWebView extends WebView implements NestedScrollingChild {
+
     private int mLastY;
+
     private final int[] mScrollOffset = new int[2];
+
     private final int[] mScrollConsumed = new int[2];
+
     private int mNestedOffsetY;
+
     private NestedScrollingChildHelper mChildHelper;
 
     public UstadNestedWebView(Context context) {

@@ -24,7 +24,7 @@ public class ContentEditorResourceHandler {
 
     }
 
-    private ResouceHandlerListener handlerListener;
+    private ContentEditorResourceCopyListener handlerListener;
 
     private HashMap<String, File> directories;
 
@@ -43,7 +43,7 @@ public class ContentEditorResourceHandler {
         resourceList = new ArrayList<>();
     }
 
-    public ContentEditorResourceHandler with(ResouceHandlerListener listener){
+    public ContentEditorResourceHandler with(ContentEditorResourceCopyListener listener){
         this.handlerListener = listener;
         File cssDir = directories.get(ContentEditorView.CONTENT_CSS_DIR);
         File jsDir = directories.get(ContentEditorView.CONTENT_JS_DIR);

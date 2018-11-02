@@ -1,8 +1,5 @@
 package com.ustadmobile.core.view;
 
-import java.io.File;
-import java.util.HashMap;
-
 public interface ContentEditorView extends UstadView {
     String VIEW_NAME = "ContentEditor";
     String TEXT_FORMAT_TYPE_BOLD = "Bold";
@@ -25,10 +22,9 @@ public interface ContentEditorView extends UstadView {
     String ACTION_PREVIEW = "Preview";
     String ACTION_REDO = "Redo";
     String ACTION_UNDO = "Undo";
-    String ACTION_CONTENT_PREVIEW ="previewContent";
-    String ACTION_CONTENT_REQUEST ="getEditContent";
-    String ACTION_CONTENT_CHANGED ="editorChanged";
-    String ACTION_GENERATE_FILE ="getStandaloneFile";
+    String ACTION_INIT_EDITOR ="onInitEditor";
+    String ACTION_CONTENT_CHANGED ="onContentChanged";
+    String ACTION_SAVE_CONTENT ="onSaveContent";
     String ACTION_TEXT_DIRECTION = "mceDirectionLTR";
     String CONTENT_INSERT_MULTIPLE_CHOICE_QN = "MultipleChoice";
     String CONTENT_INSERT_FILLTHEBLANKS_QN = "FillTheBlanks";
@@ -41,8 +37,27 @@ public interface ContentEditorView extends UstadView {
     String CONTENT_CSS_BOOTSTRAP = "bootstrap.min.css";
     String CONTENT_JS_BOOTSTRAP = "bootstrap.min.css";
     String CONTENT_JS_USTAD_WIDGET = "UstadWidgets.js";
+    String CONTENT_JS_USTAD_EDITOR = "UstadEditor.js";
     String CONTENT_JS_JQUERY = "jquery3.3.1.min.js";
+    String CONTENT_JS_THEME = "js/themes/modern/theme.min.js";
 
+    String [] CONTENT_EDITOR_HEAD_RESOURCES = new String[]{
+            "<link href=\"css/ustadmobile.css\" rel=\"stylesheet\" />",
+            "<link href=\"css/bootstrap.min.css\" rel=\"stylesheet\" />",
+            "<script src=\"js/jquery3.3.1.min.js\" type=\"text/javascript\"></script>",
+            "<script src=\"js/tinymce.min.js\" type=\"text/javascript\"></script>",
+            "<script src=\"js/plugins/ustadmobile/UstadWidgets.js\" type=\"text/javascript\"></script>",
+            "<script src=\"js/UstadEditor.js\" type=\"text/javascript\"></script>"
+    };
+    String [] CONTENT_EDITOR_BODY_RESOURCES = new String[] {
+            "<script src=\"js/bootstrap.min.js\"></script>",
+            "<script>\n" +
+                    "    $(function() {\n" +
+                    "        $('body').css('width', $(window).width());\n" +
+                    "        QuestionWidget.handleEditOff();\n" +
+                    "    });\n" +
+            "</script>"
+    };
 
 
     void setContentBold();
@@ -85,15 +100,11 @@ public interface ContentEditorView extends UstadView {
 
     void insertFillTheBlanksQuestion();
 
-    void requestEditorContent(boolean isPreview);
+    void requestEditorContent();
 
     void handleContentMenu();
 
-    void loadFileContentToTheEditor(String content);
-
-    void handleEditorResources(HashMap<String,File> directories);
-
-    HashMap<String,File> createContentDir();
+    void startWebServer();
 
 
 }

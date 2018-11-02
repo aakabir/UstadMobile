@@ -2,7 +2,6 @@ package com.ustadmobile.port.android.contenteditor;
 
 public class ContentFormat {
 
-
     private int formatIcon;
 
     private String formatTag;

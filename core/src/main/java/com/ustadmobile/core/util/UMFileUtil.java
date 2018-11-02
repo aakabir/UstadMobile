@@ -34,8 +34,15 @@ import com.ustadmobile.core.impl.UMLog;
 import com.ustadmobile.core.impl.UstadMobileSystemImpl;
 
 import java.io.BufferedReader;
+import java.io.BufferedWriter;
+import java.io.File;
+import java.io.FileInputStream;
+import java.io.FileOutputStream;
 import java.io.FileReader;
+import java.io.FileWriter;
 import java.io.IOException;
+import java.io.InputStream;
+import java.io.OutputStream;
 import java.util.Enumeration;
 import java.util.Hashtable;
 import java.util.Vector;
@@ -782,6 +789,20 @@ public class UMFileUtil {
     }
 
     /**
+     * Write simple text to the file
+     * @param file file to write to
+     * @param content content to write on
+     */
+    public static void writeToFile(File file,String content){
+        try (BufferedWriter writer =
+                     new BufferedWriter(new FileWriter(file.getAbsolutePath()))) {
+            writer.write(content);
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+    }
+
+    /**
      *  Read a simple text file from device storage
      * @param fileSource location of the file to be read
      * @return String  read contents
@@ -800,5 +821,23 @@ public class UMFileUtil {
             fileOutput = sb.toString();
         }
         return  fileOutput;
+    }
+
+
+    /**
+     * Copy file from one location to another
+     * @param source File to be copied
+     * @param dest Copied file
+     * @throws IOException Exception thrown in case of any issues
+     */
+    public static void copyFile(File source, File dest) throws IOException {
+        if(dest.exists()) dest.delete();
+        try (InputStream is = new FileInputStream(source); OutputStream os = new FileOutputStream(dest)) {
+            byte[] buffer = new byte[1024];
+            int length;
+            while ((length = is.read(buffer)) > 0) {
+                os.write(buffer, 0, length);
+            }
+        }
     }
 }

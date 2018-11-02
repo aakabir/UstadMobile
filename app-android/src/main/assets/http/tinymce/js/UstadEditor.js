@@ -197,16 +197,95 @@ ustadEditor.textFormattingSubScript = function(){
     return this.isToolBarButtonActive("Subscript");
 };
 
+
+/**
+ * Initialize tinymce on a document
+ */
+ustadEditor.initTinyMceEditor = function(){
+    const inlineConfig = {
+        selector: '.container-fluid',
+        menubar: false,
+        inline: true,
+        plugins: ['ustadmobile','directionality','lists','noneditable','visualblocks'],
+        toolbar: ['ustadmobile'],
+        valid_styles: {
+            '*': 'font-size,font-family,color,text-decoration,text-align'
+        },
+        content_css: [
+            '//fonts.googleapis.com/css?family=Lato:300,300i,400,400i',
+        ],
+        extended_valid_elements : 'label[class],div[onclick|class|data-um-correct|data-um-widget|id],option[selected|value]',
+        setup:function(ed) {
+            /*ed.on('change', function() {
+                ustadEditor.hideToolbarMenu();
+                QuestionWidget.handleListeners();
+                ustadEditor.handleContentChange();
+            });
+
+            ed.on('keyup', function() {
+                ustadEditor.handleContentChange();
+                setTimeout(ustadEditor.hideToolbarMenu(), 22);
+            });
+
+            ed.on('undo', function() {
+                ustadEditor.handleContentChange();
+                setTimeout(ustadEditor.hideToolbarMenu(), 22);
+            });
+
+            ed.on('redo', function() {
+                ustadEditor.handleContentChange();
+                setTimeout(ustadEditor.hideToolbarMenu(), 22);
+            });*/
+
+        },
+        style_formats: [{ title: 'Containers', items: [
+                { title: 'section', block: 'section', wrapper: true, merge_siblings: false },
+                { title: 'article', block: 'article', wrapper: true, merge_siblings: false },
+                { title: 'blockquote', block: 'blockquote', wrapper: true },
+                { title: 'hgroup', block: 'hgroup', wrapper: true },
+                { title: 'aside', block: 'aside', wrapper: true },
+                { title: 'figure', block: 'figure', wrapper: true }
+            ]
+        }]
+    };
+    try{
+        tinymce.init(inlineConfig).then(function () {
+            ustadEditor.init(tinymce.activeEditor);
+           /* QuestionWidget.handleEditOn();
+            QuestionWidget.handleListeners();
+            setTimeout(ustadEditor.requestFocus(), 20);
+            setTimeout(ustadEditor.hideToolbarMenu(), 22);
+            setTimeout(ustadEditor.switchOnEditorController());
+            console.log(JSON.stringify({action:'onInitEditor',content:"true"}));*/
+
+        });
+    }catch (e) {
+        console.log(JSON.stringify({action:'exception',content:e}))
+    }
+};
+
+/**
+ * Add labels and texts on the document when question templates is used
+ */
+ustadEditor.switchOnEditorController = function(){
+    try{
+        document.getElementById("editor-on").click();
+    }catch (e) {
+        console.log("switchOnEditorController:",e);
+    }
+};
+
+
 /**
  * Get content from the active content editor
  * @returns {*|void}
  */
-ustadEditor.getContent = function(extraFlag){
-    return {action:'getEditContent',content:btoa(this.activeEditor.getContent()),extraFlag:extraFlag};
+ustadEditor.getContent = function(){
+    return {action:'getContent',content:btoa(this.activeEditor.getContent())};
 };
 
 /**
- * Request ustadEditor focus to the active editor
+ * Request focus to the active editor
  * @returns {boolean}
  */
 ustadEditor.requestFocus = function () {
@@ -215,12 +294,120 @@ ustadEditor.requestFocus = function () {
 };
 
 /**
+ * Hide toolbar menu after successfully initializing the editor
+ */
+ustadEditor.hideToolbarMenu = function () {
+    try{
+        $("#ustadmobile-menu").click();
+        $("#mceu_0").hide();
+        $("#mceu_4").hide();
+        $("#mce-editor").on('click',function () {
+            $("#mceu_0").hide();
+            $("#mceu_4").hide();
+        });
+    }catch (e) {
+        console.log("hideToolbarMenu:",e)
+    }
+};
+
+/**
  * Insert multiple choice question template to the editor
  */
 ustadEditor.insertMultipleChoiceQuestionTemplate = function () {
-    document.getElementById("multiple-choice").click();
-    return "inserted";
+    try{
+        document.getElementById("multiple-choice").click();
+        return "inserted multiple choice question";
+    }catch (e) {
+        console.log(e);
+        return null;
+    }
 };
+
+
+/**
+ * Insert fill in the blanks question template to the editor
+ */
+ustadEditor.insertFillInTheBlanksQuestionTemplate = function () {
+    try{
+        document.getElementById("fill-the-blanks").click();
+        return "inserted fill the blanks question";
+    }catch (e) {
+        console.log(e);
+        return null;
+    }
+};
+
+
+/**
+ * Insert multimedia content to the editor
+ * @param source media absolute path
+ * @param mimeType media mime type
+ */
+ustadEditor.insertMedia = function(source,mimeType){
+    const width = $(window).width();
+    let mediaContent = null;
+    if(mimeType.includes("image")){
+        mediaContent = "<img src=\""+source+"\" class=\"um-media img-fluid\" width=\""+width+"\"/>";
+    }else if(mimeType.includes("audio")){
+        mediaContent =
+            "<video controls class='um-media img-fluid media-audio'>" +
+            "    <source src=\""+source+"\" type=\""+mimeType+"\">" +
+            " Your browser does not support the "+
+            "</video>";
+    }else{
+        mediaContent =
+            "<video controls class='um-media img-fluid' width='"+width+"'>" +
+            "    <source src=\""+source+"\" type=\""+mimeType+"\">" +
+            "</video>";
+    }
+    this.executeRawContent("<p>"+mediaContent+"</p>");
+};
+
+
+/**
+ * Insert raw content to the active editor
+ * @param content content to be inserted
+ */
+ustadEditor.executeRawContent= function(content){
+    this.activeEditor.execCommand('mceInsertContent', false, content,{format: 'raw'});
+};
+
+
+/**
+ * Callback to listen for any changes on the active editor
+ */
+ustadEditor.handleContentChange = function(){
+    console.log(JSON.stringify({action:'onContentChanged',content:btoa(this.activeEditor.getContent())}));
+};
+
+
+/**
+ * Load content into a preview
+ * @param fileContent content to be manipulated for preview
+ */
+ustadEditor.loadContentForPreview = function (fileContent) {
+    const editorContent = $("<div/>").html($.parseHTML(atob(fileContent)));
+    $(editorContent).find("br").remove();
+    $(editorContent).find("label").remove();
+    $(editorContent).find("button.add-choice").remove();
+    $(editorContent).find('div.question-choice').addClass("question-choice-pointer").removeClass("default-margin-top");
+    $(editorContent).find('div.multichoice').addClass("default-margin-bottom").removeClass("default-margin-top");
+    $(editorContent).find('div.select-option').addClass("hide-element").removeClass("show-element");
+    $(editorContent).find('div.fill-blanks').addClass("hide-element").removeClass("show-element");
+    $(editorContent).find('div.question-choice-answer').addClass("hide-element").removeClass("show-element");
+    $(editorContent).find('.question-retry-btn').addClass("hide-element").removeClass("show-element");
+    $(editorContent).find('div.question-choice-feedback').addClass("hide-element").removeClass("show-element");
+    $(editorContent).find('div.question-answer').addClass("hide-element").removeClass("show-element");
+
+    $(editorContent).find('div.question').addClass('card col-sm-12 col-lg-12 default-padding-bottom default-margin-bottom default-padding-top');
+    $(editorContent).find('div.question-choice').addClass('alert alert-secondary');
+    $(editorContent).find('[data-um-preview="main"]').addClass('preview-main default-margin-top');
+    $(editorContent).find('[data-um-preview="alert"]').addClass('preview-alert default-margin-top');
+    $(editorContent).find('[data-um-preview="support"]').addClass('preview-support default-margin-top');
+    return {action:'onSaveContent',content:btoa($('<div/>').html(editorContent).contents().html())};
+};
+
+
 
 
 /**
@@ -237,38 +424,24 @@ ustadEditor.changeEditorMode = function(mode){
 
 
 /**
- * Create a stand alone file which can be exported from the app.
+ * Create new file with our basic document template.
  * @param content content for preview
- * @param isOurDoc
- * @param isNewDoc
  * @returns {Promise<void>} File generation promise
  */
-ustadEditor.generateStandAloneFile = async function(content, isOurDoc, isNewDoc){
-    let result = null;
-    if(isOurDoc === "true" && isNewDoc === "true"){
-        let promise = new Promise((resolve) => {
-            $.ajax({url: "templates/stand-alone-file.html", success: function(fileContent){
-                    const fileContentParts = fileContent.split("<template/>");
-                    const standAloneFileContent = fileContentParts[0]+atob(content)+fileContentParts[1];
-                    resolve(standAloneFileContent);
-                }});
-        });
+ustadEditor.generateNewFile = async function(content){
+    let promise = new Promise((resolve) => {
+        $.ajax({url: "templates/stand-alone-file.html", success: function(fileContent){
+                const fileContentParts = fileContent.split("<template/>");
+                const standAloneFileContent = fileContentParts[0]+atob(content)+fileContentParts[1];
+                resolve(standAloneFileContent);
+            }});
+    });
 
-        result = await promise;
-    }else{
-        result = atob(content);
-    }
-    console.log(JSON.stringify({action:'getStandaloneFile',content:btoa(result),extraFlag:null}));
+    const result = await promise;
+    console.log(JSON.stringify({action:'newFile',content:btoa(result),extraFlag:null}));
 };
 
 
-/**
- * Insert fill in the blanks question template to the editor
- */
-ustadEditor.insertFillInTheBlanksQuestionTemplate = function () {
-    document.getElementById("fill-the-blanks").click();
-    return "inserted";
-};
 
 
 
@@ -276,8 +449,12 @@ ustadEditor.insertFillInTheBlanksQuestionTemplate = function () {
  * Start content live preview on the editor
  */
 ustadEditor.startLivePreview = function () {
-    document.getElementById("editor-off").click();
-    return {action: 'savePreview', content: btoa(this.activeEditor.getContent()),extraFlag:null};
+    try{
+        document.getElementById("editor-off").click();
+        return {action: 'savePreview', content: btoa(this.activeEditor.getContent()),extraFlag:null};
+    }catch (e) {
+        console.log("startLivePreview",e)
+    }
 };
 
 /**
@@ -289,94 +466,6 @@ ustadEditor.startLocalPreview = function(content){
     QuestionWidget.handleEditOff();
 };
 
-
-/**
- * Hide toolbar menu after successfully initializing the editor
- */
-ustadEditor.hideToolbarMenu = function () {
-    $("#ustadmobile-menu").click();
-    $("#mceu_0").hide();
-    $("#mceu_4").hide();
-    $("#mce-editor").on('click',function () {
-        $("#mceu_0").hide();
-        $("#mceu_4").hide();
-    });
-};
-
-/**
- * Load local file for editing / previewing
- * @param fileName name of the file to be edited/previewed
- * @param mode operation mode i.e Preview when TRUE otherwise FALSE
- */
-
-/**
- * Load content to the editor from the file
- * @param content content to be loaded to the editor
- */
-ustadEditor.loadContentToTheEditor = function (content) {
-    const plainContent = atob(content);
-    const container = document.createElement("div");
-    container.innerHTML = plainContent;
-    let fileContent = "";
-    container.innerHTML = plainContent;
-    const questionList = container.querySelectorAll(".question");
-    const isOurContent = questionList.length > 0;
-    if(isOurContent){
-        for(let question in questionList){
-            if(!questionList.hasOwnProperty(question))
-                continue;
-            fileContent = fileContent + $(questionList[question]).prop('outerHTML');
-        }
-    }else{
-        fileContent = plainContent;
-    }
-    this.activeEditor.execCommand('mceInsertContent', false, fileContent,{format: 'raw'});
-    if(isOurContent){
-        document.getElementById("editor-on").click();
-    }
-};
-
-/**
- * Callback to listen for any changes on the active editor
- */
-ustadEditor.handleContentChange = function(){
-    //console.log(this.activeEditor.getContent());
-    console.log(JSON.stringify({action:'editorChanged',content:btoa(this.activeEditor.getContent()),extraFlag:null}));
-};
-
-/**
- * Load content into a preview
- * @param fileContent base64 content to be loaded to the preview
- * @param extraFlag
- * @param ourDoc Flag to indicate if the content was produced from ustad app
- */
-ustadEditor.loadContentForPreview = function (fileContent,extraFlag,ourDoc) {
-    let contentToPreview = null;
-    if(ourDoc === "true"){
-        const editorContent = $("<div/>").html($.parseHTML(atob(fileContent)));
-        $(editorContent).find("br").remove();
-        $(editorContent).find("label").remove();
-        $(editorContent).find("button.add-choice").remove();
-        $(editorContent).find('div.question-choice').addClass("question-choice-pointer").removeClass("default-margin-top");
-        $(editorContent).find('div.multichoice').addClass("default-margin-bottom").removeClass("default-margin-top");
-        $(editorContent).find('div.select-option').addClass("hide-element").removeClass("show-element");
-        $(editorContent).find('div.fill-blanks').addClass("hide-element").removeClass("show-element");
-        $(editorContent).find('div.question-choice-answer').addClass("hide-element").removeClass("show-element");
-        $(editorContent).find('.question-retry-btn').addClass("hide-element").removeClass("show-element");
-        $(editorContent).find('div.question-choice-feedback').addClass("hide-element").removeClass("show-element");
-        $(editorContent).find('div.question-answer').addClass("hide-element").removeClass("show-element");
-
-        $(editorContent).find('div.question').addClass('card col-sm-12 col-lg-12 default-padding-bottom default-margin-bottom default-padding-top');
-        $(editorContent).find('div.question-choice').addClass('alert alert-secondary');
-        $(editorContent).find('[data-um-preview="main"]').addClass('preview-main default-margin-top');
-        $(editorContent).find('[data-um-preview="alert"]').addClass('preview-alert default-margin-top');
-        $(editorContent).find('[data-um-preview="support"]').addClass('preview-support default-margin-top');
-        contentToPreview = btoa($('<div/>').html(editorContent).contents().html());
-    }else{
-        contentToPreview = fileContent;
-    }
-    return {action:'previewContent',content:contentToPreview,extraFlag:extraFlag};
-};
 
 
 

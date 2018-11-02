@@ -5,13 +5,11 @@ package com.ustadmobile.port.android.contenteditor;
  * @author kileha3
  */
 
-public class WebJsResponse {
+public class WebContentEditorJsCallback {
 
     private String action;
 
     private String content;
-
-    private String extraFlag;
 
     public String getAction() {
         return action;
@@ -29,11 +27,4 @@ public class WebJsResponse {
         this.content = content;
     }
 
-    public String getExtraFlag() {
-        return extraFlag;
-    }
-
-    public void setExtraFlag(String extraFlag) {
-        this.extraFlag = extraFlag;
-    }
 }

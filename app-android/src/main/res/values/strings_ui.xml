@@ -261,4 +261,6 @@
     <string name="content_font_36">36pt</string>
     <string name="content_source_camera">From Camera</string>
     <string name="content_source_device">From Device</string>
+    <string name="content_choose_file">Choose File</string>
+    <string name="content_prepare_file">Preparing file...</string>
 </resources>

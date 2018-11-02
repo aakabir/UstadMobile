@@ -13,13 +13,12 @@ import com.toughra.ustadmobile.R;
 import com.ustadmobile.core.controller.ContentPreviewPresenter;
 import com.ustadmobile.core.view.ContentPreviewView;
 import com.ustadmobile.port.android.contenteditor.UstadNestedWebView;
+import com.ustadmobile.port.android.contenteditor.WebContentEditorClient;
 import com.ustadmobile.port.android.util.UMAndroidUtil;
 
 public class ContentPreviewActivity extends UstadBaseActivity implements ContentPreviewView {
 
     private UstadNestedWebView contentPreview;
-
-    private ContentPreviewPresenter presenter;
 
     private Toolbar toolbar;
 
@@ -34,10 +33,6 @@ public class ContentPreviewActivity extends UstadBaseActivity implements Content
         @Override
         public void onPageFinished(WebView view, String url) {
             super.onPageFinished(view, url);
-            if(presenter.isPreviewIndex()){
-                presenter.setPreviewIndex(false);
-                presenter.loadContentToPreview();
-            }
         }
     }
 
@@ -60,20 +55,17 @@ public class ContentPreviewActivity extends UstadBaseActivity implements Content
         contentPreview.clearCache(true);
         contentPreview.clearHistory();
 
-        presenter = new ContentPreviewPresenter(this,
-                UMAndroidUtil.bundleToHashtable(getIntent().getExtras()),this);
+        ContentPreviewPresenter presenter = new ContentPreviewPresenter(this,
+                UMAndroidUtil.bundleToHashtable(getIntent().getExtras()), this);
         presenter.onCreate(UMAndroidUtil.bundleToHashtable(savedInstanceState));
     }
 
     @Override
-    public void loadPreviewPage(String pageUrl) {
-        contentPreview.loadUrl(pageUrl);
+    public void loadPreviewPage(String localUri) {
+        contentPreview.setWebViewClient(new WebContentEditorClient(this,localUri));
+        contentPreview.loadUrl(localUri+"/index.html");
     }
 
-    @Override
-    public void startPreviewing(String content) {
-        callJavaScriptFunction("ustadEditor.startLocalPreview", content);
-    }
 
     @Override
     public boolean onOptionsItemSelected(MenuItem item) {
@@ -84,37 +76,6 @@ public class ContentPreviewActivity extends UstadBaseActivity implements Content
         }
         return true;
     }
-
-    /**
-     * Invoke javascript call from android
-     * @param functionName name of the javascript function
-     * @param params javascript function params
-     */
-    public void callJavaScriptFunction(String functionName,@Nullable String ...params){
-        StringBuilder mBuilder = new StringBuilder();
-        mBuilder.append("javascript:try{");
-        mBuilder.append(functionName);
-        mBuilder.append("(");
-        String separator = "";
-        if(params != null && params.length > 0){
-            for (String param : params) {
-                mBuilder.append(separator);
-                separator = ",";
-                if(param != null){
-                    mBuilder.append("\"");
-                }
-                mBuilder.append(param);
-                if(param != null){
-                    mBuilder.append("\"");
-                }
-
-            }
-        }
-        mBuilder.append(")}catch(error){console.error(error.message);}");
-        final String call = mBuilder.toString();
-        contentPreview.evaluateJavascript(call, value -> { });
-    }
-
 
     @Override
     public void setTitle(String title) {

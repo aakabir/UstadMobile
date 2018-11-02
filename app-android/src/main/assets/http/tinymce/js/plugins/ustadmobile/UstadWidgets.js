@@ -24,6 +24,7 @@ QuestionWidget.prototype.editOn = function(){
     $(this.element).find('[data-um-preview="alert"]').removeClass("preview-alert default-margin-top");
     $(this.element).find('[data-um-preview="support"]').removeClass("preview-support default-margin-top");
     $(this.element).find(".question-body").before("<label class='um-labels'>Question Text</label><br/>");
+    $(this.element).find(".question").before("<h1 class='show-element'>Hello question</h1>");
 
     return this.element;
 };
@@ -81,24 +82,26 @@ QuestionWidget.handleQuestionNode = function (serializedNode) {
  */
 QuestionWidget.handleListeners = function () {
     const questionList = window.document.querySelectorAll(".question");
-    for(const question in questionList){
-        if(!questionList.hasOwnProperty(question))
-            continue;
-        const questionElement = questionList[question].outerHTML;
-        const questionId =  $(questionElement).attr("id");
-        if(!QuestionWidget._widgetListeners[questionId]) {
-            const widgetType = $(questionElement).attr("data-um-widget");
-            switch(widgetType) {
-                case QuestionWidget.WIDGET_NAME_MULTICHOICE:
-                    const multiChoice = new MultiChoiceQuestionWidget(questionElement);
-                    multiChoice.attachEditListeners();
-                    QuestionWidget._widgetListeners[questionId] = multiChoice;
-                    break;
-                case QuestionWidget.WIDGET_NAME_FILL_BLANKS:
-                    const fillTheBlanks = new FillTheBlanksQuestionWidget(questionElement);
-                    fillTheBlanks.attachEditListeners();
-                    QuestionWidget._widgetListeners[questionId] = fillTheBlanks;
-                    break;
+    if(questionList != null){
+        for(const question in questionList){
+            if(!questionList.hasOwnProperty(question))
+                continue;
+            const questionElement = questionList[question].outerHTML;
+            const questionId =  $(questionElement).attr("id");
+            if(!QuestionWidget._widgetListeners[questionId]) {
+                const widgetType = $(questionElement).attr("data-um-widget");
+                switch(widgetType) {
+                    case QuestionWidget.WIDGET_NAME_MULTICHOICE:
+                        const multiChoice = new MultiChoiceQuestionWidget(questionElement);
+                        multiChoice.attachEditListeners();
+                        QuestionWidget._widgetListeners[questionId] = multiChoice;
+                        break;
+                    case QuestionWidget.WIDGET_NAME_FILL_BLANKS:
+                        const fillTheBlanks = new FillTheBlanksQuestionWidget(questionElement);
+                        fillTheBlanks.attachEditListeners();
+                        QuestionWidget._widgetListeners[questionId] = fillTheBlanks;
+                        break;
+                }
             }
         }
     }
@@ -124,6 +127,30 @@ QuestionWidget.handleEditOff = function(){
                 const fillTheBlanks = new FillTheBlanksQuestionWidget(questionElement);
                 fillTheBlanks.attachPreviewListeners();
                 break;
+        }
+    }
+
+};
+
+QuestionWidget.handleEditOn = function(){
+    const questionList = window.document.querySelectorAll(".question");
+    if(questionList != null){
+        for(const question in questionList){
+            if(!questionList.hasOwnProperty(question))
+                continue;
+            const questionElement = questionList[question].outerHTML;
+            const widgetType = $(questionElement).attr("data-um-widget");
+            switch(widgetType) {
+                case QuestionWidget.WIDGET_NAME_MULTICHOICE:
+                    const multiChoice = new MultiChoiceQuestionWidget(questionElement);
+                    multiChoice.editOn();
+                    break;
+
+                case QuestionWidget.WIDGET_NAME_FILL_BLANKS:
+                    const fillTheBlanks = new FillTheBlanksQuestionWidget(questionElement);
+                    fillTheBlanks.editOn();
+                    break;
+            }
         }
     }
 

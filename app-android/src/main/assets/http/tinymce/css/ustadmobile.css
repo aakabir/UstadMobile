@@ -1,7 +1,6 @@
 html {
     display: table;
 }
-
 .question{
     padding: 2%;
 }
@@ -99,6 +98,12 @@ select,button :focus :active{
 
 .question-choice-pointer{
     cursor: pointer;
+}
+
+.media-audio{
+    background: transparent;
+    height: 53px;
+    width: 100%;
 }
 
 
