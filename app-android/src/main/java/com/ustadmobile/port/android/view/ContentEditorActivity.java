@@ -3,7 +3,6 @@ package com.ustadmobile.port.android.view;
 import android.Manifest;
 import android.annotation.SuppressLint;
 import android.app.AlertDialog;
-import android.app.ProgressDialog;
 import android.content.Intent;
 import android.content.pm.PackageManager;
 import android.graphics.Bitmap;
@@ -41,13 +40,11 @@ import android.view.Menu;
 import android.view.MenuItem;
 import android.view.View;
 import android.view.ViewGroup;
-import android.webkit.ConsoleMessage;
-import android.webkit.WebChromeClient;
 import android.webkit.WebSettings;
 import android.webkit.WebView;
 import android.widget.ImageView;
+import android.widget.ProgressBar;
 import android.widget.RelativeLayout;
-import android.widget.TextView;
 
 import com.github.clans.fab.FloatingActionButton;
 import com.github.clans.fab.FloatingActionMenu;
@@ -64,6 +61,7 @@ import com.ustadmobile.core.view.ContentPreviewView;
 import com.ustadmobile.port.android.contenteditor.ContentEditorResourceHandler;
 import com.ustadmobile.port.android.contenteditor.ContentFormat;
 import com.ustadmobile.port.android.contenteditor.UmAndroidUriUtil;
+import com.ustadmobile.port.android.contenteditor.WebContentEditorChrome;
 import com.ustadmobile.port.android.contenteditor.WebContentEditorClient;
 import com.ustadmobile.port.android.contenteditor.WebJsResponse;
 import com.ustadmobile.port.android.impl.http.AndroidAssetsHandler;
@@ -90,7 +88,7 @@ import id.zelory.compressor.Compressor;
 import static com.ustadmobile.port.android.contenteditor.WebContentEditorClient.executeJsFunction;
 
 public class ContentEditorActivity extends UstadBaseActivity implements ContentEditorView,
-        FloatingActionMenu.OnMenuToggleListener, WebContentEditorClient.JsExecutionCallback {
+        FloatingActionMenu.OnMenuToggleListener, WebContentEditorChrome.JsLoadingCallback {
 
     private static ContentEditorPresenter presenter;
 
@@ -132,7 +130,7 @@ public class ContentEditorActivity extends UstadBaseActivity implements ContentE
 
     private File fileFromCamera;
 
-    private ProgressDialog progressDialog;
+    private ProgressBar progressDialog;
 
     public static final int CAMERA_IMAGE_CAPTURE_REQUEST = 900;
 
@@ -151,6 +149,7 @@ public class ContentEditorActivity extends UstadBaseActivity implements ContentE
             new SimpleDateFormat("yyyyMMddHHmmss").format(new Date()) + "";
 
     private File contentDir;
+
 
 
 
@@ -182,22 +181,6 @@ public class ContentEditorActivity extends UstadBaseActivity implements ContentE
         @Override
         public CharSequence getPageTitle(int position) {
             return contentFormattingType[position];
-        }
-    }
-
-
-    /**
-     * Web chrome client
-     */
-    private class WebChrome extends WebChromeClient{
-        @Override
-        public boolean onConsoleMessage(ConsoleMessage consoleMessage) {
-            UstadMobileSystemImpl.l(UMLog.DEBUG,700,
-                    "Consoled a message "+consoleMessage.message());
-            if(consoleMessage.message().contains("action")){
-                processJsCallLogValues(consoleMessage.message());
-            }
-            return true;
         }
     }
 
@@ -326,7 +309,6 @@ public class ContentEditorActivity extends UstadBaseActivity implements ContentE
                 BottomSheetBehavior.from(findViewById(R.id.bottom_sheet_container));
         mediaSourceBottomSheetBehavior =
                 BottomSheetBehavior.from(findViewById(R.id.bottom_multimedia_source_sheet_container));
-        TextView toolbarTitle = findViewById(R.id.toolbarTitle);
         mInsertContent = findViewById(R.id.content_editor_insert);
         mPreviewContent = findViewById(R.id.content_editor_preview);
         Toolbar toolbar = findViewById(R.id.um_toolbar);
@@ -335,6 +317,7 @@ public class ContentEditorActivity extends UstadBaseActivity implements ContentE
         mInsertFillBlanks = findViewById(R.id.content_type_fill_blanks);
         mContentPageDrawer = findViewById(R.id.content_page_drawer);
         editorContent = findViewById(R.id.editor_content);
+        progressDialog = findViewById(R.id.progressBar);
         RelativeLayout mFromCamera = findViewById(R.id.multimedia_from_camera);
         RelativeLayout mFromDevice = findViewById(R.id.multimedia_from_device);
 
@@ -349,10 +332,11 @@ public class ContentEditorActivity extends UstadBaseActivity implements ContentE
         mInsertContent.hideMenuButton(false);
         setUMToolbar(R.id.um_toolbar);
         getSupportActionBar().setDisplayHomeAsUpEnabled(true);
-        toolbarTitle.setVisibility(View.GONE);
-        progressDialog = new ProgressDialog(this);
-        progressDialog.setMessage(UstadMobileSystemImpl
-                .getInstance().getString(MessageID.content_prepare_file,this));
+        if(toolbar != null){
+            toolbar.setTitle("");
+        }
+        progressDialog.setMax(100);
+        progressDialog.setProgress(0);
         contentDir = new File(Environment.getExternalStorageDirectory(),"contents");
         args = UMAndroidUtil.bundleToHashtable(getIntent().getExtras());
         index_file = args.get(EDITOR_CONTENT_FILE).toString();
@@ -455,7 +439,7 @@ public class ContentEditorActivity extends UstadBaseActivity implements ContentE
         webSettings.setJavaScriptEnabled(true);
         webSettings.setAllowFileAccess(true);
         webSettings.setRenderPriority(WebSettings.RenderPriority.HIGH);
-        editorContent.setWebChromeClient(new WebChrome());
+        editorContent.setWebChromeClient(new WebContentEditorChrome(this));
         editorContent.setLayerType(View.LAYER_TYPE_HARDWARE, null);
         editorContent.clearCache(true);
         editorContent.clearHistory();
@@ -490,7 +474,9 @@ public class ContentEditorActivity extends UstadBaseActivity implements ContentE
             mContentPageDrawer.openDrawer(GravityCompat.END);
 
         }else if(itemId == android.R.id.home){
-            handleExpandableViews();
+            if(new File(contentDir,index_temp_file).delete()){
+                handleExpandableViews();
+            }
 
         }else if(itemId == R.id.content_action_format){
             if(mInsertContent.isOpened()){
@@ -534,7 +520,7 @@ public class ContentEditorActivity extends UstadBaseActivity implements ContentE
             menuHelper.setGravity(Gravity.END);
             menuHelper.show();
         }else if(itemId == R.id.content_action_editor){
-            progressDialog.show();
+            progressDialog.setVisibility(View.VISIBLE);
             executeJsFunction(editorContent,
                     "ustadEditor.initTinyMceEditor",this, (String[]) null);
         }
@@ -544,6 +530,16 @@ public class ContentEditorActivity extends UstadBaseActivity implements ContentE
     @Override
     public void onCallbackReceived(String value) {
         processJsCallLogValues(value);
+    }
+
+    @Override
+    public void onProgressChanged(int newProgress) {
+        progressDialog.setProgress(newProgress);
+    }
+
+    @Override
+    public void onPageFinishedLoading() {
+        progressDialog.setVisibility(View.GONE);
     }
 
     /**
@@ -561,7 +557,7 @@ public class ContentEditorActivity extends UstadBaseActivity implements ContentE
                         mInsertContent.showMenuButton(true);
                     }
                     isEditorInitialized = Boolean.parseBoolean(callback.getContent());
-                    progressDialog.dismiss();
+                    progressDialog.setVisibility(View.GONE);
                     invalidateOptionsMenu();
                     break;
 
@@ -631,7 +627,7 @@ public class ContentEditorActivity extends UstadBaseActivity implements ContentE
     }
 
     private void insertMedia(Uri uri, boolean fromCamera) throws IOException {
-        progressDialog.show();
+        progressDialog.setVisibility(View.VISIBLE);
         String mimeType = UmAndroidUriUtil.getMimeType(this,uri);
         File sourceFile, compressedFile;
         if(fromCamera){
@@ -651,7 +647,7 @@ public class ContentEditorActivity extends UstadBaseActivity implements ContentE
                         getName().replaceAll("\\s+","_"));
         UMFileUtil.copyFile(sourceFile,destination);
         String source = MEDIA_CONTENT_DIR + destination.getName();
-        progressDialog.dismiss();
+        progressDialog.setVisibility(View.GONE);
         executeJsFunction(editorContent,
                 "ustadEditor.insertMedia",this, source,mimeType);
     }
@@ -732,7 +728,7 @@ public class ContentEditorActivity extends UstadBaseActivity implements ContentE
             if(embeddedHTTPD.isAlive()){
                 baseUrl =  "http://127.0.0.1:"+embeddedHTTPD.getListeningPort()+"/";
                 args.put(ContentPreviewView.PREVIEW_URL,baseUrl+ TEM_EDITING_DIR);
-                handleResources();
+                presenter.handleDocument(new File(contentDir,index_file));
             }
         } catch (IOException e) {
             e.printStackTrace();
@@ -885,6 +881,12 @@ public class ContentEditorActivity extends UstadBaseActivity implements ContentE
                 "ustadEditor.getContent",this, (String[]) null);
     }
 
+    @Override
+    public void createNewDocument() {
+        UMFileUtil.writeToFile(new File(contentDir,index_file),NEW_DOCUMENT_TEMPLATE);
+        loadIndexFile();
+    }
+
 
     @Override
     public void handleContentMenu() {
@@ -896,7 +898,8 @@ public class ContentEditorActivity extends UstadBaseActivity implements ContentE
     /**
      * Start copying resources to the local editor directory
      */
-    private void handleResources() {
+    @Override
+    public void handleResources() {
         new Thread(() -> {
             ContentEditorResourceHandler resourceHandler = new ContentEditorResourceHandler(
                     contentDir.getAbsolutePath(),UMFileUtil.joinPaths(baseUrl,assetsDir,"tinymce"));
@@ -986,6 +989,7 @@ public class ContentEditorActivity extends UstadBaseActivity implements ContentE
         if(baseUrl != null){
             editorContent.setWebViewClient(new WebContentEditorClient(
                     this,baseUrl+TEM_EDITING_DIR));
+            progressDialog.setVisibility(View.VISIBLE);
             editorContent.loadUrl(UMFileUtil.joinPaths(baseUrl,TEM_EDITING_DIR,index_temp_file));
         }
     }
