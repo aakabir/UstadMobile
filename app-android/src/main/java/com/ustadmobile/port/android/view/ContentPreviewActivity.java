@@ -6,6 +6,7 @@ import android.support.v7.widget.Toolbar;
 import android.view.MenuItem;
 import android.view.View;
 import android.webkit.WebSettings;
+import android.widget.ProgressBar;
 
 import com.toughra.ustadmobile.R;
 import com.ustadmobile.core.controller.ContentPreviewPresenter;
@@ -14,12 +15,16 @@ import com.ustadmobile.core.impl.UstadMobileSystemImpl;
 import com.ustadmobile.core.util.UMFileUtil;
 import com.ustadmobile.core.view.ContentPreviewView;
 import com.ustadmobile.port.android.contenteditor.UstadNestedWebView;
+import com.ustadmobile.port.android.contenteditor.WebContentEditorChrome;
 import com.ustadmobile.port.android.contenteditor.WebContentEditorClient;
 import com.ustadmobile.port.android.util.UMAndroidUtil;
 
-public class ContentPreviewActivity extends UstadBaseActivity implements ContentPreviewView {
+public class ContentPreviewActivity extends UstadBaseActivity
+        implements ContentPreviewView, WebContentEditorChrome.JsLoadingCallback {
 
     private UstadNestedWebView contentPreview;
+
+    private ProgressBar progressDialog;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -27,7 +32,10 @@ public class ContentPreviewActivity extends UstadBaseActivity implements Content
         setContentView(R.layout.activity_content_preview);
         contentPreview = findViewById(R.id.preview_content);
         Toolbar toolbar = findViewById(R.id.um_toolbar);
+        progressDialog = findViewById(R.id.progressBar);
         setToolbar(toolbar);
+        progressDialog.setMax(100);
+        progressDialog.setProgress(0);
 
         WebSettings webSettings = contentPreview.getSettings();
         webSettings.setJavaScriptEnabled(true);
@@ -67,6 +75,23 @@ public class ContentPreviewActivity extends UstadBaseActivity implements Content
     @Override
     public void loadPreviewPage(String localUri, String indexFile) {
         contentPreview.setWebViewClient(new WebContentEditorClient(this,localUri));
+        contentPreview.setWebChromeClient(new WebContentEditorChrome(this));
+        progressDialog.setVisibility(View.VISIBLE);
         contentPreview.loadUrl(UMFileUtil.joinPaths(localUri,indexFile));
+    }
+
+    @Override
+    public void onProgressChanged(int newProgress) {
+        progressDialog.setProgress(newProgress);
+    }
+
+    @Override
+    public void onPageFinishedLoading() {
+        progressDialog.setVisibility(View.GONE);
+    }
+
+    @Override
+    public void onCallbackReceived(String value) {
+
     }
 }

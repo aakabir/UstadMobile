@@ -93,14 +93,8 @@ public class SplashScreenActivity extends AppCompatActivity implements DialogInt
             }
         }
 
-        new Handler().postDelayed(() -> {
-            //UstadMobileSystemImpl.getInstance().startUI(SplashScreenActivity.this);
-            //TODO: Remove this after finishing content editing logic
-            Hashtable args = new Hashtable();
-            args.put(ContentEditorView.EDITOR_CONTENT_FILE,"index.html");
-            UstadMobileSystemImpl.getInstance().go(ContentEditorView.VIEW_NAME,args,
-                    SplashScreenActivity.this);
-        }, 0);
+        new Handler().postDelayed(() ->
+                UstadMobileSystemImpl.getInstance().startUI(SplashScreenActivity.this), 0);
     }
 
     @Override

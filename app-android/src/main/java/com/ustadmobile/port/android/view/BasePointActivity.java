@@ -213,6 +213,9 @@ public class BasePointActivity extends UstadBaseActivity implements BasePointVie
             case BasePointController.CMD_RECEIVE_ENTRY:
                 mBasePointController.handleClickReceive();
                 return true;
+            case BasePointController.CMD_START_CONTENT_EDITOR:
+                mBasePointController.handleStartEditor();
+                return true;
 
         }
 
@@ -223,6 +226,7 @@ public class BasePointActivity extends UstadBaseActivity implements BasePointVie
     public boolean onCreateOptionsMenu(Menu menu) {
         menu.add(Menu.NONE, BasePointController.CMD_SHARE_APP, 0, R.string.share_application);
         menu.add(Menu.NONE, BasePointController.CMD_RECEIVE_ENTRY, 1, R.string.receive);
+        menu.add(Menu.NONE, BasePointController.CMD_START_CONTENT_EDITOR, 2, R.string.start_editor);
         return super.onCreateOptionsMenu(menu);
     }
 

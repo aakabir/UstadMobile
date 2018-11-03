@@ -423,21 +423,21 @@ ustadEditor.changeEditorMode = function(mode){
 
 
 /**
- * Create new file with our basic document template.
- * @param content content for preview
+ * Create new document with our basic document template.
  * @returns {Promise<void>} File generation promise
  */
-ustadEditor.generateNewFile = async function(content){
+ustadEditor.createNewDocument = async function(){
+    console.log("hit document creation process");
     let promise = new Promise((resolve) => {
         $.ajax({url: "templates/stand-alone-file.html", success: function(fileContent){
                 const fileContentParts = fileContent.split("<template/>");
-                const standAloneFileContent = fileContentParts[0]+atob(content)+fileContentParts[1];
+                const standAloneFileContent = fileContentParts[0]+""+fileContentParts[1];
                 resolve(standAloneFileContent);
             }});
     });
 
     const result = await promise;
-    console.log(JSON.stringify({action:'newFile',content:btoa(result),extraFlag:null}));
+    console.log(JSON.stringify({action:'onDocumentCreated',content:btoa(result)}));
 };
 
 
