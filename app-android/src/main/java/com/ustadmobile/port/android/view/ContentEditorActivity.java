@@ -58,7 +58,7 @@ import com.ustadmobile.core.view.ContentPreviewView;
 import com.ustadmobile.port.android.contenteditor.ContentFormat;
 import com.ustadmobile.port.android.contenteditor.UmAndroidUriUtil;
 import com.ustadmobile.port.android.contenteditor.WebContentEditorClient;
-import com.ustadmobile.port.android.contenteditor.WebContentEditorJsCallback;
+import com.ustadmobile.port.android.contenteditor.WebJsResponse;
 import com.ustadmobile.port.android.impl.http.AndroidAssetsHandler;
 import com.ustadmobile.port.android.util.UMAndroidUtil;
 import com.ustadmobile.port.sharedse.impl.http.EmbeddedHTTPD;
@@ -80,8 +80,11 @@ import java.util.Objects;
 
 import id.zelory.compressor.Compressor;
 
+import static com.ustadmobile.port.android.contenteditor.WebContentEditorClient.executeJsFunction;
+
 public class ContentEditorActivity extends UstadBaseActivity implements
-        ContentEditorView, FloatingActionMenu.OnMenuToggleListener {
+        ContentEditorView, FloatingActionMenu.OnMenuToggleListener,
+        WebContentEditorClient.JsExecutionCallback {
 
     private static ContentEditorPresenter presenter;
 
@@ -105,7 +108,7 @@ public class ContentEditorActivity extends UstadBaseActivity implements
 
     private boolean isFromFormatting = false;
 
-    private boolean isEditorInialized = false;
+    private boolean isEditorInitialized = false;
 
     private static final int FORMATTING_TEXT_INDEX = 0;
 
@@ -396,7 +399,7 @@ public class ContentEditorActivity extends UstadBaseActivity implements
                 presenter.handleFormatTypeClicked(CONTENT_INSERT_MULTIPLE_CHOICE_QN,null));
 
         mInsertFillBlanks.setOnClickListener(v ->
-                presenter.handleFormatTypeClicked(CONTENT_INSERT_FILLTHEBLANKS_QN,null));
+                presenter.handleFormatTypeClicked(CONTENT_INSERT_FILL_THE_BLANKS_QN,null));
 
 
         formattingBottomSheetBehavior.setBottomSheetCallback(
@@ -451,7 +454,7 @@ public class ContentEditorActivity extends UstadBaseActivity implements
     public boolean onPrepareOptionsMenu(Menu menu) {
         menu.findItem(R.id.content_action_direction)
                 .setIcon(formattingList.get(FORMATTING_ACTIONS_INDEX).get(0).getFormatIcon());
-        menu.findItem(R.id.content_action_editor).setVisible(!isEditorInialized);
+        menu.findItem(R.id.content_action_editor).setVisible(!isEditorInitialized);
         return super.onPrepareOptionsMenu(menu);
     }
 
@@ -509,10 +512,60 @@ public class ContentEditorActivity extends UstadBaseActivity implements
             menuHelper.show();
         }else if(itemId == R.id.content_action_editor){
             progressDialog.show();
-            callJavaScriptFunction("ustadEditor.initTinyMceEditor", (String) null);
+            executeJsFunction(editorContent,
+                    "ustadEditor.initTinyMceEditor",this, (String[]) null);
         }
         return true;
     }
+
+    @Override
+    public void onCallbackReceived(String value) {
+        processJsCallLogValues(value);
+    }
+
+    /**
+     * Process values returned from JS calls
+     * @param value value returned
+     */
+    private void processJsCallLogValues(String value){
+        if(value.contains("action")){
+            WebJsResponse callback = new Gson().fromJson(value,WebJsResponse.class);
+            String content = Base64Coder.decodeString(callback.getContent());
+            switch (callback.getAction()){
+                case ACTION_INIT_EDITOR:
+                    isEditorInitialized = Boolean.parseBoolean(callback.getContent());
+                    progressDialog.dismiss();
+                    invalidateOptionsMenu();
+                    break;
+
+                case ACTION_CONTENT_CHANGED:
+                    if(content.length() > 0){
+                        mPreviewContent.show(true);
+                    }else{
+                        mPreviewContent.hide(true);
+                    }
+                    executeJsFunction(editorContent, "ustadEditor.loadContentForPreview",
+                            this, callback.getContent());
+                    break;
+
+                case ACTION_SAVE_CONTENT:
+                    Document index = getIndexDocument(INDEX_FILE);
+                    Elements docContainer = index.select(".container-fluid");
+                    if(docContainer.size() > 0){
+                        docContainer.first().html(content);
+                    }else{
+                        String wrapped = "<div class=\"container-fluid\">"+content+"</div>";
+                        Element bodyElement = index.select("body").first();
+                        bodyElement.html(wrapped);
+                    }
+                    UMFileUtil.writeToFile(new File(contentDir,"index.html"),index.html());
+                    break;
+
+            }
+        }
+
+    }
+
 
     @Override
     protected void onActivityResult(int requestCode, int resultCode, Intent data) {
@@ -534,13 +587,14 @@ public class ContentEditorActivity extends UstadBaseActivity implements
                                     .compressToFile(new File(filePath));
                         }
 
-                        File destination = new File(contentDir, MEDIA_CONTENT_DIR +compressedFile.
+                        File destination =
+                                new File(contentDir, MEDIA_CONTENT_DIR +compressedFile.
                                         getName().replaceAll("\\s+","_"));
                         UMFileUtil.copyFile(compressedFile,destination);
-                        String source = MEDIA_CONTENT_DIR +destination.getName();
+                        String source = MEDIA_CONTENT_DIR + destination.getName();
                         progressDialog.dismiss();
-                        callJavaScriptFunction("ustadEditor.insertMedia",
-                                source,mimeType);
+                        executeJsFunction(editorContent,
+                                "ustadEditor.insertMedia",this, source,mimeType);
                     } catch (IOException e) {
                         e.printStackTrace();
                     }
@@ -653,123 +707,133 @@ public class ContentEditorActivity extends UstadBaseActivity implements
 
     @Override
     public void setContentBold() {
-        callJavaScriptFunction("ustadEditor.textFormattingBold",
-                (String[]) null);
+        executeJsFunction(editorContent,
+                "ustadEditor.textFormattingBold",this, (String[]) null);
     }
 
     @Override
     public void setContentItalic() {
-        callJavaScriptFunction("ustadEditor.textFormattingItalic",
-                (String) null);
+        executeJsFunction(editorContent,
+                "ustadEditor.textFormattingItalic",this, (String[]) null);
     }
 
     @Override
     public void setContentUnderlined() {
-        callJavaScriptFunction("ustadEditor.textFormattingUnderline",
-                (String) null);
+        executeJsFunction(editorContent,
+                "ustadEditor.textFormattingUnderline",this, (String[]) null);
     }
 
     @Override
     public void setContentStrikeThrough() {
-        callJavaScriptFunction("ustadEditor.textFormattingStrikeThrough",
-                (String) null);
+        executeJsFunction(editorContent,
+                "ustadEditor.textFormattingStrikeThrough",this, (String[]) null);
     }
 
     @Override
     public void setContentFontSize(String fontSize) {
-        callJavaScriptFunction("ustadEditor.setFontSize", fontSize);
+        executeJsFunction(editorContent,
+                "ustadEditor.setFontSize",this, fontSize);
     }
 
     @Override
     public void setContentSuperscript() {
-        callJavaScriptFunction("ustadEditor.textFormattingSuperScript",
-                (String) null);
+        executeJsFunction(editorContent,
+                "ustadEditor.textFormattingSuperScript",this, (String[]) null);
     }
 
     @Override
     public void setContentSubScript() {
-        callJavaScriptFunction("ustadEditor.textFormattingSubScript",
-                (String) null);
+        executeJsFunction(editorContent,
+                "ustadEditor.textFormattingSubScript",this, (String[]) null);
     }
 
     @Override
     public void setContentJustified() {
-        callJavaScriptFunction("ustadEditor.paragraphFullJustification",
-                (String) null);
+        executeJsFunction(editorContent,
+                "ustadEditor.paragraphFullJustification",this, (String[]) null);
     }
 
     @Override
     public void setContentCenterAlign() {
-        callJavaScriptFunction("ustadEditor.paragraphCenterJustification",
-                (String) null);
+        executeJsFunction(editorContent,
+                "ustadEditor.paragraphCenterJustification",this, (String[]) null);
     }
 
     @Override
     public void setContentLeftAlign() {
-        callJavaScriptFunction("ustadEditor.paragraphLeftJustification",
-                (String) null);
+        executeJsFunction(editorContent,
+                "ustadEditor.paragraphLeftJustification",this, (String[]) null);
     }
 
     @Override
     public void setContentRightAlign() {
-        callJavaScriptFunction("ustadEditor.paragraphRightJustification",
-                (String) null);
+        executeJsFunction(editorContent,
+                "ustadEditor.paragraphRightJustification",this, (String[]) null);
     }
 
     @Override
     public void setContentOrderedList() {
-        callJavaScriptFunction("ustadEditor.paragraphOrderedListFormatting",
-                (String) null);
+        executeJsFunction(editorContent,
+                "ustadEditor.paragraphOrderedListFormatting",this, (String[]) null);
     }
 
     @Override
     public void setContentUnOrderList() {
-        callJavaScriptFunction("ustadEditor.paragraphUnOrderedListFormatting",
-                (String) null);
+        executeJsFunction(editorContent,
+                "ustadEditor.paragraphUnOrderedListFormatting",this, (String[]) null);
     }
 
     @Override
     public void setContentIncreaseIndent() {
-        callJavaScriptFunction("ustadEditor.paragraphIndent", (String) null);
+        executeJsFunction(editorContent,
+                "ustadEditor.paragraphIndent",this, (String[]) null);
     }
 
     @Override
     public void setContentDecreaseIndent() {
-        callJavaScriptFunction("ustadEditor.paragraphOutDent", (String) null);
+        executeJsFunction(editorContent,
+                "ustadEditor.paragraphOutDent",this, (String[]) null);
     }
 
     @Override
     public void setContentRedo() {
-        callJavaScriptFunction("ustadEditor.editorActionRedo", (String) null);
+        executeJsFunction(editorContent,
+                "ustadEditor.editorActionRedo",this, (String[]) null);
     }
 
     @Override
     public void setContentUndo() {
-        callJavaScriptFunction("ustadEditor.editorActionUndo", (String) null);
+        executeJsFunction(editorContent,
+                "ustadEditor.editorActionUndo",this, (String[]) null);
     }
 
     @Override
     public void setContentTextDirection(boolean right) {
-        callJavaScriptFunction(right ? "ustadEditor.textDirectionRightToLeft":
-                "ustadEditor.textDirectionLeftToRight", (String) null);
+
+        executeJsFunction(editorContent,
+                right ? "ustadEditor.textDirectionRightToLeft":
+                        "ustadEditor.textDirectionLeftToRight",this, (String[]) null);
         invalidateOptionsMenu();
     }
 
     @Override
     public void insertMultipleChoiceQuestion() {
-        callJavaScriptFunction("ustadEditor.insertMultipleChoiceQuestionTemplate",
-                (String) null);
+        executeJsFunction(editorContent,
+                "ustadEditor.insertMultipleChoiceQuestionTemplate",
+                this, (String[]) null);
     }
 
     @Override
     public void insertFillTheBlanksQuestion() {
-        callJavaScriptFunction("ustadEditor.insertFillInTheBlanksQuestionTemplate",
-                (String) null);
+        executeJsFunction(editorContent,
+                "ustadEditor.insertFillInTheBlanksQuestionTemplate",
+                this, (String[]) null);
     }
 
     @Override
     public void requestEditorContent() {
-        callJavaScriptFunction("ustadEditor.getContent", (String) null);
+        executeJsFunction(editorContent,
+                "ustadEditor.getContent",this, (String[]) null);
     }
 
 
@@ -798,7 +862,6 @@ public class ContentEditorActivity extends UstadBaseActivity implements
      * to the temp file then direct them to asset handler to be resolved as files.
      */
     private void loadIndexFile() {
-
         File source = new File(contentDir,INDEX_FILE);
         File destination = new File(contentDir,INDEX_TEMP_FILE);
         try {
@@ -848,7 +911,8 @@ public class ContentEditorActivity extends UstadBaseActivity implements
                 String resource;
                 Element script = Jsoup.parse(ref).select("script[src]").first();
                 if(ref.contains(CONTENT_JS_USTAD_WIDGET)){
-                    script.attr("src",baseUrl+assetsDir+"/tinymce/"+script.attr("src"));
+                    script.attr("src", baseUrl+assetsDir
+                            +"/tinymce/js/plugins/ustadmobile/"+CONTENT_JS_USTAD_WIDGET);
                     resource = script.toString();
                 }else{
                     resource = ref;
@@ -867,8 +931,8 @@ public class ContentEditorActivity extends UstadBaseActivity implements
 
         /*Load temp index file*/
         if(baseUrl != null){
-            editorContent.setWebViewClient(
-                    new WebContentEditorClient(this,baseUrl+TEM_EDITING_DIR));
+            editorContent.setWebViewClient(new WebContentEditorClient(
+                    this,baseUrl+TEM_EDITING_DIR));
             editorContent.loadUrl(baseUrl+ TEM_EDITING_DIR +"/"+INDEX_TEMP_FILE);
         }
     }
@@ -881,80 +945,6 @@ public class ContentEditorActivity extends UstadBaseActivity implements
             e.printStackTrace();
         }
         return  null;
-    }
-
-    /**
-     * Invoke javascript call from android
-     * @param functionName name of the javascript function
-     * @param params javascript function params
-     */
-    public void callJavaScriptFunction(String functionName,@Nullable String ...params){
-        StringBuilder mBuilder = new StringBuilder();
-        mBuilder.append("javascript:try{");
-        mBuilder.append(functionName);
-        mBuilder.append("(");
-        String separator = "";
-        if(params != null && params.length > 0){
-            for (String param : params) {
-                mBuilder.append(separator);
-                separator = ",";
-                if(param != null){
-                    mBuilder.append("\"");
-                }
-                mBuilder.append(param);
-                if(param != null){
-                    mBuilder.append("\"");
-                }
-            }
-        }
-        mBuilder.append(")}catch(error){console.error(error.message);}");
-        final String call = mBuilder.toString();
-        editorContent.evaluateJavascript(call, this::processJsCallLogValues);
-    }
-
-
-
-    /**
-     * Process values returned from JS calls
-     * @param value value returned
-     */
-    private void processJsCallLogValues(String value){
-        if(value.contains("action")){
-            WebContentEditorJsCallback callback = new Gson().fromJson(value,WebContentEditorJsCallback.class);
-            String content = Base64Coder.decodeString(callback.getContent());
-            switch (callback.getAction()){
-                case ACTION_INIT_EDITOR:
-                    isEditorInialized = Boolean.parseBoolean(callback.getContent());
-                    progressDialog.dismiss();
-                    invalidateOptionsMenu();
-                    break;
-
-                case ACTION_CONTENT_CHANGED:
-                    if(content.length() > 0){
-                        mPreviewContent.show(true);
-                    }else{
-                        mPreviewContent.hide(true);
-                    }
-                    callJavaScriptFunction("ustadEditor.loadContentForPreview",
-                            callback.getContent());
-                    break;
-
-                case ACTION_SAVE_CONTENT:
-                    Document index = getIndexDocument(INDEX_FILE);
-                    Elements docContainer = index.select(".container-fluid");
-                    if(docContainer.size() > 0){
-                        docContainer.first().html(content);
-                    }else{
-                        String wrapped = "<div class=\"container-fluid\">"+content+"</div>";
-                        Element bodyElement = index.select("body").first();
-                        bodyElement.html(wrapped);
-                    }
-                    UMFileUtil.writeToFile(new File(contentDir,"index.html"),index.html());
-                    break;
-
-            }
-        }
-
     }
 
 

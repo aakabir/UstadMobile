@@ -1,8 +1,6 @@
 package com.ustadmobile.core.controller;
 
-import com.ustadmobile.core.impl.UstadMobileSystemImpl;
 import com.ustadmobile.core.view.ContentEditorView;
-import com.ustadmobile.core.view.ContentPreviewView;
 
 import java.io.File;
 import java.util.ArrayList;
@@ -15,7 +13,7 @@ import static com.ustadmobile.core.view.ContentEditorView.ACTION_TEXT_DIRECTION;
 import static com.ustadmobile.core.view.ContentEditorView.ACTION_UNDO;
 import static com.ustadmobile.core.view.ContentEditorView.CONTENT_EDITOR_BODY_RESOURCES;
 import static com.ustadmobile.core.view.ContentEditorView.CONTENT_EDITOR_HEAD_RESOURCES;
-import static com.ustadmobile.core.view.ContentEditorView.CONTENT_INSERT_FILLTHEBLANKS_QN;
+import static com.ustadmobile.core.view.ContentEditorView.CONTENT_INSERT_FILL_THE_BLANKS_QN;
 import static com.ustadmobile.core.view.ContentEditorView.CONTENT_INSERT_MULTIPLE_CHOICE_QN;
 import static com.ustadmobile.core.view.ContentEditorView.PARAGRAPH_FORMAT_ALIGN_CENTER;
 import static com.ustadmobile.core.view.ContentEditorView.PARAGRAPH_FORMAT_ALIGN_JUSTIFY;
@@ -111,7 +109,7 @@ public class ContentEditorPresenter extends UstadBaseController<ContentEditorVie
                 case ACTION_PREVIEW:
                     view.requestEditorContent();
                     break;
-                case CONTENT_INSERT_FILLTHEBLANKS_QN:
+                case CONTENT_INSERT_FILL_THE_BLANKS_QN:
                     view.insertFillTheBlanksQuestion();
                     break;
                 case CONTENT_INSERT_MULTIPLE_CHOICE_QN:

@@ -12,9 +12,15 @@ import android.provider.MediaStore;
  * Class which handles uri's, it converts uri to normal files
  * also it may be used to look for mime type of a file.
  *
+ * <b>Operation flow</b>
+ * <p>
+ *    Use {@link UmAndroidUriUtil#getMimeType(Context, Uri)} to get mime type of a file
+ *
+ *    Use {@link UmAndroidUriUtil#getPath(Context, Uri)} to get the actual file absolute path
+ * </p>
+ *
  * @author kileha3
  */
-
 
 public class UmAndroidUriUtil {
 

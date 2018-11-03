@@ -1,11 +1,13 @@
 package com.ustadmobile.port.android.contenteditor;
 
 /**
- * Class which represents response received from Javascript method execution on native android.
+ * Class which represents response received from Javascript method
+ * execution or console message on native android.
+ *
  * @author kileha3
  */
 
-public class WebContentEditorJsCallback {
+public class WebJsResponse {
 
     private String action;
 

@@ -27,26 +27,22 @@ public interface ContentEditorView extends UstadView {
     String ACTION_SAVE_CONTENT ="onSaveContent";
     String ACTION_TEXT_DIRECTION = "mceDirectionLTR";
     String CONTENT_INSERT_MULTIPLE_CHOICE_QN = "MultipleChoice";
-    String CONTENT_INSERT_FILLTHEBLANKS_QN = "FillTheBlanks";
+    String CONTENT_INSERT_FILL_THE_BLANKS_QN = "FillTheBlanks";
 
     String CONTENT_ROOT_DIR = "root_dir";
-    String CONTENT_CSS_DIR = "css_dir";
-    String CONTENT_JS_DIR = "js_dir";
-    String CONTENT_MEDIA_DIR = "media_dir";
     String CONTENT_CSS_USTAD = "ustadmobile.css";
     String CONTENT_CSS_BOOTSTRAP = "bootstrap.min.css";
     String CONTENT_JS_BOOTSTRAP = "bootstrap.min.css";
     String CONTENT_JS_USTAD_WIDGET = "UstadWidgets.js";
     String CONTENT_JS_USTAD_EDITOR = "UstadEditor.js";
     String CONTENT_JS_JQUERY = "jquery3.3.1.min.js";
-    String CONTENT_JS_THEME = "js/themes/modern/theme.min.js";
 
     String [] CONTENT_EDITOR_HEAD_RESOURCES = new String[]{
             "<link href=\"css/ustadmobile.css\" rel=\"stylesheet\" />",
             "<link href=\"css/bootstrap.min.css\" rel=\"stylesheet\" />",
             "<script src=\"js/jquery3.3.1.min.js\" type=\"text/javascript\"></script>",
             "<script src=\"js/tinymce.min.js\" type=\"text/javascript\"></script>",
-            "<script src=\"js/plugins/ustadmobile/UstadWidgets.js\" type=\"text/javascript\"></script>",
+            "<script src=\"js/UstadWidgets.js\" type=\"text/javascript\"></script>",
             "<script src=\"js/UstadEditor.js\" type=\"text/javascript\"></script>"
     };
     String [] CONTENT_EDITOR_BODY_RESOURCES = new String[] {
