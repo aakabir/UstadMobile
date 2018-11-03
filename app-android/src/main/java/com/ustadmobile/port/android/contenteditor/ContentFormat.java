@@ -1,5 +1,11 @@
 package com.ustadmobile.port.android.contenteditor;
 
+/**
+ * Class which represents the content formatting type,
+ * this handles the content styling on the active editor
+ *
+ * @author kileha3
+ */
 public class ContentFormat {
 
     private int formatIcon;

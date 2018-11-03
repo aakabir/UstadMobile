@@ -8,11 +8,11 @@ package com.ustadmobile.port.android.contenteditor;
  *
  * @author kileha3
  */
-public interface ContentEditorResourceCopyListener {
+public interface ResourceCopyTaskListener {
 
     /**
      * Invoked when all resources have been copied.
      */
-    void onResouceReady();
+    void onResourcesReady();
 
 }

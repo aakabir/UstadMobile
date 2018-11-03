@@ -11,7 +11,7 @@ import com.ustadmobile.core.util.UMFileUtil;
 import java.io.IOException;
 import java.io.InputStream;
 
-import static com.ustadmobile.core.view.ContentEditorView.CONTENT_JS_USTAD_WIDGET;
+import static com.ustadmobile.core.view.ContentEditorView.RESOURCE_JS_USTAD_WIDGET;
 
 /**
  * Class which handles HTTP request and native-to-js client interaction
@@ -77,7 +77,7 @@ public class WebContentEditorClient extends WebViewClient {
      */
     private boolean isInnerResource(String uri){
         for(String resource: resourceTag){
-            if(uri.contains(resource) && !uri.contains(CONTENT_JS_USTAD_WIDGET)){
+            if(uri.contains(resource) && !uri.contains(RESOURCE_JS_USTAD_WIDGET)){
                 return true;
             }
         }

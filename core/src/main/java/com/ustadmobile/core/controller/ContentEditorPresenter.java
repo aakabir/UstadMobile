@@ -35,7 +35,6 @@ public class ContentEditorPresenter extends UstadBaseController<ContentEditorVie
 
     private Hashtable args;
 
-    private File rootMountPath;
 
     public ContentEditorPresenter(Object context, Hashtable arguments, ContentEditorView view) {
         super(context, arguments, view);
@@ -45,7 +44,6 @@ public class ContentEditorPresenter extends UstadBaseController<ContentEditorVie
     @Override
     public void onCreate(Hashtable savedState) {
         super.onCreate(savedState);
-        rootMountPath = new File(args.get(ContentEditorView.CONTENT_ROOT_DIR).toString());
         view.startWebServer();
     }
 
@@ -121,22 +119,11 @@ public class ContentEditorPresenter extends UstadBaseController<ContentEditorVie
         });
     }
 
-
-
     /**
-     * Write editor content to the file on the disk
-     * @param fileContent content to be written
+     * Check web resource if is one of our core editor resources
+     * @param resource Resource to be checked
+     * @return True if is core resource otherwise false
      */
-    public void handleSavingStandAloneFile(String fileContent){
-        /*File standAloneFile = new File(contentDirMap.get(CONTENT_ROOT_DIR),
-                args.get(FILE_NAME).toString());
-        try (BufferedWriter writer = new BufferedWriter(new FileWriter(standAloneFile))) {
-            writer.write(fileContent);
-        } catch (Exception e) {
-            e.printStackTrace();
-        }*/
-    }
-
     public boolean isUstadResource(String resource){
         ArrayList<String> resourceList =
                 new ArrayList(Arrays.asList(CONTENT_EDITOR_HEAD_RESOURCES));

@@ -31,11 +31,12 @@ public interface ContentEditorView extends UstadView {
 
     String CONTENT_ROOT_DIR = "root_dir";
     String CONTENT_CSS_USTAD = "ustadmobile.css";
-    String CONTENT_CSS_BOOTSTRAP = "bootstrap.min.css";
-    String CONTENT_JS_BOOTSTRAP = "bootstrap.min.css";
-    String CONTENT_JS_USTAD_WIDGET = "UstadWidgets.js";
-    String CONTENT_JS_USTAD_EDITOR = "UstadEditor.js";
-    String CONTENT_JS_JQUERY = "jquery3.3.1.min.js";
+    String RESOURCE_CSS_BOOTSTRAP = "bootstrap.min.css";
+    String RESOURCE_JS_BOOTSTRAP = "bootstrap.min.js";
+    String RESOURCE_JS_USTAD_WIDGET = "UstadWidgets.js";
+    String RESOURCE_JS_USTAD_EDITOR = "UstadEditor.js";
+    String RESOURCE_JS_JQUERY = "jquery3.3.1.min.js";
+    String RESOURCE_JS_TINYMCE = "tinymce.min.js";
 
     String [] CONTENT_EDITOR_HEAD_RESOURCES = new String[]{
             "<link href=\"css/ustadmobile.css\" rel=\"stylesheet\" />",
