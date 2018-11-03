@@ -1,5 +1,6 @@
 package com.ustadmobile.core.controller;
 
+import com.ustadmobile.core.view.ContentEditorView;
 import com.ustadmobile.core.view.ContentPreviewView;
 
 import java.util.Hashtable;
@@ -17,8 +18,9 @@ public class ContentPreviewPresenter extends UstadBaseController<ContentPreviewV
     public void onCreate(Hashtable savedState) {
         super.onCreate(savedState);
         view.runOnUiThread(() -> {
-            view.setTitle(args.get(ContentPreviewView.FILE_NAME).toString());
-            view.loadPreviewPage(args.get(ContentPreviewView.PREVIEW_URL).toString());
+            String localUri = args.get(ContentPreviewView.PREVIEW_URL).toString();
+            String indexFile = args.get(ContentEditorView.EDITOR_CONTENT_FILE).toString();
+            view.loadPreviewPage(localUri, indexFile);
         });
 
     }

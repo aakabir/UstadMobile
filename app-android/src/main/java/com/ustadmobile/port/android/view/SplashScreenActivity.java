@@ -49,7 +49,6 @@ import com.ustadmobile.core.impl.UstadMobileSystemImpl;
 import com.ustadmobile.core.view.ContentEditorView;
 import com.ustadmobile.core.view.ContentPreviewView;
 
-import java.util.HashMap;
 import java.util.Hashtable;
 
 
@@ -98,7 +97,7 @@ public class SplashScreenActivity extends AppCompatActivity implements DialogInt
             //UstadMobileSystemImpl.getInstance().startUI(SplashScreenActivity.this);
             //TODO: Remove this after finishing content editing logic
             Hashtable args = new Hashtable();
-            args.put(ContentPreviewView.FILE_NAME,"index.html");
+            args.put(ContentEditorView.EDITOR_CONTENT_FILE,"index.html");
             UstadMobileSystemImpl.getInstance().go(ContentEditorView.VIEW_NAME,args,
                     SplashScreenActivity.this);
         }, 0);

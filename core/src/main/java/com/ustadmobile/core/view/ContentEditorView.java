@@ -1,7 +1,10 @@
 package com.ustadmobile.core.view;
 
 public interface ContentEditorView extends UstadView {
+
     String VIEW_NAME = "ContentEditor";
+    String EDITOR_CONTENT_FILE = "file_name";
+
     String TEXT_FORMAT_TYPE_BOLD = "Bold";
     String TEXT_FORMAT_TYPE_UNDERLINE= "Underline";
     String TEXT_FORMAT_TYPE_ITALIC = "Italic";

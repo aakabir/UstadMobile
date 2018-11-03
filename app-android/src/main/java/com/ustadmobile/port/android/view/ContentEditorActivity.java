@@ -83,9 +83,8 @@ import id.zelory.compressor.Compressor;
 
 import static com.ustadmobile.port.android.contenteditor.WebContentEditorClient.executeJsFunction;
 
-public class ContentEditorActivity extends UstadBaseActivity implements
-        ContentEditorView, FloatingActionMenu.OnMenuToggleListener,
-        WebContentEditorClient.JsExecutionCallback {
+public class ContentEditorActivity extends UstadBaseActivity implements ContentEditorView,
+        FloatingActionMenu.OnMenuToggleListener, WebContentEditorClient.JsExecutionCallback {
 
     private static ContentEditorPresenter presenter;
 
@@ -135,8 +134,8 @@ public class ContentEditorActivity extends UstadBaseActivity implements
 
     private static final String MEDIA_CONTENT_DIR = "media/";
 
-    private static final String INDEX_FILE = "index.html";
-    private static final String INDEX_TEMP_FILE = "_index.html";
+    private  String index_file;
+    private  String index_temp_file;
 
     private String assetsDir = "assets-" +
             new SimpleDateFormat("yyyyMMddHHmmss").format(new Date()) + "";
@@ -345,7 +344,8 @@ public class ContentEditorActivity extends UstadBaseActivity implements
                 .getInstance().getString(MessageID.content_prepare_file,this));
         contentDir = new File(Environment.getExternalStorageDirectory(),"contents");
         args = UMAndroidUtil.bundleToHashtable(getIntent().getExtras());
-        args.put(ContentEditorView.CONTENT_ROOT_DIR,contentDir.getAbsolutePath());
+        index_file = args.get(EDITOR_CONTENT_FILE).toString();
+        index_temp_file = "_"+index_file;
         presenter = new ContentEditorPresenter(this,args,this);
         presenter.onCreate(UMAndroidUtil.bundleToHashtable(savedInstanceState));
 
@@ -550,7 +550,7 @@ public class ContentEditorActivity extends UstadBaseActivity implements
                     break;
 
                 case ACTION_SAVE_CONTENT:
-                    Document index = getIndexDocument(INDEX_FILE);
+                    Document index = getIndexDocument(index_file);
                     Elements docContainer = index.select(".container-fluid");
                     if(docContainer.size() > 0){
                         docContainer.first().html(content);
@@ -863,14 +863,14 @@ public class ContentEditorActivity extends UstadBaseActivity implements
      * to the temp file then direct them to asset handler to be resolved as files.
      */
     private void loadIndexFile() {
-        File source = new File(contentDir,INDEX_FILE);
-        File destination = new File(contentDir,INDEX_TEMP_FILE);
+        File source = new File(contentDir, index_file);
+        File destination = new File(contentDir, index_temp_file);
         try {
             UMFileUtil.copyFile(source,destination);
         } catch (IOException e) {
             e.printStackTrace();
         }
-        Document htmlDoc = getIndexDocument(INDEX_TEMP_FILE);
+        Document htmlDoc = getIndexDocument(index_temp_file);
         Element docHead = htmlDoc.select("head").first();
         Element docBody = htmlDoc.select("body").first();
 
@@ -934,7 +934,7 @@ public class ContentEditorActivity extends UstadBaseActivity implements
         if(baseUrl != null){
             editorContent.setWebViewClient(new WebContentEditorClient(
                     this,baseUrl+TEM_EDITING_DIR));
-            editorContent.loadUrl(baseUrl+ TEM_EDITING_DIR +"/"+INDEX_TEMP_FILE);
+            editorContent.loadUrl(UMFileUtil.joinPaths(baseUrl,TEM_EDITING_DIR,index_temp_file));
         }
     }
 

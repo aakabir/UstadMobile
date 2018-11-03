@@ -50,7 +50,7 @@ public class ContentEditorResourceHandler {
 
     private int resourceCounter = 0;
 
-    private int resourceMaxCounter = 7;
+    private static final int MAX_RESOURCE_COUNT = 7;
 
 
     /**
@@ -147,7 +147,7 @@ public class ContentEditorResourceHandler {
                         startCopying();
                     }
 
-                    if(resourceCounter == resourceMaxCounter){
+                    if(resourceCounter == MAX_RESOURCE_COUNT){
                         handlerListener.onResourcesReady();
                         resourceCounter = 0;
                     }
@@ -166,7 +166,7 @@ public class ContentEditorResourceHandler {
      */
     private void checkNext(){
         resourceCounter++;
-        if(resourceCounter == resourceMaxCounter){
+        if(resourceCounter == MAX_RESOURCE_COUNT){
             handlerListener.onResourcesReady();
             resourceCounter = 0;
         }else {
