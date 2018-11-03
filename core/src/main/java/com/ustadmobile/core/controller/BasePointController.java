@@ -15,6 +15,7 @@ import com.ustadmobile.core.util.UMFileUtil;
 import com.ustadmobile.core.view.AppView;
 import com.ustadmobile.core.view.BasePointMenuItem;
 import com.ustadmobile.core.view.BasePointView;
+import com.ustadmobile.core.view.ContentEditorView;
 import com.ustadmobile.core.view.DialogResultListener;
 import com.ustadmobile.core.view.DismissableDialog;
 import com.ustadmobile.core.view.UstadView;
@@ -76,6 +77,8 @@ public class BasePointController extends UstadBaseController implements DialogRe
     public static final int CMD_SHARE_APP=1005;
 
     public static final int CMD_RECEIVE_ENTRY = 1006;
+
+    public static final int CMD_START_CONTENT_EDITOR = 1007;
 
     public BasePointController(Object context, BasePointView view) {
         super(context);
@@ -224,6 +227,12 @@ public class BasePointController extends UstadBaseController implements DialogRe
 
     public void handleClickShareApp() {
         basePointView.showShareAppDialog();
+    }
+
+    public void handleStartEditor(){
+        Hashtable args = new Hashtable();
+        args.put(ContentEditorView.EDITOR_CONTENT_FILE,"index.html");
+        UstadMobileSystemImpl.getInstance().go(ContentEditorView.VIEW_NAME,args, context);
     }
 
     public void handleClickReceive() {

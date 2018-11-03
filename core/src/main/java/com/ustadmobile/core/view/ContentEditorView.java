@@ -28,6 +28,7 @@ public interface ContentEditorView extends UstadView {
     String ACTION_INIT_EDITOR ="onInitEditor";
     String ACTION_CONTENT_CHANGED ="onContentChanged";
     String ACTION_SAVE_CONTENT ="onSaveContent";
+    String ACTION_NEW_DOCUMENT ="onDocumentCreated";
     String ACTION_TEXT_DIRECTION = "mceDirectionLTR";
     String CONTENT_INSERT_MULTIPLE_CHOICE_QN = "MultipleChoice";
     String CONTENT_INSERT_FILL_THE_BLANKS_QN = "FillTheBlanks";
@@ -58,6 +59,35 @@ public interface ContentEditorView extends UstadView {
                     "    });\n" +
             "</script>"
     };
+
+    String NEW_DOCUMENT_TEMPLATE = "<!DOCTYPE html>\n" +
+            "<html>\n" +
+            "<head>\n" +
+            "    <meta name=\"viewport\" content=\"width=device-width, initial-scale=1.0\"/>\n" +
+            "    <link href=\"css/ustadmobile.css\" rel=\"stylesheet\">\n" +
+            "    <link href=\"css/bootstrap.min.css\" rel=\"stylesheet\">\n" +
+            "    <script src=\"js/jquery3.3.1.min.js\" type=\"text/javascript\"></script>\n" +
+            "    <script src=\"js/tinymce.min.js\" type=\"text/javascript\"></script>\n" +
+            "    <script src=\"js/UstadWidgets.js\" type=\"text/javascript\"></script>\n" +
+            "    <script src=\"js/UstadEditor.js\" type=\"text/javascript\"></script>\n" +
+            "</head>\n" +
+            "\n" +
+            "<body>\n" +
+            "<div class=\"container-fluid\">\n" +
+            "    <div class=\"row\" id=\"ustad-preview\">\n" +
+            "        <template/>\n" +
+            "    </div>\n" +
+            "</div>\n" +
+            "\n" +
+            "<script src=\"js/bootstrap.min.js\" controls></script>\n" +
+            "<script>\n" +
+            "    $(function() {\n" +
+            "        $('body').css('width', $(window).width());\n" +
+            "        QuestionWidget.handleEditOff();\n" +
+            "    });\n" +
+            "</script>\n" +
+            "</body>\n" +
+            "</html>";
 
 
     void setContentBold();
@@ -102,7 +132,11 @@ public interface ContentEditorView extends UstadView {
 
     void requestEditorContent();
 
+    void createNewDocument();
+
     void handleContentMenu();
+
+    void handleResources();
 
     void startWebServer();
 

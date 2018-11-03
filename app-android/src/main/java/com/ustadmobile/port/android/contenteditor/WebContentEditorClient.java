@@ -1,6 +1,7 @@
 package com.ustadmobile.port.android.contenteditor;
 
 import android.content.Context;
+import android.graphics.Bitmap;
 import android.webkit.WebResourceRequest;
 import android.webkit.WebResourceResponse;
 import android.webkit.WebView;
@@ -14,7 +15,7 @@ import java.io.InputStream;
 import static com.ustadmobile.core.view.ContentEditorView.RESOURCE_JS_USTAD_WIDGET;
 
 /**
- * Class which handles HTTP request and native-to-js client interaction
+ * Class which handles HTTP request from WebView and native-to-js client interaction
  *
  * <b>Note: Operation Flow</b>
  *
@@ -93,7 +94,7 @@ public class WebContentEditorClient extends WebViewClient {
      * @param params params to be passed to the function
      */
     public static void executeJsFunction(WebView mWeb, String function,
-                                         JsExecutionCallback callback,String ...params){
+                                         WebContentEditorChrome.JsLoadingCallback callback, String ...params){
         StringBuilder mBuilder = new StringBuilder();
         mBuilder.append("javascript:try{");
         mBuilder.append(function);
@@ -115,18 +116,5 @@ public class WebContentEditorClient extends WebViewClient {
         mBuilder.append(")}catch(error){console.error(error.message);}");
         final String call = mBuilder.toString();
         mWeb.evaluateJavascript(call, callback::onCallbackReceived);
-    }
-
-
-    /**
-     * Interface which listen for callback values when js function are executed
-     */
-    public interface JsExecutionCallback{
-
-        /**
-         * Invoked when return value or console message is created.
-         * @param value valued to be passed to the native android
-         */
-        void onCallbackReceived(String value);
     }
 }

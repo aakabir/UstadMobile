@@ -120,6 +120,22 @@ public class ContentEditorPresenter extends UstadBaseController<ContentEditorVie
     }
 
     /**
+     * Check if user opens existing document, if not create a new document and load to the editor
+     * @param file document to be checked.
+     */
+    public void handleDocument(File file){
+        view.runOnUiThread(() -> {
+            if(file.exists()){
+                view.handleResources();
+            }else{
+                view.createNewDocument();
+            }
+        });
+
+    }
+
+
+    /**
      * Check web resource if is one of our core editor resources
      * @param resource Resource to be checked
      * @return True if is core resource otherwise false

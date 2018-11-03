@@ -10,16 +10,8 @@
     <android.support.design.widget.CoordinatorLayout
         android:layout_width="match_parent"
         android:layout_height="match_parent">
-        <android.support.design.widget.AppBarLayout
-            android:id="@+id/appbarLayout"
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:elevation="@dimen/dimen_4dp">
-
-            <include
-                android:id="@+id/um_toolbar"
-                layout="@layout/layout_toolbar" />
-        </android.support.design.widget.AppBarLayout>
+        <include
+            layout="@layout/toolbar_with_progress"/>
 
         <!-- Main content -->
         <WebView
