@@ -55,6 +55,7 @@ import com.ustadmobile.core.util.Base64Coder;
 import com.ustadmobile.core.util.UMFileUtil;
 import com.ustadmobile.core.view.ContentEditorView;
 import com.ustadmobile.core.view.ContentPreviewView;
+import com.ustadmobile.port.android.contenteditor.ContentEditorResourceHandler;
 import com.ustadmobile.port.android.contenteditor.ContentFormat;
 import com.ustadmobile.port.android.contenteditor.UmAndroidUriUtil;
 import com.ustadmobile.port.android.contenteditor.WebContentEditorClient;
@@ -669,12 +670,8 @@ public class ContentEditorActivity extends UstadBaseActivity implements
         mInsertFillBlanks.setVisibility(show ? View.VISIBLE:View.GONE);
     }
 
-    /**
-     * Start local web server which serves purpose of editing contents
-     */
     @Override
     public void startWebServer(){
-
         EmbeddedHTTPD embeddedHTTPD = new EmbeddedHTTPD(0, this);
         embeddedHTTPD.addRoute( assetsDir+"(.)+",  AndroidAssetsHandler.class, this);
         embeddedHTTPD.addRoute( TEM_EDITING_DIR +"(.)+",  FileDirectoryHandler.class, contentDir);
@@ -683,7 +680,7 @@ public class ContentEditorActivity extends UstadBaseActivity implements
             if(embeddedHTTPD.isAlive()){
                 baseUrl =  "http://127.0.0.1:"+embeddedHTTPD.getListeningPort()+"/";
                 args.put(ContentPreviewView.PREVIEW_URL,baseUrl+ TEM_EDITING_DIR);
-                loadIndexFile();
+                handleResources();
             }
         } catch (IOException e) {
             e.printStackTrace();
@@ -844,18 +841,22 @@ public class ContentEditorActivity extends UstadBaseActivity implements
         }
     }
 
-    /*@Override
-    public void handleEditorResources(HashMap<String, File> directories) {
+    /**
+     * Start copying resources to the local editor directory
+     */
+    private void handleResources() {
         new Thread(() -> {
-            ContentEditorResourceHandler resourceHandler =
-                    new ContentEditorResourceHandler(directories,baseUrl);
+            ContentEditorResourceHandler resourceHandler = new ContentEditorResourceHandler(
+                    contentDir.getAbsolutePath(),UMFileUtil.joinPaths(baseUrl,assetsDir,"tinymce"));
             resourceHandler.with(
-                    () -> UstadMobileSystemImpl.l(UMLog.DEBUG,700,
-                    "All resources has been copied to the external dirs"))
+                    () -> {
+                        UstadMobileSystemImpl.l(UMLog.DEBUG,700,
+                                "All resources has been copied to the external dirs");
+                        runOnUiThread(this::loadIndexFile);
+                    })
                     .startCopying();
         }).start();
-    }*/
-
+    }
 
     /**
      * Search for all scripts necessary for file editing, if not present then append them
@@ -910,9 +911,9 @@ public class ContentEditorActivity extends UstadBaseActivity implements
             if(!docHead.html().contains(ref)){
                 String resource;
                 Element script = Jsoup.parse(ref).select("script[src]").first();
-                if(ref.contains(CONTENT_JS_USTAD_WIDGET)){
+                if(ref.contains(RESOURCE_JS_USTAD_WIDGET)){
                     script.attr("src", baseUrl+assetsDir
-                            +"/tinymce/js/plugins/ustadmobile/"+CONTENT_JS_USTAD_WIDGET);
+                            +"/tinymce/js/plugins/ustadmobile/"+ RESOURCE_JS_USTAD_WIDGET);
                     resource = script.toString();
                 }else{
                     resource = ref;

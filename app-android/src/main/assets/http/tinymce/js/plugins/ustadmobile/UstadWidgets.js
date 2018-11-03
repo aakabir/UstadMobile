@@ -306,18 +306,22 @@ FillTheBlanksQuestionWidget.prototype.handleProvidedAnswer = function(event){
     const choiceElement = $(questionElement).find(".fill-blanks");
     const wrongChoiceText = $(choiceElement).find(".question-choice-feedback-wrong").text();
     const correctChoiceText = $(choiceElement).find(".question-choice-feedback-correct").text();
-    const defaultAnswerText = $(choiceElement).find(".question-choice-body").text().toLowerCase();
-    const userAnswerText = $(questionElement).find(".fill-the-blanks-input").val().toLowerCase();
+    let defaultAnswerText = $(choiceElement).find(".question-choice-body").text().toLowerCase();
+    let userAnswerText = $(questionElement).find(".fill-the-blanks-input").val().toLowerCase();
     const feedbackContainer = $(questionElement).find(".question-feedback-container");
+    userAnswerText = userAnswerText.replace(/(\r\n|\n|\r)/gm,"").replace(/\s/g, "");
+    defaultAnswerText = defaultAnswerText.replace(/(\r\n|\n|\r)/gm,"").replace(/\s/g, "");
+
     const isCorrectChoice = defaultAnswerText === userAnswerText;
     const message = userAnswerText.length > 0 ?
         (isCorrectChoice ? correctChoiceText: wrongChoiceText):"<b>Sorry!</b> please type your answer before submitting it";
+    console.log("Answer","user:"+userAnswerText+" - "+defaultAnswerText+": correct "+isCorrectChoice);
     $(feedbackContainer).find(".question-feedback-container-text").html(message);
     $(feedbackContainer).removeClass("hide-element show-element alert-success alert-danger alert-warning");
     $(feedbackContainer).addClass(userAnswerText.length > 0 ? (isCorrectChoice ? "alert-success":"alert-danger")
         :"alert-info"+ " show-element");
     const canBeRetried = questionElement.attr("data-um-retry")==='true';
-    if((!isCorrectChoice  || userAnswerText.length <= 0) && canBeRetried){
+    if((!isCorrectChoice && canBeRetried) || userAnswerText.length <= 0){
         $(questionElement).find(".question-retry-btn").removeClass("hide-element").addClass("show-element");
     }
 };

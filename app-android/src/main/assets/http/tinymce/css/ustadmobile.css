@@ -101,8 +101,9 @@ select,button :focus :active{
 }
 
 .media-audio{
+    margin-top: 10px;
     background: transparent;
-    height: 53px;
+    max-height: 53px;
     width: 100%;
 }
 

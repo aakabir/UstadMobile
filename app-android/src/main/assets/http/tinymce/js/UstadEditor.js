@@ -216,7 +216,7 @@ ustadEditor.initTinyMceEditor = function(){
         ],
         extended_valid_elements : 'label[class],div[onclick|class|data-um-correct|data-um-widget|id],option[selected|value]',
         setup:function(ed) {
-            /*ed.on('change', function() {
+            ed.on('change', function() {
                 ustadEditor.hideToolbarMenu();
                 QuestionWidget.handleListeners();
                 ustadEditor.handleContentChange();
@@ -235,7 +235,7 @@ ustadEditor.initTinyMceEditor = function(){
             ed.on('redo', function() {
                 ustadEditor.handleContentChange();
                 setTimeout(ustadEditor.hideToolbarMenu(), 22);
-            });*/
+            });
 
         },
         style_formats: [{ title: 'Containers', items: [
@@ -251,12 +251,11 @@ ustadEditor.initTinyMceEditor = function(){
     try{
         tinymce.init(inlineConfig).then(function () {
             ustadEditor.init(tinymce.activeEditor);
-           /* QuestionWidget.handleEditOn();
             QuestionWidget.handleListeners();
             setTimeout(ustadEditor.requestFocus(), 20);
             setTimeout(ustadEditor.hideToolbarMenu(), 22);
             setTimeout(ustadEditor.switchOnEditorController());
-            console.log(JSON.stringify({action:'onInitEditor',content:"true"}));*/
+            console.log(JSON.stringify({action:'onInitEditor',content:"true"}));
 
         });
     }catch (e) {
@@ -350,7 +349,7 @@ ustadEditor.insertMedia = function(source,mimeType){
         mediaContent = "<img src=\""+source+"\" class=\"um-media img-fluid\" width=\""+width+"\"/>";
     }else if(mimeType.includes("audio")){
         mediaContent =
-            "<video controls class='um-media img-fluid media-audio'>" +
+            "<video controls class='um-media media-audio'>" +
             "    <source src=\""+source+"\" type=\""+mimeType+"\">" +
             " Your browser does not support the "+
             "</video>";
@@ -360,7 +359,7 @@ ustadEditor.insertMedia = function(source,mimeType){
             "    <source src=\""+source+"\" type=\""+mimeType+"\">" +
             "</video>";
     }
-    this.executeRawContent("<p>"+mediaContent+"</p>");
+    this.executeRawContent("<p class='text-center'>"+mediaContent+"</p>");
 };
 
 
@@ -457,14 +456,6 @@ ustadEditor.startLivePreview = function () {
     }
 };
 
-/**
- * Start content preview away from the editor
- * @param content content to be previewed
- */
-ustadEditor.startLocalPreview = function(content){
-    document.getElementById("ustad-preview").innerHTML = atob(content);
-    QuestionWidget.handleEditOff();
-};
 
 
 
