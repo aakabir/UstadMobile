@@ -338,6 +338,7 @@ public class ContentEditorActivity extends UstadBaseActivity implements ContentE
         progressDialog.setMax(100);
         progressDialog.setProgress(0);
         contentDir = new File(Environment.getExternalStorageDirectory(),"contents");
+        if(!contentDir.exists()) contentDir.mkdir();
         args = UMAndroidUtil.bundleToHashtable(getIntent().getExtras());
         index_file = args.get(EDITOR_CONTENT_FILE).toString();
         index_temp_file = "_"+index_file;
@@ -884,7 +885,6 @@ public class ContentEditorActivity extends UstadBaseActivity implements ContentE
     @Override
     public void createNewDocument() {
         UMFileUtil.writeToFile(new File(contentDir,index_file),NEW_DOCUMENT_TEMPLATE);
-        loadIndexFile();
     }
 
 

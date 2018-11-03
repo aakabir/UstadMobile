@@ -125,10 +125,9 @@ public class ContentEditorPresenter extends UstadBaseController<ContentEditorVie
      */
     public void handleDocument(File file){
         view.runOnUiThread(() -> {
-            if(file.exists()){
-                view.handleResources();
-            }else{
+            if(!file.exists()){
                 view.createNewDocument();
+                view.handleResources();
             }
         });
 
