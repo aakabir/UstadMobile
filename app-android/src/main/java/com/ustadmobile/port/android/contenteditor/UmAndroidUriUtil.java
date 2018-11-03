@@ -1,4 +1,5 @@
 package com.ustadmobile.port.android.contenteditor;
+import android.content.ContentResolver;
 import android.content.ContentUris;
 import android.content.Context;
 import android.database.Cursor;
@@ -7,6 +8,8 @@ import android.os.Build;
 import android.os.Environment;
 import android.provider.DocumentsContract;
 import android.provider.MediaStore;
+import android.support.annotation.NonNull;
+import android.webkit.MimeTypeMap;
 
 /**
  * Class which handles uri's, it converts uri to normal files
@@ -147,7 +150,17 @@ public class UmAndroidUriUtil {
      * @param uri Uri to be resolved
      * @return mime type of the file
      */
-    public static String getMimeType(Context context,Uri uri){
-        return context.getContentResolver().getType(uri);
+    public static String getMimeType(Context context,@NonNull Uri uri){
+        String mimeType;
+        if (uri.getScheme().equals(ContentResolver.SCHEME_CONTENT)) {
+            ContentResolver cr = context.getContentResolver();
+            mimeType = cr.getType(uri);
+        } else {
+            String fileExtension = MimeTypeMap.getFileExtensionFromUrl(uri
+                    .toString());
+            mimeType = MimeTypeMap.getSingleton().getMimeTypeFromExtension(
+                    fileExtension.toLowerCase());
+        }
+        return mimeType;
     }
 }
