@@ -264,4 +264,8 @@
     <string name="content_choose_file">Choose File</string>
     <string name="content_prepare_file">Preparing file...</string>
     <string name="content_preview">Previewing...</string>
+    <string name="content_media_photo">Photo</string>
+    <string name="content_media_video">Video</string>
+    <string name="content_media_message">What media type would you like to capture from camera?</string>
+    <string name="content_media_title">Media type</string>
 </resources>

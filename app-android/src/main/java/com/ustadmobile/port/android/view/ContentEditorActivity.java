@@ -1,22 +1,28 @@
 package com.ustadmobile.port.android.view;
 
+import android.Manifest;
 import android.annotation.SuppressLint;
+import android.app.AlertDialog;
 import android.app.ProgressDialog;
 import android.content.Intent;
+import android.content.pm.PackageManager;
 import android.graphics.Bitmap;
 import android.net.Uri;
 import android.os.Build;
 import android.os.Bundle;
 import android.os.Environment;
+import android.provider.MediaStore;
 import android.support.annotation.NonNull;
 import android.support.annotation.Nullable;
 import android.support.annotation.VisibleForTesting;
 import android.support.design.widget.BottomSheetBehavior;
 import android.support.design.widget.TabLayout;
+import android.support.v4.app.ActivityCompat;
 import android.support.v4.app.Fragment;
 import android.support.v4.app.FragmentManager;
 import android.support.v4.app.FragmentStatePagerAdapter;
 import android.support.v4.content.ContextCompat;
+import android.support.v4.content.FileProvider;
 import android.support.v4.view.GravityCompat;
 import android.support.v4.view.ViewPager;
 import android.support.v4.widget.DrawerLayout;
@@ -121,6 +127,10 @@ public class ContentEditorActivity extends UstadBaseActivity implements ContentE
     private  String baseUrl = null;
 
     private Hashtable args = null;
+
+    private Uri cameraMedia;
+
+    private File fileFromCamera;
 
     private ProgressDialog progressDialog;
 
@@ -335,7 +345,8 @@ public class ContentEditorActivity extends UstadBaseActivity implements ContentE
             toolbar.setTitle("");
             toolbar.setNavigationIcon(R.drawable.ic_check_white_24dp);
         }
-        mPreviewContent.hide(true);
+        mPreviewContent.hide(false);
+        mInsertContent.hideMenuButton(false);
         setUMToolbar(R.id.um_toolbar);
         getSupportActionBar().setDisplayHomeAsUpEnabled(true);
         toolbarTitle.setVisibility(View.GONE);
@@ -364,6 +375,17 @@ public class ContentEditorActivity extends UstadBaseActivity implements ContentE
         mFromDevice.setOnClickListener(v -> {
             mediaSourceBottomSheetBehavior.setState(BottomSheetBehavior.STATE_COLLAPSED);
             startFileBrowser();
+        });
+
+        mFromCamera.setOnClickListener(v -> {
+            mediaSourceBottomSheetBehavior.setState(BottomSheetBehavior.STATE_COLLAPSED);
+            if (ContextCompat.checkSelfPermission(getApplicationContext(),
+                    Manifest.permission.CAMERA) != PackageManager.PERMISSION_GRANTED) {
+                ActivityCompat.requestPermissions(ContentEditorActivity.this,
+                        new String[]{Manifest.permission.CAMERA}, CAMERA_PERMISSION_REQUEST);
+                return;
+            }
+            showMediaTypeDialog();
         });
 
         mPreviewContent.setOnClickListener(v ->
@@ -534,12 +556,17 @@ public class ContentEditorActivity extends UstadBaseActivity implements ContentE
             String content = Base64Coder.decodeString(callback.getContent());
             switch (callback.getAction()){
                 case ACTION_INIT_EDITOR:
+                    if(mInsertContent.isMenuButtonHidden()){
+                        mInsertContent.setVisibility(View.VISIBLE);
+                        mInsertContent.showMenuButton(true);
+                    }
                     isEditorInitialized = Boolean.parseBoolean(callback.getContent());
                     progressDialog.dismiss();
                     invalidateOptionsMenu();
                     break;
 
                 case ACTION_CONTENT_CHANGED:
+                    mPreviewContent.setVisibility(View.VISIBLE);
                     if(content.length() > 0){
                         mPreviewContent.show(true);
                     }else{
@@ -567,6 +594,18 @@ public class ContentEditorActivity extends UstadBaseActivity implements ContentE
 
     }
 
+    @Override
+    public void onRequestPermissionsResult(int requestCode, @NonNull String permissions[], @NonNull int[] grantResults) {
+        switch (requestCode) {
+            case CAMERA_PERMISSION_REQUEST:
+                if (grantResults.length > 0
+                        && grantResults[0] == PackageManager.PERMISSION_GRANTED) {
+                    showMediaTypeDialog();
+                }
+                break;
+        }
+    }
+
 
     @Override
     protected void onActivityResult(int requestCode, int resultCode, Intent data) {
@@ -575,33 +614,46 @@ public class ContentEditorActivity extends UstadBaseActivity implements ContentE
             switch (requestCode){
                 case FILE_BROWSING_REQUEST:
                     try{
-                        progressDialog.show();
-                        Uri uri = data.getData();
-                        String mimeType = UmAndroidUriUtil.getMimeType(this,uri);
-                        String filePath =
-                                Objects.requireNonNull(UmAndroidUriUtil.getPath(this, uri));
-                        File compressedFile = new File(filePath);
-                        if(mimeType.contains("image")){
-                            compressedFile = new Compressor(this)
-                                    .setQuality(75)
-                                    .setCompressFormat(Bitmap.CompressFormat.WEBP)
-                                    .compressToFile(new File(filePath));
-                        }
-
-                        File destination =
-                                new File(contentDir, MEDIA_CONTENT_DIR +compressedFile.
-                                        getName().replaceAll("\\s+","_"));
-                        UMFileUtil.copyFile(compressedFile,destination);
-                        String source = MEDIA_CONTENT_DIR + destination.getName();
-                        progressDialog.dismiss();
-                        executeJsFunction(editorContent,
-                                "ustadEditor.insertMedia",this, source,mimeType);
+                        insertMedia(data.getData(),false);
+                    } catch (IOException e) {
+                        e.printStackTrace();
+                    }
+                    break;
+                case CAMERA_IMAGE_CAPTURE_REQUEST:
+                    try{
+                        insertMedia(cameraMedia, true);
                     } catch (IOException e) {
                         e.printStackTrace();
                     }
                     break;
             }
         }
+    }
+
+    private void insertMedia(Uri uri, boolean fromCamera) throws IOException {
+        progressDialog.show();
+        String mimeType = UmAndroidUriUtil.getMimeType(this,uri);
+        File sourceFile, compressedFile;
+        if(fromCamera){
+            sourceFile = fileFromCamera;
+        }else{
+             sourceFile = new File(Objects.requireNonNull(UmAndroidUriUtil.getPath(this, uri)));
+        }
+        compressedFile = sourceFile;
+        if(mimeType.contains("image")){
+            compressedFile = new Compressor(this)
+                    .setQuality(75)
+                    .setCompressFormat(Bitmap.CompressFormat.WEBP)
+                    .compressToFile(sourceFile);
+        }
+
+        File destination = new File(contentDir, MEDIA_CONTENT_DIR + compressedFile.
+                        getName().replaceAll("\\s+","_"));
+        UMFileUtil.copyFile(sourceFile,destination);
+        String source = MEDIA_CONTENT_DIR + destination.getName();
+        progressDialog.dismiss();
+        executeJsFunction(editorContent,
+                "ustadEditor.insertMedia",this, source,mimeType);
     }
 
     @Override
@@ -1016,5 +1068,36 @@ public class ContentEditorActivity extends UstadBaseActivity implements ContentE
         startActivityForResult(Intent.createChooser(intent,
                 UstadMobileSystemImpl.getInstance().getString(
                         MessageID.content_choose_file,this)), FILE_BROWSING_REQUEST);
+    }
+
+    /**
+     * Open camera ans start acquire media content
+     * @param isImage True if media is of image type otherwise video.
+     */
+    private void startCameraIntent(boolean isImage){
+        String imageId = String.valueOf(System.currentTimeMillis());
+        Intent cameraIntent = new Intent(isImage ?
+                android.provider.MediaStore.ACTION_IMAGE_CAPTURE:MediaStore.ACTION_VIDEO_CAPTURE);
+        File dir = Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_DCIM);
+        fileFromCamera = new File(dir,imageId+ (isImage ? "_image.png":"_video.mp4"));
+        cameraMedia = FileProvider.getUriForFile(this,
+                getPackageName()+".fileprovider", fileFromCamera);
+        cameraIntent.putExtra(MediaStore.EXTRA_OUTPUT,cameraMedia);
+        startActivityForResult(cameraIntent, CAMERA_IMAGE_CAPTURE_REQUEST);
+    }
+
+    /**
+     * Handle choice between video and image from the camera.
+     */
+    private void showMediaTypeDialog(){
+        UstadMobileSystemImpl impl = UstadMobileSystemImpl.getInstance();
+        AlertDialog.Builder builder = new AlertDialog.Builder(this);
+        builder.setTitle(impl.getString(MessageID.content_media_title,this));
+        builder.setMessage(impl.getString(MessageID.content_media_message,this));
+        builder.setPositiveButton(impl.getString(MessageID.content_media_photo,this),
+                (dialog, which) -> startCameraIntent(true));
+        builder.setNegativeButton(impl.getString(MessageID.content_media_video,this),
+                (dialog, which) -> startCameraIntent(false));
+        builder.show();
     }
 }

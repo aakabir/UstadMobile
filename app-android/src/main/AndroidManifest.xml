@@ -42,6 +42,7 @@
                 android:resource="@xml/file_provider_path" />
         </provider>
 
+
         <activity
             android:name=".UstadMobileActivity"
             android:configChanges="orientation|keyboardHidden|keyboard|screenSize|locale"

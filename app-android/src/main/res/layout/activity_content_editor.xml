@@ -35,6 +35,7 @@
         <include layout="@layout/content_multimedia_sources_bottom_sheets_main" />
 
         <com.github.clans.fab.FloatingActionButton
+            android:visibility="gone"
             android:id="@+id/content_editor_preview"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
@@ -50,6 +51,7 @@
         <com.github.clans.fab.FloatingActionMenu
             android:layout_gravity="bottom|end"
             android:id="@+id/content_editor_insert"
+            android:visibility="gone"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:paddingEnd="@dimen/dimen_16dp"
