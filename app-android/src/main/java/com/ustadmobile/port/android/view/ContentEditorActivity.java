@@ -120,7 +120,9 @@ public class ContentEditorActivity extends UstadBaseActivity implements ContentE
 
     private boolean isEditorInitialized = false;
 
-    private boolean isTextHighlighted = false;
+    private boolean openFormattingBottomSheet = false;
+
+    private boolean isSoftKeyboardActive = false;
 
     private static final int FORMATTING_TEXT_INDEX = 0;
 
@@ -151,13 +153,18 @@ public class ContentEditorActivity extends UstadBaseActivity implements ContentE
 
     private static final String MEDIA_CONTENT_DIR = "media/";
 
+    private View blankDocumentContainer;
+
     private  String index_file;
+
     private  String index_temp_file;
 
     private String assetsDir = "assets-" +
             new SimpleDateFormat("yyyyMMddHHmmss").format(new Date()) + "";
 
     private File contentDir;
+
+
 
     /**
      * UI implementation of formatting type as pager.
@@ -325,9 +332,11 @@ public class ContentEditorActivity extends UstadBaseActivity implements ContentE
         editorContent = findViewById(R.id.editor_content);
         progressDialog = findViewById(R.id.progressBar);
         startEditing = findViewById(R.id.btn_start_editing);
+        ImageView actionClose = findViewById(R.id.action_close_tab);
         RelativeLayout mFromCamera = findViewById(R.id.multimedia_from_camera);
         RelativeLayout mFromDevice = findViewById(R.id.multimedia_from_device);
         View rootView = findViewById(R.id.coordinationLayout);
+        blankDocumentContainer = findViewById(R.id.new_doc_container);
 
         ViewPager mViewPager = findViewById(R.id.content_types_viewpager);
         TabLayout mTabLayout = findViewById(R.id.content_types_tabs);
@@ -368,6 +377,8 @@ public class ContentEditorActivity extends UstadBaseActivity implements ContentE
             }
         });
 
+        actionClose.setOnClickListener(v -> setFormattingBottomSheetBehavior(false));
+
         mFromDevice.setOnClickListener(v -> {
             setMediaSourceBottomSheetBehavior(false);
             startFileBrowser();
@@ -397,26 +408,6 @@ public class ContentEditorActivity extends UstadBaseActivity implements ContentE
 
         mInsertContent.setOnMenuToggleListener(this);
 
-        mediaSourceBottomSheetBehavior.setBottomSheetCallback(
-                new BottomSheetBehavior.BottomSheetCallback() {
-            @Override
-            public void onStateChanged(@NonNull View bottomSheet, int newState) {
-                if(newState == BottomSheetBehavior.STATE_EXPANDED){
-                    mInsertContent.close(true);
-                    mPreviewContent.hide(true);
-                }
-
-                if(newState == BottomSheetBehavior.STATE_COLLAPSED){
-                    mInsertContent.showMenu(true);
-                    mPreviewContent.show(true);
-                }
-            }
-
-            @Override
-            public void onSlide(@NonNull View bottomSheet, float slideOffset) {
-
-            }
-        });
 
         mInsertMultimedia.setOnClickListener(v ->
                 setMediaSourceBottomSheetBehavior(true));
@@ -434,12 +425,21 @@ public class ContentEditorActivity extends UstadBaseActivity implements ContentE
             public void onStateChanged(@NonNull View bottomSheet, int newState) {
                 if(newState == BottomSheetBehavior.STATE_EXPANDED){
                     mInsertContent.setVisibility(View.GONE);
+                    mPreviewContent.setVisibility(View.GONE);
                     mPreviewContent.hide(true);
+                    if(openFormattingBottomSheet){
+                        openFormattingBottomSheet = false;
+                        handleSoftKeyboard(false);
+                    }
                 }
 
                 if(newState == BottomSheetBehavior.STATE_COLLAPSED){
                     mInsertContent.setVisibility(View.VISIBLE);
-                    mPreviewContent.show(true);
+                    mPreviewContent.setVisibility(View.VISIBLE);
+                    if(isEditorInitialized){
+                        mPreviewContent.show(true);
+                    }
+                    openFormattingBottomSheet = false;
                 }
             }
 
@@ -448,6 +448,29 @@ public class ContentEditorActivity extends UstadBaseActivity implements ContentE
 
             }
         });
+
+        mediaSourceBottomSheetBehavior.setBottomSheetCallback(
+                new BottomSheetBehavior.BottomSheetCallback() {
+                    @Override
+                    public void onStateChanged(@NonNull View bottomSheet, int newState) {
+                        if(newState == BottomSheetBehavior.STATE_EXPANDED){
+                            mInsertContent.close(true);
+                            mPreviewContent.hide(true);
+                        }
+
+                        if(newState == BottomSheetBehavior.STATE_COLLAPSED){
+                            mInsertContent.showMenu(true);
+                            if(isEditorInitialized){
+                                mPreviewContent.show(true);
+                            }
+                        }
+                    }
+
+                    @Override
+                    public void onSlide(@NonNull View bottomSheet, float slideOffset) {
+
+                    }
+                });
 
         ContentFormattingPagerAdapter adapter =
                 new ContentFormattingPagerAdapter(getSupportFragmentManager());
@@ -493,9 +516,7 @@ public class ContentEditorActivity extends UstadBaseActivity implements ContentE
             mContentPageDrawer.openDrawer(GravityCompat.END);
 
         }else if(itemId == android.R.id.home){
-            if(new File(contentDir,index_temp_file).delete()){
-                handleExpandableViews();
-            }
+            handleExpandableViews();
 
         }else if(itemId == R.id.content_action_format){
            handleContentFormattingBottomSheet();
@@ -562,15 +583,20 @@ public class ContentEditorActivity extends UstadBaseActivity implements ContentE
                         mInsertContent.showMenuButton(true);
                     }
                     isEditorInitialized = Boolean.parseBoolean(callback.getContent());
+                    if(isEditorInitialized){
+                        handleSoftKeyboard(true);
+                    }
                     startEditing.setVisibility(View.GONE);
                     progressDialog.setVisibility(View.GONE);
-                    invalidateOptionsMenu();
+                    blankDocumentContainer.setVisibility(View.GONE);
                     break;
 
                 case ACTION_CONTENT_CHANGED:
                     mPreviewContent.setVisibility(View.VISIBLE);
                     if(content.length() > 0){
-                        mPreviewContent.show(true);
+                       if(isEditorInitialized){
+                           mPreviewContent.show(true);
+                       }
                     }else{
                         mPreviewContent.hide(true);
                     }
@@ -669,9 +695,11 @@ public class ContentEditorActivity extends UstadBaseActivity implements ContentE
     public void onMenuToggle(boolean opened) {
         if(opened){
             mPreviewContent.hide(true);
+            handleSoftKeyboard(false);
+            setFormattingBottomSheetBehavior(false);
         }else{
             handleFABMenuButton(false);
-            if(!isMediaSourceBottomSheetExpanded()){
+            if(!isMediaSourceBottomSheetExpanded() && isEditorInitialized){
                 mPreviewContent.show(true);
             }
             if(isFromFormatting){
@@ -685,8 +713,6 @@ public class ContentEditorActivity extends UstadBaseActivity implements ContentE
      * Collapse all expandable views before moving out of the activity (User experience)
      */
     private void handleExpandableViews(){
-
-
         boolean isDrawerOpen = mContentPageDrawer.isDrawerOpen(GravityCompat.END);
 
         boolean isFabMenuOpen = mInsertContent.isOpened();
@@ -709,6 +735,12 @@ public class ContentEditorActivity extends UstadBaseActivity implements ContentE
 
         if(!isMediaSourceBottomSheetExpanded() && !isFormattingBottomSheetExpanded()
                 && !isFabMenuOpen && !isDrawerOpen){
+           handleFinishingActivity();
+        }
+    }
+
+    private void handleFinishingActivity() {
+        if(new File(contentDir,index_temp_file).delete()){
             finish();
         }
     }
@@ -739,6 +771,7 @@ public class ContentEditorActivity extends UstadBaseActivity implements ContentE
             e.printStackTrace();
         }
     }
+
 
     @VisibleForTesting
     public BottomSheetBehavior getFormattingBottomSheetBehavior() {
@@ -902,7 +935,15 @@ public class ContentEditorActivity extends UstadBaseActivity implements ContentE
     @Override
     public boolean onTouchEvent(MotionEvent event) {
         if(event.getAction() == android.view.MotionEvent.ACTION_UP){
-            hideKeyboard();
+            openFormattingBottomSheet = true;
+            if(isSoftKeyboardActive){
+                handleSoftKeyboard(false);
+            }else{
+                if(!isFormattingBottomSheetExpanded()){
+                    setFormattingBottomSheetBehavior(true);
+                }
+            }
+
         }
         return super.onTouchEvent(event);
     }
@@ -940,6 +981,7 @@ public class ContentEditorActivity extends UstadBaseActivity implements ContentE
         Document htmlDoc = getIndexDocument(index_temp_file);
         Element docHead = htmlDoc.select("head").first();
         Element docBody = htmlDoc.select("body").first();
+        blankDocumentContainer.setVisibility(docBody.text().length() <= 0 ? View.VISIBLE:View.GONE);
 
         if(docHead != null){
             Elements headResources = docHead.children();
@@ -1097,11 +1139,18 @@ public class ContentEditorActivity extends UstadBaseActivity implements ContentE
         }
     }
 
-    private void hideKeyboard() {
-        isTextHighlighted = true;
-        InputMethodManager inputMethodManager =
-                (InputMethodManager)  getSystemService(Activity.INPUT_METHOD_SERVICE);
-        inputMethodManager.hideSoftInputFromWindow(getCurrentFocus().getWindowToken(), 0);
+    private void handleSoftKeyboard(boolean show){
+        if(show){
+            InputMethodManager imm = (InputMethodManager)getSystemService(Context.INPUT_METHOD_SERVICE);
+            Objects.requireNonNull(imm).toggleSoftInput(InputMethodManager.SHOW_FORCED, 0);
+        }else{
+            InputMethodManager imm = (InputMethodManager) getSystemService(Activity.INPUT_METHOD_SERVICE);
+            View view = getCurrentFocus();
+            if (view == null) {
+                view = new View(this);
+            }
+            Objects.requireNonNull(imm).hideSoftInputFromWindow(view.getWindowToken(), 0);
+        }
     }
 
 
@@ -1169,16 +1218,18 @@ public class ContentEditorActivity extends UstadBaseActivity implements ContentE
             rootView.getWindowVisibleDisplayFrame(rect);
             int screenHeight = rootView.getRootView().getHeight();
             int keypadHeight = screenHeight - rect.bottom;
-
-            if (keypadHeight > screenHeight * 0.15) {
-                UstadMobileSystemImpl.l(UMLog.DEBUG,700,
-                        "Keyboard opened, hiding text highlight control");
-                isTextHighlighted = false;
+            isSoftKeyboardActive = keypadHeight > screenHeight * 0.15;
+            if (isSoftKeyboardActive) {
                 setFormattingBottomSheetBehavior(false);
-            } else {
-                if(isTextHighlighted){
-                    UstadMobileSystemImpl.l(UMLog.DEBUG,700,
-                            "Keyboard closed showing text highlight controls");
+                if(mInsertContent.isOpened()){
+                    mInsertContent.hideMenuButton(true);
+                    mPreviewContent.hide(true);
+                }
+            }else{
+                if(isEditorInitialized){
+                    mPreviewContent.show(true);
+                }
+                if(openFormattingBottomSheet){
                     setFormattingBottomSheetBehavior(true);
                 }
             }

@@ -2,7 +2,7 @@ html {
     display: table;
 }
 .question{
-    padding: 2%;
+    padding: 1%;
 }
 
 .hide-element{
@@ -106,6 +106,16 @@ select,button :focus :active{
     max-height: 53px;
     width: 100%;
 }
+
+.um-media{
+    margin-top: 10px;
+}
+
+.mce-content-body {
+    border: 0 solid transparent !important;
+    outline: 0 solid transparent !important;
+}
+
 
 
 

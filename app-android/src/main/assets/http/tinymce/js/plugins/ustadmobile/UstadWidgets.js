@@ -2,11 +2,14 @@
 let QuestionWidget = function(element) {
    this.element =  $.parseHTML(element);
 };
-
 QuestionWidget._widgets = {};
 QuestionWidget._widgetListeners = {};
 QuestionWidget.WIDGET_NAME_MULTICHOICE = "multichoice";
 QuestionWidget.WIDGET_NAME_FILL_BLANKS = "fill-the-blanks";
+QuestionWidget.isNewQuestion = false;
+QuestionWidget.setNewQuestion = function(newQuestion){
+    QuestionWidget.isNewQuestion = newQuestion === "true";
+};
 
 /**
  * English constant placeholders
@@ -52,14 +55,17 @@ QuestionWidget.prototype.editOn = function(){
     $(this.element).find('[data-um-preview="support"]').removeClass("preview-support default-margin-top");
     $(this.element).find(".question-body").before("<label class='um-labels'>"+QuestionWidget.PLACEHOLDERS_LABELS.labelForQuestionBodyText+"</label><br/>");
 
-    $(this.element).find(".question-body").html(QuestionWidget.PLACEHOLDERS_LABELS.placeholderForTheQuestionText);
-    $(this.element).find(".question-choice-body").html(QuestionWidget.PLACEHOLDERS_LABELS.placeholderForTheChoiceText);
-    $(this.element).find(".question-choice-feedback").html(QuestionWidget.PLACEHOLDERS_LABELS.placeholderForTheChoiceFeedback);
-    $(this.element).find(".question-choice-feedback-correct").html(QuestionWidget.PLACEHOLDERS_LABELS.placeholderForTheRightChoiceFeedback);
-    $(this.element).find(".question-choice-feedback-wrong").html(QuestionWidget.PLACEHOLDERS_LABELS.placeholderForTheWrongChoiceFeedback);
-    $(this.element).find(".fill-the-blanks-check").text(QuestionWidget.PLACEHOLDERS_LABELS.labelForCheckAnswerInputPromptBtn);
-    $(this.element).find(".qn-retry").text(QuestionWidget.PLACEHOLDERS_LABELS.labelForTryAgainOptionBtn);
-    $(this.element).find(".fill-the-blanks-input").attr("placeholder",QuestionWidget.PLACEHOLDERS_LABELS.placeholderForTheBlanksInput);
+    if(QuestionWidget.isNewQuestion){
+        $(this.element).find(".question-body").html(QuestionWidget.PLACEHOLDERS_LABELS.placeholderForTheQuestionText);
+        $(this.element).find(".question-choice-body").html(QuestionWidget.PLACEHOLDERS_LABELS.placeholderForTheChoiceText);
+        $(this.element).find(".question-choice-feedback").html(QuestionWidget.PLACEHOLDERS_LABELS.placeholderForTheChoiceFeedback);
+        $(this.element).find(".question-choice-feedback-correct").html(QuestionWidget.PLACEHOLDERS_LABELS.placeholderForTheRightChoiceFeedback);
+        $(this.element).find(".question-choice-feedback-wrong").html(QuestionWidget.PLACEHOLDERS_LABELS.placeholderForTheWrongChoiceFeedback);
+        $(this.element).find(".fill-the-blanks-check").text(QuestionWidget.PLACEHOLDERS_LABELS.labelForCheckAnswerInputPromptBtn);
+        $(this.element).find(".qn-retry").text(QuestionWidget.PLACEHOLDERS_LABELS.labelForTryAgainOptionBtn);
+        $(this.element).find(".fill-the-blanks-input").attr("placeholder",QuestionWidget.PLACEHOLDERS_LABELS.placeholderForTheBlanksInput);
+    }
+
     $(this.element).find(".question-retry-option").html("" +
         "<select>" +
         "  <option value=\"true\">"+QuestionWidget.PLACEHOLDERS_LABELS.labelForTrueOptionText+"</option>" +
@@ -328,6 +334,7 @@ MultiChoiceQuestionWidget.prototype.addChoice = function(event) {
         "</select></div></div>";
     this.editOn();
     $(event.target).prev().prev().before(choiceUiHolder);
+    ustadEditor.handleContentChange();
 };
 
 /**
@@ -357,7 +364,7 @@ MultiChoiceQuestionWidget.prototype.handleClickAnswer = function(event) {
 FillTheBlanksQuestionWidget.prototype.handleProvidedAnswer = function(event){
     const questionElement = $(event.target).closest("div div.question");
     const choiceElement = $(questionElement).find(".fill-blanks");
-    const wrongChoiceText = $(choiceElement).find(".question-choice-feedback-wrong").text();
+    const wrongChoiceText = $(choiceElement).find(".question-choice-feedback-wrong").html();
     const correctChoiceText = $(choiceElement).find(".question-choice-feedback-correct").html();
     let defaultAnswerText = $(choiceElement).find(".question-choice-body").text().toLowerCase();
     let userAnswerText = $(questionElement).find(".fill-the-blanks-input").val().toLowerCase();

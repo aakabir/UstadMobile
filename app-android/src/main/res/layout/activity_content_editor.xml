@@ -27,6 +27,50 @@
         <!-- Bottom Sheet media source-->
         <include layout="@layout/content_multimedia_sources_bottom_sheets_main" />
 
+        <RelativeLayout
+            android:visibility="gone"
+            android:background="@color/icons"
+            android:id="@+id/new_doc_container"
+            android:layout_width="match_parent"
+            android:layout_height="match_parent">
+            <TextView
+                android:id="@+id/blank_doc_title"
+                android:textColor="@color/divider_faint"
+                android:layout_centerInParent="true"
+                android:textSize="24sp"
+                android:text="Blank document"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content" />
+            <LinearLayout
+                android:orientation="horizontal"
+                android:layout_below="@+id/blank_doc_title"
+                android:layout_centerHorizontal="true"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content">
+                <TextView
+                    android:layout_gravity="center_vertical"
+                    android:textSize="11sp"
+                    android:text="Click"
+                    android:id="@+id/click_label"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content" />
+                <ImageView
+                    android:tint="@color/accent"
+                    android:layout_marginLeft="@dimen/dimen_10dp"
+                    android:layout_marginRight="@dimen/dimen_10dp"
+                    android:src="@drawable/ic_editor_action"
+                    android:layout_width="@dimen/dimen_16dp"
+                    android:layout_height="@dimen/dimen_16dp" />
+                <TextView
+                    android:layout_gravity="center_vertical"
+                    android:textSize="11sp"
+                    android:text="to start editing"
+                    android:layout_marginRight="@dimen/dimen_10dp"
+                    android:id="@+id/editing_label"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content" />
+            </LinearLayout>
+        </RelativeLayout>
         <com.github.clans.fab.FloatingActionButton
             android:visibility="gone"
             android:id="@+id/content_editor_preview"

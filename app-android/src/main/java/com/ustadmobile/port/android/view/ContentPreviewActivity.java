@@ -7,6 +7,7 @@ import android.view.MenuItem;
 import android.view.View;
 import android.webkit.WebSettings;
 import android.widget.ProgressBar;
+import android.widget.TextView;
 
 import com.toughra.ustadmobile.R;
 import com.ustadmobile.core.controller.ContentPreviewPresenter;
@@ -26,12 +27,15 @@ public class ContentPreviewActivity extends UstadBaseActivity
 
     private ProgressBar progressDialog;
 
+    private TextView toolbarTitle;
+
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_content_preview);
         contentPreview = findViewById(R.id.preview_content);
         Toolbar toolbar = findViewById(R.id.um_toolbar);
+        toolbarTitle = findViewById(R.id.toolbarTitle);
         progressDialog = findViewById(R.id.progressBar);
         setToolbar(toolbar);
         progressDialog.setMax(100);
@@ -58,7 +62,10 @@ public class ContentPreviewActivity extends UstadBaseActivity
             actionBar.setDisplayHomeAsUpEnabled(true);
             actionBar.setHomeButtonEnabled(true);
         }
-        toolbar.setTitle(UstadMobileSystemImpl.getInstance()
+        if(toolbar != null){
+            toolbar.setTitle("");
+        }
+        toolbarTitle.setText(UstadMobileSystemImpl.getInstance()
                 .getString(MessageID.content_preview,this));
     }
 

@@ -242,6 +242,9 @@ ustadEditor.initTinyMceEditor = function(){
         selector: '.container-fluid',
         menubar: false,
         inline: true,
+        force_br_newlines : true,
+        force_p_newlines : false,
+        forced_root_block : '',
         plugins: ['ustadmobile','directionality','lists','noneditable','visualblocks'],
         toolbar: ['ustadmobile'],
         valid_styles: {
@@ -250,7 +253,7 @@ ustadEditor.initTinyMceEditor = function(){
         content_css: [
             '//fonts.googleapis.com/css?family=Lato:300,300i,400,400i',
         ],
-        extended_valid_elements : 'label[class],div[onclick|class|data-um-correct|data-um-widget|id],option[selected|value]',
+        extended_valid_elements : 'label[class],div[onclick|class|data-um-correct|data-um-widget|id],option[selected|value],br[class]',
         style_formats: [{ title: 'Containers', items: [
                 { title: 'section', block: 'section', wrapper: true, merge_siblings: false },
                 { title: 'article', block: 'article', wrapper: true, merge_siblings: false },
@@ -262,11 +265,12 @@ ustadEditor.initTinyMceEditor = function(){
         }],
         init_instance_callback: function (ed) {
             ed.on('click', function (e) {
+                setTimeout(ustadEditor.hideToolbarMenu(), 22);
                 console.log(JSON.stringify(ustadEditor.startCheckingActivatedControls()));
             });
 
             ed.on('change', function() {
-                ustadEditor.hideToolbarMenu();
+                setTimeout(ustadEditor.hideToolbarMenu(), 22);
                 QuestionWidget.handleListeners();
                 ustadEditor.handleContentChange();
             });
@@ -294,6 +298,7 @@ ustadEditor.initTinyMceEditor = function(){
             setTimeout(ustadEditor.requestFocus(), 20);
             setTimeout(ustadEditor.hideToolbarMenu(), 22);
             setTimeout(ustadEditor.switchOnEditorController());
+            ustadEditor.initializeTextHighlightingListener();
             console.log(JSON.stringify({action:'onInitEditor',content:"true"}));
             console.log(JSON.stringify(ustadEditor.startCheckingActivatedControls()));
 
@@ -353,6 +358,7 @@ ustadEditor.hideToolbarMenu = function () {
  */
 ustadEditor.insertMultipleChoiceQuestionTemplate = function () {
     try{
+        QuestionWidget.setNewQuestion("true");
         document.getElementById("multiple-choice").click();
         return "inserted multiple choice question";
     }catch (e) {
@@ -366,6 +372,7 @@ ustadEditor.insertMultipleChoiceQuestionTemplate = function () {
  */
 ustadEditor.insertFillInTheBlanksQuestionTemplate = function () {
     try{
+        QuestionWidget.setNewQuestion("true");
         document.getElementById("fill-the-blanks").click();
         return "inserted fill the blanks question";
     }catch (e) {
@@ -386,7 +393,7 @@ ustadEditor.insertMedia = function(source,mimeType){
         mediaContent = "<img src=\""+source+"\" class=\"um-media img-fluid\" width=\""+width+"\"/>";
     }else if(mimeType.includes("audio")){
         mediaContent =
-            "<video controls class='um-media media-audio'>" +
+            "<video controls class='media-audio'>" +
             "    <source src=\""+source+"\" type=\""+mimeType+"\">" +
             "</video>";
     }else{
