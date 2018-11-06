@@ -2,8 +2,6 @@ package com.ustadmobile.port.sharedse.view;
 
 import com.ustadmobile.core.view.UstadView;
 
-import java.util.List;
-
 /**
  * Created by mike on 3/5/18.
  */

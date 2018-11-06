@@ -2,7 +2,6 @@ package com.ustadmobile.core.impl.http;
 
 import java.io.IOException;
 import java.io.InputStream;
-import java.util.Hashtable;
 
 /**
  * A wrapper that represents an HTTP response

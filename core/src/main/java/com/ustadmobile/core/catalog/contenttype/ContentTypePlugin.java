@@ -1,9 +1,6 @@
 package com.ustadmobile.core.catalog.contenttype;
 
 
-import java.io.IOException;
-import java.io.InputStream;
-import java.util.ArrayList;
 import java.util.List;
 
 /**

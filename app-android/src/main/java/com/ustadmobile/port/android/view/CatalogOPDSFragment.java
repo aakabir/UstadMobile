@@ -33,7 +33,6 @@
 package com.ustadmobile.port.android.view;
 
 
-import android.app.ActionBar;
 import android.arch.lifecycle.LiveData;
 import android.arch.paging.DataSource;
 import android.arch.paging.LivePagedListBuilder;
@@ -65,14 +64,12 @@ import com.ustadmobile.core.model.CourseProgress;
 import com.ustadmobile.core.opds.OpdsFilterOptions;
 import com.ustadmobile.core.view.CatalogView;
 import com.ustadmobile.lib.db.entities.OpdsEntry;
-import com.ustadmobile.lib.db.entities.OpdsEntryWithChildEntries;
 import com.ustadmobile.lib.db.entities.OpdsEntryWithRelations;
 import com.ustadmobile.lib.db.entities.OpdsEntryWithStatusCache;
 import com.ustadmobile.lib.db.entities.OpdsLink;
 import com.ustadmobile.port.android.util.UMAndroidUtil;
 
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Hashtable;

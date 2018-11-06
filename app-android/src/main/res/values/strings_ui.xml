@@ -246,6 +246,7 @@
 
     <string name="catalog_language">Catalog Language</string>
     <string name="also_available_in">Also available in</string>
+
     <string name="content_type_multimedia">Multimedia</string>
     <string name="content_type_multiple_choice">Multiple choice</string>
     <string name="content_type_fill_the_blanks">Fill in the blanks</string>
@@ -260,13 +261,13 @@
     <string name="content_font_18">18pt</string>
     <string name="content_font_24">24pt</string>
     <string name="content_font_36">36pt</string>
-    <string name="content_source_camera">From Camera</string>
-    <string name="content_source_device">From Device</string>
-    <string name="content_choose_file">Choose File</string>
+    <string name="content_source_camera">From camera</string>
+    <string name="content_source_device">From device</string>
+    <string name="content_choose_file">Choose file</string>
     <string name="content_prepare_file">Preparing file...</string>
     <string name="content_preview">Previewing...</string>
     <string name="content_media_photo">Photo</string>
     <string name="content_media_video">Video</string>
-    <string name="content_media_message">What media type would you like to capture from camera?</string>
+    <string name="content_media_message">What media type would you like to capture?</string>
     <string name="content_media_title">Media type</string>
 </resources>

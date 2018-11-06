@@ -3,7 +3,6 @@ package com.ustadmobile.test.sharedse.network;
 import com.ustadmobile.core.db.UmAppDatabase;
 import com.ustadmobile.core.db.dao.EntryStatusResponseDao;
 import com.ustadmobile.core.networkmanager.AvailabilityMonitorRequest;
-import com.ustadmobile.core.networkmanager.NetworkManagerCore;
 import com.ustadmobile.port.sharedse.impl.UstadMobileSystemImplSE;
 import com.ustadmobile.port.sharedse.networkmanager.NetworkManager;
 import com.ustadmobile.core.networkmanager.NetworkManagerListener;

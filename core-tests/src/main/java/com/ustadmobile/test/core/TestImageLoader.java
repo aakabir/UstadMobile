@@ -3,7 +3,6 @@ package com.ustadmobile.test.core;
 import com.ustadmobile.core.controller.UstadBaseController;
 
 import org.junit.AfterClass;
-import org.junit.Assert;
 import org.junit.BeforeClass;
 import org.junit.Test;
 

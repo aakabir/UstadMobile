@@ -1,6 +1,5 @@
 package com.ustadmobile.core.controller;
 
-import com.ustadmobile.core.buildconfig.CoreBuildConfig;
 import com.ustadmobile.core.impl.UmCallback;
 import com.ustadmobile.core.impl.UstadMobileSystemImpl;
 import com.ustadmobile.core.util.UMCalendarUtil;

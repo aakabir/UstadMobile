@@ -1,24 +1,15 @@
 package com.ustadmobile.test.port.android.view;
 
-import android.content.Context;
 import android.content.Intent;
 import android.support.test.InstrumentationRegistry;
 import android.support.test.rule.ActivityTestRule;
 
 import com.ustadmobile.core.controller.ContainerController;
-import com.ustadmobile.core.controller.XapiPackagePresenter;
-import com.ustadmobile.core.util.UMIOUtils;
 import com.ustadmobile.core.view.XapiPackageView;
 import com.ustadmobile.port.android.view.XapiPackageActivity;
 import com.ustadmobile.test.core.view.TestXapiPackageView;
 
-import org.junit.AfterClass;
-import org.junit.BeforeClass;
-
 import java.io.File;
-import java.io.FileOutputStream;
-import java.io.IOException;
-import java.io.InputStream;
 
 /**
  * Created by mike on 12/25/17.

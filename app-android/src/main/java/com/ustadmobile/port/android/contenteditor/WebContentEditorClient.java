@@ -1,7 +1,6 @@
 package com.ustadmobile.port.android.contenteditor;
 
 import android.content.Context;
-import android.graphics.Bitmap;
 import android.webkit.WebResourceRequest;
 import android.webkit.WebResourceResponse;
 import android.webkit.WebView;

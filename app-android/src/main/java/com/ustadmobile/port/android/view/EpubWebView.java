@@ -2,7 +2,6 @@ package com.ustadmobile.port.android.view;
 
 import android.annotation.TargetApi;
 import android.content.Context;
-import android.support.annotation.Px;
 import android.support.v4.view.GestureDetectorCompat;
 import android.support.v4.view.ViewCompat;
 import android.util.AttributeSet;

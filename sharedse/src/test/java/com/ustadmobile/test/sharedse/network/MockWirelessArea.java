@@ -1,8 +1,5 @@
 package com.ustadmobile.test.sharedse.network;
 
-import com.ustadmobile.core.networkmanager.NetworkNode;
-
-import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Hashtable;
 import java.util.Map;

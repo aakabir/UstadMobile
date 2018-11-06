@@ -2,13 +2,11 @@ package com.ustadmobile.core.fs.contenttype;
 
 import com.ustadmobile.core.catalog.contenttype.H5PContentType;
 import com.ustadmobile.core.db.UmAppDatabase;
-import com.ustadmobile.core.util.UMFileUtil;
 import com.ustadmobile.core.util.UMIOUtils;
 import com.ustadmobile.lib.db.entities.OpdsEntryWithRelations;
 import com.ustadmobile.lib.db.entities.OpdsLink;
 import com.ustadmobile.lib.util.UmUuidUtil;
 
-import org.json.JSONArray;
 import org.json.JSONObject;
 
 import java.io.File;

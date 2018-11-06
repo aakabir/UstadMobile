@@ -7,11 +7,8 @@ import com.ustadmobile.lib.database.jdbc.JdbcDatabaseUtils;
 import com.ustadmobile.lib.annotationprocessor.core.db.ExampleDatabase;
 
 import org.junit.Assert;
-import org.junit.BeforeClass;
 import org.junit.Test;
-import org.sqlite.SQLiteDataSource;
 
-import java.io.File;
 import java.sql.Connection;
 import java.sql.SQLException;
 import java.util.List;

@@ -2,9 +2,6 @@ package com.ustadmobile.core.catalog.contenttype;
 
 import com.ustadmobile.core.view.ContainerView;
 
-import java.io.IOException;
-import java.io.InputStream;
-import java.io.OutputStream;
 import java.util.Arrays;
 import java.util.List;
 

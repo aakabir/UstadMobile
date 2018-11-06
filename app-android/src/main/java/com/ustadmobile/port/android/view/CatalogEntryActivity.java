@@ -1,7 +1,6 @@
 package com.ustadmobile.port.android.view;
 
 import android.graphics.Bitmap;
-import android.graphics.BitmapFactory;
 import android.graphics.Typeface;
 import android.os.Build;
 import android.os.Bundle;

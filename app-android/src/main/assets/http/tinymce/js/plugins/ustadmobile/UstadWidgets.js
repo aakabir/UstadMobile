@@ -8,6 +8,33 @@ QuestionWidget._widgetListeners = {};
 QuestionWidget.WIDGET_NAME_MULTICHOICE = "multichoice";
 QuestionWidget.WIDGET_NAME_FILL_BLANKS = "fill-the-blanks";
 
+/**
+ * English constant placeholders
+ * */
+QuestionWidget.PLACEHOLDERS_LABELS = {
+    labelForQuestionBodyText: 'Question text',
+    labelForAddChoiceBtn: 'Add choice',
+    labelForChoiceBodyText: 'Choice text',
+    labelForFeedbackBodyText: 'Feedback text',
+    labelForQuestionRetryOption: 'Can this be retried?',
+    labelForRightAnswerOption: 'Is this the right answer?',
+    labelForFillTheBlanksAnswerBodyText: 'Question answer',
+    labelForFillTheBlanksPromptInput: 'Input answer',
+    labelForQuestionRightFeedbackText: 'Right input feedback',
+    labelForQuestionWrongFeedbackText: 'Wrong input feedback',
+    labelForTrueOptionText:'Yes',
+    labelFalseOptionText: 'No',
+    labelForCheckAnswerInputPromptBtn: 'Check answer',
+    labelForTryAgainOptionBtn:'Try again',
+    placeholderForTheQuestionText: 'Placeholder text for the question body',
+    placeholderForTheChoiceText: 'Placeholder text for the choice body',
+    placeholderForTheBlanksInput: 'Type answer here',
+    placeholderForTheChoiceFeedback: 'Feedback placeholder text',
+    placeholderForTheRightChoiceFeedback: 'Feedback placeholder text for the right choice',
+    placeholderForTheWrongChoiceFeedback: 'Feedback placeholder text for the wrong choice',
+    warningOnSubmitEmptyField: '<b>Whoops!</b> Please type your answer before you press submit',
+};
+
 QuestionWidget.prototype.init = function() {};
 
 QuestionWidget.prototype.editOn = function(){
@@ -17,14 +44,32 @@ QuestionWidget.prototype.editOn = function(){
 
     $(this.element).find("label").remove();
     $(this.element).find(".question-retry-option")
-        .before("<label class='um-labels col-sm-12 col-lg-10'>Can be retried?</label><br/>");
+        .before("<label class='um-labels col-sm-12 col-lg-10'>"+QuestionWidget.PLACEHOLDERS_LABELS.labelForQuestionRetryOption+"</label><br/>");
     $(this.element).find(".question-retry-option").removeClass("hide-element").addClass("show-element");
     $(this.element).find(".question-choice-answer").removeClass("hide-element").addClass("show-element");
     $(this.element).find('[data-um-preview="main"]').removeClass("preview-main default-margin-top");
     $(this.element).find('[data-um-preview="alert"]').removeClass("preview-alert default-margin-top");
     $(this.element).find('[data-um-preview="support"]').removeClass("preview-support default-margin-top");
-    $(this.element).find(".question-body").before("<label class='um-labels'>Question Text</label><br/>");
-    $(this.element).find(".question").before("<h1 class='show-element'>Hello question</h1>");
+    $(this.element).find(".question-body").before("<label class='um-labels'>"+QuestionWidget.PLACEHOLDERS_LABELS.labelForQuestionBodyText+"</label><br/>");
+
+    $(this.element).find(".question-body").html(QuestionWidget.PLACEHOLDERS_LABELS.placeholderForTheQuestionText);
+    $(this.element).find(".question-choice-body").html(QuestionWidget.PLACEHOLDERS_LABELS.placeholderForTheChoiceText);
+    $(this.element).find(".question-choice-feedback").html(QuestionWidget.PLACEHOLDERS_LABELS.placeholderForTheChoiceFeedback);
+    $(this.element).find(".question-choice-feedback-correct").html(QuestionWidget.PLACEHOLDERS_LABELS.placeholderForTheRightChoiceFeedback);
+    $(this.element).find(".question-choice-feedback-wrong").html(QuestionWidget.PLACEHOLDERS_LABELS.placeholderForTheWrongChoiceFeedback);
+    $(this.element).find(".fill-the-blanks-check").text(QuestionWidget.PLACEHOLDERS_LABELS.labelForCheckAnswerInputPromptBtn);
+    $(this.element).find(".qn-retry").text(QuestionWidget.PLACEHOLDERS_LABELS.labelForTryAgainOptionBtn);
+    $(this.element).find(".fill-the-blanks-input").attr("placeholder",QuestionWidget.PLACEHOLDERS_LABELS.placeholderForTheBlanksInput);
+    $(this.element).find(".question-retry-option").html("" +
+        "<select>" +
+        "  <option value=\"true\">"+QuestionWidget.PLACEHOLDERS_LABELS.labelForTrueOptionText+"</option>" +
+        "  <option value=\"false\" selected=\"selected\">"+QuestionWidget.PLACEHOLDERS_LABELS.labelFalseOptionText+"</option>" +
+        "</select>");
+    $(this.element).find(".question-choice-answer").html("" +
+        "<select>" +
+        "  <option value=\"true\">"+QuestionWidget.PLACEHOLDERS_LABELS.labelForTrueOptionText+"</option>" +
+        "  <option value=\"false\" selected=\"selected\">"+QuestionWidget.PLACEHOLDERS_LABELS.labelFalseOptionText+"</option>" +
+        "</select>");
 
     return this.element;
 };
@@ -234,10 +279,14 @@ FillTheBlanksQuestionWidget.prototype.attachPreviewListeners = function() {
 MultiChoiceQuestionWidget.prototype.editOn = function() {
     QuestionWidget.prototype.editOn.apply(this, arguments);
     $(this.element).find("button.btn-default.add-choice").remove();
-    $("<button class='btn btn-primary float-right default-margin-top add-choice show-element'>Add Choice</button>").appendTo(this.element);
-    $(this.element).find(".question-choice-body").before("<label class='um-labels'>Choice Text</label><br/>");
-    $(this.element).find(".question-choice-feedback").before("<label class='um-labels'>Feedback Text</label><br/>");
-    $(this.element).find(".question-choice-answer").before("<label class='um-labels'>is right answer?</label><br/>");
+    $("<button class='btn btn-primary float-right default-margin-top add-choice show-element'>"
+        +QuestionWidget.PLACEHOLDERS_LABELS.labelForAddChoiceBtn+"</button>").appendTo(this.element);
+    $(this.element).find(".question-choice-body").before("<label class='um-labels'>"
+        +QuestionWidget.PLACEHOLDERS_LABELS.labelForChoiceBodyText+"</label><br/>");
+    $(this.element).find(".question-choice-feedback").before("<label class='um-labels'>"
+        +QuestionWidget.PLACEHOLDERS_LABELS.labelForFeedbackBodyText+"</label><br/>");
+    $(this.element).find(".question-choice-answer").before("<label class='um-labels'>"
+        +QuestionWidget.PLACEHOLDERS_LABELS.labelForRightAnswerOption+"</label><br/>");
     return this.element;
 };
 
@@ -249,10 +298,14 @@ MultiChoiceQuestionWidget.prototype.editOn = function() {
 FillTheBlanksQuestionWidget.prototype.editOn = function() {
     QuestionWidget.prototype.editOn.apply(this, arguments);
     $(this.element).find(".fill-blanks").removeClass("hide-element").addClass("show-element");
-    $(this.element).find(".question-choice-body").before("<label class='um-labels'>Question Answer</label><br/>");
-    $(this.element).find(".input-group").before("<label class='um-labels '>Input Answer</label><br/>");
-    $(this.element).find(".question-choice-feedback-correct").before("<label class='um-labels'>Right input feedback</label><br/>");
-    $(this.element).find(".question-choice-feedback-wrong").before("<label class='um-labels'>Wrong input feedback</label><br/>");
+    $(this.element).find(".question-choice-body").before("<label class='um-labels'>"
+        +QuestionWidget.PLACEHOLDERS_LABELS.labelForFillTheBlanksAnswerBodyText+"</label><br/>");
+    $(this.element).find(".input-group").before("<label class='um-labels '>"
+        +QuestionWidget.PLACEHOLDERS_LABELS.labelForFillTheBlanksPromptInput+"</label><br/>");
+    $(this.element).find(".question-choice-feedback-correct").before("<label class='um-labels'>"
+        +QuestionWidget.PLACEHOLDERS_LABELS.labelForQuestionRightFeedbackText+"</label><br/>");
+    $(this.element).find(".question-choice-feedback-wrong").before("<label class='um-labels'>"
+        +QuestionWidget.PLACEHOLDERS_LABELS.labelForQuestionWrongFeedbackText+"</label><br/>");
     return this.element;
 };
 
@@ -263,15 +316,15 @@ FillTheBlanksQuestionWidget.prototype.editOn = function() {
  */
 MultiChoiceQuestionWidget.prototype.addChoice = function(event) {
     const choiceUiHolder = "<div class=\"question-choice\" data-um-correct=\"false\" data-um-preview=\"support\">" +
-        "<label class=\"um-labels\">Choice Text</label><br>" +
-        "<div class=\"question-choice-body\">B. Dar es salaam</div>" +
-        "<label class=\"um-labels\">Feedback Text</label><br>" +
+        "<label class=\"um-labels\">"+QuestionWidget.PLACEHOLDERS_LABELS.labelForChoiceBodyText+"</label><br>" +
+        "<div class=\"question-choice-body\">"+QuestionWidget.PLACEHOLDERS_LABELS.placeholderForTheChoiceText+"</div>" +
+        "<label class=\"um-labels\">"+QuestionWidget.PLACEHOLDERS_LABELS.labelForFeedbackBodyText+"</label><br>" +
         "<div class=\"question-choice-feedback\" data-um-edit-only=\"true\">" +
         "What a choice, you need to read more about this country.</div>" +
-        "<label class=\"um-labels\">is right answer?</label><br>" +
+        "<label class=\"um-labels\">"+QuestionWidget.PLACEHOLDERS_LABELS.labelForRightAnswerOption+"</label><br>" +
         "<div class=\"question-choice-answer select-option col-sm-3 show-element col-lg-3\">" +
-        "<select><option value=\"true\">Yes</option>" +
-        "<option selected=\"selected\" value=\"false\">No</option>" +
+        "<select><option value=\"true\">"+QuestionWidget.PLACEHOLDERS_LABELS.labelForTrueOptionText+"</option>" +
+        "<option selected=\"selected\" value=\"false\">"+QuestionWidget.PLACEHOLDERS_LABELS.labelFalseOptionText+"</option>" +
         "</select></div></div>";
     this.editOn();
     $(event.target).prev().prev().before(choiceUiHolder);
@@ -285,7 +338,7 @@ MultiChoiceQuestionWidget.prototype.handleClickAnswer = function(event) {
     const choiceElement = $(event.target).closest("div .question-choice");
     const questionElement = $(event.target).closest("div div.question");
     const isCorrectChoice = choiceElement.attr("data-um-correct")==='true';
-    const feedbackText = $(choiceElement).find(".question-choice-feedback").text();
+    const feedbackText = $(choiceElement).find(".question-choice-feedback").html();
     const feedbackContainer = $(questionElement).find(".question-feedback-container");
     $(feedbackContainer).find(".question-feedback-container-text").html(feedbackText);
     $(feedbackContainer).removeClass("hide-element show-element alert-success alert-danger alert-warning");
@@ -305,7 +358,7 @@ FillTheBlanksQuestionWidget.prototype.handleProvidedAnswer = function(event){
     const questionElement = $(event.target).closest("div div.question");
     const choiceElement = $(questionElement).find(".fill-blanks");
     const wrongChoiceText = $(choiceElement).find(".question-choice-feedback-wrong").text();
-    const correctChoiceText = $(choiceElement).find(".question-choice-feedback-correct").text();
+    const correctChoiceText = $(choiceElement).find(".question-choice-feedback-correct").html();
     let defaultAnswerText = $(choiceElement).find(".question-choice-body").text().toLowerCase();
     let userAnswerText = $(questionElement).find(".fill-the-blanks-input").val().toLowerCase();
     const feedbackContainer = $(questionElement).find(".question-feedback-container");
@@ -314,7 +367,7 @@ FillTheBlanksQuestionWidget.prototype.handleProvidedAnswer = function(event){
 
     const isCorrectChoice = defaultAnswerText === userAnswerText;
     const message = userAnswerText.length > 0 ?
-        (isCorrectChoice ? correctChoiceText: wrongChoiceText):"<b>Sorry!</b> please type your answer before submitting it";
+        (isCorrectChoice ? correctChoiceText: wrongChoiceText):QuestionWidget.PLACEHOLDERS_LABELS.warningOnSubmitEmptyField;
     console.log("Answer","user:"+userAnswerText+" - "+defaultAnswerText+": correct "+isCorrectChoice);
     $(feedbackContainer).find(".question-feedback-container-text").html(message);
     $(feedbackContainer).removeClass("hide-element show-element alert-success alert-danger alert-warning");

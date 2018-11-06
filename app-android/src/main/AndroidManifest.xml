@@ -44,7 +44,7 @@
 
 
         <activity
-            android:name=".UstadMobileActivity"
+            android:name="com.toughra.ustadmobile.UstadMobileActivity"
             android:configChanges="orientation|keyboardHidden|keyboard|screenSize|locale"
             android:label="@string/app_name" />
         <activity
@@ -104,7 +104,7 @@
             android:configChanges="orientation|keyboardHidden|keyboard|screenSize"
             android:label="" />
         <activity android:name="com.ustadmobile.port.android.view.ContentEditorActivity" />
-        <activity android:name="com.ustadmobile.port.android.view.ContentPreviewActivity"></activity>
+        <activity android:name="com.ustadmobile.port.android.view.ContentPreviewActivity"/>
     </application>
 
 </manifest>

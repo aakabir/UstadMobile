@@ -34,10 +34,6 @@ package com.ustadmobile.test.core;
     import j2meunit.framework.TestCase;
  $else$ */
 
-import com.ustadmobile.core.controller.LoginController;
-import com.ustadmobile.core.util.TestUtils;
-import com.ustadmobile.test.core.buildconfig.TestConstants;
-
 import junit.framework.TestCase;
 
 import java.io.IOException;

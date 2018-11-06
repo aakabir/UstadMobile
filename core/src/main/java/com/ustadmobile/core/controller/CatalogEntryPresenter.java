@@ -6,7 +6,6 @@ import com.ustadmobile.core.db.UmLiveData;
 import com.ustadmobile.core.db.UmObserver;
 import com.ustadmobile.core.generated.locale.MessageID;
 import com.ustadmobile.core.impl.BaseUmCallback;
-import com.ustadmobile.core.impl.UMLog;
 import com.ustadmobile.core.impl.UmCallback;
 import com.ustadmobile.core.impl.UstadMobileSystemImpl;
 import com.ustadmobile.core.networkmanager.AvailabilityMonitorRequest;
@@ -29,7 +28,6 @@ import java.util.Arrays;
 import java.util.HashSet;
 import java.util.Hashtable;
 import java.util.List;
-import java.util.Vector;
 
 import static com.ustadmobile.lib.db.entities.OpdsEntry.ENTRY_PROTOCOL;
 

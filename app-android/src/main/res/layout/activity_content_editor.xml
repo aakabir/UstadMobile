@@ -9,6 +9,7 @@
 
     <android.support.design.widget.CoordinatorLayout
         android:layout_width="match_parent"
+        android:id="@+id/coordinationLayout"
         android:layout_height="match_parent">
         <include
             layout="@layout/toolbar_with_progress"/>
@@ -117,6 +118,15 @@
                 fab:fab_label="@string/content_type_multimedia" />
 
         </com.github.clans.fab.FloatingActionMenu>
+
+        <android.support.design.widget.FloatingActionButton
+            android:id="@+id/btn_start_editing"
+            android:layout_width="wrap_content"
+            android:layout_gravity="bottom|end"
+            fab:fab_size="normal"
+            android:src="@drawable/ic_editor_action"
+            android:layout_margin="@dimen/dimen_16dp"
+            android:layout_height="wrap_content" />
     </android.support.design.widget.CoordinatorLayout>
 
     <android.support.design.widget.NavigationView

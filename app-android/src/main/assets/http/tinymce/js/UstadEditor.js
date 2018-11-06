@@ -19,9 +19,16 @@ ustadEditor.init = function(activeEditor){
  * @returns {boolean} TRUE if is active otherwise FALSE
  */
 ustadEditor.isToolBarButtonActive = function(buttonIdentifier){
-    return this.activeEditor.queryCommandState(buttonIdentifier) != null
+    return this.activeEditor.queryCommandState(buttonIdentifier);
 };
 
+/**
+ * Check if the control was executed at least once.
+ * @param controlCommand
+ */
+ustadEditor.isControlActivated = function(controlCommand){
+    return this.activeEditor.queryCommandValue(controlCommand) != null;
+};
 
 /**
  * Change editor content font size
@@ -39,7 +46,7 @@ ustadEditor.setFontSize = function(fontSize){
  */
 ustadEditor.editorActionUndo = function(){
     this.activeEditor.execCommand("Undo",false,null);
-    return this.isToolBarButtonActive("Undo");
+    return this.isControlActivated("Undo");
 };
 
 /**
@@ -48,7 +55,7 @@ ustadEditor.editorActionUndo = function(){
  */
 ustadEditor.editorActionRedo = function(){
     this.activeEditor.execCommand("Redo",false,null);
-    return this.isToolBarButtonActive("Redo");
+    return this.isControlActivated("Redo")  ;
 };
 
 /**
@@ -57,7 +64,7 @@ ustadEditor.editorActionRedo = function(){
  */
 ustadEditor.textDirectionLeftToRight = function(){
     this.activeEditor.execCommand("mceDirectionLTR",false,null);
-    return this.isToolBarButtonActive("mceDirectionLTR");
+    return this.isControlActivated("mceDirectionLTR");
 };
 
 /**
@@ -66,7 +73,7 @@ ustadEditor.textDirectionLeftToRight = function(){
  */
 ustadEditor.textDirectionRightToLeft = function(){
     this.activeEditor.execCommand("mceDirectionRTL",false,null);
-    return this.isToolBarButtonActive("mceDirectionRTL");
+    return this.isControlActivated("mceDirectionRTL");
 };
 
 /**
@@ -96,7 +103,6 @@ ustadEditor.paragraphLeftJustification = function(){
     return this.isToolBarButtonActive("JustifyLeft");
 };
 
-
 /**
  * Justify left editor content
  * @returns {boolean} TRUE if justified FALSE otherwise
@@ -124,14 +130,13 @@ ustadEditor.paragraphCenterJustification = function(){
     return this.isToolBarButtonActive("JustifyCenter");
 };
 
-
 /**
  * Indent editor content
  * @returns {boolean} TRUE if justified FALSE otherwise
  */
 ustadEditor.paragraphOutDent = function(){
     this.activeEditor.execCommand("Outdent",false,null);
-    return this.isToolBarButtonActive("Outdent");
+    return this.isControlActivated("Outdent");
 };
 
 /**
@@ -140,7 +145,7 @@ ustadEditor.paragraphOutDent = function(){
  */
 ustadEditor.paragraphIndent = function(){
     this.activeEditor.execCommand("Indent",false,null);
-    return this.isToolBarButtonActive("Indent");
+    return this.isControlActivated("Indent");
 };
 
 /**
@@ -197,6 +202,37 @@ ustadEditor.textFormattingSubScript = function(){
     return this.isToolBarButtonActive("Subscript");
 };
 
+/**
+ * Initialize a listener which fires a callback when text is highlighted (Web version)
+ */
+ustadEditor.initializeTextHighlightingListener = function(){
+    let timer;
+    $('.container-fluid').on("mousedown",function(){
+        timer = setTimeout(function(){
+            ustadEditor.handleTextHighlighting();
+        },1000);
+    }).on("mouseup mouseleave",function(){
+        clearTimeout(timer);
+    });
+};
+
+/**
+ * Check if the current selected editor node has controls activated to it
+ * @param commandValue control to check from
+ * @returns {{action: string, content: string}}
+ */
+ustadEditor.checkCurrentActiveControls = function(commandValue){
+    const isActive = ustadEditor.isToolBarButtonActive(commandValue);
+    return {action:'activeControl',content:btoa(commandValue+"-"+isActive)};
+};
+
+/**
+ * Start checking for active controls  and reactivate
+ * @returns {{action: string, content: string}}
+ */
+ustadEditor.startCheckingActivatedControls = function(){
+    return {action:'onActiveControlCheck',content:btoa("yes")};
+};
 
 /**
  * Initialize tinymce on a document
@@ -215,7 +251,20 @@ ustadEditor.initTinyMceEditor = function(){
             '//fonts.googleapis.com/css?family=Lato:300,300i,400,400i',
         ],
         extended_valid_elements : 'label[class],div[onclick|class|data-um-correct|data-um-widget|id],option[selected|value]',
-        setup:function(ed) {
+        style_formats: [{ title: 'Containers', items: [
+                { title: 'section', block: 'section', wrapper: true, merge_siblings: false },
+                { title: 'article', block: 'article', wrapper: true, merge_siblings: false },
+                { title: 'blockquote', block: 'blockquote', wrapper: true },
+                { title: 'hgroup', block: 'hgroup', wrapper: true },
+                { title: 'aside', block: 'aside', wrapper: true },
+                { title: 'figure', block: 'figure', wrapper: true }
+            ]
+        }],
+        init_instance_callback: function (ed) {
+            ed.on('click', function (e) {
+                console.log(JSON.stringify(ustadEditor.startCheckingActivatedControls()));
+            });
+
             ed.on('change', function() {
                 ustadEditor.hideToolbarMenu();
                 QuestionWidget.handleListeners();
@@ -236,17 +285,7 @@ ustadEditor.initTinyMceEditor = function(){
                 ustadEditor.handleContentChange();
                 setTimeout(ustadEditor.hideToolbarMenu(), 22);
             });
-
-        },
-        style_formats: [{ title: 'Containers', items: [
-                { title: 'section', block: 'section', wrapper: true, merge_siblings: false },
-                { title: 'article', block: 'article', wrapper: true, merge_siblings: false },
-                { title: 'blockquote', block: 'blockquote', wrapper: true },
-                { title: 'hgroup', block: 'hgroup', wrapper: true },
-                { title: 'aside', block: 'aside', wrapper: true },
-                { title: 'figure', block: 'figure', wrapper: true }
-            ]
-        }]
+        }
     };
     try{
         tinymce.init(inlineConfig).then(function () {
@@ -256,10 +295,11 @@ ustadEditor.initTinyMceEditor = function(){
             setTimeout(ustadEditor.hideToolbarMenu(), 22);
             setTimeout(ustadEditor.switchOnEditorController());
             console.log(JSON.stringify({action:'onInitEditor',content:"true"}));
+            console.log(JSON.stringify(ustadEditor.startCheckingActivatedControls()));
 
         });
     }catch (e) {
-        console.log(JSON.stringify({action:'exception',content:e}))
+        console.log(JSON.stringify({action:'exception',content:e}));
     }
 };
 
@@ -273,7 +313,6 @@ ustadEditor.switchOnEditorController = function(){
         console.log("switchOnEditorController:",e);
     }
 };
-
 
 /**
  * Get content from the active content editor
@@ -322,7 +361,6 @@ ustadEditor.insertMultipleChoiceQuestionTemplate = function () {
     }
 };
 
-
 /**
  * Insert fill in the blanks question template to the editor
  */
@@ -335,7 +373,6 @@ ustadEditor.insertFillInTheBlanksQuestionTemplate = function () {
         return null;
     }
 };
-
 
 /**
  * Insert multimedia content to the editor
@@ -351,7 +388,6 @@ ustadEditor.insertMedia = function(source,mimeType){
         mediaContent =
             "<video controls class='um-media media-audio'>" +
             "    <source src=\""+source+"\" type=\""+mimeType+"\">" +
-            " Your browser does not support the "+
             "</video>";
     }else{
         mediaContent =
@@ -377,6 +413,16 @@ ustadEditor.executeRawContent= function(content){
  */
 ustadEditor.handleContentChange = function(){
     console.log(JSON.stringify({action:'onContentChanged',content:btoa(this.activeEditor.getContent())}));
+};
+
+/**
+ * Callback to listen for any text highlighting on the active editor
+ */
+ustadEditor.handleTextHighlighting = function(){
+    const highlighted = this.activeEditor.selection.getContent();
+    if(highlighted){
+        console.log(JSON.stringify({action:'onContentHighlighted',content:btoa("")}));
+    }
 };
 
 
@@ -424,7 +470,7 @@ ustadEditor.changeEditorMode = function(mode){
 
 /**
  * Create new document with our basic document template.
- * @returns {Promise<void>} File generation promise
+ * @returns {Promise<void>} File generation promise (web version)
  */
 ustadEditor.createNewDocument = async function(){
     console.log("hit document creation process");
@@ -439,9 +485,6 @@ ustadEditor.createNewDocument = async function(){
     const result = await promise;
     console.log(JSON.stringify({action:'onDocumentCreated',content:btoa(result)}));
 };
-
-
-
 
 
 /**

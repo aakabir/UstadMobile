@@ -27,12 +27,6 @@
 
     <item
         app:showAsAction="always"
-        android:id="@+id/content_action_editor"
-        android:icon="@drawable/ic_editor_action"
-        android:title="" />
-
-    <item
-        app:showAsAction="always"
         android:id="@+id/content_action_pages"
         android:icon="@drawable/ic_menu_white_24dp"
         android:title="" />

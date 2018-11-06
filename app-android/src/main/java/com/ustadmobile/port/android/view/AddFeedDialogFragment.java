@@ -23,8 +23,6 @@ import com.ustadmobile.core.view.AddFeedDialogView;
 import com.ustadmobile.core.view.DismissableDialog;
 import com.ustadmobile.port.android.util.UMAndroidUtil;
 
-import java.util.Hashtable;
-
 /**
  * Created by mike on 10/10/17.
  */

@@ -13,7 +13,6 @@ import com.toughra.ustadmobile.R;
 import com.ustadmobile.port.android.view.BasePointActivity;
 
 import org.junit.Rule;
-import org.junit.Test;
 
 import java.util.UUID;
 

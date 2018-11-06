@@ -1,13 +1,5 @@
 package com.ustadmobile.test.http;
 
-import java.util.concurrent.TimeUnit;
-
-import okhttp3.mockwebserver.Dispatcher;
-import okhttp3.mockwebserver.MockResponse;
-import okhttp3.mockwebserver.RecordedRequest;
-import okio.Buffer;
-import okio.Okio;
-
 public class HttpServer {
 
     public static void main(String[] args) {

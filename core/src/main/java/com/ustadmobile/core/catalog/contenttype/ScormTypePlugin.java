@@ -2,10 +2,6 @@ package com.ustadmobile.core.catalog.contenttype;
 
 import com.ustadmobile.core.view.ScormPackageView;
 
-import org.xmlpull.v1.XmlPullParserException;
-
-import java.io.IOException;
-import java.io.InputStream;
 import java.util.Arrays;
 import java.util.List;
 

@@ -30,10 +30,6 @@
  */
 package com.ustadmobile.test.port.sharedse;
 
-import com.ustadmobile.core.impl.HTTPResult;
-import com.ustadmobile.core.impl.UstadMobileSystemImpl;
-import com.ustadmobile.core.util.TestUtils;
-
 import java.io.IOException;
 
 /* $if umplatform == 2  $

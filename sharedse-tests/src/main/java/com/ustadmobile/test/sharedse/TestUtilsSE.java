@@ -1,9 +1,7 @@
 package com.ustadmobile.test.sharedse;
 
-import com.ustadmobile.core.impl.HTTPResult;
 import com.ustadmobile.core.impl.UMLog;
 import com.ustadmobile.core.impl.UstadMobileSystemImpl;
-import com.ustadmobile.core.util.UMFileUtil;
 import com.ustadmobile.core.util.UMIOUtils;
 import com.ustadmobile.core.util.URLTextUtil;
 import com.ustadmobile.test.core.impl.PlatformTestUtil;

@@ -2,7 +2,6 @@ package com.ustadmobile.core.catalog;
 
 import com.ustadmobile.core.catalog.contenttype.ContentTypePlugin;
 import com.ustadmobile.core.impl.UstadMobileSystemImpl;
-import com.ustadmobile.lib.util.UMUtil;
 
 /**
  * This is a utility class that helps manage support for different content types. It will cache

@@ -127,8 +127,8 @@ public class ContentEditorPresenter extends UstadBaseController<ContentEditorVie
         view.runOnUiThread(() -> {
             if(!file.exists()){
                 view.createNewDocument();
-                view.handleResources();
             }
+            view.handleResources();
         });
 
     }

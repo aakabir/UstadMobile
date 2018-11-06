@@ -7,7 +7,6 @@ import com.ustadmobile.lib.database.annotation.UmQuery;
 import com.ustadmobile.lib.db.entities.OpdsLink;
 
 import java.util.List;
-import java.util.UUID;
 
 /**
  * Created by mike on 1/16/18.

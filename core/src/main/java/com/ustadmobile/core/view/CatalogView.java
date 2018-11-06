@@ -33,7 +33,6 @@ package com.ustadmobile.core.view;
 import com.ustadmobile.core.db.UmProvider;
 import com.ustadmobile.core.model.CourseProgress;
 import com.ustadmobile.core.opds.OpdsFilterOptions;
-import com.ustadmobile.lib.db.entities.OpdsEntryWithRelations;
 import com.ustadmobile.lib.db.entities.OpdsEntryWithStatusCache;
 
 import java.util.Set;

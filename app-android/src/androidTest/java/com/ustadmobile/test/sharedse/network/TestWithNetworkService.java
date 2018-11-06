@@ -15,7 +15,6 @@ import com.ustadmobile.core.impl.UstadMobileSystemImpl;
 import com.ustadmobile.port.android.netwokmanager.NetworkServiceAndroid;
 
 import org.junit.After;
-import org.junit.AfterClass;
 import org.junit.Before;
 import org.junit.Rule;
 

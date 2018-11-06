@@ -3,11 +3,9 @@ package com.ustadmobile.test.sharedse.http;
 import com.ustadmobile.core.db.UmAppDatabase;
 import com.ustadmobile.core.impl.UMLog;
 import com.ustadmobile.core.impl.UstadMobileSystemImpl;
-import com.ustadmobile.port.sharedse.impl.UstadMobileSystemImplSE;
 import com.ustadmobile.port.sharedse.networkmanager.NetworkManager;
 import com.ustadmobile.port.sharedse.networkmanager.WiFiDirectGroup;
 import com.ustadmobile.port.sharedse.networkmanager.WiFiDirectGroupListener;
-import com.ustadmobile.test.core.impl.PlatformTestUtil;
 
 import org.json.JSONObject;
 

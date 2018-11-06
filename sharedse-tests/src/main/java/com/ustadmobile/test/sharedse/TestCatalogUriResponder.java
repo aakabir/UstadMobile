@@ -1,7 +1,6 @@
 package com.ustadmobile.test.sharedse;
 
 import com.ustadmobile.core.controller.CatalogPresenter;
-import com.ustadmobile.core.db.UmAppDatabase;
 import com.ustadmobile.core.fs.db.ContainerFileHelper;
 import com.ustadmobile.core.impl.UstadMobileSystemImpl;
 import com.ustadmobile.core.util.UMIOUtils;

@@ -1,7 +1,5 @@
 package com.ustadmobile.test.core.impl;
 
-import java.util.Timer;
-
 /**
  * Created by mike on 12/25/17.
  */

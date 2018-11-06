@@ -46,10 +46,6 @@ import android.view.MenuItem;
 
 import com.toughra.ustadmobile.R;
 import com.ustadmobile.core.impl.UstadMobileSystemImpl;
-import com.ustadmobile.core.view.ContentEditorView;
-import com.ustadmobile.core.view.ContentPreviewView;
-
-import java.util.Hashtable;
 
 
 public class SplashScreenActivity extends AppCompatActivity implements DialogInterface.OnClickListener, ActivityCompat.OnRequestPermissionsResultCallback{

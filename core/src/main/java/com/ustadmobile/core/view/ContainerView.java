@@ -31,7 +31,6 @@
 package com.ustadmobile.core.view;
 
 import com.ustadmobile.core.controller.ContainerController;
-import com.ustadmobile.core.epubnav.EPUBNavDocument;
 import com.ustadmobile.core.epubnav.EPUBNavItem;
 
 /**

@@ -26,14 +26,15 @@ public interface ContentEditorView extends UstadView {
     String ACTION_REDO = "Redo";
     String ACTION_UNDO = "Undo";
     String ACTION_INIT_EDITOR ="onInitEditor";
+    String ACTION_CHECK_ACTIVE_CONTROLS ="onActiveControlCheck";
+    String ACTION_CONTROLS_ACTIVATED ="activeControl";
     String ACTION_CONTENT_CHANGED ="onContentChanged";
     String ACTION_SAVE_CONTENT ="onSaveContent";
-    String ACTION_NEW_DOCUMENT ="onDocumentCreated";
+    String ACTION_TEXT_SELECTION ="onContentHighlighted";
     String ACTION_TEXT_DIRECTION = "mceDirectionLTR";
     String CONTENT_INSERT_MULTIPLE_CHOICE_QN = "MultipleChoice";
     String CONTENT_INSERT_FILL_THE_BLANKS_QN = "FillTheBlanks";
 
-    String CONTENT_ROOT_DIR = "root_dir";
     String CONTENT_CSS_USTAD = "ustadmobile.css";
     String RESOURCE_CSS_BOOTSTRAP = "bootstrap.min.css";
     String RESOURCE_JS_BOOTSTRAP = "bootstrap.min.js";
@@ -73,7 +74,7 @@ public interface ContentEditorView extends UstadView {
             "</head>\n" +
             "\n" +
             "<body>\n" +
-            "<div class=\"container-fluid\">\n" +
+            "<div class=\"container-fluid default-margin-top\">\n" +
             "    <div class=\"row\" id=\"ustad-preview\">\n" +
             "        <template/>\n" +
             "    </div>\n" +

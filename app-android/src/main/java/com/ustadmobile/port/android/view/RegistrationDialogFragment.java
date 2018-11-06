@@ -3,7 +3,6 @@ package com.ustadmobile.port.android.view;
 import android.content.Context;
 import android.os.Bundle;
 import android.support.design.widget.TextInputLayout;
-import android.support.v7.widget.AppCompatAutoCompleteTextView;
 import android.text.InputFilter;
 import android.text.InputType;
 import android.text.Spanned;
@@ -31,7 +30,6 @@ import com.ustadmobile.core.impl.UstadMobileSystemImpl;
 import com.ustadmobile.core.view.DismissableDialog;
 import com.ustadmobile.core.view.RegistrationView;
 
-import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.Calendar;
 import java.util.Hashtable;

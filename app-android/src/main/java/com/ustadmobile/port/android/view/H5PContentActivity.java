@@ -3,7 +3,6 @@ package com.ustadmobile.port.android.view;
 import android.content.ComponentName;
 import android.os.Build;
 import android.os.IBinder;
-import android.support.v7.app.AppCompatActivity;
 import android.os.Bundle;
 import android.webkit.WebChromeClient;
 import android.webkit.WebSettings;

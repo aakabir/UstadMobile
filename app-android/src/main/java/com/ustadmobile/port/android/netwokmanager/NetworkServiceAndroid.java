@@ -10,13 +10,8 @@ import android.support.annotation.Nullable;
 
 import com.ustadmobile.core.impl.UstadMobileSystemImpl;
 import com.ustadmobile.port.android.impl.UstadMobileSystemImplAndroid;
-import com.ustadmobile.port.sharedse.impl.UstadMobileSystemImplSE;
-
-import java.sql.SQLException;
 
 import edu.rit.se.wifibuddy.WifiDirectHandler;
-import com.ustadmobile.core.listener.ActiveSyncListener;
-import com.ustadmobile.core.listener.ActiveUserListener;
 
 import static com.ustadmobile.port.android.netwokmanager.NetworkManagerAndroid.PREF_KEY_SUPERNODE;
 
