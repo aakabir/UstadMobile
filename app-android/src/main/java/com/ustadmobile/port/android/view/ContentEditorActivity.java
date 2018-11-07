@@ -4,9 +4,11 @@ import android.Manifest;
 import android.annotation.SuppressLint;
 import android.app.Activity;
 import android.app.AlertDialog;
+import android.content.BroadcastReceiver;
 import android.content.ClipboardManager;
 import android.content.Context;
 import android.content.Intent;
+import android.content.IntentFilter;
 import android.content.pm.PackageManager;
 import android.graphics.Bitmap;
 import android.graphics.Rect;
@@ -26,6 +28,7 @@ import android.support.v4.app.FragmentManager;
 import android.support.v4.app.FragmentStatePagerAdapter;
 import android.support.v4.content.ContextCompat;
 import android.support.v4.content.FileProvider;
+import android.support.v4.content.LocalBroadcastManager;
 import android.support.v4.view.GravityCompat;
 import android.support.v4.view.ViewPager;
 import android.support.v4.widget.DrawerLayout;
@@ -36,7 +39,6 @@ import android.support.v7.widget.PopupMenu;
 import android.support.v7.widget.RecyclerView;
 import android.support.v7.widget.Toolbar;
 import android.util.DisplayMetrics;
-import android.util.SparseArray;
 import android.view.Display;
 import android.view.Gravity;
 import android.view.LayoutInflater;
@@ -60,6 +62,7 @@ import com.toughra.ustadmobile.R;
 import com.ustadmobile.core.controller.ContentEditorPresenter;
 import com.ustadmobile.core.generated.locale.MessageID;
 import com.ustadmobile.core.impl.UMLog;
+import com.ustadmobile.core.impl.UMStorageDir;
 import com.ustadmobile.core.impl.UstadMobileSystemImpl;
 import com.ustadmobile.core.util.Base64Coder;
 import com.ustadmobile.core.util.UMFileUtil;
@@ -67,6 +70,7 @@ import com.ustadmobile.core.view.ContentEditorView;
 import com.ustadmobile.core.view.ContentPreviewView;
 import com.ustadmobile.port.android.contenteditor.ContentEditorResourceHandler;
 import com.ustadmobile.port.android.contenteditor.ContentFormat;
+import com.ustadmobile.port.android.contenteditor.ContentFormattingHelper;
 import com.ustadmobile.port.android.contenteditor.UmAndroidUriUtil;
 import com.ustadmobile.port.android.contenteditor.WebContentEditorChrome;
 import com.ustadmobile.port.android.contenteditor.WebContentEditorClient;
@@ -92,6 +96,8 @@ import java.util.Objects;
 
 import id.zelory.compressor.Compressor;
 
+import static com.ustadmobile.core.controller.CatalogPresenter.SHARED_RESOURCE;
+import static com.ustadmobile.port.android.contenteditor.ContentFormattingHelper.FORMATTING_ACTIONS_INDEX;
 import static com.ustadmobile.port.android.contenteditor.WebContentEditorClient.executeJsFunction;
 
 public class ContentEditorActivity extends UstadBaseActivity implements ContentEditorView,
@@ -127,13 +133,6 @@ public class ContentEditorActivity extends UstadBaseActivity implements ContentE
 
     private boolean isSoftKeyboardActive = false;
 
-    private static final int FORMATTING_TEXT_INDEX = 0;
-
-    private static final int FORMATTING_PARAGRAPH_INDEX = 1;
-
-    private static final int FORMATTING_ACTIONS_INDEX = 2;
-
-    private static SparseArray<List<ContentFormat>> formattingList = new SparseArray<>();
     android.support.design.widget.FloatingActionButton startEditing;
 
     private  String baseUrl = null;
@@ -152,7 +151,7 @@ public class ContentEditorActivity extends UstadBaseActivity implements ContentE
 
     private static final int FILE_BROWSING_REQUEST = 902;
 
-    private static final String TEM_EDITING_DIR = "contents";
+    private static final String EDITOR_ROOT_DIR = "contentEditor";
 
     private static final String MEDIA_CONTENT_DIR = "media/";
 
@@ -213,11 +212,6 @@ public class ContentEditorActivity extends UstadBaseActivity implements ContentE
         class FormatsAdapter extends RecyclerView.Adapter<FormatsAdapter.FormatViewHolder>{
 
             private List<ContentFormat> contentFormats = new ArrayList<>();
-            private int formatType;
-
-            FormatsAdapter(int formatType){
-                this.formatType = formatType;
-            }
 
             void setContentFormats(List<ContentFormat> contentFormats) {
                 this.contentFormats = contentFormats;
@@ -244,10 +238,10 @@ public class ContentEditorActivity extends UstadBaseActivity implements ContentE
                         format.isActive() ? R.color.content_icon_active:R.color.icons));
                 mIcon.setImageResource(format.getFormatIcon());
                 mLayout.setOnClickListener(v -> {
-                    if(!format.getFormatTag().equals(TEXT_FORMAT_TYPE_FONT)){
+                    if(!format.getFormatCommand().equals(TEXT_FORMAT_TYPE_FONT)){
                         format.setActive(!format.isActive());
-                        formattingList.put(formatType, contentFormats);
-                        presenter.handleFormatTypeClicked(format.getFormatTag(),null);
+                        ContentFormattingHelper.getInstance().updateFormat(format);
+                        presenter.handleFormatTypeClicked(format.getFormatCommand(),null);
                         notifyDataSetChanged();
                     }else{
                         PopupMenu popupMenu = new PopupMenu(getActivity(), holder.itemView);
@@ -255,7 +249,7 @@ public class ContentEditorActivity extends UstadBaseActivity implements ContentE
                                 .inflate(R.menu.menu_content_font_sizes, popupMenu.getMenu());
                         popupMenu.getMenu().getItem(0).setChecked(true);
                         popupMenu.setOnMenuItemClickListener(item -> {
-                            presenter.handleFormatTypeClicked(format.getFormatTag(),
+                            presenter.handleFormatTypeClicked(format.getFormatCommand(),
                                     item.getTitle().toString().replace("pt",""));
                             return true;
                         });
@@ -267,7 +261,7 @@ public class ContentEditorActivity extends UstadBaseActivity implements ContentE
 
             @Override
             public int getItemCount() {
-                return contentFormats.size();
+                return contentFormats != null ? contentFormats.size():0;
             }
 
             class FormatViewHolder extends RecyclerView.ViewHolder{
@@ -277,6 +271,15 @@ public class ContentEditorActivity extends UstadBaseActivity implements ContentE
             }
 
         }
+
+        private BroadcastReceiver broadcastReceiver = new BroadcastReceiver() {
+            @Override
+            public void onReceive(Context context, Intent intent) {
+                if(intent!=null){
+                    adapter.notifyDataSetChanged();
+                }
+            }
+        };
 
         public FormattingFragment newInstance(int formatType) {
             this.formattingType = formatType;
@@ -289,16 +292,28 @@ public class ContentEditorActivity extends UstadBaseActivity implements ContentE
             View rootView = inflater.inflate(R.layout.fragment_content_formatting,
                     container, false);
             RecyclerView mRecyclerView = rootView.findViewById(R.id.formats_list);
-            adapter = new FormatsAdapter(formattingType);
-            adapter.setContentFormats(formattingList.get(formattingType));
+            adapter = new FormatsAdapter();
+            adapter.setContentFormats(
+                    ContentFormattingHelper.getInstance().getFormatListByType(formattingType));
             GridLayoutManager mLayoutManager = new GridLayoutManager(getContext(),
                     getSpanCount(100));
             mRecyclerView.setLayoutManager(mLayoutManager);
             mRecyclerView.setAdapter(adapter);
+
+            IntentFilter intentFilter = new IntentFilter();
+            intentFilter.addAction(ACTION_FORMAT_STATUS_CHANGED);
+            LocalBroadcastManager.getInstance(Objects.requireNonNull(getActivity()))
+                    .registerReceiver(broadcastReceiver,intentFilter);
             return  rootView;
 
         }
 
+        @Override
+        public void onDestroy() {
+            super.onDestroy();
+            LocalBroadcastManager.getInstance(Objects.requireNonNull(getActivity()))
+                    .unregisterReceiver(broadcastReceiver);
+        }
 
         /**
          * Automatically gets number of rows to be displayed as per screen size
@@ -363,7 +378,8 @@ public class ContentEditorActivity extends UstadBaseActivity implements ContentE
         }
         progressDialog.setMax(100);
         progressDialog.setProgress(0);
-        contentDir = new File(Environment.getExternalStorageDirectory(),"contents");
+        UMStorageDir [] rootDir = UstadMobileSystemImpl.getInstance().getStorageDirs(SHARED_RESOURCE,this);
+        contentDir = new File(new File(rootDir[0].getDirURI()), EDITOR_ROOT_DIR);
         if(!contentDir.exists()) contentDir.mkdir();
         args = UMAndroidUtil.bundleToHashtable(getIntent().getExtras());
         index_file = args.get(EDITOR_CONTENT_FILE).toString();
@@ -443,6 +459,7 @@ public class ContentEditorActivity extends UstadBaseActivity implements ContentE
                     if(openFormattingBottomSheet){
                         openFormattingBottomSheet = false;
                         handleSoftKeyboard(false);
+                        setMediaSourceBottomSheetBehavior(false);
                     }
                 }
 
@@ -469,6 +486,8 @@ public class ContentEditorActivity extends UstadBaseActivity implements ContentE
                         if(newState == BottomSheetBehavior.STATE_EXPANDED){
                             mInsertContent.close(true);
                             mPreviewContent.hide(true);
+                            handleSoftKeyboard(false);
+                            setFormattingBottomSheetBehavior(false);
                         }
 
                         if(newState == BottomSheetBehavior.STATE_COLLAPSED){
@@ -515,8 +534,8 @@ public class ContentEditorActivity extends UstadBaseActivity implements ContentE
 
     @Override
     public boolean onPrepareOptionsMenu(Menu menu) {
-        menu.findItem(R.id.content_action_direction)
-                .setIcon(formattingList.get(FORMATTING_ACTIONS_INDEX).get(0).getFormatIcon());
+        menu.findItem(R.id.content_action_direction).setIcon(ContentFormattingHelper.getInstance()
+                        .getFormatListByType(FORMATTING_ACTIONS_INDEX).get(0).getFormatIcon());
         return super.onPrepareOptionsMenu(menu);
     }
 
@@ -532,7 +551,12 @@ public class ContentEditorActivity extends UstadBaseActivity implements ContentE
             handleExpandableViews();
 
         }else if(itemId == R.id.content_action_format){
-           handleContentFormattingBottomSheet();
+            openFormattingBottomSheet = true;
+            if(isSoftKeyboardActive){
+                handleSoftKeyboard(false);
+            }else{
+                setFormattingBottomSheetBehavior(true);
+            }
 
         }else if(itemId == R.id.content_action_undo){
             presenter.handleFormatTypeClicked(ACTION_UNDO,null);
@@ -546,12 +570,12 @@ public class ContentEditorActivity extends UstadBaseActivity implements ContentE
             popupMenu.inflate(R.menu.menu_content_text_direction);
             popupMenu.getMenu().getItem(0).setChecked(true);
             popupMenu.setOnMenuItemClickListener(popupItem -> {
-                List<ContentFormat> format = formattingList.get(FORMATTING_ACTIONS_INDEX);
+                List<ContentFormat> format = ContentFormattingHelper.getInstance()
+                        .getFormatListByType(FORMATTING_ACTIONS_INDEX);
                 format.get(0).setActive(true);
                 format.get(0).setFormatIcon(popupItem.getItemId() == R.id.direction_leftToRight ?
                         R.drawable.ic_format_textdirection_l_to_r_white_24dp:
                         R.drawable.ic_format_textdirection_r_to_l_white_24dp);
-                formattingList.put(FORMATTING_ACTIONS_INDEX,format);
                 presenter.handleFormatTypeClicked(ACTION_TEXT_DIRECTION,
                         popupItem.getItemId() == R.id.direction_leftToRight ? "false":"true");
                 return true;
@@ -630,8 +654,21 @@ public class ContentEditorActivity extends UstadBaseActivity implements ContentE
                     }
                     UMFileUtil.writeToFile(new File(contentDir,"index.html"),index.html());
                     break;
+
                 case ACTION_CHECK_ACTIVE_CONTROLS:
                     checkActivatedControls();
+                    break;
+
+                case ACTION_CONTROLS_ACTIVATED:
+                    UstadMobileSystemImpl.l(UMLog.DEBUG,700,content);
+                    String formatCommand = content.split("-")[0];
+                    String formatStatus = content.split("-")[1];
+                    ContentFormattingHelper mHelper = ContentFormattingHelper.getInstance();
+                    ContentFormat format = mHelper.getFormatByCommand(formatCommand);
+                    format.setActive(Boolean.parseBoolean(formatStatus));
+                    mHelper.updateFormat(format);
+                    LocalBroadcastManager.getInstance(this)
+                            .sendBroadcast(new Intent(ACTION_FORMAT_STATUS_CHANGED));
                     break;
             }
         }
@@ -774,12 +811,12 @@ public class ContentEditorActivity extends UstadBaseActivity implements ContentE
     public void startWebServer(){
         EmbeddedHTTPD embeddedHTTPD = new EmbeddedHTTPD(0, this);
         embeddedHTTPD.addRoute( assetsDir+"(.)+",  AndroidAssetsHandler.class, this);
-        embeddedHTTPD.addRoute( TEM_EDITING_DIR +"(.)+",  FileDirectoryHandler.class, contentDir);
+        embeddedHTTPD.addRoute( EDITOR_ROOT_DIR +"(.)+",  FileDirectoryHandler.class, contentDir);
         try {
             embeddedHTTPD.start();
             if(embeddedHTTPD.isAlive()){
                 baseUrl =  "http://127.0.0.1:"+embeddedHTTPD.getListeningPort()+"/";
-                args.put(ContentPreviewView.PREVIEW_URL,baseUrl+ TEM_EDITING_DIR);
+                args.put(ContentPreviewView.PREVIEW_URL,baseUrl+ EDITOR_ROOT_DIR);
                 presenter.handleDocument(new File(contentDir,index_file));
             }
         } catch (IOException e) {
@@ -793,10 +830,6 @@ public class ContentEditorActivity extends UstadBaseActivity implements ContentE
         return formattingBottomSheetBehavior;
     }
 
-    @VisibleForTesting
-    public static SparseArray<List<ContentFormat>> getFormatting(){
-        return formattingList;
-    }
 
     @VisibleForTesting
     public BottomSheetBehavior getMediaSourceBottomSheetBehavior() {
@@ -951,13 +984,7 @@ public class ContentEditorActivity extends UstadBaseActivity implements ContentE
     public boolean onTouchEvent(MotionEvent event) {
         if(event.getAction() == android.view.MotionEvent.ACTION_UP){
             openFormattingBottomSheet = true;
-            if(isSoftKeyboardActive){
-                handleSoftKeyboard(false);
-            }else{
-                if(!isFormattingBottomSheetExpanded()){
-                    setFormattingBottomSheetBehavior(true);
-                }
-            }
+            handleSoftKeyboard(false);
 
         }
         return super.onTouchEvent(event);
@@ -1068,9 +1095,9 @@ public class ContentEditorActivity extends UstadBaseActivity implements ContentE
         /*Load temp index file*/
         if(baseUrl != null){
             editorContent.setWebViewClient(new WebContentEditorClient(
-                    this,baseUrl+TEM_EDITING_DIR));
+                    this,baseUrl+ EDITOR_ROOT_DIR));
             progressDialog.setVisibility(View.VISIBLE);
-            editorContent.loadUrl(UMFileUtil.joinPaths(baseUrl,TEM_EDITING_DIR,index_temp_file));
+            editorContent.loadUrl(UMFileUtil.joinPaths(baseUrl, EDITOR_ROOT_DIR,index_temp_file));
         }
     }
 
@@ -1108,56 +1135,9 @@ public class ContentEditorActivity extends UstadBaseActivity implements ContentE
      * Prepare lis of all formatting types
      */
     private void prepareFormattingTypeLists(){
-        List<ContentFormat> mText = new ArrayList<>();
-        List<ContentFormat> mDirection = new ArrayList<>();
-        List<ContentFormat> mParagraph = new ArrayList<>();
-        mText.add(new ContentFormat(R.drawable.ic_format_bold_black_24dp,
-                TEXT_FORMAT_TYPE_BOLD,false));
-        mText.add(new ContentFormat(R.drawable.ic_format_italic_black_24dp,
-                TEXT_FORMAT_TYPE_ITALIC,false));
-        mText.add(new ContentFormat(R.drawable.ic_format_strikethrough_black_24dp,
-                TEXT_FORMAT_TYPE_STRIKE,false));
-        mText.add(new ContentFormat(R.drawable.ic_format_underlined_black_24dp,
-                TEXT_FORMAT_TYPE_UNDERLINE,false));
-        mText.add(new ContentFormat(R.drawable.ic_format_size_black_24dp,
-                TEXT_FORMAT_TYPE_FONT,false));
-        mText.add(new ContentFormat(R.drawable.ic_number_superscript,
-                TEXT_FORMAT_TYPE_SUP,false));
-        mText.add(new ContentFormat(R.drawable.ic_number_subscript,
-                TEXT_FORMAT_TYPE_SUB,false));
-        mParagraph.add(new ContentFormat(R.drawable.ic_format_align_justify_black_24dp,
-                PARAGRAPH_FORMAT_ALIGN_JUSTIFY, false));
-        mParagraph.add(new ContentFormat(R.drawable.ic_format_align_right_black_24dp,
-                PARAGRAPH_FORMAT_ALIGN_RIGHT,false));
-        mParagraph.add(new ContentFormat(R.drawable.ic_format_align_center_black_24dp,
-                PARAGRAPH_FORMAT_ALIGN_CENTER,false));
-        mParagraph.add(new ContentFormat(R.drawable.ic_format_align_left_black_24dp,
-                PARAGRAPH_FORMAT_ALIGN_LEFT,false));
-        mParagraph.add(new ContentFormat(R.drawable.ic_format_list_numbered_black_24dp,
-                PARAGRAPH_FORMAT_LIST_ORDERED,false));
-        mParagraph.add(new ContentFormat(R.drawable.ic_format_list_bulleted_black_24dp,
-                PARAGRAPH_FORMAT_LIST_UNORDERED,false));
-        mParagraph.add(new ContentFormat(R.drawable.ic_format_indent_increase_black_24dp,
-                PARAGRAPH_FORMAT_INDENT_INCREASE,false));
-        mParagraph.add(new ContentFormat(R.drawable.ic_format_indent_decrease_black_24dp,
-                PARAGRAPH_FORMAT_INDENT_DECREASE,false));
-        mDirection.add(new ContentFormat(R.drawable.ic_format_textdirection_l_to_r_white_24dp,
-                ACTION_TEXT_DIRECTION,false));
 
-        formattingList.put(FORMATTING_TEXT_INDEX,mText);
-        formattingList.put(FORMATTING_PARAGRAPH_INDEX,mParagraph);
-        formattingList.put(FORMATTING_ACTIONS_INDEX,mDirection);
     }
 
-    private void handleContentFormattingBottomSheet(){
-        if(mInsertContent.isOpened()){
-            isFromFormatting = true;
-            mInsertContent.close(true);
-        }else{
-            setMediaSourceBottomSheetBehavior(false);
-            setFormattingBottomSheetBehavior(!isFormattingBottomSheetExpanded());
-        }
-    }
 
     private void handleSoftKeyboard(boolean show){
         if(show){
@@ -1233,7 +1213,6 @@ public class ContentEditorActivity extends UstadBaseActivity implements ContentE
      */
     private void handleKeyboardVisibilityChange(View rootView){
         rootView.getViewTreeObserver().addOnGlobalLayoutListener(() -> {
-
             Rect rect = new Rect();
             rootView.getWindowVisibleDisplayFrame(rect);
             int screenHeight = rootView.getRootView().getHeight();
@@ -1272,7 +1251,10 @@ public class ContentEditorActivity extends UstadBaseActivity implements ContentE
 
     private void checkActivatedControls(){
         if(isEditorInitialized){
-            executeJsFunction(editorContent, "ustadEditor.checkCurrentActiveControls", this, "bold");
+            for(ContentFormat format: ContentFormattingHelper.getInstance().getAllFormats()){
+                executeJsFunction(editorContent, "ustadEditor.checkCurrentActiveControls",
+                        this, format.getFormatCommand());
+            }
         }
     }
 

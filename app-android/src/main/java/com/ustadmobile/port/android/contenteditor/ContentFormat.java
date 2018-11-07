@@ -10,20 +10,21 @@ public class ContentFormat {
 
     private int formatIcon;
 
-    private String formatTag;
+    private String formatCommand;
 
     private boolean active;
 
-    private int formatId;
+    private int formatType;
 
-    public ContentFormat(int formatIcon, String formatTag, boolean active) {
+    public ContentFormat(int formatIcon, String formatCommand, boolean active, int formatType) {
         this.formatIcon = formatIcon;
-        this.formatTag = formatTag;
+        this.formatCommand = formatCommand;
         this.active = active;
+        this.formatType = formatType;
     }
 
-    public String getFormatTag() {
-        return formatTag;
+    public String getFormatCommand() {
+        return formatCommand;
     }
 
     public void setActive(boolean active) {
@@ -34,13 +35,6 @@ public class ContentFormat {
         return active;
     }
 
-    public void setFormatId(int formatId) {
-        this.formatId = formatId;
-    }
-
-    public int getFormatId() {
-        return formatId;
-    }
 
     public void setFormatIcon(int formatIcon) {
         this.formatIcon = formatIcon;
@@ -48,5 +42,17 @@ public class ContentFormat {
 
     public int getFormatIcon() {
         return formatIcon;
+    }
+
+    public void setFormatCommand(String formatCommand) {
+        this.formatCommand = formatCommand;
+    }
+
+    public int getFormatType() {
+        return formatType;
+    }
+
+    public void setFormatType(int formatType) {
+        this.formatType = formatType;
     }
 }

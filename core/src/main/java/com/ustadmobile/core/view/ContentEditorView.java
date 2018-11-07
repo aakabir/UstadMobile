@@ -31,6 +31,7 @@ public interface ContentEditorView extends UstadView {
     String ACTION_CONTENT_CHANGED ="onContentChanged";
     String ACTION_SAVE_CONTENT ="onSaveContent";
     String ACTION_TEXT_DIRECTION = "mceDirectionLTR";
+    String ACTION_FORMAT_STATUS_CHANGED = "actionContentFormatStatusChange";
     String CONTENT_INSERT_MULTIPLE_CHOICE_QN = "MultipleChoice";
     String CONTENT_INSERT_FILL_THE_BLANKS_QN = "FillTheBlanks";
 
