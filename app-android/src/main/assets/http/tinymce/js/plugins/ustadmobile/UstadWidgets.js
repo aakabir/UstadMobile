@@ -344,6 +344,23 @@ MultiChoiceQuestionWidget.prototype.addChoice = function(event) {
 MultiChoiceQuestionWidget.prototype.handleClickAnswer = function(event) {
     const choiceElement = $(event.target).closest("div .question-choice");
     const questionElement = $(event.target).closest("div div.question");
+
+    //handle UI
+
+    const allChoices = $(questionElement).find("[data-um-correct]");
+    for(let choice in allChoices){
+        if(!allChoices.hasOwnProperty(choice))
+            continue;
+        const choiceNode = allChoices[choice];
+        if($(choiceNode).hasClass("question-choice-pointer")){
+            const isClicked = $(choiceNode).html() === $(choiceElement).html();
+            if(isClicked){
+                $(choiceNode).addClass("selected-choice");
+            }else{
+                $(choiceNode).removeClass("selected-choice");
+            }
+        }
+    }
     const isCorrectChoice = choiceElement.attr("data-um-correct")==='true';
     const feedbackText = $(choiceElement).find(".question-choice-feedback").html();
     const feedbackContainer = $(questionElement).find(".question-feedback-container");

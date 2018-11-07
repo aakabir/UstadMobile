@@ -263,7 +263,7 @@ ustadEditor.initTinyMceEditor = function(){
                 { title: 'figure', block: 'figure', wrapper: true }
             ]
         }],
-        init_instance_callback: function (ed) {
+        setup: function (ed) {
             ed.on('click', function (e) {
                 setTimeout(ustadEditor.hideToolbarMenu(), 22);
                 console.log(JSON.stringify(ustadEditor.startCheckingActivatedControls()));

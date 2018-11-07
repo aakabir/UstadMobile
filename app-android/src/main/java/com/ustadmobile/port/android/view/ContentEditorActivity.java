@@ -51,6 +51,7 @@ import android.webkit.WebView;
 import android.widget.ImageView;
 import android.widget.ProgressBar;
 import android.widget.RelativeLayout;
+import android.widget.TextView;
 
 import com.github.clans.fab.FloatingActionButton;
 import com.github.clans.fab.FloatingActionMenu;
@@ -121,6 +122,8 @@ public class ContentEditorActivity extends UstadBaseActivity implements ContentE
     private boolean isEditorInitialized = false;
 
     private boolean openFormattingBottomSheet = false;
+
+    private boolean isDocumentEmpty = true;
 
     private boolean isSoftKeyboardActive = false;
 
@@ -336,6 +339,9 @@ public class ContentEditorActivity extends UstadBaseActivity implements ContentE
         RelativeLayout mFromCamera = findViewById(R.id.multimedia_from_camera);
         RelativeLayout mFromDevice = findViewById(R.id.multimedia_from_device);
         View rootView = findViewById(R.id.coordinationLayout);
+        TextView blankDocTitle = findViewById(R.id.blank_doc_title);
+        TextView bdClickLabel = findViewById(R.id.click_label);
+        TextView bdCreatLabel = findViewById(R.id.editing_label);
         blankDocumentContainer = findViewById(R.id.new_doc_container);
 
         ViewPager mViewPager = findViewById(R.id.content_types_viewpager);
@@ -417,6 +423,13 @@ public class ContentEditorActivity extends UstadBaseActivity implements ContentE
 
         mInsertFillBlanks.setOnClickListener(v ->
                 presenter.handleFormatTypeClicked(CONTENT_INSERT_FILL_THE_BLANKS_QN,null));
+
+        UstadMobileSystemImpl impl = UstadMobileSystemImpl.getInstance();
+
+        blankDocTitle.setText(impl.getString(MessageID.content_blank_doc_title,this));
+        bdClickLabel.setText(impl.getString(MessageID.content_blank_doc_click_label,this));
+        bdCreatLabel.setText(impl.getString(MessageID.content_blank_doc_start_label,this));
+
 
 
         formattingBottomSheetBehavior.setBottomSheetCallback(
@@ -593,7 +606,8 @@ public class ContentEditorActivity extends UstadBaseActivity implements ContentE
 
                 case ACTION_CONTENT_CHANGED:
                     mPreviewContent.setVisibility(View.VISIBLE);
-                    if(content.length() > 0){
+                    isDocumentEmpty = content.length() <= 0;
+                    if(!isDocumentEmpty){
                        if(isEditorInitialized){
                            mPreviewContent.show(true);
                        }
@@ -741,7 +755,8 @@ public class ContentEditorActivity extends UstadBaseActivity implements ContentE
 
     private void handleFinishingActivity() {
         if(new File(contentDir,index_temp_file).delete()){
-            finish();
+            //TODO: change this to finish() after demo.
+            moveTaskToBack(true);
         }
     }
 
@@ -981,7 +996,12 @@ public class ContentEditorActivity extends UstadBaseActivity implements ContentE
         Document htmlDoc = getIndexDocument(index_temp_file);
         Element docHead = htmlDoc.select("head").first();
         Element docBody = htmlDoc.select("body").first();
-        blankDocumentContainer.setVisibility(docBody.text().length() <= 0 ? View.VISIBLE:View.GONE);
+
+        /*Check if the document is empty and show empty document container*/
+        boolean hasImageContent = docBody.select("img[src]").size() > 0;
+        boolean hasVideoAudioContent = docBody.select("source[src]").size() > 0;
+        isDocumentEmpty = docBody.text().length() <= 0 && !hasImageContent && !hasVideoAudioContent;
+        blankDocumentContainer.setVisibility(isDocumentEmpty ? View.VISIBLE:View.GONE);
 
         if(docHead != null){
             Elements headResources = docHead.children();
@@ -1226,7 +1246,7 @@ public class ContentEditorActivity extends UstadBaseActivity implements ContentE
                     mPreviewContent.hide(true);
                 }
             }else{
-                if(isEditorInitialized){
+                if(isEditorInitialized && !isDocumentEmpty){
                     mPreviewContent.show(true);
                 }
                 if(openFormattingBottomSheet){

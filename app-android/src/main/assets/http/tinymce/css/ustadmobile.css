@@ -116,6 +116,11 @@ select,button :focus :active{
     outline: 0 solid transparent !important;
 }
 
+.selected-choice{
+    background-color: black !important;
+    color: white !important;
+}
+
 
 
 
