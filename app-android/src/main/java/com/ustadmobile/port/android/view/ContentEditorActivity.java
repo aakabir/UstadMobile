@@ -520,11 +520,6 @@ public class ContentEditorActivity extends UstadBaseActivity implements ContentE
 
     }
 
-    @Override
-    public void onStart() {
-        super.onStart();
-        prepareFormattingTypeLists();
-    }
 
     @Override
     public boolean onCreateOptionsMenu(Menu menu) {
@@ -652,6 +647,9 @@ public class ContentEditorActivity extends UstadBaseActivity implements ContentE
                         Element bodyElement = index.select("body").first();
                         bodyElement.html(wrapped);
                     }
+
+                    UstadMobileSystemImpl.l(UMLog.DEBUG,700,
+                            content);
                     UMFileUtil.writeToFile(new File(contentDir,"index.html"),index.html());
                     break;
 
@@ -1131,14 +1129,6 @@ public class ContentEditorActivity extends UstadBaseActivity implements ContentE
 
 
 
-    /**
-     * Prepare lis of all formatting types
-     */
-    private void prepareFormattingTypeLists(){
-
-    }
-
-
     private void handleSoftKeyboard(boolean show){
         if(show){
             InputMethodManager imm = (InputMethodManager)getSystemService(Context.INPUT_METHOD_SERVICE);
@@ -1220,13 +1210,12 @@ public class ContentEditorActivity extends UstadBaseActivity implements ContentE
             isSoftKeyboardActive = keypadHeight > screenHeight * 0.15;
             if (isSoftKeyboardActive) {
                 setFormattingBottomSheetBehavior(false);
-                if(mInsertContent.isOpened()){
-                    mInsertContent.hideMenuButton(true);
-                    mPreviewContent.hide(true);
-                }
+                mInsertContent.hideMenuButton(true);
+                mPreviewContent.hide(true);
             }else{
                 if(isEditorInitialized && !isDocumentEmpty){
                     mPreviewContent.show(true);
+                    mInsertContent.showMenuButton(true);
                 }
                 if(openFormattingBottomSheet){
                     setFormattingBottomSheetBehavior(true);
@@ -1239,13 +1228,10 @@ public class ContentEditorActivity extends UstadBaseActivity implements ContentE
      * Handle clipboard action completion
      */
     private void handleClipBoardContentChanges(){
-        ClipboardManager clipboard = (ClipboardManager) this.getSystemService(Context.CLIPBOARD_SERVICE);
+        ClipboardManager clipboard =
+                (ClipboardManager) this.getSystemService(Context.CLIPBOARD_SERVICE);
         assert clipboard != null;
-        clipboard.addPrimaryClipChangedListener(() -> {
-            UstadMobileSystemImpl.l(UMLog.DEBUG,700,
-                    "Clipboard text changed");
-            setFormattingBottomSheetBehavior(false);
-        });
+        clipboard.addPrimaryClipChangedListener(() -> setFormattingBottomSheetBehavior(false));
     }
 
 

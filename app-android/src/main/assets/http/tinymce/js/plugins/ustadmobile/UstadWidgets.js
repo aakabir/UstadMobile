@@ -77,6 +77,10 @@ QuestionWidget.prototype.editOn = function(){
         "  <option value=\"false\" selected=\"selected\">"+QuestionWidget.PLACEHOLDERS_LABELS.labelFalseOptionText+"</option>" +
         "</select>");
 
+    $('body').on('change', '.question-choice-answer select', function(event) {
+        QuestionWidget.prototype.setRetryOption(event);
+    });
+
     return this.element;
 };
 
@@ -249,7 +253,7 @@ MultiChoiceQuestionWidget.prototype.attachEditListeners = function() {
     QuestionWidget.prototype.addListeners.apply(this, arguments);
     $(".question-add-choice-btn button.add-choice").on('click', this.addChoice.bind(this));
     $("button.add-choice").on('click', this.addChoice.bind(this));
-    $("select").on("change",this.setCorrectChoice.bind(this));
+    $(".question-choice-answer select").on("change",this.setCorrectChoice.bind(this));
 };
 
 /**
@@ -293,6 +297,15 @@ MultiChoiceQuestionWidget.prototype.editOn = function() {
         +QuestionWidget.PLACEHOLDERS_LABELS.labelForFeedbackBodyText+"</label><br/>");
     $(this.element).find(".question-choice-answer").before("<label class='um-labels'>"
         +QuestionWidget.PLACEHOLDERS_LABELS.labelForRightAnswerOption+"</label><br/>");
+    const choices = $(this.element).find(".question-choice");
+    for(let choice in choices){
+        if(!choices.hasOwnProperty(choice))
+            continue;
+        if($(choices[choice]).hasClass("question-choice")){
+            $(choices[choice]).attr("id",QuestionWidget.getNextQuestionId());
+        }
+
+    }
     return this.element;
 };
 
@@ -321,20 +334,22 @@ FillTheBlanksQuestionWidget.prototype.editOn = function() {
  * @param event
  */
 MultiChoiceQuestionWidget.prototype.addChoice = function(event) {
-    const choiceUiHolder = "<div class=\"question-choice\" data-um-correct=\"false\" data-um-preview=\"support\">" +
+    const choiceUiHolder = "<div class=\"question-choice\" data-um-correct=\"false\" data-um-preview=\"support\" id='"
+        +QuestionWidget.getNextQuestionId()+"'>" +
         "<label class=\"um-labels\">"+QuestionWidget.PLACEHOLDERS_LABELS.labelForChoiceBodyText+"</label><br>" +
         "<div class=\"question-choice-body\">"+QuestionWidget.PLACEHOLDERS_LABELS.placeholderForTheChoiceText+"</div>" +
         "<label class=\"um-labels\">"+QuestionWidget.PLACEHOLDERS_LABELS.labelForFeedbackBodyText+"</label><br>" +
-        "<div class=\"question-choice-feedback\" data-um-edit-only=\"true\">" +
-        "What a choice, you need to read more about this country.</div>" +
+        "<div class=\"question-choice-feedback\" data-um-edit-only=\"true\">"
+        +QuestionWidget.PLACEHOLDERS_LABELS.placeholderForTheChoiceFeedback+"</div>" +
         "<label class=\"um-labels\">"+QuestionWidget.PLACEHOLDERS_LABELS.labelForRightAnswerOption+"</label><br>" +
         "<div class=\"question-choice-answer select-option col-sm-3 show-element col-lg-3\">" +
         "<select><option value=\"true\">"+QuestionWidget.PLACEHOLDERS_LABELS.labelForTrueOptionText+"</option>" +
         "<option selected=\"selected\" value=\"false\">"+QuestionWidget.PLACEHOLDERS_LABELS.labelFalseOptionText+"</option>" +
         "</select></div></div>";
-    this.editOn();
     $(event.target).prev().prev().before(choiceUiHolder);
-    ustadEditor.handleContentChange();
+    $('body').on('change', '.question-choice-answer select', function(event) {
+        MultiChoiceQuestionWidget.prototype.setCorrectChoice(event);
+    });
 };
 
 /**
@@ -345,15 +360,13 @@ MultiChoiceQuestionWidget.prototype.handleClickAnswer = function(event) {
     const choiceElement = $(event.target).closest("div .question-choice");
     const questionElement = $(event.target).closest("div div.question");
 
-    //handle UI
-
     const allChoices = $(questionElement).find("[data-um-correct]");
     for(let choice in allChoices){
         if(!allChoices.hasOwnProperty(choice))
             continue;
         const choiceNode = allChoices[choice];
         if($(choiceNode).hasClass("question-choice-pointer")){
-            const isClicked = $(choiceNode).html() === $(choiceElement).html();
+            const isClicked = $(choiceNode).attr("id") === $(choiceElement).attr("id");
             if(isClicked){
                 $(choiceNode).addClass("selected-choice");
             }else{
@@ -370,6 +383,10 @@ MultiChoiceQuestionWidget.prototype.handleClickAnswer = function(event) {
     const canBeRetried = questionElement.attr("data-um-retry")==='true';
     if(!isCorrectChoice && canBeRetried){
         $(questionElement).find(".question-retry-btn").removeClass("hide-element").addClass("show-element");
+    }
+
+    if(isCorrectChoice){
+        $(questionElement).find(".question-retry-btn").removeClass("show-element").addClass("hide-element");
     }
 };
 
@@ -401,6 +418,10 @@ FillTheBlanksQuestionWidget.prototype.handleProvidedAnswer = function(event){
     if((!isCorrectChoice && canBeRetried) || userAnswerText.length <= 0){
         $(questionElement).find(".question-retry-btn").removeClass("hide-element").addClass("show-element");
     }
+
+    if(isCorrectChoice){
+        $(questionElement).find(".question-retry-btn").removeClass("show-element").addClass("hide-element");
+    }
 };
 
 /**
@@ -409,6 +430,7 @@ FillTheBlanksQuestionWidget.prototype.handleProvidedAnswer = function(event){
  */
 MultiChoiceQuestionWidget.prototype.setCorrectChoice = function(event){
     $(event.target).closest("div .question-choice").attr("data-um-correct",$(event.target).val());
+    ustadEditor.handleContentChange();
 };
 
 
@@ -421,6 +443,7 @@ QuestionWidget.prototype.setRetryOption = function(event){
     const canBeRetried = $(event.target).val() === 'true';
     $(questionElement).attr("data-um-retry",canBeRetried);
     $(this.element).find("br").remove();
+    ustadEditor.handleContentChange();
 };
 
 /**
@@ -429,6 +452,7 @@ QuestionWidget.prototype.setRetryOption = function(event){
  */
 QuestionWidget.prototype.handleClickQuestionRetry = function(event){
     const questionElement = $(event.target).closest("div.question");
+    $(questionElement).find(".question-choice-pointer").removeClass("selected-choice");
     $(questionElement).find(".question-feedback-container").removeClass("show-element").addClass("hide-element");
     $(questionElement).find(".question-retry-btn").removeClass("show-element").addClass("hide-element");
 };

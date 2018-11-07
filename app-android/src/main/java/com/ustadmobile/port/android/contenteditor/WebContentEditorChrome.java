@@ -19,8 +19,6 @@ public class WebContentEditorChrome  extends WebChromeClient {
     }
     @Override
     public boolean onConsoleMessage(ConsoleMessage consoleMessage) {
-        UstadMobileSystemImpl.l(UMLog.DEBUG,700,
-                "Consoled a message "+consoleMessage.message());
         if(consoleMessage.message().contains("action")){
            callback.onCallbackReceived(consoleMessage.message());
         }

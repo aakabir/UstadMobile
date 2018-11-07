@@ -263,16 +263,16 @@ ustadEditor.initTinyMceEditor = function(){
                 { title: 'figure', block: 'figure', wrapper: true }
             ]
         }],
-        setup: function (ed) {
-            ed.on('click', function (e) {
-                setTimeout(ustadEditor.hideToolbarMenu(), 22);
-                console.log(JSON.stringify(ustadEditor.startCheckingActivatedControls()));
-            });
-
-            ed.on('change', function() {
+        init_instance_callback: function (ed) {
+            ed.on('NodeChange', function () {
                 setTimeout(ustadEditor.hideToolbarMenu(), 22);
                 QuestionWidget.handleListeners();
                 ustadEditor.handleContentChange();
+            });
+
+            ed.on('click', function () {
+                setTimeout(ustadEditor.hideToolbarMenu(), 22);
+                console.log(JSON.stringify(ustadEditor.startCheckingActivatedControls()));
             });
 
             ed.on('keyup', function() {
