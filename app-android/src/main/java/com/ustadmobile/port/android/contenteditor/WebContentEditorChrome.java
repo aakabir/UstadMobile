@@ -14,6 +14,10 @@ public class WebContentEditorChrome  extends WebChromeClient {
 
     private JsLoadingCallback callback;
 
+    /**
+     * Constructor which is used when creating an instance of this class.
+     * @param callback Callback to handle all page loads
+     */
     public WebContentEditorChrome (JsLoadingCallback callback){
         this.callback = callback;
     }
@@ -25,6 +29,11 @@ public class WebContentEditorChrome  extends WebChromeClient {
         return true;
     }
 
+    /**
+     * Listen for the page load progress change and notifies the UI
+     * @param view WebView in which the page is currently loading
+     * @param newProgress new progress percentage
+     */
     public void onProgressChanged(WebView view, int newProgress){
         if(newProgress == 100){
             callback.onPageFinishedLoading();

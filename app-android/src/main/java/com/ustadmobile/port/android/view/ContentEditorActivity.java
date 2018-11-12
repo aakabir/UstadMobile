@@ -167,9 +167,8 @@ public class ContentEditorActivity extends UstadBaseActivity implements ContentE
     private File contentDir;
 
 
-
     /**
-     * UI implementation of formatting type as pager.
+     * Content formatting adapter which handles formatting sections
      */
     private class ContentFormattingPagerAdapter extends FragmentStatePagerAdapter {
 

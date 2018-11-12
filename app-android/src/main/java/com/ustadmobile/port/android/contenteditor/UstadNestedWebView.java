@@ -10,7 +10,7 @@ import android.view.MotionEvent;
 import android.webkit.WebView;
 
 /**
- * Class which handles nested scroll behaviours on Webview hen wrapped in nested scrollview
+ * Class which handles nested scroll behaviours on Webview when wrapped in nested scrollview
  *
  * @author kileha3
  */
