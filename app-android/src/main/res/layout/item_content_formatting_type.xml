@@ -20,7 +20,6 @@
         tools:ignore="UselessParent">
 
         <ImageView
-            android:src="@drawable/ic_list_multiple_choice_20dp"
             android:tint="@color/text_secondary"
             android:id="@+id/format_icon"
             android:layout_width="@dimen/dimen_20dp"

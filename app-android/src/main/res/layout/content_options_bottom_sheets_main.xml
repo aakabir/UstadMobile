@@ -3,7 +3,7 @@
     android:elevation="@dimen/dimen_16dp"
     xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:app="http://schemas.android.com/apk/res-auto"
-    android:id="@+id/bottom_multimedia_source_sheet_container"
+    android:id="@+id/bottom_content_option_sheet_container"
     android:layout_width="match_parent"
     android:layout_height="wrap_content"
     android:background="@color/icons"
@@ -23,14 +23,14 @@
             <TextView
                 android:textSize="17sp"
                 android:textColor="@color/text_primary"
-                android:text="@string/content_type_multimedia"
+                android:text="@string/content_insert_options"
                 android:padding="@dimen/dimen_16dp"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content" />
             <ImageView
                 android:layout_centerVertical="true"
                 android:layout_alignParentRight="true"
-                android:id="@+id/action_close_tab_multimedia_options"
+                android:id="@+id/action_close_tab_content_options"
                 android:tint="@color/secondary_text"
                 android:layout_marginLeft="@dimen/dimen_16dp"
                 android:src="@drawable/ic_expand_more_black_24dp"
@@ -48,20 +48,20 @@
             android:clickable="true"
             android:foreground="?android:attr/selectableItemBackground"
             android:focusable="true"
-            android:id="@+id/multimedia_from_camera"
+            android:id="@+id/content_option_multiplechoice"
             android:padding="@dimen/dimen_16dp"
             android:layout_width="match_parent"
             android:layout_height="wrap_content">
             <ImageView
                 android:tint="@color/text_secondary"
-                android:src="@drawable/ic_photo_camera_black_24dp"
+                android:src="@drawable/ic_multiple_choice"
                 android:id="@+id/multiple_choice"
                 android:layout_centerVertical="true"
                 android:layout_width="@dimen/dimen_20dp"
                 android:layout_height="@dimen/dimen_20dp" />
 
             <TextView
-                android:text="@string/content_source_camera"
+                android:text="@string/content_type_multiple_choice"
                 android:layout_marginLeft="@dimen/dimen_16dp"
                 android:layout_toRightOf="@+id/multiple_choice"
                 android:textSize="15sp"
@@ -74,7 +74,7 @@
             android:clickable="true"
             android:foreground="?android:attr/selectableItemBackground"
             android:focusable="true"
-            android:id="@+id/multimedia_from_device"
+            android:id="@+id/content_option_filltheblanks"
             android:layout_marginTop="@dimen/dimen_8dp"
             android:padding="@dimen/dimen_16dp"
             android:layout_width="match_parent"
@@ -82,7 +82,7 @@
             <ImageView
                 android:tint="@color/text_secondary"
                 android:id="@+id/device_image"
-                android:src="@drawable/ic_perm_media_black_24dp"
+                android:src="@drawable/ic_create_black_24dp"
                 android:layout_centerVertical="true"
                 android:layout_width="@dimen/dimen_20dp"
                 android:layout_height="@dimen/dimen_20dp" />
@@ -91,7 +91,34 @@
                 android:layout_marginLeft="@dimen/dimen_16dp"
                 android:layout_toRightOf="@+id/device_image"
                 android:textSize="15sp"
-                android:text="@string/content_source_device"
+                android:text="@string/content_type_fill_the_blanks"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content" />
+        </RelativeLayout>
+
+
+        <RelativeLayout
+            android:clickable="true"
+            android:foreground="?android:attr/selectableItemBackground"
+            android:focusable="true"
+            android:id="@+id/content_option_multimedia"
+            android:layout_marginTop="@dimen/dimen_8dp"
+            android:padding="@dimen/dimen_16dp"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content">
+            <ImageView
+                android:tint="@color/text_secondary"
+                android:id="@+id/perm"
+                android:src="@drawable/ic_perm_media_black_24dp"
+                android:layout_centerVertical="true"
+                android:layout_width="@dimen/dimen_20dp"
+                android:layout_height="@dimen/dimen_20dp" />
+
+            <TextView
+                android:layout_marginLeft="@dimen/dimen_16dp"
+                android:layout_toRightOf="@+id/perm"
+                android:textSize="15sp"
+                android:text="@string/content_type_multimedia"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content" />
         </RelativeLayout>

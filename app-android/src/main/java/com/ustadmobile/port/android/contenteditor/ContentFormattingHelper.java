@@ -5,6 +5,7 @@ import com.ustadmobile.core.view.ContentEditorView;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.concurrent.CopyOnWriteArrayList;
 
 import static com.ustadmobile.core.view.ContentEditorView.*;
 
@@ -41,12 +42,56 @@ public class ContentFormattingHelper {
 
     private static List<ContentFormat> formatList = new ArrayList<>();
 
+    private List<StateChangeDispatcher> dispatcherList = new CopyOnWriteArrayList<>();
+
     public static ContentFormattingHelper getInstance() {
         if(instance == null){
             instance = new ContentFormattingHelper();
             prepareFormattingList();
         }
         return instance;
+    }
+
+
+    /**
+     * Construct quick action menu items
+     * @return list of all quick action menus
+     */
+    public List<ContentFormat> getQuickActions(){
+        List<ContentFormat> quickActions = new ArrayList<>();
+
+        ContentFormat bold = getFormatByCommand(TEXT_FORMAT_TYPE_BOLD);
+        bold.setFormatId(R.id.content_action_bold);
+        quickActions.add(bold);
+
+        ContentFormat italic = getFormatByCommand(TEXT_FORMAT_TYPE_ITALIC);
+        italic.setFormatId(R.id.content_action_italic);
+        quickActions.add(italic);
+
+        ContentFormat underline = getFormatByCommand(TEXT_FORMAT_TYPE_UNDERLINE);
+        underline.setFormatId(R.id.content_action_underline);
+        quickActions.add(underline);
+
+        ContentFormat strikeThrough = getFormatByCommand(TEXT_FORMAT_TYPE_STRIKE);
+        strikeThrough.setFormatId(R.id.content_action_strike_through);
+        quickActions.add(strikeThrough);
+
+        ContentFormat ordered = getFormatByCommand(PARAGRAPH_FORMAT_LIST_ORDERED);
+        ordered.setFormatId(R.id.content_action_ordered_list);
+        quickActions.add(ordered);
+
+        ContentFormat unordered = getFormatByCommand(PARAGRAPH_FORMAT_LIST_UNORDERED);
+        unordered.setFormatId(R.id.content_action_uordered_list);
+        quickActions.add(unordered);
+
+        ContentFormat iIncrease = getFormatByCommand(PARAGRAPH_FORMAT_INDENT_INCREASE);
+        iIncrease.setFormatId(R.id.content_action_indent);
+        quickActions.add(iIncrease);
+
+        ContentFormat iDecrease = getFormatByCommand(PARAGRAPH_FORMAT_INDENT_DECREASE);
+        iDecrease.setFormatId(R.id.content_action_outdent);
+        quickActions.add(iDecrease);
+        return quickActions;
     }
 
 
@@ -58,10 +103,10 @@ public class ContentFormattingHelper {
                 TEXT_FORMAT_TYPE_BOLD,false,FORMATTING_TEXT_INDEX));
         mText.add(new ContentFormat(R.drawable.ic_format_italic_black_24dp,
                 TEXT_FORMAT_TYPE_ITALIC,false,FORMATTING_TEXT_INDEX));
-        mText.add(new ContentFormat(R.drawable.ic_format_strikethrough_black_24dp,
-                TEXT_FORMAT_TYPE_STRIKE,false,FORMATTING_TEXT_INDEX));
         mText.add(new ContentFormat(R.drawable.ic_format_underlined_black_24dp,
                 TEXT_FORMAT_TYPE_UNDERLINE,false,FORMATTING_TEXT_INDEX));
+        mText.add(new ContentFormat(R.drawable.ic_format_strikethrough_black_24dp,
+                TEXT_FORMAT_TYPE_STRIKE,false,FORMATTING_TEXT_INDEX));
         mText.add(new ContentFormat(R.drawable.ic_format_size_black_24dp,
                 TEXT_FORMAT_TYPE_FONT,false,FORMATTING_TEXT_INDEX));
         mText.add(new ContentFormat(R.drawable.ic_number_superscript,
@@ -85,7 +130,9 @@ public class ContentFormattingHelper {
         mParagraph.add(new ContentFormat(R.drawable.ic_format_indent_decrease_black_24dp,
                 PARAGRAPH_FORMAT_INDENT_DECREASE,false,FORMATTING_PARAGRAPH_INDEX));
         mDirection.add(new ContentFormat(R.drawable.ic_format_textdirection_l_to_r_white_24dp,
-                ACTION_TEXT_DIRECTION,false,FORMATTING_ACTIONS_INDEX));
+                ACTION_TEXT_DIRECTION_LTR,false,FORMATTING_ACTIONS_INDEX));
+        mDirection.add(new ContentFormat(R.drawable.ic_format_textdirection_r_to_l_white_24dp,
+                ACTION_TEXT_DIRECTION_RTL,false,FORMATTING_ACTIONS_INDEX));
         formatList.addAll(mText);
         formatList.addAll(mParagraph);
         formatList.addAll(mDirection);
@@ -122,6 +169,7 @@ public class ContentFormattingHelper {
         return contentFormat;
     }
 
+
     /**
      * Update content format status
      * @param contentFormat updated content format
@@ -135,6 +183,69 @@ public class ContentFormattingHelper {
             }
         }
         formatList.set(formatIndex,contentFormat);
+        dispatchUpdate(contentFormat);
+    }
+
+    public void updateOtherJustification(String command){
+        String mTag = "Justify";
+        List<ContentFormat> paragraphFormatList = getFormatListByType(FORMATTING_PARAGRAPH_INDEX);
+        for(ContentFormat format: paragraphFormatList){
+            if(format.getFormatCommand().contains(mTag) && command.contains(mTag)
+                    && !format.getFormatCommand().equals(command)){
+                int index = paragraphFormatList.indexOf(format);
+                format.setActive(false);
+                formatList.set(index, format);
+            }
+        }
+    }
+
+    public void updateOtherListOrder(String command){
+        String mTag = "List";
+        List<ContentFormat> listOrdersTypes = listOrderFormats();
+        for(ContentFormat format: listOrdersTypes){
+            if(format.getFormatCommand().contains(mTag) && command.contains(mTag)
+                    && !format.getFormatCommand().equals(command)){
+                int index = listOrdersTypes.indexOf(format);
+                format.setActive(false);
+                formatList.set(index, format);
+            }
+        }
+    }
+
+    private List<ContentFormat> listOrderFormats(){
+        List<ContentFormat> listOrders = new ArrayList<>();
+        for(ContentFormat format: formatList){
+            if(format.getFormatCommand().contains("List")){
+               listOrders.add(format);
+            }
+        }
+        return listOrders;
+    }
+
+    public void setStateDispatcher(StateChangeDispatcher stateDispatcher){
+        if(dispatcherList != null){
+            dispatcherList.add(stateDispatcher);
+        }
+    }
+
+    public void dispatchUpdate(ContentFormat format){
+        for(StateChangeDispatcher dispatcher: dispatcherList){
+            dispatcher.onStateChanged(format);
+        }
+    }
+
+
+    public void destroy(){
+        if(dispatcherList != null && dispatcherList.size()>0){
+            dispatcherList.clear();
+        }
+    }
+
+
+    public static boolean isTobeHighlighted(String command){
+        return !command.equals(TEXT_FORMAT_TYPE_FONT)
+                && !command.equals(PARAGRAPH_FORMAT_INDENT_DECREASE)
+                && !command.equals(PARAGRAPH_FORMAT_INDENT_INCREASE);
     }
 
     /**
@@ -143,5 +254,18 @@ public class ContentFormattingHelper {
      */
     public List<ContentFormat> getAllFormats(){
         return formatList;
+    }
+
+
+    /**
+     * Interface to listen for the state change of the formatting item
+     */
+    public interface StateChangeDispatcher {
+
+        /**
+         * Invoked when formatting item has been updated
+         * @param format updated content format
+         */
+        void onStateChanged(ContentFormat format);
     }
 }

@@ -16,6 +16,8 @@ public class ContentFormat {
 
     private int formatType;
 
+    private int formatId = 0;
+
     /**
      * Constructor which will be used to create an instance of content formatting.
      * @param formatIcon Formatting icon
@@ -95,5 +97,13 @@ public class ContentFormat {
      */
     public void setFormatType(int formatType) {
         this.formatType = formatType;
+    }
+
+    public int getFormatId() {
+        return formatId;
+    }
+
+    public void setFormatId(int formatId) {
+        this.formatId = formatId;
     }
 }

@@ -261,6 +261,7 @@
     <string name="content_font_18">18pt</string>
     <string name="content_font_24">24pt</string>
     <string name="content_font_36">36pt</string>
+    <string name="content_insert_options">Insert</string>
     <string name="content_source_camera">From camera</string>
     <string name="content_source_device">From device</string>
     <string name="content_choose_file">Choose file</string>

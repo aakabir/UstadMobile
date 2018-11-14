@@ -30,7 +30,8 @@ public interface ContentEditorView extends UstadView {
     String ACTION_CONTROLS_ACTIVATED ="activeControl";
     String ACTION_CONTENT_CHANGED ="onContentChanged";
     String ACTION_SAVE_CONTENT ="onSaveContent";
-    String ACTION_TEXT_DIRECTION = "mceDirectionLTR";
+    String ACTION_TEXT_DIRECTION_LTR = "mceDirectionLTR";
+    String ACTION_TEXT_DIRECTION_RTL = "mceDirectionRTL";
     String ACTION_FORMAT_STATUS_CHANGED = "actionContentFormatStatusChange";
     String CONTENT_INSERT_MULTIPLE_CHOICE_QN = "MultipleChoice";
     String CONTENT_INSERT_FILL_THE_BLANKS_QN = "FillTheBlanks";
@@ -125,7 +126,7 @@ public interface ContentEditorView extends UstadView {
 
     void setContentUndo();
 
-    void setContentTextDirection(boolean right);
+    void setContentTextDirection(boolean isLTR);
 
     void insertMultipleChoiceQuestion();
 
@@ -134,8 +135,6 @@ public interface ContentEditorView extends UstadView {
     void requestEditorContent();
 
     void createNewDocument();
-
-    void handleContentMenu();
 
     void handleResources();
 

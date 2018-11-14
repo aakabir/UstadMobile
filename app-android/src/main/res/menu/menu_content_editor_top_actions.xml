@@ -2,33 +2,51 @@
 <menu xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:app="http://schemas.android.com/apk/res-auto">
     <item
+        android:visible="false"
         app:showAsAction="always"
         android:id="@+id/content_action_undo"
         android:icon="@drawable/ic_undo_white_24dp"
         android:title="" />
 
     <item
+        android:visible="false"
         app:showAsAction="always"
         android:id="@+id/content_action_redo"
         android:icon="@drawable/ic_redo_white_24dp"
         android:title="" />
     <item
+        android:visible="false"
         app:showAsAction="always"
         android:id="@+id/content_action_format"
         android:icon="@drawable/ic_text_format_white_24dp"
         android:title="" />
 
     <item
+        android:visible="false"
         app:showAsAction="always"
+        android:id="@+id/content_action_insert"
+        android:icon="@drawable/fab_add"
+        android:title="" />
+
+    <item
+        android:visible="false"
+        app:showAsAction="always"
+        android:id="@+id/content_action_preview"
+        android:icon="@drawable/ic_document_preview"
+        android:title="" />
+
+    <item
+        android:visible="false"
+        app:showAsAction="never"
         android:id="@+id/content_action_direction"
         android:icon="@drawable/ic_format_textdirection_l_to_r_white_24dp"
         android:title="">
     </item>
 
     <item
-        app:showAsAction="always"
+        app:showAsAction="never"
         android:id="@+id/content_action_pages"
         android:icon="@drawable/ic_menu_white_24dp"
-        android:title="" />
+        android:title="Pages" />
 
 </menu>

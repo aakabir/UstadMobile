@@ -36,170 +36,191 @@ ustadEditor.isControlActivated = function(controlCommand){
  * @returns {string | * | void}
  */
 ustadEditor.setFontSize = function(fontSize){
-    this.activeEditor.execCommand("FontSize",false,""+fontSize+"pt");
-    return this.activeEditor.queryCommandValue("FontSize");
+    this.executeCommand("FontSize",""+fontSize+"pt");
+    const activeFont = this.activeEditor.queryCommandValue("FontSize");
+    const isActive = this.isControlActivated("FontSize");
+    return {action:'activeControl',content:btoa("FontSize-"+isActive+"-"+activeFont)};
 };
 
 /**
  * Undo previously performed action
- * @returns {boolean} TRUE if succeed FALSE otherwise
+ * @returns {Object} TRUE if succeed FALSE otherwise
  */
 ustadEditor.editorActionUndo = function(){
-    this.activeEditor.execCommand("Undo",false,null);
-    return this.isControlActivated("Undo");
+    this.executeCommand("Undo",null);
+    const isActive = this.isControlActivated("Undo");
+    return {action:'activeControl',content:btoa("Undo-"+isActive)};
 };
 
 /**
  * Redo previously performed action
- * @returns {boolean} TRUE if succeed FALSE otherwise
+ * @returns {Object} TRUE if succeed FALSE otherwise
  */
 ustadEditor.editorActionRedo = function(){
-    this.activeEditor.execCommand("Redo",false,null);
-    return this.isControlActivated("Redo")  ;
+    this.executeCommand("Redo",null);
+    const isActive = this.isControlActivated("Redo");
+    return {action:'activeControl',content:btoa("Redo-"+isActive)};
 };
 
 /**
  * Set text direction from Left to Right
- * @returns {boolean} TRUE if direction changed otherwise FALSE
+ * @returns {Object} TRUE if direction changed otherwise FALSE
  */
 ustadEditor.textDirectionLeftToRight = function(){
-    this.activeEditor.execCommand("mceDirectionLTR",false,null);
-    return this.isControlActivated("mceDirectionLTR");
+    this.executeCommand('mceDirectionLTR');
+    const isActive = this.isControlActivated("mceDirectionLTR");
+    return {action:'activeControl',content:btoa("mceDirectionLTR-"+isActive)};
 };
 
 /**
  * Set text direction from Right to Left
- * @returns {boolean} TRUE if direction changed otherwise FALSE
+ * @returns {Object} TRUE if direction changed otherwise FALSE
  */
 ustadEditor.textDirectionRightToLeft = function(){
-    this.activeEditor.execCommand("mceDirectionRTL",false,null);
-    return this.isControlActivated("mceDirectionRTL");
+    this.executeCommand("mceDirectionRTL",null);
+    const isActive = this.isControlActivated("mceDirectionRTL");
+    return {action:'activeControl',content:btoa("mceDirectionRTL-"+isActive)};
 };
 
 /**
  * Remove or insert un-ordered list
- * @returns {boolean} TRUE inserted and FALSE otherwise
+ * @returns {Object} TRUE inserted and FALSE otherwise
  */
 ustadEditor.paragraphUnOrderedListFormatting = function(){
-    this.activeEditor.execCommand("InsertUnorderedList",false,null);
-    return this.isToolBarButtonActive("InsertUnorderedList");
+    this.executeCommand("InsertUnorderedList",null);
+    const isActive = this.isToolBarButtonActive("InsertUnorderedList");
+    return {action:'activeControl',content:btoa("InsertUnorderedList-"+isActive)};
 };
 
 /**
  * Remove or insert ordered list
- * @returns {boolean} TRUE inserted and FALSE otherwise
+ * @returns {Object} TRUE inserted and FALSE otherwise
  */
 ustadEditor.paragraphOrderedListFormatting = function(){
-    this.activeEditor.execCommand("InsertOrderedList",false,null);
-    return this.isToolBarButtonActive("InsertOrderedList");
+    this.executeCommand("InsertOrderedList",null);
+    const isActive = this.isToolBarButtonActive("InsertOrderedList");
+    return {action:'activeControl',content:btoa("InsertOrderedList-"+isActive)};
 };
 
 /**
  * Justify left editor content
- * @returns {boolean} TRUE if justified FALSE otherwise
+ * @returns {Object} TRUE if justified FALSE otherwise
  */
 ustadEditor.paragraphLeftJustification = function(){
-    this.activeEditor.execCommand("JustifyLeft",false,null);
-    return this.isToolBarButtonActive("JustifyLeft");
+    this.executeCommand("JustifyLeft",null);
+    const isActive = this.isToolBarButtonActive("JustifyLeft");
+    return {action:'activeControl',content:btoa("JustifyLeft-"+isActive)};
 };
 
 /**
  * Justify left editor content
- * @returns {boolean} TRUE if justified FALSE otherwise
+ * @returns {Object} TRUE if justified FALSE otherwise
  */
 ustadEditor.paragraphRightJustification = function(){
-    this.activeEditor.execCommand("JustifyRight",false,null);
-    return this.isToolBarButtonActive("JustifyRight");
+    this.executeCommand("JustifyRight",null);
+    const isActive = this.isToolBarButtonActive("JustifyRight");
+    return {action:'activeControl',content:btoa("JustifyRight-"+isActive)};
 };
 
 /**
  * Justify fully editor content
- * @returns {boolean} TRUE if justified FALSE otherwise
+ * @returns {Object} TRUE if justified FALSE otherwise
  */
 ustadEditor.paragraphFullJustification = function(){
-    this.activeEditor.execCommand("JustifyFull",false,null);
-    return this.isToolBarButtonActive("JustifyFull");
+    this.executeCommand("JustifyFull",null);
+    const isActive = this.isToolBarButtonActive("JustifyFull");
+    return {action:'activeControl',content:btoa("JustifyFull-"+isActive)};
 };
 
 /**
  * Justify center editor content
- * @returns {boolean} TRUE if justified FALSE otherwise
+ * @returns {Object} TRUE if justified FALSE otherwise
  */
 ustadEditor.paragraphCenterJustification = function(){
-    this.activeEditor.execCommand("JustifyCenter",false,null);
-    return this.isToolBarButtonActive("JustifyCenter");
+    this.executeCommand("JustifyCenter",null);
+    const isActive = this.isToolBarButtonActive("JustifyCenter");
+    return {action:'activeControl',content:btoa("JustifyCenter-"+isActive)};
 };
 
 /**
  * Indent editor content
- * @returns {boolean} TRUE if justified FALSE otherwise
+ * @returns {Object} TRUE if justified FALSE otherwise
  */
 ustadEditor.paragraphOutDent = function(){
-    this.activeEditor.execCommand("Outdent",false,null);
-    return this.isControlActivated("Outdent");
+    this.executeCommand("Outdent",null);
+    const isActive = this.isControlActivated("Outdent");
+    this.hideToolbarMenu();
+    return {action:'activeControl',content:btoa("Outdent-"+isActive)};
 };
 
 /**
  * Indent editor content
- * @returns {boolean} TRUE if justified FALSE otherwise
+ * @returns {Object} TRUE if justified FALSE otherwise
  */
 ustadEditor.paragraphIndent = function(){
-    this.activeEditor.execCommand("Indent",false,null);
-    return this.isControlActivated("Indent");
+    this.executeCommand("Indent",null);
+    const isActive = this.isControlActivated("Indent");
+    return {action:'activeControl',content:btoa("Indent-"+isActive)};
 };
 
 /**
  * Apply bold ustadEditor to a text
- * @returns {boolean} TRUE if applied otherwise FALSE
+ * @returns {Object} TRUE if applied otherwise FALSE
  */
 ustadEditor.textFormattingBold = function(){
-    this.activeEditor.execCommand("Bold",false,null);
-    return this.isToolBarButtonActive("Bold");
+    this.executeCommand("Bold",null);
+    const isActive = this.isToolBarButtonActive("Bold");
+    return {action:'activeControl',content:btoa("Bold-"+isActive)};
 };
 
 /**
  * Apply italic ustadEditor to a text
- * @returns {boolean} TRUE if applied otherwise FALSE
+ * @returns {Object} TRUE if applied otherwise FALSE
  */
 ustadEditor.textFormattingItalic = function(){
-    this.activeEditor.execCommand("Italic",false,null);
-    return this.isToolBarButtonActive("Italic");
+    this.executeCommand("Italic",null);
+    const isActive = this.isToolBarButtonActive("Italic");
+    return {action:'activeControl',content:btoa("Italic-"+isActive)};
 };
 
 /**
  * Apply underline ustadEditor to a text
- * @returns {boolean} TRUE if applied otherwise FALSE
+ * @returns {Object} TRUE if applied otherwise FALSE
  */
 ustadEditor.textFormattingUnderline = function(){
-    this.activeEditor.execCommand("Underline",false,null);
-    return this.isToolBarButtonActive("Underline");
+    this.executeCommand("Underline",null);
+    const isActive = this.isToolBarButtonActive("Underline");
+    return {action:'activeControl',content:btoa("Underline-"+isActive)};
 };
 
 /**
  * Apply strike-through ustadEditor to a text
- * @returns {boolean} TRUE if applied otherwise FALSE
+ * @returns {Object} TRUE if applied otherwise FALSE
  */
 ustadEditor.textFormattingStrikeThrough = function(){
-    this.activeEditor.execCommand("Strikethrough",false,null);
-    return this.isToolBarButtonActive("Strikethrough");
+    this.executeCommand("Strikethrough",null);
+    const isActive = this.isToolBarButtonActive("Strikethrough");
+    return {action:'activeControl',content:btoa("Strikethrough-"+isActive)};
 };
 
 /**
  * Apply superscript ustadEditor to a text
- * @returns {boolean} TRUE if applied otherwise FALSE
+ * @returns {Object} TRUE if applied otherwise FALSE
  */
 ustadEditor.textFormattingSuperScript = function(){
-    this.activeEditor.execCommand("Superscript",false,null);
-    return this.isToolBarButtonActive("Superscript");
+    this.executeCommand("Superscript",null);
+    const isActive = this.isToolBarButtonActive("Superscript");
+    return {action:'activeControl',content:btoa("Superscript-"+isActive)};
 };
 
 /**
  * Apply subscript ustadEditor to a text
- * @returns {boolean} TRUE if applied otherwise FALSE
+ * @returns {Object} TRUE if applied otherwise FALSE
  */
 ustadEditor.textFormattingSubScript = function(){
-    this.activeEditor.execCommand("Subscript",false,null);
-    return this.isToolBarButtonActive("Subscript");
+    this.executeCommand("Subscript",null);
+    const isActive = this.isToolBarButtonActive("Subscript");
+    return {action:'activeControl',content:btoa("Subscript-"+isActive)};
 };
 
 /**
@@ -273,6 +294,7 @@ ustadEditor.initTinyMceEditor = function(){
             ed.on('click', function () {
                 setTimeout(ustadEditor.hideToolbarMenu(), 22);
                 console.log(JSON.stringify(ustadEditor.startCheckingActivatedControls()));
+                console.log(JSON.stringify({action:'onClickEvent',content:btoa("yes")}));
             });
 
             ed.on('keyup', function() {
@@ -301,6 +323,7 @@ ustadEditor.initTinyMceEditor = function(){
             ustadEditor.initializeTextHighlightingListener();
             console.log(JSON.stringify({action:'onInitEditor',content:"true"}));
             console.log(JSON.stringify(ustadEditor.startCheckingActivatedControls()));
+            console.log(JSON.stringify({action:'onClickEvent',content:btoa("yes")}))
 
         });
     }catch (e) {
@@ -414,6 +437,15 @@ ustadEditor.executeRawContent= function(content){
     this.activeEditor.execCommand('mceInsertContent', false, content,{format: 'raw'});
 };
 
+/**
+ * Execute normal formatting commands
+ * @param command command to be executed
+ * @param args extra value to be passed on eg. font size
+ */
+ustadEditor.executeCommand = function(command,args){
+    this.activeEditor.execCommand(command, false,args);
+};
+
 
 /**
  * Callback to listen for any changes on the active editor
@@ -459,9 +491,6 @@ ustadEditor.loadContentForPreview = function (fileContent) {
     return {action:'onSaveContent',content:btoa($('<div/>').html(editorContent).contents().html())};
 };
 
-
-
-
 /**
  * Changing editor editing mode
  */
@@ -505,13 +534,3 @@ ustadEditor.startLivePreview = function () {
         console.log("startLivePreview",e)
     }
 };
-
-
-
-
-
-
-
-
-
-

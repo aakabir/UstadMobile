@@ -9,7 +9,8 @@ import java.util.Hashtable;
 
 import static com.ustadmobile.core.view.ContentEditorView.ACTION_PREVIEW;
 import static com.ustadmobile.core.view.ContentEditorView.ACTION_REDO;
-import static com.ustadmobile.core.view.ContentEditorView.ACTION_TEXT_DIRECTION;
+import static com.ustadmobile.core.view.ContentEditorView.ACTION_TEXT_DIRECTION_LTR;
+import static com.ustadmobile.core.view.ContentEditorView.ACTION_TEXT_DIRECTION_RTL;
 import static com.ustadmobile.core.view.ContentEditorView.ACTION_UNDO;
 import static com.ustadmobile.core.view.ContentEditorView.CONTENT_EDITOR_BODY_RESOURCES;
 import static com.ustadmobile.core.view.ContentEditorView.CONTENT_EDITOR_HEAD_RESOURCES;
@@ -53,69 +54,92 @@ public class ContentEditorPresenter extends UstadBaseController<ContentEditorVie
                 case TEXT_FORMAT_TYPE_BOLD:
                     view.setContentBold();
                     break;
+
                 case TEXT_FORMAT_TYPE_ITALIC:
                     view.setContentItalic();
                     break;
+
                 case TEXT_FORMAT_TYPE_STRIKE:
                     view.setContentStrikeThrough();
                     break;
+
                 case TEXT_FORMAT_TYPE_UNDERLINE:
                     view.setContentUnderlined();
                     break;
+
                 case TEXT_FORMAT_TYPE_SUP:
                     view.setContentSuperscript();
                     break;
+
                 case TEXT_FORMAT_TYPE_SUB:
                     view.setContentSubScript();
                     break;
+
                 case TEXT_FORMAT_TYPE_FONT:
                     view.setContentFontSize(param);
                     break;
+
                 case PARAGRAPH_FORMAT_ALIGN_CENTER:
                     view.setContentCenterAlign();
                     break;
+
                 case PARAGRAPH_FORMAT_ALIGN_LEFT:
                     view.setContentLeftAlign();
                     break;
+
                 case PARAGRAPH_FORMAT_ALIGN_RIGHT:
                     view.setContentRightAlign();
                     break;
+
                 case PARAGRAPH_FORMAT_ALIGN_JUSTIFY:
                     view.setContentJustified();
                     break;
+
                 case PARAGRAPH_FORMAT_LIST_ORDERED:
                     view.setContentOrderedList();
                     break;
+
                 case PARAGRAPH_FORMAT_LIST_UNORDERED:
                     view.setContentUnOrderList();
                     break;
+
                 case PARAGRAPH_FORMAT_INDENT_DECREASE:
                     view.setContentDecreaseIndent();
                     break;
+
                 case PARAGRAPH_FORMAT_INDENT_INCREASE:
                     view.setContentIncreaseIndent();
                     break;
+
                 case ACTION_REDO:
                     view.setContentRedo();
                     break;
+
                 case ACTION_UNDO:
                     view.setContentUndo();
                     break;
-                case ACTION_TEXT_DIRECTION:
-                    view.setContentTextDirection(Boolean.parseBoolean(param));
+
+                case ACTION_TEXT_DIRECTION_LTR:
+                    view.setContentTextDirection(true);
                     break;
+
+                case ACTION_TEXT_DIRECTION_RTL:
+                    view.setContentTextDirection(false);
+                    break;
+
                 case ACTION_PREVIEW:
                     view.requestEditorContent();
                     break;
+
                 case CONTENT_INSERT_FILL_THE_BLANKS_QN:
                     view.insertFillTheBlanksQuestion();
                     break;
+
                 case CONTENT_INSERT_MULTIPLE_CHOICE_QN:
                     view.insertMultipleChoiceQuestion();
                     break;
 
             }
-            view.handleContentMenu();
         });
     }
 
