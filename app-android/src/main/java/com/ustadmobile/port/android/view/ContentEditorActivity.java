@@ -2,25 +2,23 @@ package com.ustadmobile.port.android.view;
 
 import android.Manifest;
 import android.annotation.SuppressLint;
-import android.app.Activity;
 import android.app.AlertDialog;
 import android.content.ClipboardManager;
 import android.content.Context;
 import android.content.Intent;
 import android.content.pm.PackageManager;
 import android.graphics.Bitmap;
-import android.graphics.Rect;
 import android.net.Uri;
 import android.os.Build;
 import android.os.Bundle;
 import android.os.Environment;
-import android.os.Handler;
 import android.provider.MediaStore;
 import android.support.annotation.NonNull;
 import android.support.annotation.Nullable;
 import android.support.annotation.VisibleForTesting;
 import android.support.design.widget.AppBarLayout;
 import android.support.design.widget.BottomSheetBehavior;
+import android.support.design.widget.FloatingActionButton;
 import android.support.design.widget.TabLayout;
 import android.support.v4.app.ActivityCompat;
 import android.support.v4.app.Fragment;
@@ -45,7 +43,6 @@ import android.view.Menu;
 import android.view.MenuItem;
 import android.view.View;
 import android.view.ViewGroup;
-import android.view.inputmethod.InputMethodManager;
 import android.webkit.WebSettings;
 import android.webkit.WebView;
 import android.widget.ImageView;
@@ -53,7 +50,6 @@ import android.widget.ProgressBar;
 import android.widget.RelativeLayout;
 import android.widget.TextView;
 
-import com.github.clans.fab.FloatingActionMenu;
 import com.google.gson.Gson;
 import com.toughra.ustadmobile.R;
 import com.ustadmobile.core.controller.ContentEditorPresenter;
@@ -99,11 +95,13 @@ import id.zelory.compressor.Compressor;
 import static com.ustadmobile.core.controller.CatalogPresenter.SHARED_RESOURCE;
 import static com.ustadmobile.port.android.contenteditor.ContentFormattingHelper.FORMATTING_ACTIONS_INDEX;
 import static com.ustadmobile.port.android.contenteditor.ContentFormattingHelper.isTobeHighlighted;
+import static com.ustadmobile.port.android.contenteditor.EditorAnimatedViewSwitcher.ANIMATED_SOFT_KEYBOARD_PANEL;
+import static com.ustadmobile.port.android.contenteditor.EditorAnimatedViewSwitcher.MAX_SOFT_KEYBOARD_DELAY;
 import static com.ustadmobile.port.android.contenteditor.WebContentEditorClient.executeJsFunction;
 
 public class ContentEditorActivity extends UstadBaseActivity implements ContentEditorView,
         WebContentEditorChrome.JsLoadingCallback, BottomToolbarView.OnQuickActionMenuItemClicked,
-        ContentFormattingHelper.StateChangeDispatcher {
+        ContentFormattingHelper.StateChangeDispatcher , EditorAnimatedViewSwitcher.OnAnimatedViewsClosedListener{
 
     private static ContentEditorPresenter presenter;
 
@@ -117,13 +115,7 @@ public class ContentEditorActivity extends UstadBaseActivity implements ContentE
 
     private BottomToolbarView mBottomToolbarView;
 
-    private RelativeLayout mInsertMultipleChoice;
-
-    private RelativeLayout mInsertFillBlanks;
-
-    private RelativeLayout mInsertMultimedia;
-
-    private WebView editorContent;
+    private WebView editorWebView;
 
     private DrawerLayout mContentPageDrawer;
 
@@ -133,7 +125,7 @@ public class ContentEditorActivity extends UstadBaseActivity implements ContentE
 
     private boolean isDocumentEmpty = true;
 
-    android.support.design.widget.FloatingActionButton startEditing;
+    private FloatingActionButton startEditing;
 
     private  String baseUrl = null;
 
@@ -335,7 +327,7 @@ public class ContentEditorActivity extends UstadBaseActivity implements ContentE
     }
 
 
-    @SuppressLint("SetJavaScriptEnabled")
+    @SuppressLint({"SetJavaScriptEnabled"})
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
@@ -349,11 +341,11 @@ public class ContentEditorActivity extends UstadBaseActivity implements ContentE
                 .from(findViewById(R.id.bottom_content_option_sheet_container));
 
         toolbar = findViewById(R.id.um_toolbar);
-        mInsertMultimedia = findViewById(R.id.content_option_multimedia);
-        mInsertMultipleChoice = findViewById(R.id.content_option_multiplechoice);
-        mInsertFillBlanks = findViewById(R.id.content_option_filltheblanks);
+        RelativeLayout mInsertMultimedia = findViewById(R.id.content_option_multimedia);
+        RelativeLayout mInsertMultipleChoice = findViewById(R.id.content_option_multiplechoice);
+        RelativeLayout mInsertFillBlanks = findViewById(R.id.content_option_filltheblanks);
         mContentPageDrawer = findViewById(R.id.content_page_drawer);
-        editorContent = findViewById(R.id.editor_content);
+        editorWebView = findViewById(R.id.editor_content);
         progressDialog = findViewById(R.id.progressBar);
         startEditing = findViewById(R.id.btn_start_editing);
         RelativeLayout mFromCamera = findViewById(R.id.multimedia_from_camera);
@@ -375,9 +367,10 @@ public class ContentEditorActivity extends UstadBaseActivity implements ContentE
         mBottomToolbarView.setOnQuickActionMenuItemClicked(this);
 
         viewSwitcher = EditorAnimatedViewSwitcher.getInstance()
-                        .with(this).setViews(rootView, contentOptionsBottomSheetBehavior,
-                        formattingBottomSheetBehavior,mediaSourceBottomSheetBehavior,
-                        mContentPageDrawer);
+                        .with(this,this)
+                        .setViews(rootView, editorWebView,contentOptionsBottomSheetBehavior,
+                                formattingBottomSheetBehavior, mediaSourceBottomSheetBehavior,
+                                mContentPageDrawer);
 
 
 
@@ -408,25 +401,25 @@ public class ContentEditorActivity extends UstadBaseActivity implements ContentE
 
 
         findViewById(R.id.action_close_tab_formats).setOnClickListener(v ->
-            viewSwitcher.closeAnimatedView(EditorAnimatedViewSwitcher.PANEL_FORMATTING_CONTENT));
+            viewSwitcher.closeAnimatedView(EditorAnimatedViewSwitcher.ANIMATED_FORMATTING_PANEL));
         findViewById(R.id.action_close_tab_multimedia_options).setOnClickListener(v ->
-            viewSwitcher.closeAnimatedView(EditorAnimatedViewSwitcher.PANEL_MEDIA_CONTENT));
+            viewSwitcher.closeAnimatedView(EditorAnimatedViewSwitcher.ANIMATED_MEDIA_TYPE_PANEL));
         findViewById(R.id.action_close_tab_content_options).setOnClickListener(v ->
-            viewSwitcher.closeAnimatedView(EditorAnimatedViewSwitcher.PANEL_INSERT_CONTENT));
+            viewSwitcher.closeAnimatedView(EditorAnimatedViewSwitcher.ANIMATED_CONTENT_OPTION_PANEL));
 
         mFromDevice.setOnClickListener(v -> {
-            viewSwitcher.closeAnimatedView(EditorAnimatedViewSwitcher.PANEL_MEDIA_CONTENT);
+            viewSwitcher.closeAnimatedView(EditorAnimatedViewSwitcher.ANIMATED_MEDIA_TYPE_PANEL);
             startFileBrowser();
         });
 
         startEditing.setOnClickListener(v -> {
             progressDialog.setVisibility(View.VISIBLE);
-            executeJsFunction(editorContent, "ustadEditor.initTinyMceEditor",
+            executeJsFunction(editorWebView, "ustadEditor.initTinyMceEditor",
                     ContentEditorActivity.this, (String[]) null);
         });
 
         mFromCamera.setOnClickListener(v -> {
-            viewSwitcher.closeAnimatedView(EditorAnimatedViewSwitcher.PANEL_MEDIA_CONTENT);
+            viewSwitcher.closeAnimatedView(EditorAnimatedViewSwitcher.ANIMATED_MEDIA_TYPE_PANEL);
             if (ContextCompat.checkSelfPermission(getApplicationContext(),
                     Manifest.permission.CAMERA) != PackageManager.PERMISSION_GRANTED) {
                 ActivityCompat.requestPermissions(ContentEditorActivity.this,
@@ -439,7 +432,7 @@ public class ContentEditorActivity extends UstadBaseActivity implements ContentE
 
 
         mInsertMultimedia.setOnClickListener(v ->
-                viewSwitcher.animateView(EditorAnimatedViewSwitcher.PANEL_MEDIA_CONTENT));
+                viewSwitcher.animateView(EditorAnimatedViewSwitcher.ANIMATED_MEDIA_TYPE_PANEL));
 
         mInsertMultipleChoice.setOnClickListener(v ->
                 presenter.handleFormatTypeClicked(CONTENT_INSERT_MULTIPLE_CHOICE_QN,null));
@@ -459,14 +452,14 @@ public class ContentEditorActivity extends UstadBaseActivity implements ContentE
         mViewPager.setAdapter(adapter);
         mTabLayout.setupWithViewPager(mViewPager);
 
-        WebSettings webSettings = editorContent.getSettings();
+        WebSettings webSettings = editorWebView.getSettings();
         webSettings.setJavaScriptEnabled(true);
         webSettings.setAllowFileAccess(true);
         webSettings.setRenderPriority(WebSettings.RenderPriority.HIGH);
-        editorContent.setWebChromeClient(new WebContentEditorChrome(this));
-        editorContent.setLayerType(View.LAYER_TYPE_HARDWARE, null);
-        editorContent.clearCache(true);
-        editorContent.clearHistory();
+        editorWebView.setWebChromeClient(new WebContentEditorChrome(this));
+        editorWebView.setLayerType(View.LAYER_TYPE_HARDWARE, null);
+        editorWebView.clearCache(true);
+        editorWebView.clearHistory();
 
     }
 
@@ -492,6 +485,7 @@ public class ContentEditorActivity extends UstadBaseActivity implements ContentE
         return super.onPrepareOptionsMenu(menu);
     }
 
+
     @SuppressLint("RestrictedApi")
     @Override
     public boolean onOptionsItemSelected(MenuItem item) {
@@ -505,7 +499,7 @@ public class ContentEditorActivity extends UstadBaseActivity implements ContentE
 
         }else if(itemId == R.id.content_action_format){
 
-            viewSwitcher.animateView(EditorAnimatedViewSwitcher.PANEL_FORMATTING_CONTENT);
+            viewSwitcher.animateView(EditorAnimatedViewSwitcher.ANIMATED_FORMATTING_PANEL);
 
         }else if(itemId == R.id.content_action_preview){
             UstadMobileSystemImpl.getInstance().go(ContentPreviewView.VIEW_NAME,
@@ -513,7 +507,7 @@ public class ContentEditorActivity extends UstadBaseActivity implements ContentE
 
         }else if(itemId == R.id.content_action_insert){
 
-            viewSwitcher.animateView(EditorAnimatedViewSwitcher.PANEL_INSERT_CONTENT);
+            viewSwitcher.animateView(EditorAnimatedViewSwitcher.ANIMATED_CONTENT_OPTION_PANEL);
 
         }else if(itemId == R.id.content_action_undo){
             presenter.handleFormatTypeClicked(ACTION_UNDO,null);
@@ -533,8 +527,9 @@ public class ContentEditorActivity extends UstadBaseActivity implements ContentE
                 format.get(0).setFormatIcon(popupItem.getItemId() == R.id.direction_leftToRight ?
                         R.drawable.ic_format_textdirection_l_to_r_white_24dp:
                         R.drawable.ic_format_textdirection_r_to_l_white_24dp);
-                presenter.handleFormatTypeClicked(popupItem.getItemId() ==
-                        R.id.direction_leftToRight ? ACTION_TEXT_DIRECTION_LTR:ACTION_TEXT_DIRECTION_RTL,null);
+                presenter.handleFormatTypeClicked(
+                        popupItem.getItemId() == R.id.direction_leftToRight ?
+                                ACTION_TEXT_DIRECTION_LTR:ACTION_TEXT_DIRECTION_RTL,null);
                 return true;
             });
              @SuppressLint("RestrictedApi")
@@ -572,6 +567,26 @@ public class ContentEditorActivity extends UstadBaseActivity implements ContentE
     }
 
     @Override
+    public void onAnimatedViewsClosed() {
+        if(isEditorInitialized){
+            isEditorInitialized = false;
+            handleBackNavigationIcon();
+            invalidateOptionsMenu();
+            handleQuickActions();
+            viewSwitcher.closeAnimatedView(ANIMATED_SOFT_KEYBOARD_PANEL);
+            startEditing.setVisibility(View.VISIBLE);
+            loadIndexFile();
+        }else{
+            if(new File(contentDir,index_temp_file).delete())moveTaskToBack(true);
+        }
+    }
+
+    @Override
+    public void onFocusRequested() {
+        requestEditorFocus();
+    }
+
+    @Override
     public void onProgressChanged(int newProgress) {
         progressDialog.setProgress(newProgress);
     }
@@ -586,27 +601,31 @@ public class ContentEditorActivity extends UstadBaseActivity implements ContentE
      * @param callback object returned
      */
     private void processJsCallLogValues(WebJsResponse callback){
+
         String content = Base64Coder.decodeString(callback.getContent());
+
         switch (callback.getAction()){
             //on editor initialized
             case ACTION_INIT_EDITOR:
                 isEditorInitialized = Boolean.parseBoolean(callback.getContent());
                 if(isEditorInitialized){
                     invalidateOptionsMenu();
-                    new Handler().postDelayed(() ->
-                        viewSwitcher.animateView(EditorAnimatedViewSwitcher.PANEL_SOFT_KEYBOARD),
-                            TimeUnit.SECONDS.toMillis(2));
+                    requestEditorFocus();
+                    editorWebView.postDelayed(() -> {
+                        viewSwitcher.animateView(ANIMATED_SOFT_KEYBOARD_PANEL);
+                    },TimeUnit.SECONDS.toMillis(MAX_SOFT_KEYBOARD_DELAY));
                 }
                 handleBackNavigationIcon();
                 startEditing.setVisibility(View.GONE);
                 progressDialog.setVisibility(View.GONE);
                 blankDocumentContainer.setVisibility(View.GONE);
+                viewSwitcher.setEditorActivated(isEditorInitialized);
                 handleQuickActions();
                 break;
             //content changed on the editor
             case ACTION_CONTENT_CHANGED:
                 isDocumentEmpty = content.length() <= 0;
-                executeJsFunction(editorContent, "ustadEditor.loadContentForPreview",
+                executeJsFunction(editorWebView, "ustadEditor.loadContentForPreview",
                         this, callback.getContent());
                 break;
 
@@ -629,11 +648,6 @@ public class ContentEditorActivity extends UstadBaseActivity implements ContentE
             //start checking if there is any control activated
             case ACTION_CHECK_ACTIVE_CONTROLS:
                 checkActivatedControls();
-                if(isEditorInitialized){
-                    viewSwitcher.animateView(EditorAnimatedViewSwitcher.PANEL_SOFT_KEYBOARD);
-                }
-
-
                 break;
             //Callback received after checking which control are activated
             case ACTION_CONTROLS_ACTIVATED:
@@ -708,7 +722,7 @@ public class ContentEditorActivity extends UstadBaseActivity implements ContentE
         UMFileUtil.copyFile(sourceFile,destination);
         String source = MEDIA_CONTENT_DIR + destination.getName();
         progressDialog.setVisibility(View.GONE);
-        executeJsFunction(editorContent,
+        executeJsFunction(editorWebView,
                 "ustadEditor.insertMedia",this, source,mimeType);
     }
 
@@ -730,15 +744,9 @@ public class ContentEditorActivity extends UstadBaseActivity implements ContentE
     }
 
 
-
-    /**
-     * Show and hide FAB Menu according to the state of the editor
-     * @param show Show when TRUE otherwise hide menus
-     */
-    private void handleFABMenuButton(boolean show){
-        mInsertMultimedia.setVisibility(show ? View.VISIBLE:View.GONE);
-        mInsertMultipleChoice.setVisibility(show ? View.VISIBLE:View.GONE);
-        mInsertFillBlanks.setVisibility(show ? View.VISIBLE:View.GONE);
+    private void requestEditorFocus(){
+        executeJsFunction(editorWebView,"ustadEditor.requestFocus",
+                this, (String[]) null);
     }
 
     @Override
@@ -772,109 +780,109 @@ public class ContentEditorActivity extends UstadBaseActivity implements ContentE
 
     @Override
     public void setContentBold() {
-        executeJsFunction(editorContent,
+        executeJsFunction(editorWebView,
                 "ustadEditor.textFormattingBold",this, (String[]) null);
     }
 
     @Override
     public void setContentItalic() {
-        executeJsFunction(editorContent,
+        executeJsFunction(editorWebView,
                 "ustadEditor.textFormattingItalic",this, (String[]) null);
     }
 
     @Override
     public void setContentUnderlined() {
-        executeJsFunction(editorContent,
+        executeJsFunction(editorWebView,
                 "ustadEditor.textFormattingUnderline",this, (String[]) null);
     }
 
     @Override
     public void setContentStrikeThrough() {
-        executeJsFunction(editorContent,
+        executeJsFunction(editorWebView,
                 "ustadEditor.textFormattingStrikeThrough",this, (String[]) null);
     }
 
     @Override
     public void setContentFontSize(String fontSize) {
-        executeJsFunction(editorContent,
+        executeJsFunction(editorWebView,
                 "ustadEditor.setFontSize",this, fontSize);
     }
 
     @Override
     public void setContentSuperscript() {
-        executeJsFunction(editorContent,
+        executeJsFunction(editorWebView,
                 "ustadEditor.textFormattingSuperScript",this, (String[]) null);
     }
 
     @Override
     public void setContentSubScript() {
-        executeJsFunction(editorContent,
+        executeJsFunction(editorWebView,
                 "ustadEditor.textFormattingSubScript",this, (String[]) null);
     }
 
     @Override
     public void setContentJustified() {
-        executeJsFunction(editorContent,
+        executeJsFunction(editorWebView,
                 "ustadEditor.paragraphFullJustification",this, (String[]) null);
     }
 
     @Override
     public void setContentCenterAlign() {
-        executeJsFunction(editorContent,
+        executeJsFunction(editorWebView,
                 "ustadEditor.paragraphCenterJustification",this, (String[]) null);
     }
 
     @Override
     public void setContentLeftAlign() {
-        executeJsFunction(editorContent,
+        executeJsFunction(editorWebView,
                 "ustadEditor.paragraphLeftJustification",this, (String[]) null);
     }
 
     @Override
     public void setContentRightAlign() {
-        executeJsFunction(editorContent,
+        executeJsFunction(editorWebView,
                 "ustadEditor.paragraphRightJustification",this, (String[]) null);
     }
 
     @Override
     public void setContentOrderedList() {
-        executeJsFunction(editorContent,
+        executeJsFunction(editorWebView,
                 "ustadEditor.paragraphOrderedListFormatting",this, (String[]) null);
     }
 
     @Override
     public void setContentUnOrderList() {
-        executeJsFunction(editorContent,
+        executeJsFunction(editorWebView,
                 "ustadEditor.paragraphUnOrderedListFormatting",this, (String[]) null);
     }
 
     @Override
     public void setContentIncreaseIndent() {
-        executeJsFunction(editorContent,
+        executeJsFunction(editorWebView,
                 "ustadEditor.paragraphIndent",this, (String[]) null);
     }
 
     @Override
     public void setContentDecreaseIndent() {
-        executeJsFunction(editorContent,
+        executeJsFunction(editorWebView,
                 "ustadEditor.paragraphOutDent",this, (String[]) null);
     }
 
     @Override
     public void setContentRedo() {
-        executeJsFunction(editorContent,
+        executeJsFunction(editorWebView,
                 "ustadEditor.editorActionRedo",this, (String[]) null);
     }
 
     @Override
     public void setContentUndo() {
-        executeJsFunction(editorContent,
+        executeJsFunction(editorWebView,
                 "ustadEditor.editorActionUndo",this, (String[]) null);
     }
 
     @Override
     public void setContentTextDirection(boolean isLTR) {
-        executeJsFunction(editorContent,
+        executeJsFunction(editorWebView,
                 !isLTR ? "ustadEditor.textDirectionRightToLeft":
                         "ustadEditor.textDirectionLeftToRight",this, (String[]) null);
         invalidateOptionsMenu();
@@ -882,21 +890,21 @@ public class ContentEditorActivity extends UstadBaseActivity implements ContentE
 
     @Override
     public void insertMultipleChoiceQuestion() {
-        executeJsFunction(editorContent,
+        executeJsFunction(editorWebView,
                 "ustadEditor.insertMultipleChoiceQuestionTemplate",
                 this, (String[]) null);
     }
 
     @Override
     public void insertFillTheBlanksQuestion() {
-        executeJsFunction(editorContent,
+        executeJsFunction(editorWebView,
                 "ustadEditor.insertFillInTheBlanksQuestionTemplate",
                 this, (String[]) null);
     }
 
     @Override
     public void requestEditorContent() {
-        executeJsFunction(editorContent,
+        executeJsFunction(editorWebView,
                 "ustadEditor.getContent",this, (String[]) null);
     }
 
@@ -1009,10 +1017,10 @@ public class ContentEditorActivity extends UstadBaseActivity implements ContentE
 
         /*Load temp index file*/
         if(baseUrl != null){
-            editorContent.setWebViewClient(new WebContentEditorClient(
+            editorWebView.setWebViewClient(new WebContentEditorClient(
                     this,baseUrl+ EDITOR_ROOT_DIR));
             progressDialog.setVisibility(View.VISIBLE);
-            editorContent.loadUrl(UMFileUtil.joinPaths(baseUrl, EDITOR_ROOT_DIR,index_temp_file));
+            editorWebView.loadUrl(UMFileUtil.joinPaths(baseUrl, EDITOR_ROOT_DIR,index_temp_file));
         }
     }
 
@@ -1027,19 +1035,6 @@ public class ContentEditorActivity extends UstadBaseActivity implements ContentE
     }
 
 
-    private void handleFinishingActivity() {
-        if(isEditorInitialized){
-            isEditorInitialized = false;
-            handleBackNavigationIcon();
-            invalidateOptionsMenu();
-            handleQuickActions();
-            viewSwitcher.closeAnimatedView(EditorAnimatedViewSwitcher.PANEL_SOFT_KEYBOARD);
-            startEditing.setVisibility(View.VISIBLE);
-            loadIndexFile();
-        }else{
-            if(new File(contentDir,index_temp_file).delete())moveTaskToBack(true);
-        }
-    }
 
 
     /**
@@ -1113,7 +1108,7 @@ public class ContentEditorActivity extends UstadBaseActivity implements ContentE
                 (ClipboardManager) this.getSystemService(Context.CLIPBOARD_SERVICE);
         assert clipboard != null;
         clipboard.addPrimaryClipChangedListener(() ->
-        viewSwitcher.closeAnimatedView(EditorAnimatedViewSwitcher.PANEL_FORMATTING_CONTENT));
+        viewSwitcher.closeAnimatedView(EditorAnimatedViewSwitcher.ANIMATED_FORMATTING_PANEL));
     }
 
     /**
@@ -1122,7 +1117,7 @@ public class ContentEditorActivity extends UstadBaseActivity implements ContentE
     private void checkActivatedControls(){
         if(isEditorInitialized){
             for(ContentFormat format: formattingHelper.getAllFormats()){
-                executeJsFunction(editorContent, "ustadEditor.checkCurrentActiveControls",
+                executeJsFunction(editorWebView, "ustadEditor.checkCurrentActiveControls",
                         this, format.getFormatCommand());
             }
         }

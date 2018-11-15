@@ -1,5 +1,6 @@
 package com.ustadmobile.port.android.contenteditor;
 
+import android.annotation.SuppressLint;
 import android.app.Activity;
 import android.content.Context;
 import android.graphics.Rect;
@@ -7,13 +8,41 @@ import android.support.annotation.NonNull;
 import android.support.design.widget.BottomSheetBehavior;
 import android.support.v4.view.GravityCompat;
 import android.support.v4.widget.DrawerLayout;
+import android.view.GestureDetector;
+import android.view.MotionEvent;
 import android.view.View;
 import android.view.inputmethod.InputMethodManager;
+import android.webkit.WebView;
 
 import java.util.Objects;
+import java.util.concurrent.TimeUnit;
 
+/**
+ * Class which handles all animated view switching, we have BottomSheets and keyboard
+ * to bring seamless experience these views has to be switched accordingly.
+ *
+ * <b>Operational Flow:</b>
+ * <p>
+ *     Use {@link EditorAnimatedViewSwitcher#with(Activity, OnAnimatedViewsClosedListener)}
+ *     to set content editor activity instance and listener for listening all animation
+ *     closing event,.
+ *
+ *     Use {@link EditorAnimatedViewSwitcher#setViews)} to set all animated views and root view
+ *     which will be used to listen for the keyboard events.
+ *
+ *     Use {@link EditorAnimatedViewSwitcher#animateView(String)} to send request to open a certain
+ *     animated view depending on the view key passed into it.
+ *
+ *     Use {@link EditorAnimatedViewSwitcher#closeAnimatedView(String)} to send request to close a
+ *     certain animated view depending on the view key passed into it.
+ *
+ *     Use {@link EditorAnimatedViewSwitcher#closeActivity()} to handle activity closing task
+ *     which will close all the activity views before shutting down.
+ * </p>
+ */
 public class EditorAnimatedViewSwitcher {
 
+    @SuppressLint("StaticFieldLeak")
     private static EditorAnimatedViewSwitcher viewSwitcher;
 
     private BottomSheetBehavior formattingBottomSheetBehavior;
@@ -23,6 +52,12 @@ public class EditorAnimatedViewSwitcher {
     private BottomSheetBehavior contentOptionsBottomSheetBehavior;
 
     private DrawerLayout drawerLayout;
+
+    private WebView editorView;
+
+    private OnAnimatedViewsClosedListener closedListener;
+
+    private GestureDetector gestureDetector;
 
     private boolean isKeyboardActive;
 
@@ -36,17 +71,56 @@ public class EditorAnimatedViewSwitcher {
 
     private Activity activity;
 
-    public static final String PANEL_FORMATTING_CONTENT = "formatting_content";
+    /**
+     * Key which represent the formatting options BottomSheet
+     */
+    public static final String ANIMATED_FORMATTING_PANEL = "formatting_panel";
 
-    public static final String PANEL_INSERT_CONTENT ="insert_content";
+    /**
+     * Key which represents the content option BottomSheet
+     */
+    public static final String ANIMATED_CONTENT_OPTION_PANEL ="content_option_panel";
 
-    public static final String PANEL_MEDIA_CONTENT = "media_content";
+    /**
+     * Key which represents the media source BottomSheet
+     */
+    public static final String ANIMATED_MEDIA_TYPE_PANEL = "media_type_panel";
 
-    public static final String PANEL_SOFT_KEYBOARD = "soft_keyboard";
+    /**
+     * Key which represents the device soft keyboard
+     */
+    public static final String ANIMATED_SOFT_KEYBOARD_PANEL = "soft_keyboard";
 
+    public static  final  int MAX_SOFT_KEYBOARD_DELAY = 1;
 
     private View rootView;
 
+    private boolean editorActivated = false;
+
+
+    /**
+     * Gesture listener to listen for long press an clicks on the webview
+     * for the implicitly keyboard open
+     */
+    private GestureDetector.SimpleOnGestureListener onGestureListener =
+            new GestureDetector.SimpleOnGestureListener() {
+                @Override
+                public boolean onSingleTapConfirmed(MotionEvent e) {
+                    requestFocusOpenKeyboard();
+                    return super.onSingleTapConfirmed(e);
+                }
+
+                @Override
+                public void onLongPress(MotionEvent e) {
+                    super.onLongPress(e);
+                    requestFocusOpenKeyboard();
+                }
+            };
+
+    /**
+     * Get EditorAnimatedViewSwitcher singleton instance.
+     * @return EditorAnimatedViewSwitcher instance
+     */
     public static  EditorAnimatedViewSwitcher getInstance(){
         if(viewSwitcher == null){
             viewSwitcher = new EditorAnimatedViewSwitcher();
@@ -54,12 +128,31 @@ public class EditorAnimatedViewSwitcher {
         return viewSwitcher;
     }
 
-    public EditorAnimatedViewSwitcher with(Activity activity){
+    /**
+     * Set activity instance to be used and listener to listen when all animated views are closed.
+     * @param activity Activity under watcher
+     * @param listener Listener to be set for listening animated view closing events.
+     * @return EditorAnimatedViewSwitcher instance.
+     */
+    public EditorAnimatedViewSwitcher with(Activity activity,
+                                           OnAnimatedViewsClosedListener listener){
         this.activity = activity;
+        this.closedListener = listener;
         return this;
     }
 
-    public EditorAnimatedViewSwitcher setViews(View rootView, BottomSheetBehavior insertContentSheet,
+
+    /**
+     * Set animated views to be monitored from the root activity
+     * @param rootView Root view of the activity
+     * @param insertContentSheet content option bottom sheet view
+     * @param formatSheet Formats types bottom sheet view
+     * @param mediaSheet Media sources bottom sheet view
+     * @param drawerLayout Drawer layout view
+     * @return EditorAnimatedViewSwitcher instance.
+     */
+    public EditorAnimatedViewSwitcher setViews(View rootView, WebView editorView,
+                                               BottomSheetBehavior insertContentSheet,
                                                BottomSheetBehavior formatSheet,
                                                BottomSheetBehavior mediaSheet,
                                                DrawerLayout drawerLayout){
@@ -67,12 +160,19 @@ public class EditorAnimatedViewSwitcher {
         this.formattingBottomSheetBehavior = formatSheet;
         this.mediaSourceBottomSheetBehavior = mediaSheet;
         this.rootView = rootView;
+        this.editorView = editorView;
         this.drawerLayout = drawerLayout;
         initializeSwitcher();
         return this;
     }
 
+    /**
+     * Initialize all views and callback listeners
+     */
+    @SuppressLint("ClickableViewAccessibility")
     private void initializeSwitcher(){
+        gestureDetector = new GestureDetector(activity, onGestureListener);
+        editorView.setOnTouchListener((v, event) -> gestureDetector.onTouchEvent(event));
         contentOptionsBottomSheetBehavior.setBottomSheetCallback(
                 new BottomSheetBehavior.BottomSheetCallback() {
             @Override
@@ -150,6 +250,13 @@ public class EditorAnimatedViewSwitcher {
             isKeyboardActive = keypadHeight > screenHeight * 0.15;
             if(isKeyboardActive){
                 openKeyboard = false;
+                if(isFormattingBottomSheetExpanded()){
+                    setFormattingBottomSheetBehavior(false);
+                }else if(isContentOptionsBottomSheetExpanded()){
+                    setContentOptionBottomSheetBehavior(false);
+                }else if(isMediaSourceBottomSheetExpanded()){
+                    setMediaSourceBottomSheetBehavior(false);
+                }
             }else{
                 if(openFormatPanel){
                     setFormattingBottomSheetBehavior(true);
@@ -162,10 +269,14 @@ public class EditorAnimatedViewSwitcher {
         });
     }
 
+    /**
+     * Animate specific animated view
+     * @param currentKey Key of the view to be animated (opened)
+     */
     public void animateView(String currentKey){
 
         switch (currentKey){
-            case PANEL_FORMATTING_CONTENT:
+            case ANIMATED_FORMATTING_PANEL:
                 if(isFormattingBottomSheetExpanded()){
                     openKeyboard = true;
                     setFormattingBottomSheetBehavior(false);
@@ -185,7 +296,7 @@ public class EditorAnimatedViewSwitcher {
                 }
                 break;
 
-            case PANEL_INSERT_CONTENT:
+            case ANIMATED_CONTENT_OPTION_PANEL:
 
                 if(isContentOptionsBottomSheetExpanded()){
                     openKeyboard = true;
@@ -206,7 +317,7 @@ public class EditorAnimatedViewSwitcher {
                 }
 
                 break;
-            case PANEL_MEDIA_CONTENT:
+            case ANIMATED_MEDIA_TYPE_PANEL:
 
                 if(isMediaSourceBottomSheetExpanded()){
                     openKeyboard = true;
@@ -228,7 +339,7 @@ public class EditorAnimatedViewSwitcher {
 
 
                 break;
-            case PANEL_SOFT_KEYBOARD:
+            case ANIMATED_SOFT_KEYBOARD_PANEL:
                 if(isFormattingBottomSheetExpanded()){
                     openKeyboard = true;
                     setFormattingBottomSheetBehavior(false);
@@ -239,34 +350,50 @@ public class EditorAnimatedViewSwitcher {
                     openKeyboard = true;
                     setMediaSourceBottomSheetBehavior(false);
                 }else{
-                    handleSoftKeyboard(true);
+                    if(!isKeyboardActive){
+                        handleSoftKeyboard(true);
+                    }
                 }
                 break;
         }
     }
 
-    public void closeAnimatedView(String viewKey){
+    /**
+     * Set flag to indicate editing mode of the main editor
+     * @param editorActivated True when editing mode is ON otherwise Editing mode will be OFF
+     */
+    public void setEditorActivated(boolean editorActivated){
+        this.editorActivated = editorActivated;
+    }
 
+    /**
+     * Close specific animated view.
+     * @param viewKey Key of the animated view to be closed.
+     */
+    public void closeAnimatedView(String viewKey){
         switch (viewKey){
-            case PANEL_FORMATTING_CONTENT:
+            case ANIMATED_FORMATTING_PANEL:
                 setFormattingBottomSheetBehavior(false);
                 break;
 
-            case PANEL_INSERT_CONTENT:
+            case ANIMATED_CONTENT_OPTION_PANEL:
                 setContentOptionBottomSheetBehavior(false);
                 break;
 
-            case PANEL_MEDIA_CONTENT:
+            case ANIMATED_MEDIA_TYPE_PANEL:
                 setMediaSourceBottomSheetBehavior(false);
                 break;
 
-            case PANEL_SOFT_KEYBOARD:
+            case ANIMATED_SOFT_KEYBOARD_PANEL:
                 handleSoftKeyboard(false);
                 break;
         }
     }
 
-
+    /**
+     * IMplicitly open and close soft keyboard.
+     * @param show Open when true is passed otherwise close it.
+     */
     private void handleSoftKeyboard(boolean show){
         if(show){
             InputMethodManager imm = (InputMethodManager) activity.getSystemService(Context.INPUT_METHOD_SERVICE);
@@ -283,7 +410,7 @@ public class EditorAnimatedViewSwitcher {
 
 
     /**
-     * Collapse all expandable views before moving out of the activity (User experience)
+     * Close all animated view before destroying the activity.
      */
     public void closeActivity(){
         boolean isDrawerOpen = drawerLayout.isDrawerOpen(GravityCompat.END);
@@ -306,7 +433,10 @@ public class EditorAnimatedViewSwitcher {
 
         if(!isMediaSourceBottomSheetExpanded() && !isFormattingBottomSheetExpanded()
                 && !isDrawerOpen && !isContentOptionsBottomSheetExpanded()){
-           //TODO: send event
+
+            if(closedListener != null){
+              closedListener.onAnimatedViewsClosed();
+          }
         }
     }
 
@@ -336,6 +466,33 @@ public class EditorAnimatedViewSwitcher {
     private void setMediaSourceBottomSheetBehavior(boolean expanded){
         mediaSourceBottomSheetBehavior.setState(expanded ? BottomSheetBehavior.STATE_EXPANDED
                 : BottomSheetBehavior.STATE_COLLAPSED);
+    }
+
+    private void requestFocusOpenKeyboard(){
+        closedListener.onFocusRequested();
+        editorView.postDelayed(() -> {
+            if(editorActivated){
+                if(!isKeyboardActive){
+                    handleSoftKeyboard(true);
+                }
+            }
+        },TimeUnit.SECONDS.toMillis(MAX_SOFT_KEYBOARD_DELAY));
+    }
+
+    /**
+     * Interface which listen for the closing event of all views
+     * and webview focus on click, tap and press events.
+     */
+    public interface OnAnimatedViewsClosedListener {
+        /**
+         * Invoked when all animated views are closed
+         */
+        void onAnimatedViewsClosed();
+
+        /**
+         * Invoked when WebView requests a focus.
+         */
+        void onFocusRequested();
     }
 
 
