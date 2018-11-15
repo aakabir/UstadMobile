@@ -16,6 +16,7 @@ import android.webkit.WebView;
 
 import java.util.Objects;
 import java.util.concurrent.TimeUnit;
+import java.util.logging.Handler;
 
 /**
  * Class which handles all animated view switching, we have BottomSheets and keyboard
@@ -91,7 +92,7 @@ public class EditorAnimatedViewSwitcher {
      */
     public static final String ANIMATED_SOFT_KEYBOARD_PANEL = "soft_keyboard";
 
-    public static  final  int MAX_SOFT_KEYBOARD_DELAY = 1;
+    public static  final  long MAX_SOFT_KEYBOARD_DELAY = TimeUnit.SECONDS.toMillis(1);
 
     private View rootView;
 
@@ -431,13 +432,18 @@ public class EditorAnimatedViewSwitcher {
             setContentOptionBottomSheetBehavior(false);
         }
 
-        if(!isMediaSourceBottomSheetExpanded() && !isFormattingBottomSheetExpanded()
-                && !isDrawerOpen && !isContentOptionsBottomSheetExpanded()){
+        handleSoftKeyboard(false);
 
-            if(closedListener != null){
-              closedListener.onAnimatedViewsClosed();
-          }
-        }
+        new android.os.Handler().postDelayed(() -> {
+            if(!isMediaSourceBottomSheetExpanded() && !isFormattingBottomSheetExpanded()
+                    && !isDrawerOpen && !isContentOptionsBottomSheetExpanded() && !isKeyboardActive){
+
+                if(closedListener != null){
+                    editorActivated = false;
+                    closedListener.onAnimatedViewsClosed();
+                }
+            }
+        },MAX_SOFT_KEYBOARD_DELAY);
     }
 
 
@@ -476,7 +482,7 @@ public class EditorAnimatedViewSwitcher {
                     handleSoftKeyboard(true);
                 }
             }
-        },TimeUnit.SECONDS.toMillis(MAX_SOFT_KEYBOARD_DELAY));
+        },MAX_SOFT_KEYBOARD_DELAY);
     }
 
     /**

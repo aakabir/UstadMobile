@@ -292,7 +292,7 @@ ustadEditor.initTinyMceEditor = function(){
             });
 
             ed.on('click', function () {
-                ustadEditor.requestFocus();
+                //ustadEditor.requestFocus();
                 console.log(JSON.stringify(ustadEditor.startCheckingActivatedControls()));
                 console.log(JSON.stringify({action:'onClickEvent',content:btoa("yes")}));
             });

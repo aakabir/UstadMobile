@@ -7,6 +7,7 @@ import android.content.ClipboardManager;
 import android.content.Context;
 import android.content.Intent;
 import android.content.pm.PackageManager;
+import android.content.res.TypedArray;
 import android.graphics.Bitmap;
 import android.net.Uri;
 import android.os.Build;
@@ -134,6 +135,8 @@ public class ContentEditorActivity extends UstadBaseActivity implements ContentE
     private Uri cameraMedia;
 
     private File fileFromCamera;
+
+    private boolean openPreview = false;
 
     private ProgressBar progressDialog;
 
@@ -464,7 +467,6 @@ public class ContentEditorActivity extends UstadBaseActivity implements ContentE
     }
 
 
-
     @Override
     public boolean onCreateOptionsMenu(Menu menu) {
         getMenuInflater().inflate(R.menu.menu_content_editor_top_actions,menu);
@@ -502,8 +504,8 @@ public class ContentEditorActivity extends UstadBaseActivity implements ContentE
             viewSwitcher.animateView(EditorAnimatedViewSwitcher.ANIMATED_FORMATTING_PANEL);
 
         }else if(itemId == R.id.content_action_preview){
-            UstadMobileSystemImpl.getInstance().go(ContentPreviewView.VIEW_NAME,
-                    args,getApplicationContext());
+           openPreview = true;
+           viewSwitcher.closeActivity();
 
         }else if(itemId == R.id.content_action_insert){
 
@@ -568,22 +570,30 @@ public class ContentEditorActivity extends UstadBaseActivity implements ContentE
 
     @Override
     public void onAnimatedViewsClosed() {
-        if(isEditorInitialized){
-            isEditorInitialized = false;
-            handleBackNavigationIcon();
-            invalidateOptionsMenu();
-            handleQuickActions();
-            viewSwitcher.closeAnimatedView(ANIMATED_SOFT_KEYBOARD_PANEL);
-            startEditing.setVisibility(View.VISIBLE);
-            loadIndexFile();
+
+        if(openPreview){
+            openPreview = false;
+            UstadMobileSystemImpl.getInstance().go(ContentPreviewView.VIEW_NAME,
+                    args,getApplicationContext());
         }else{
-            if(new File(contentDir,index_temp_file).delete())moveTaskToBack(true);
+            if(isEditorInitialized){
+                isEditorInitialized = false;
+                handleBackNavigationIcon();
+                invalidateOptionsMenu();
+                handleQuickActions();
+                viewSwitcher.closeAnimatedView(ANIMATED_SOFT_KEYBOARD_PANEL);
+                startEditing.setVisibility(View.VISIBLE);
+                loadIndexFile();
+            }else{
+                if(new File(contentDir,index_temp_file).delete())moveTaskToBack(true);
+            }
         }
+
     }
 
     @Override
     public void onFocusRequested() {
-        requestEditorFocus();
+
     }
 
     @Override
@@ -609,11 +619,12 @@ public class ContentEditorActivity extends UstadBaseActivity implements ContentE
             case ACTION_INIT_EDITOR:
                 isEditorInitialized = Boolean.parseBoolean(callback.getContent());
                 if(isEditorInitialized){
+                    handleWebViewMargin();
                     invalidateOptionsMenu();
                     requestEditorFocus();
                     editorWebView.postDelayed(() -> {
                         viewSwitcher.animateView(ANIMATED_SOFT_KEYBOARD_PANEL);
-                    },TimeUnit.SECONDS.toMillis(MAX_SOFT_KEYBOARD_DELAY));
+                    },MAX_SOFT_KEYBOARD_DELAY);
                 }
                 handleBackNavigationIcon();
                 startEditing.setVisibility(View.GONE);
@@ -745,8 +756,7 @@ public class ContentEditorActivity extends UstadBaseActivity implements ContentE
 
 
     private void requestEditorFocus(){
-        executeJsFunction(editorWebView,"ustadEditor.requestFocus",
-                this, (String[]) null);
+        executeJsFunction(editorWebView,"ustadEditor.requestFocus", this, (String[]) null);
     }
 
     @Override
@@ -938,6 +948,10 @@ public class ContentEditorActivity extends UstadBaseActivity implements ContentE
      * to the temp file then direct them to asset handler to be resolved as files.
      */
     private void loadIndexFile() {
+        handleWebViewMargin();
+        if(!isEditorInitialized && viewSwitcher != null){
+            viewSwitcher.closeAnimatedView(ANIMATED_SOFT_KEYBOARD_PANEL);
+        }
         File source = new File(contentDir, index_file);
         File destination = new File(contentDir, index_temp_file);
         try {
@@ -1023,6 +1037,7 @@ public class ContentEditorActivity extends UstadBaseActivity implements ContentE
             editorWebView.loadUrl(UMFileUtil.joinPaths(baseUrl, EDITOR_ROOT_DIR,index_temp_file));
         }
     }
+
 
     private Document getIndexDocument(String fileIndex){
         try {
@@ -1122,5 +1137,22 @@ public class ContentEditorActivity extends UstadBaseActivity implements ContentE
             }
         }
     }
+
+    /**
+     * Set bottom margin dynamically to the WebView to make sure when editing mode is ON,
+     * WebView goes above quick actions
+     */
+    private void handleWebViewMargin(){
+        TypedArray styledAttributes = getTheme().obtainStyledAttributes(
+                new int[] { android.R.attr.actionBarSize });
+        int actionBarSize = (int) styledAttributes.getDimension(0, 0);
+        styledAttributes.recycle();
+        float marginBottomValue = isEditorInitialized ?  (actionBarSize+6):0;
+        ViewGroup.MarginLayoutParams params = (ViewGroup.MarginLayoutParams)
+                editorWebView.getLayoutParams();
+        params.bottomMargin = (int) marginBottomValue;
+
+    }
+
 
 }
