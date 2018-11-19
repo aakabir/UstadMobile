@@ -13,6 +13,8 @@ import com.toughra.ustadmobile.R;
 
 import java.util.List;
 
+import static com.ustadmobile.port.android.contenteditor.ContentFormattingHelper.isTobeHighlighted;
+
 /**
  * Customized toolbar view which handles quick action menus on the editor.
  *
@@ -94,7 +96,8 @@ public class BottomToolbarView extends Toolbar {
             FrameLayout rootView = (FrameLayout) menuItem.getActionView();
             ImageView imageIcon = rootView.findViewById(R.id.format_icon);
             FrameLayout iconHolder = rootView.findViewById(R.id.icon_holder);
-            changeState(imageIcon,iconHolder,format.isActive());
+            changeState(imageIcon,iconHolder,format.isActive() &&
+                    isTobeHighlighted(format.getFormatCommand()));
         }
     }
 

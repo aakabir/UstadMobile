@@ -233,8 +233,9 @@ public class ContentEditorActivity extends UstadBaseActivity implements ContentE
                 RelativeLayout mLayout = holder.itemView.findViewById(R.id.format_holder);
                 mIcon.setImageResource(format.getFormatIcon());
                 changeState(mIcon,mLayout,format.isActive());
-                if(!isTobeHighlighted(format.getFormatCommand())){
-                    changeState(mIcon,mLayout,false);
+                changeState(mIcon,mLayout,false);
+                if(isTobeHighlighted(format.getFormatCommand())){
+
                 }
                 ContentFormattingHelper formattingHelper = ContentFormattingHelper.getInstance();
                 mLayout.setOnClickListener(v -> {
@@ -746,7 +747,9 @@ public class ContentEditorActivity extends UstadBaseActivity implements ContentE
     @Override
     public void onQuickActionClicked(String command) {
         ContentFormat format = formattingHelper.getFormatByCommand(command);
-        presenter.handleFormatTypeClicked(format.getFormatCommand(),null);
+        if(format != null){
+            presenter.handleFormatTypeClicked(format.getFormatCommand(),null);
+        }
     }
 
 
@@ -766,6 +769,8 @@ public class ContentEditorActivity extends UstadBaseActivity implements ContentE
         embeddedHTTPD.addRoute( EDITOR_ROOT_DIR +"(.)+",  FileDirectoryHandler.class, contentDir);
         try {
             embeddedHTTPD.start();
+
+            //TODO: if the server failed to start, it would throw an exception. the following if is redundant
             if(embeddedHTTPD.isAlive()){
                 baseUrl =  "http://127.0.0.1:"+embeddedHTTPD.getListeningPort()+"/";
                 args.put(ContentPreviewView.PREVIEW_URL,baseUrl+ EDITOR_ROOT_DIR);
@@ -1050,8 +1055,6 @@ public class ContentEditorActivity extends UstadBaseActivity implements ContentE
     }
 
 
-
-
     /**
      * Open device default file explorer for user to pick file
      */
@@ -1140,13 +1143,13 @@ public class ContentEditorActivity extends UstadBaseActivity implements ContentE
 
     /**
      * Set bottom margin dynamically to the WebView to make sure when editing mode is ON,
-     * WebView goes above quick actions
+     * WebView goes above quick actions toolbar.
      */
     private void handleWebViewMargin(){
-        TypedArray styledAttributes = getTheme().obtainStyledAttributes(
+        TypedArray attrs = getTheme().obtainStyledAttributes(
                 new int[] { android.R.attr.actionBarSize });
-        int actionBarSize = (int) styledAttributes.getDimension(0, 0);
-        styledAttributes.recycle();
+        int actionBarSize = (int) attrs.getDimension(0, 0);
+        attrs.recycle();
         float marginBottomValue = isEditorInitialized ?  (actionBarSize+6):0;
         ViewGroup.MarginLayoutParams params = (ViewGroup.MarginLayoutParams)
                 editorWebView.getLayoutParams();

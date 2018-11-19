@@ -175,17 +175,20 @@ public class ContentFormattingHelper {
      * @param contentFormat updated content format
      */
     public void updateFormat(ContentFormat contentFormat) {
-        int formatIndex = 0;
         for(ContentFormat format: formatList){
             if(format.getFormatCommand().equals(contentFormat.getFormatCommand())){
-                formatIndex = formatList.indexOf(format);
+                int formatIndex = formatList.indexOf(format);
+                formatList.get(formatIndex).setActive(contentFormat.isActive());
                 break;
             }
         }
-        formatList.set(formatIndex,contentFormat);
         dispatchUpdate(contentFormat);
     }
 
+    /**
+     * Prevent all justification to be active at the same time, only one type at a time.
+     * @param command current active justification command.
+     */
     public void updateOtherJustification(String command){
         String mTag = "Justify";
         List<ContentFormat> paragraphFormatList = getFormatListByType(FORMATTING_PARAGRAPH_INDEX);
@@ -199,6 +202,10 @@ public class ContentFormattingHelper {
         }
     }
 
+    /**
+     * Prevent all list types to active at the same time, only one at a time.
+     * @param command current active list type command.
+     */
     public void updateOtherListOrder(String command){
         String mTag = "List";
         List<ContentFormat> listOrdersTypes = listOrderFormats();
@@ -228,13 +235,19 @@ public class ContentFormattingHelper {
         }
     }
 
+    /**
+     * Dispatch update to both content formatting panels and quick actions.
+     * @param format updated format to be dispatched
+     */
     public void dispatchUpdate(ContentFormat format){
         for(StateChangeDispatcher dispatcher: dispatcherList){
             dispatcher.onStateChanged(format);
         }
     }
 
-
+    /**
+     * Delete all listeners from the list on activity destroy
+     */
     public void destroy(){
         if(dispatcherList != null && dispatcherList.size()>0){
             dispatcherList.clear();
@@ -242,6 +255,12 @@ public class ContentFormattingHelper {
     }
 
 
+    /**
+     * Check if the format is valid for highlight or not, for those format which
+     * deals with increment like indentation they are not fit for active state
+     * @param command format command to be checked for validity
+     * @return True if valid otherwise False.
+     */
     public static boolean isTobeHighlighted(String command){
         return !command.equals(TEXT_FORMAT_TYPE_FONT)
                 && !command.equals(PARAGRAPH_FORMAT_INDENT_DECREASE)

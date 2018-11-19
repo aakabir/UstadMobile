@@ -9,6 +9,7 @@ import com.ustadmobile.core.impl.UstadMobileSystemImpl;
 
 /**
  * Class which is responsible to handle all page loads and native-to-js client interaction.
+ * It is also responsible to handle all Javascript console logs.
  */
 public class WebContentEditorChrome  extends WebChromeClient {
 
@@ -23,6 +24,7 @@ public class WebContentEditorChrome  extends WebChromeClient {
     }
     @Override
     public boolean onConsoleMessage(ConsoleMessage consoleMessage) {
+        UstadMobileSystemImpl.l(UMLog.DEBUG,700,consoleMessage.message());
         if(consoleMessage.message().contains("action")){
            callback.onCallbackReceived(consoleMessage.message());
         }
