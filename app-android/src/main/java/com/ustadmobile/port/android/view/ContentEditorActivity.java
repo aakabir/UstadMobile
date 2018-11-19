@@ -89,7 +89,6 @@ import java.util.Date;
 import java.util.Hashtable;
 import java.util.List;
 import java.util.Objects;
-import java.util.concurrent.TimeUnit;
 
 import id.zelory.compressor.Compressor;
 
@@ -233,9 +232,8 @@ public class ContentEditorActivity extends UstadBaseActivity implements ContentE
                 RelativeLayout mLayout = holder.itemView.findViewById(R.id.format_holder);
                 mIcon.setImageResource(format.getFormatIcon());
                 changeState(mIcon,mLayout,format.isActive());
-                changeState(mIcon,mLayout,false);
-                if(isTobeHighlighted(format.getFormatCommand())){
-
+                if(!isTobeHighlighted(format.getFormatCommand())){
+                    changeState(mIcon,mLayout,false);
                 }
                 ContentFormattingHelper formattingHelper = ContentFormattingHelper.getInstance();
                 mLayout.setOnClickListener(v -> {
