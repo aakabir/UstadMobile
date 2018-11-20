@@ -32,27 +32,47 @@ public class WebContentEditorInterface {
      */
     @JavascriptInterface
     public void onContentChanged(String callbackValue){
-        callback.onCallbackReceived(callbackValue);
+        try{
+            callback.onCallbackReceived(callbackValue);
+        }catch (Exception e){
+            e.printStackTrace();
+        }
     }
 
     @JavascriptInterface
     public void onTextSelected(String callbackValue){
-        callback.onCallbackReceived(callbackValue);
+        try{
+            callback.onCallbackReceived(callbackValue);
+        }catch (Exception e){
+            e.printStackTrace();
+        }
     }
 
     @JavascriptInterface
     public void onClickEvent(String callbackValue){
-        callback.onCallbackReceived(callbackValue);
+        try{
+            callback.onCallbackReceived(callbackValue);
+        }catch (Exception e){
+            e.printStackTrace();
+        }
     }
 
     @JavascriptInterface
     public void onControlActivatedCheck(String callbackValue){
-        callback.onCallbackReceived(callbackValue);
+        try{
+            callback.onCallbackReceived(callbackValue);
+        }catch (Exception e){
+            e.printStackTrace();
+        }
     }
 
     @JavascriptInterface
     public void onInitEditor(String callbackValue){
-        callback.onCallbackReceived(callbackValue);
+        try{
+            callback.onCallbackReceived(callbackValue);
+        }catch (Exception e){
+            e.printStackTrace();
+        }
     }
 
 }
