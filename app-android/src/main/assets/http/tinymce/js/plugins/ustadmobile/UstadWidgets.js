@@ -188,6 +188,14 @@ QuestionWidget.handleEditOff = function(){
 };
 
 QuestionWidget.handleEditOn = function(){
+  const labels = document.querySelectorAll("label");
+  for(let label in labels){
+    if(labels.hasOwnProperty(label))
+    continue;
+    const labelElement = labels[label];
+    labelElement.innerText = "Hello there";
+  }
+  console.log("delete",);
     const questionList = window.document.querySelectorAll(".question");
     if(questionList != null){
         for(const question in questionList){
@@ -446,6 +454,11 @@ QuestionWidget.prototype.setRetryOption = function(event){
     ustadEditor.handleContentChange();
 };
 
+QuestionWidget.prototype.preventDelete = function(event){
+  console.log("Delete",event.target);
+};
+
+
 /**
  * Handle when retry button is clicked (Hide feedback box and retry button)
  * @param event onClick event from button
@@ -456,6 +469,3 @@ QuestionWidget.prototype.handleClickQuestionRetry = function(event){
     $(questionElement).find(".question-feedback-container").removeClass("show-element").addClass("hide-element");
     $(questionElement).find(".question-retry-btn").removeClass("show-element").addClass("hide-element");
 };
-
-
-

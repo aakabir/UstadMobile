@@ -224,20 +224,6 @@ ustadEditor.textFormattingSubScript = function(){
 };
 
 /**
- * Initialize a listener which fires a callback when text is highlighted (Web version)
- */
-ustadEditor.initializeTextHighlightingListener = function(){
-    let timer;
-    $('.container-fluid').on("mousedown",function(){
-        timer = setTimeout(function(){
-            ustadEditor.handleTextHighlighting();
-        },1000);
-    }).on("mouseup mouseleave",function(){
-        clearTimeout(timer);
-    });
-};
-
-/**
  * Check if the current selected editor node has controls activated to it
  * @param commandValue control to check from
  * @returns {{action: string, content: string}}
@@ -285,32 +271,79 @@ ustadEditor.initTinyMceEditor = function(){
             ]
         }],
         init_instance_callback: function (ed) {
-            ed.on('NodeChange', function () {
-                setTimeout(ustadEditor.hideToolbarMenu(), 22);
-                QuestionWidget.handleListeners();
-                ustadEditor.handleContentChange();
-            });
+          /**
+           * Listen for text selction event
+           * @type {[type]}
+           */
+          ed.on('SelectionChange', e => {
+            ustadEditor.hideToolbarMenu();
+            ustadEditor.handleContentChange();
+          });
 
-            ed.on('click', function () {
-                //ustadEditor.requestFocus();
-                console.log(JSON.stringify(ustadEditor.startCheckingActivatedControls()));
-                console.log(JSON.stringify({action:'onClickEvent',content:btoa("yes")}));
-            });
+          /**
+           * Listen for node change event
+           * @type {[type]}
+           */
+          ed.on('NodeChange', e => {
+            ustadEditor.hideToolbarMenu();
+            QuestionWidget.handleListeners();
+            ustadEditor.handleContentChange();
+          });
 
-            ed.on('keyup', function() {
-                ustadEditor.handleContentChange();
-                setTimeout(ustadEditor.hideToolbarMenu(), 22);
-            });
+          /**
+           * Listen for click event inside the editor
+           * @type {[type]}
+           */
+          ed.on('click', e => {
+            ustadEditor.hideToolbarMenu();
+            UmContentEditor.onControlActivatedCheck(JSON.stringify(ustadEditor.startCheckingActivatedControls()));
+            UmContentEditor.onClickEvent(JSON.stringify({action:'onClickEvent',content:btoa("yes")}));
+          });
 
-            ed.on('undo', function() {
-                ustadEditor.handleContentChange();
-                setTimeout(ustadEditor.hideToolbarMenu(), 22);
-            });
+          /**
+           * Listen for the key up event
+           * @type {[type]}
+           */
+          ed.on('keyup', e => {
+            ustadEditor.hideToolbarMenu();
+            ustadEditor.handleContentChange();
+          });
 
-            ed.on('redo', function() {
-                ustadEditor.handleContentChange();
-                setTimeout(ustadEditor.hideToolbarMenu(), 22);
-            });
+          /**
+           * Listen for the button press and prevent label deletion
+           * @type {[type]}
+           */
+          ed.on('keydown', e => {
+            ustadEditor.hideToolbarMenu();
+            ustadEditor.handleContentChange();
+            const key = e.key;
+            const isLabel = $(tinymce.activeEditor.selection.getNode()).hasClass("um-labels");
+            const isKey = (key === "Backspace" || key === "Delete" || key === "Enter");
+            if(isKey && isLabel){
+              e.preventDefault();
+              e.stopImmediatePropagation();
+              return false
+            }
+
+          });
+
+          /**
+           * Listen for undo action event
+           * @type {[type]}
+           */
+          ed.on('undo', e => {
+            ustadEditor.hideToolbarMenu()
+            ustadEditor.handleContentChange();
+          });
+
+          /**
+           * Listen for the redo action event
+           * @type {[type]}
+           */
+          ed.on('redo', e => {
+            ustadEditor.hideToolbarMenu();
+            ustadEditor.handleContentChange();
+          });
         }
     };
     try{
@@ -320,14 +353,13 @@ ustadEditor.initTinyMceEditor = function(){
             setTimeout(ustadEditor.requestFocus(), 20);
             setTimeout(ustadEditor.hideToolbarMenu(), 22);
             setTimeout(ustadEditor.switchOnEditorController());
-            ustadEditor.initializeTextHighlightingListener();
-            console.log(JSON.stringify({action:'onInitEditor',content:"true"}));
-            console.log(JSON.stringify(ustadEditor.startCheckingActivatedControls()));
-            console.log(JSON.stringify({action:'onClickEvent',content:btoa("yes")}))
+            UmContentEditor.onInitEditor(JSON.stringify({action:'onInitEditor',content:"true"}));
+            UmContentEditor.onControlActivatedCheck(JSON.stringify(ustadEditor.startCheckingActivatedControls()));
+            UmContentEditor.onClickEvent(JSON.stringify({action:'onClickEvent',content:btoa("yes")}));
 
         });
     }catch (e) {
-        console.log(JSON.stringify({action:'exception',content:e}));
+        console.log("initTinyMceEditor: "+e);
     }
 };
 
@@ -338,7 +370,7 @@ ustadEditor.switchOnEditorController = function(){
     try{
         document.getElementById("editor-on").click();
     }catch (e) {
-        console.log("switchOnEditorController:",e);
+        console.log("switchOnEditorController: "+e);
     }
 };
 
@@ -373,7 +405,7 @@ ustadEditor.hideToolbarMenu = function () {
             $("#mceu_4").hide();
         });
     }catch (e) {
-        console.log("hideToolbarMenu:",e)
+        console.log("hideToolbarMenu: "+e)
     }
 };
 
@@ -386,7 +418,7 @@ ustadEditor.insertMultipleChoiceQuestionTemplate = function () {
         document.getElementById("multiple-choice").click();
         return "inserted multiple choice question";
     }catch (e) {
-        console.log(e);
+        console.log("insertMultipleChoiceQuestionTemplate: "+e);
         return null;
     }
 };
@@ -400,7 +432,7 @@ ustadEditor.insertFillInTheBlanksQuestionTemplate = function () {
         document.getElementById("fill-the-blanks").click();
         return "inserted fill the blanks question";
     }catch (e) {
-        console.log(e);
+        console.log("insertFillInTheBlanksQuestionTemplate: "+e);
         return null;
     }
 };
@@ -444,7 +476,11 @@ ustadEditor.executeRawContent= function(content){
  * @param args extra value to be passed on eg. font size
  */
 ustadEditor.executeCommand = function(command,args){
-    this.activeEditor.execCommand(command, false,args);
+    try{
+      this.activeEditor.execCommand(command, false,args);
+    }catch(e){
+      console.log("executeCommand: "+e);
+    }
 };
 
 
@@ -452,19 +488,9 @@ ustadEditor.executeCommand = function(command,args){
  * Callback to listen for any changes on the active editor
  */
 ustadEditor.handleContentChange = function(){
-    console.log(JSON.stringify({action:'onContentChanged',content:btoa(this.activeEditor.getContent())}));
+    const contentChangeCallback = JSON.stringify({action:'onContentChanged',content:btoa(this.activeEditor.getContent())});
+    UmContentEditor.onContentChanged(contentChangeCallback);
 };
-
-/**
- * Callback to listen for any text highlighting on the active editor
- */
-ustadEditor.handleTextHighlighting = function(){
-    const highlighted = this.activeEditor.selection.getContent();
-    if(highlighted){
-        console.log(JSON.stringify({action:'onContentHighlighted',content:btoa("")}));
-    }
-};
-
 
 /**
  * Load content into a preview
@@ -532,6 +558,6 @@ ustadEditor.startLivePreview = function () {
         document.getElementById("editor-off").click();
         return {action: 'savePreview', content: btoa(this.activeEditor.getContent()),extraFlag:null};
     }catch (e) {
-        console.log("startLivePreview",e)
+        console.log("startLivePreview:"+e)
     }
 };

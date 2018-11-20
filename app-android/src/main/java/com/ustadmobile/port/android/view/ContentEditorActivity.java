@@ -70,6 +70,7 @@ import com.ustadmobile.port.android.contenteditor.EditorAnimatedViewSwitcher;
 import com.ustadmobile.port.android.contenteditor.UmAndroidUriUtil;
 import com.ustadmobile.port.android.contenteditor.WebContentEditorChrome;
 import com.ustadmobile.port.android.contenteditor.WebContentEditorClient;
+import com.ustadmobile.port.android.contenteditor.WebContentEditorInterface;
 import com.ustadmobile.port.android.contenteditor.WebJsResponse;
 import com.ustadmobile.port.android.impl.http.AndroidAssetsHandler;
 import com.ustadmobile.port.android.util.UMAndroidUtil;
@@ -459,6 +460,8 @@ public class ContentEditorActivity extends UstadBaseActivity implements ContentE
         webSettings.setAllowFileAccess(true);
         webSettings.setRenderPriority(WebSettings.RenderPriority.HIGH);
         editorWebView.setWebChromeClient(new WebContentEditorChrome(this));
+        editorWebView.addJavascriptInterface(
+                new WebContentEditorInterface(this),"UmContentEditor");
         editorWebView.setLayerType(View.LAYER_TYPE_HARDWARE, null);
         editorWebView.clearCache(true);
         editorWebView.clearHistory();
