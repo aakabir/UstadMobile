@@ -1,6 +1,8 @@
 package com.ustadmobile.port.android.contenteditor;
 
+import android.app.Activity;
 import android.webkit.JavascriptInterface;
+
 
 /**
  * Class which listen for all the calls that javascript will make to the native side.
@@ -21,9 +23,13 @@ public class WebContentEditorInterface {
 
     private WebContentEditorChrome.JsLoadingCallback callback;
 
+    private Activity activity;
+
     /** Instantiate the interface and set the context */
-    public WebContentEditorInterface(WebContentEditorChrome.JsLoadingCallback callback) {
+    public WebContentEditorInterface(Activity activity,
+                                     WebContentEditorChrome.JsLoadingCallback callback) {
         this.callback = callback;
+        this.activity = activity;
     }
 
     /**
@@ -33,7 +39,8 @@ public class WebContentEditorInterface {
     @JavascriptInterface
     public void onContentChanged(String callbackValue){
         try{
-            callback.onCallbackReceived(callbackValue);
+            activity.runOnUiThread(() ->
+                    callback.onCallbackReceived(callbackValue));
         }catch (Exception e){
             e.printStackTrace();
         }
@@ -42,7 +49,7 @@ public class WebContentEditorInterface {
     @JavascriptInterface
     public void onTextSelected(String callbackValue){
         try{
-            callback.onCallbackReceived(callbackValue);
+            activity.runOnUiThread(() -> callback.onCallbackReceived(callbackValue));
         }catch (Exception e){
             e.printStackTrace();
         }
@@ -51,7 +58,7 @@ public class WebContentEditorInterface {
     @JavascriptInterface
     public void onClickEvent(String callbackValue){
         try{
-            callback.onCallbackReceived(callbackValue);
+            activity.runOnUiThread(() -> callback.onCallbackReceived(callbackValue));
         }catch (Exception e){
             e.printStackTrace();
         }
@@ -60,7 +67,7 @@ public class WebContentEditorInterface {
     @JavascriptInterface
     public void onControlActivatedCheck(String callbackValue){
         try{
-            callback.onCallbackReceived(callbackValue);
+            activity.runOnUiThread(() -> callback.onCallbackReceived(callbackValue));
         }catch (Exception e){
             e.printStackTrace();
         }
@@ -69,7 +76,7 @@ public class WebContentEditorInterface {
     @JavascriptInterface
     public void onInitEditor(String callbackValue){
         try{
-            callback.onCallbackReceived(callbackValue);
+            activity.runOnUiThread(() -> callback.onCallbackReceived(callbackValue));
         }catch (Exception e){
             e.printStackTrace();
         }

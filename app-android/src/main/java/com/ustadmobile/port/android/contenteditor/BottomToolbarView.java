@@ -88,16 +88,18 @@ public class BottomToolbarView extends Toolbar {
 
     /**
      * Update the MenuItem corresponding to the content format.
-     * @param format updated content format to be set to the MenuItem.
      */
-    public void updateMenu(ContentFormat format){
-        MenuItem menuItem = findById(format.getFormatId());
-        if(menuItem != null){
-            FrameLayout rootView = (FrameLayout) menuItem.getActionView();
-            ImageView imageIcon = rootView.findViewById(R.id.format_icon);
-            FrameLayout iconHolder = rootView.findViewById(R.id.icon_holder);
-            changeState(imageIcon,iconHolder,format.isActive() &&
-                    isTobeHighlighted(format.getFormatCommand()));
+    public void updateMenu(){
+        List<ContentFormat> formatList = ContentFormattingHelper.getInstance().getQuickActions();
+        for(ContentFormat contentFormat: formatList){
+            MenuItem menuItem = findById(contentFormat.getFormatId());
+            if(menuItem != null){
+                FrameLayout rootView = (FrameLayout) menuItem.getActionView();
+                ImageView imageIcon = rootView.findViewById(R.id.format_icon);
+                FrameLayout iconHolder = rootView.findViewById(R.id.icon_holder);
+                changeState(imageIcon,iconHolder,contentFormat.isActive() &&
+                        isTobeHighlighted(contentFormat.getFormatCommand()));
+            }
         }
     }
 

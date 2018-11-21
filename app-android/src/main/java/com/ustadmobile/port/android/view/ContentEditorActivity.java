@@ -216,6 +216,8 @@ public class ContentEditorActivity extends UstadBaseActivity implements ContentE
             void setContentFormats(List<ContentFormat> contentFormats) {
                 this.contentFormats = contentFormats;
                 notifyDataSetChanged();
+
+
             }
 
             @NonNull
@@ -254,6 +256,8 @@ public class ContentEditorActivity extends UstadBaseActivity implements ContentE
                                     item.getTitle().toString().replace("pt",""));
                             return true;
                         });
+
+
 
                         popupMenu.show();
                     }
@@ -364,6 +368,13 @@ public class ContentEditorActivity extends UstadBaseActivity implements ContentE
         formattingHelper = ContentFormattingHelper.getInstance();
         formattingHelper.setStateDispatcher(this);
 
+        runOnUiThread(new Runnable() {
+            @Override
+            public void run() {
+
+            }
+        });
+
 
         //Set quick action menus above the keyboard when opened
         mBottomToolbarView.inflateMenu(R.menu.menu_content_editor_quick_actions);
@@ -461,7 +472,7 @@ public class ContentEditorActivity extends UstadBaseActivity implements ContentE
         webSettings.setRenderPriority(WebSettings.RenderPriority.HIGH);
         editorWebView.setWebChromeClient(new WebContentEditorChrome(this));
         editorWebView.addJavascriptInterface(
-                new WebContentEditorInterface(this),"UmContentEditor");
+                new WebContentEditorInterface(this,this),"UmContentEditor");
         editorWebView.setLayerType(View.LAYER_TYPE_HARDWARE, null);
         editorWebView.clearCache(true);
         editorWebView.clearHistory();
@@ -557,7 +568,7 @@ public class ContentEditorActivity extends UstadBaseActivity implements ContentE
     @Override
     public void onStateChanged(ContentFormat format) {
         if(format.getFormatId() != 0){
-            mBottomToolbarView.updateMenu(format);
+            mBottomToolbarView.updateMenu();
         }
     }
 
