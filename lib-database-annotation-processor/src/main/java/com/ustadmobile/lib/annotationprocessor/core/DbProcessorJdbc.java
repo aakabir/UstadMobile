@@ -24,6 +24,9 @@ import com.ustadmobile.lib.database.annotation.UmPrimaryKey;
 import com.ustadmobile.lib.database.annotation.UmQuery;
 import com.ustadmobile.lib.database.annotation.UmQueryFindByPrimaryKey;
 import com.ustadmobile.lib.database.annotation.UmRepository;
+import com.ustadmobile.lib.database.annotation.UmSyncFindAllChanges;
+import com.ustadmobile.lib.database.annotation.UmSyncFindLocalChanges;
+import com.ustadmobile.lib.database.annotation.UmSyncFindUpdateable;
 import com.ustadmobile.lib.database.annotation.UmSyncIncoming;
 import com.ustadmobile.lib.database.annotation.UmSyncOutgoing;
 import com.ustadmobile.lib.database.annotation.UmUpdate;
@@ -147,6 +150,8 @@ public class DbProcessorJdbc extends AbstractDbProcessor {
                             .add("this._dataSource = (DataSource)iContext.lookup(\"java:/comp/env/jdbc/\"+dbName);\n")
                             .add("this._arraySupported = $T.isArraySupported(this._dataSource);\n",
                                     JdbcDatabaseUtils.class)
+                            .add("$T.setIsMasterFromJndi(this, dbName, iContext);\n",
+                                    JdbcDatabaseUtils.class)
                             .add("createAllTables();\n")
                         .endControlFlow()
                         .beginControlFlow("catch($T e)",
@@ -252,6 +257,8 @@ public class DbProcessorJdbc extends AbstractDbProcessor {
                 addClearAllTablesCodeToMethod(dbType, overrideSpec, SQL_IDENTIFIER_CHAR);
             }else if(dbMethod.getAnnotation(UmRepository.class) != null) {
                 addGetRepositoryMethod(dbType, dbMethod, overrideSpec, "_repositories");
+            }else if(dbMethod.getAnnotation(UmSyncOutgoing.class) != null) {
+                overrideSpec = generateDbSyncOutgoingMethod(dbType, dbMethod);
             }else {
                 String daoFieldName = "_" + returnTypeElement.getSimpleName();
                 jdbcDbTypeSpec.addField(TypeName.get(dbMethod.getReturnType()), daoFieldName, Modifier.PRIVATE);
@@ -432,7 +439,8 @@ public class DbProcessorJdbc extends AbstractDbProcessor {
 
         }
 
-        codeBlock.beginControlFlow("if(!_existingTableNames.contains($S))",
+        codeBlock.beginControlFlow("if(!$T.listContainsStringIgnoreCase(_existingTableNames, $S))",
+                JdbcDatabaseUtils.class,
                 entitySpec.getSimpleName().toString())
                 .add("$L.executeUpdate($S);\n", stmtVariableName,
                         makeCreateTableStatement(entitySpec, quoteChar, sqlProductName));
@@ -594,6 +602,15 @@ public class DbProcessorJdbc extends AbstractDbProcessor {
                 addSyncHandleIncomingMethod(daoMethod, daoType, jdbcDaoClassSpec, "_db");
             }else if(daoMethod.getAnnotation(UmSyncOutgoing.class) != null) {
                 addSyncOutgoing(daoMethod, daoType, jdbcDaoClassSpec, "_db");
+            }else if(daoMethod.getAnnotation(UmSyncFindLocalChanges.class) != null) {
+                addQueryMethod(daoMethod, daoType, dbType, jdbcDaoClassSpec, SQL_IDENTIFIER_CHAR,
+                        generateFindLocalChangesSql(daoType, daoMethod, processingEnv));
+            }else if(daoMethod.getAnnotation(UmSyncFindAllChanges.class) != null) {
+                addQueryMethod(daoMethod, daoType, dbType, jdbcDaoClassSpec, SQL_IDENTIFIER_CHAR,
+                        generateSyncFindAllChanges(daoType, daoMethod, processingEnv));
+            }else if(daoMethod.getAnnotation(UmSyncFindUpdateable.class) != null) {
+                addQueryMethod(daoMethod, daoType, dbType, jdbcDaoClassSpec, SQL_IDENTIFIER_CHAR,
+                        generateSyncFindUpdatable(daoType, daoMethod, processingEnv));
             }
         }
 
@@ -781,13 +798,18 @@ public class DbProcessorJdbc extends AbstractDbProcessor {
                             autoIncPreparedStmtVarName)
                 .unindent().beginControlFlow(")");
 
-            if(isList || isArray) {
+            boolean resultIsList = DbProcessorUtils.isList(resultType, processingEnv);
+            boolean resultIsArray = resultType.getKind().equals(TypeKind.ARRAY);
+            if(resultIsList || resultIsArray) {
                 TypeMirror primaryKeyType = DbProcessorUtils.getArrayOrListComponentType(resultType,
                         processingEnv);
-                String arrayListVarName = isList ? "_result" : "_resultList";
+                String arrayListVarName = resultIsList ? "_result" : "_resultList";
+
                 ParameterizedTypeName listTypeName =ParameterizedTypeName.get(
-                        ClassName.get(ArrayList.class), ClassName.get(primaryKeyType));
-                if(isArray)
+                        ClassName.get(ArrayList.class),
+                        ClassName.get(DbProcessorUtils.boxIfPrimitive(primaryKeyType, processingEnv)));
+
+                if(resultIsArray)
                     codeBlock.add("$T ", listTypeName);
 
                 codeBlock.add("$L = new $T();\n", arrayListVarName, listTypeName);
@@ -795,10 +817,10 @@ public class DbProcessorJdbc extends AbstractDbProcessor {
                 codeBlock.beginControlFlow("while(generatedKeys.next())")
                         .add("$L.add(generatedKeys.get$L(1));\n", arrayListVarName,
                                 getPreparedStatementSetterGetterTypeName(primaryKeyType))
-                    .endControlFlow();
+                        .endControlFlow();
 
-                if(isArray) {
-                    codeBlock.add("_result = arrayList.toArray(new $T[arrayList.size()]);\n",
+                if(resultIsArray) {
+                    codeBlock.add("_result = _resultList.toArray(new $T[_resultList.size()]);\n",
                             primaryKeyType);
                 }
             }else {
@@ -1579,8 +1601,8 @@ public class DbProcessorJdbc extends AbstractDbProcessor {
                                 "get" + getPreparedStatementSetterGetterTypeName(method.getParameters()
                                         .get(0).asType()));
                         paramMap.put("resultSetVarName", resultSetVariableName);
-                        paramMap.put("index", i + 1);
-                        setFromResultCodeBlock.addNamed(".$setterName:L($resultSetVarName:L.$resultSetGetter:L($index:L));\n",
+                        paramMap.put("colname", metaData.getColumnLabel(i+1));
+                        setFromResultCodeBlock.addNamed(".$setterName:L($resultSetVarName:L.$resultSetGetter:L($colname:S));\n",
                                 paramMap);
                     }else if(method.getSimpleName().toString().startsWith("get")) {
                         //this is an embedded field
@@ -1795,7 +1817,14 @@ public class DbProcessorJdbc extends AbstractDbProcessor {
                 field.getSimpleName().toString(), entityTypeElement, new ArrayList<>(), false);
         codeBlock.add("$L, $L.", index, entityVariableName);
 
-        codeBlock.add(getterCallchain.get(0).getSimpleName().toString()).add("());\n");
+        if(getterCallchain != null && !getterCallchain.isEmpty()) {
+            codeBlock.add(getterCallchain.get(0).getSimpleName().toString()).add("());\n");
+        }else {
+            messager.printMessage(Diagnostic.Kind.ERROR, "Error: field " +
+                    field.getSimpleName() + " on " + entityTypeElement.getQualifiedName() +
+                    ": cannot find getter method. Attempting to generate " +
+                    daoMethod.getSimpleName());
+        }
     }
 
     private String getPreparedStatementSetterMethodName(TypeMirror variableType) {
