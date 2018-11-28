@@ -49,7 +49,8 @@ public class ContentEditorPresenter extends UstadBaseController<ContentEditorVie
     }
 
     public void handleFiles(String baseResourceRequestUrl){
-        this.tinyMceBaseUrl = baseResourceRequestUrl;
+        tinyMceBaseUrl = baseResourceRequestUrl;
+        args.put(ContentEditorView.EDITOR_REQUEST_URI,tinyMceBaseUrl);
         if(args.get(CONTENT_ENTRY_FILE_UID).equals("0")){
             view.getFileHelper().createFile(baseResourceRequestUrl,
                     new UmCallback<Long>() {

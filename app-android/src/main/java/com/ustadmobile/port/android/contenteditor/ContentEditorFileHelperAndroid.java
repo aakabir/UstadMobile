@@ -19,24 +19,23 @@ import com.ustadmobile.port.sharedse.impl.http.EmbeddedHTTPD;
 import com.ustadmobile.port.sharedse.impl.http.FileDirectoryHandler;
 import com.ustadmobile.port.sharedse.networkmanager.ResumableHttpDownload;
 
-import java.io.BufferedOutputStream;
 import java.io.File;
-import java.io.FileInputStream;
-import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
-import java.util.Enumeration;
-import java.util.zip.ZipEntry;
-import java.util.zip.ZipFile;
-import java.util.zip.ZipInputStream;
 
 import static com.ustadmobile.core.controller.CatalogPresenter.SHARED_RESOURCE;
 
 public class ContentEditorFileHelperAndroid extends ContentEditorFileHelper {
 
-    private File destinationDir;
+    private File tempDestinationDir;
+
+    private File contentEntryFile;
+
+    private File sourceFile;
 
     private File destinationFile;
+
+    private File mediaDestinationDir;
 
     private UmAppDatabase repository;
 
@@ -48,13 +47,22 @@ public class ContentEditorFileHelperAndroid extends ContentEditorFileHelper {
 
     public static final String LOCAL_ADDRESS = "http://127.0.0.1:";
 
+    public static final String INDEX_FILE = "index.html";
+
+    public static final String INDEX_TEMP_FILE = "index_temp.html";
+
+    public static final String MEDIA_DIRECTORY = "media/";
+
     public ContentEditorFileHelperAndroid(Object context) {
         super(context);
         this.context = (Context) context;
         UMStorageDir[] rootDir =
                 UstadMobileSystemImpl.getInstance().getStorageDirs(SHARED_RESOURCE,context);
-        destinationDir = new File(rootDir[0].getDirURI());
-        destinationFile = new File(destinationDir,ContentEditorView.RESOURCE_BLANK_DOCUMENT);
+        File baseContentDir = new File(rootDir[0].getDirURI());
+        File tempBaseDir = new File(baseContentDir,"temp/");
+        if(!tempBaseDir.exists())tempBaseDir.mkdir();
+        tempDestinationDir = tempBaseDir;
+        contentEntryFile = new File(baseContentDir,ContentEditorView.RESOURCE_BLANK_DOCUMENT);
         repository = UmAccountManager.getRepositoryForActiveAccount(context);
         umAppDatabase = UmAppDatabase.getInstance(context);
     }
@@ -66,7 +74,7 @@ public class ContentEditorFileHelperAndroid extends ContentEditorFileHelper {
             String resourceUrl = UMFileUtil.joinPaths(baseResourceUrl,
                     "templates/"+ContentEditorView.RESOURCE_BLANK_DOCUMENT);
             ResumableHttpDownload resumableHttpDownload = new ResumableHttpDownload(resourceUrl,
-                    destinationFile.getAbsolutePath());
+                    contentEntryFile.getAbsolutePath());
             boolean isDownloaded = false;
             try{
                 isDownloaded = resumableHttpDownload.download();
@@ -95,9 +103,9 @@ public class ContentEditorFileHelperAndroid extends ContentEditorFileHelper {
 
         ContentEntryFile contentEntryFile = new ContentEntryFile();
         contentEntryFile.setLastModified(lastModified);
-        contentEntryFile.setFileSize(destinationFile.length());
+        contentEntryFile.setFileSize(this.contentEntryFile.length());
         contentEntryFile.setMimeType(UmAndroidUriUtil.getMimeType(context,
-                Uri.fromFile(destinationFile)));
+                Uri.fromFile(this.contentEntryFile)));
 
         repository.getContentEntryDao().insertAsync(contentEntry, new UmCallback<Long>() {
             @Override
@@ -116,7 +124,7 @@ public class ContentEditorFileHelperAndroid extends ContentEditorFileHelper {
                             public void onSuccess(Long cecefUid) {
                                 ContentEntryFileStatus fileStatus = new ContentEntryFileStatus();
                                 fileStatus.setCefsContentEntryFileUid(contentEntryFileUid);
-                                fileStatus.setFilePath(destinationFile.getAbsolutePath());
+                                fileStatus.setFilePath(ContentEditorFileHelperAndroid.this.contentEntryFile.getAbsolutePath());
                                 umAppDatabase.getContentEntryFileStatusDao()
                                         .insertAsync(fileStatus, new UmCallback<Long>() {
                                     @Override
@@ -161,12 +169,15 @@ public class ContentEditorFileHelperAndroid extends ContentEditorFileHelper {
                         new UmCallback<ContentEntryFileStatus>() {
             @Override
             public void onSuccess(ContentEntryFileStatus fileStatus) {
+                sourceFile = new File(fileStatus.getFilePath());
                 String mountedToPath = "temp_"+System.currentTimeMillis()+"/";
-                File extractToPath = new File(destinationDir,mountedToPath);
+                File extractToPath = new File(tempDestinationDir,mountedToPath);
+                destinationFile = extractToPath;
+                mediaDestinationDir = new File(destinationFile,MEDIA_DIRECTORY);
                 new Thread(() -> {
                     boolean unZipped = false;
                     try {
-                        unZipped = UMFileUtil.unZipFile(new File(fileStatus.getFilePath()), extractToPath);
+                        unZipped = UMFileUtil.unZipFile(sourceFile, destinationFile);
                     } catch (IOException e) {
                         e.printStackTrace();
                         callback.onFailure(e);
@@ -177,6 +188,12 @@ public class ContentEditorFileHelperAndroid extends ContentEditorFileHelper {
                                     FileDirectoryHandler.class,extractToPath);
                             String baseRequestUrl = UMFileUtil.joinPaths(LOCAL_ADDRESS +
                                             embeddedHTTPD.getListeningPort()+"/", mountedPathPrefix);
+                            try {
+                                UMFileUtil.copyFile(new File(destinationFile,INDEX_FILE),
+                                        new File(destinationFile,INDEX_TEMP_FILE));
+                            } catch (IOException e) {
+                                e.printStackTrace();
+                            }
                             callback.onSuccess(baseRequestUrl);
                         }else{
                             callback.onSuccess(null);
@@ -202,5 +219,20 @@ public class ContentEditorFileHelperAndroid extends ContentEditorFileHelper {
     @Override
     public void removeUnUsedResources(UmCallback<Void> callback) {
 
+    }
+
+    @Override
+    public String getSourceFilePath() {
+        return sourceFile.getAbsolutePath();
+    }
+
+    @Override
+    public String getDestinationDirPath() {
+        return destinationFile.getAbsolutePath();
+    }
+
+    @Override
+    public String getDestinationMediaDirPath() {
+        return mediaDestinationDir.getAbsolutePath();
     }
 }

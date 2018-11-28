@@ -60,5 +60,11 @@ public interface  ContentEditorFileHelperCore {
      */
     void removeUnUsedResources(UmCallback<Void> callback);
 
+    String getSourceFilePath();
+
+    String getDestinationDirPath();
+
+    String getDestinationMediaDirPath();
+
 
 }
