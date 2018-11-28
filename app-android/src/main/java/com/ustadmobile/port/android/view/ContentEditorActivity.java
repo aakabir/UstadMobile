@@ -92,7 +92,10 @@ import java.util.Objects;
 
 import id.zelory.compressor.Compressor;
 
+import static com.ustadmobile.port.android.contenteditor.ContentEditorFileHelperAndroid.INDEX_FILE;
+import static com.ustadmobile.port.android.contenteditor.ContentEditorFileHelperAndroid.INDEX_TEMP_FILE;
 import static com.ustadmobile.port.android.contenteditor.ContentEditorFileHelperAndroid.LOCAL_ADDRESS;
+import static com.ustadmobile.port.android.contenteditor.ContentEditorFileHelperAndroid.MEDIA_DIRECTORY;
 import static com.ustadmobile.port.android.contenteditor.ContentFormattingHelper.FORMATTING_ACTIONS_INDEX;
 import static com.ustadmobile.port.android.contenteditor.ContentFormattingHelper.isTobeHighlighted;
 import static com.ustadmobile.port.android.contenteditor.EditorAnimatedViewSwitcher.ANIMATED_SOFT_KEYBOARD_PANEL;
@@ -146,16 +149,7 @@ public class ContentEditorActivity extends UstadBaseActivity implements ContentE
 
     private static final int FILE_BROWSING_REQUEST = 902;
 
-
-    private static final String MEDIA_CONTENT_DIR = "media/";
-
     private View blankDocumentContainer;
-
-    private  String index_file;
-
-    private  String index_temp_file;
-
-
 
     private ContentFormattingHelper formattingHelper;
 
@@ -397,8 +391,7 @@ public class ContentEditorActivity extends UstadBaseActivity implements ContentE
 
         args = UMAndroidUtil.bundleToHashtable(getIntent().getExtras());
         args.put(CONTENT_ENTRY_FILE_UID,"0");
-        index_file = args.get(EDITOR_CONTENT_FILE).toString();
-        index_temp_file = "_"+index_file;
+
 
         embeddedHTTPD = new EmbeddedHTTPD(0, this);
         fileHelperAndroid = new ContentEditorFileHelperAndroid(this);
@@ -592,7 +585,8 @@ public class ContentEditorActivity extends UstadBaseActivity implements ContentE
                 startEditing.setVisibility(View.VISIBLE);
                 injectTinyMce();
             }else{
-                //if(new File(contentDir,index_temp_file).delete())moveTaskToBack(true);
+                if(new File(fileHelperAndroid.getDestinationDirPath(),INDEX_TEMP_FILE)
+                        .delete())moveTaskToBack(true);
             }
         }
 
@@ -629,9 +623,9 @@ public class ContentEditorActivity extends UstadBaseActivity implements ContentE
                     handleWebViewMargin();
                     invalidateOptionsMenu();
                     requestEditorFocus();
-                    editorWebView.postDelayed(() -> {
-                        viewSwitcher.animateView(ANIMATED_SOFT_KEYBOARD_PANEL);
-                    },MAX_SOFT_KEYBOARD_DELAY);
+                    editorWebView.postDelayed(() ->
+                            viewSwitcher.animateView(ANIMATED_SOFT_KEYBOARD_PANEL),
+                            MAX_SOFT_KEYBOARD_DELAY);
                 }
                 handleBackNavigationIcon();
                 startEditing.setVisibility(View.GONE);
@@ -648,19 +642,20 @@ public class ContentEditorActivity extends UstadBaseActivity implements ContentE
 
             //Saving content on file after being changed
             case ACTION_SAVE_CONTENT:
-                Document index = getIndexDocument(index_file);
-                Elements docContainer = index.select(".container-fluid");
+                Document indexFile = getIndexDocument();
+                Elements docContainer = indexFile.select(".container-fluid");
                 if(docContainer.size() > 0){
                     docContainer.first().html(content);
                 }else{
                     String wrapped = "<div class=\"container-fluid\">"+content+"</div>";
-                    Element bodyElement = index.select("body").first();
+                    Element bodyElement = indexFile.select("body").first();
                     bodyElement.html(wrapped);
                 }
 
-                UstadMobileSystemImpl.l(UMLog.DEBUG,700,
-                        content);
-                //UMFileUtil.writeToFile(new File(contentDir,"index.html"),index.html());
+                UstadMobileSystemImpl.l(UMLog.DEBUG,700, content);
+                //Update index.html file
+                UMFileUtil.writeToFile(new File(fileHelperAndroid.getDestinationDirPath(),
+                        INDEX_FILE),indexFile.html());
                 break;
             //start checking if there is any control activated
             case ACTION_CHECK_ACTIVE_CONTROLS:
@@ -734,12 +729,13 @@ public class ContentEditorActivity extends UstadBaseActivity implements ContentE
                     .compressToFile(sourceFile);
         }
 
-        File destination = new File("", MEDIA_CONTENT_DIR + compressedFile.getName().replaceAll("\\s+","_"));
+        File destination = new File(fileHelperAndroid.getDestinationMediaDirPath(),
+                compressedFile.getName().replaceAll("\\s+","_"));
         UMFileUtil.copyFile(sourceFile,destination);
-        String source = MEDIA_CONTENT_DIR + destination.getName();
+        String source = MEDIA_DIRECTORY + destination.getName();
         progressDialog.setVisibility(View.GONE);
-        executeJsFunction(editorWebView,
-                "ustadEditor.insertMedia",this, source,mimeType);
+        executeJsFunction(editorWebView, "ustadEditor.insertMedia",
+                this, source,mimeType);
     }
 
 
@@ -763,7 +759,7 @@ public class ContentEditorActivity extends UstadBaseActivity implements ContentE
 
 
     private void requestEditorFocus(){
-        executeJsFunction(editorWebView,"ustadEditor.requestFocus", this, (String[]) null);
+        executeJsFunction(editorWebView,"ustadEditor.requestFocus", this);
     }
 
 
@@ -803,25 +799,25 @@ public class ContentEditorActivity extends UstadBaseActivity implements ContentE
     @Override
     public void setContentBold() {
         executeJsFunction(editorWebView,
-                "ustadEditor.textFormattingBold",this, (String[]) null);
+                "ustadEditor.textFormattingBold",this);
     }
 
     @Override
     public void setContentItalic() {
         executeJsFunction(editorWebView,
-                "ustadEditor.textFormattingItalic",this, (String[]) null);
+                "ustadEditor.textFormattingItalic",this);
     }
 
     @Override
     public void setContentUnderlined() {
         executeJsFunction(editorWebView,
-                "ustadEditor.textFormattingUnderline",this, (String[]) null);
+                "ustadEditor.textFormattingUnderline",this);
     }
 
     @Override
     public void setContentStrikeThrough() {
         executeJsFunction(editorWebView,
-                "ustadEditor.textFormattingStrikeThrough",this, (String[]) null);
+                "ustadEditor.textFormattingStrikeThrough",this);
     }
 
     @Override
@@ -833,134 +829,121 @@ public class ContentEditorActivity extends UstadBaseActivity implements ContentE
     @Override
     public void setContentSuperscript() {
         executeJsFunction(editorWebView,
-                "ustadEditor.textFormattingSuperScript",this, (String[]) null);
+                "ustadEditor.textFormattingSuperScript",this);
     }
 
     @Override
     public void setContentSubScript() {
         executeJsFunction(editorWebView,
-                "ustadEditor.textFormattingSubScript",this, (String[]) null);
+                "ustadEditor.textFormattingSubScript",this);
     }
 
     @Override
     public void setContentJustified() {
         executeJsFunction(editorWebView,
-                "ustadEditor.paragraphFullJustification",this, (String[]) null);
+                "ustadEditor.paragraphFullJustification",this);
     }
 
     @Override
     public void setContentCenterAlign() {
         executeJsFunction(editorWebView,
-                "ustadEditor.paragraphCenterJustification",this, (String[]) null);
+                "ustadEditor.paragraphCenterJustification",this);
     }
 
     @Override
     public void setContentLeftAlign() {
         executeJsFunction(editorWebView,
-                "ustadEditor.paragraphLeftJustification",this, (String[]) null);
+                "ustadEditor.paragraphLeftJustification",this);
     }
 
     @Override
     public void setContentRightAlign() {
         executeJsFunction(editorWebView,
-                "ustadEditor.paragraphRightJustification",this, (String[]) null);
+                "ustadEditor.paragraphRightJustification",this);
     }
 
     @Override
     public void setContentOrderedList() {
         executeJsFunction(editorWebView,
-                "ustadEditor.paragraphOrderedListFormatting",this, (String[]) null);
+                "ustadEditor.paragraphOrderedListFormatting",this);
     }
 
     @Override
     public void setContentUnOrderList() {
         executeJsFunction(editorWebView,
-                "ustadEditor.paragraphUnOrderedListFormatting",this, (String[]) null);
+                "ustadEditor.paragraphUnOrderedListFormatting",this);
     }
 
     @Override
     public void setContentIncreaseIndent() {
         executeJsFunction(editorWebView,
-                "ustadEditor.paragraphIndent",this, (String[]) null);
+                "ustadEditor.paragraphIndent",this);
     }
 
     @Override
     public void setContentDecreaseIndent() {
         executeJsFunction(editorWebView,
-                "ustadEditor.paragraphOutDent",this, (String[]) null);
+                "ustadEditor.paragraphOutDent",this);
     }
 
     @Override
     public void setContentRedo() {
         executeJsFunction(editorWebView,
-                "ustadEditor.editorActionRedo",this, (String[]) null);
+                "ustadEditor.editorActionRedo",this);
     }
 
     @Override
     public void setContentUndo() {
         executeJsFunction(editorWebView,
-                "ustadEditor.editorActionUndo",this, (String[]) null);
+                "ustadEditor.editorActionUndo",this);
     }
 
     @Override
     public void setContentTextDirection(boolean isLTR) {
         executeJsFunction(editorWebView,
                 !isLTR ? "ustadEditor.textDirectionRightToLeft":
-                        "ustadEditor.textDirectionLeftToRight",this, (String[]) null);
+                        "ustadEditor.textDirectionLeftToRight",this);
         invalidateOptionsMenu();
     }
 
     @Override
     public void insertMultipleChoiceQuestion() {
         executeJsFunction(editorWebView,
-                "ustadEditor.insertMultipleChoiceQuestionTemplate",
-                this, (String[]) null);
+                "ustadEditor.insertMultipleChoiceQuestionTemplate", this);
     }
 
     @Override
     public void insertFillTheBlanksQuestion() {
         executeJsFunction(editorWebView,
-                "ustadEditor.insertFillInTheBlanksQuestionTemplate",
-                this, (String[]) null);
+                "ustadEditor.insertFillInTheBlanksQuestionTemplate", this);
     }
 
     @Override
     public void requestEditorContent() {
-        executeJsFunction(editorWebView,
-                "ustadEditor.getContent",this, (String[]) null);
-    }
-
-    @Override
-    public void createNewDocument() {
-        //UMFileUtil.writeToFile(new File(contentDir,index_file),NEW_DOCUMENT_TEMPLATE);
+        executeJsFunction(editorWebView, "ustadEditor.getContent",this);
     }
 
 
-
-    /**
-     * Start copying resources to the local editor directory
-     */
-    @Override
-    public void handleResources() {
-
-    }
 
     @Override
     public void injectTinyMce() {
         editorWebView.setWebViewClient(new WebContentEditorClient(
                 this,presenter.getTinyMceBaseUrl()));
-        editorWebView.loadUrl(UMFileUtil.joinPaths(presenter.getMountedFileBaseUrl(),"index.html"));
+        args.put(ContentEditorView.EDITOR_PREVIEW_PATH,
+                UMFileUtil.joinPaths(presenter.getMountedFileBaseUrl(),INDEX_FILE));
+        String url = UMFileUtil.joinPaths(presenter.getMountedFileBaseUrl(),INDEX_TEMP_FILE);
+        editorWebView.loadUrl(url);
     }
 
 
 
-    private Document getIndexDocument(String fileIndex){
-        /*try {
-            File indexFile = new File(contentDir,fileIndex);
+    private Document getIndexDocument(){
+        try {
+            File indexFile = new File(fileHelperAndroid.getDestinationDirPath(),INDEX_FILE);
             return  Jsoup.parse(UMFileUtil.readTextFile(indexFile.getAbsolutePath()));
         } catch (IOException e) {
             e.printStackTrace();
-        }*/
+        }
         return  null;
     }
 

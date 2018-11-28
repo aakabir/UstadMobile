@@ -13,7 +13,6 @@ import com.toughra.ustadmobile.R;
 import com.ustadmobile.core.controller.ContentPreviewPresenter;
 import com.ustadmobile.core.generated.locale.MessageID;
 import com.ustadmobile.core.impl.UstadMobileSystemImpl;
-import com.ustadmobile.core.util.UMFileUtil;
 import com.ustadmobile.core.view.ContentPreviewView;
 import com.ustadmobile.port.android.contenteditor.UstadNestedWebView;
 import com.ustadmobile.port.android.contenteditor.WebContentEditorChrome;
@@ -80,11 +79,11 @@ public class ContentPreviewActivity extends UstadBaseActivity
     }
 
     @Override
-    public void loadPreviewPage(String localUri, String indexFile) {
-        contentPreview.setWebViewClient(new WebContentEditorClient(this,localUri));
+    public void startPreviewing(String baseRequestUri, String indexFile) {
+        contentPreview.setWebViewClient(new WebContentEditorClient(this,baseRequestUri));
         contentPreview.setWebChromeClient(new WebContentEditorChrome(this));
         progressDialog.setVisibility(View.VISIBLE);
-        contentPreview.loadUrl(UMFileUtil.joinPaths(localUri,indexFile));
+        contentPreview.loadUrl(indexFile);
     }
 
     @Override
