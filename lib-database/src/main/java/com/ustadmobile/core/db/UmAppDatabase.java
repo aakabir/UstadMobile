@@ -8,6 +8,7 @@ import com.ustadmobile.core.db.dao.ContentEntryContentCategoryJoinDao;
 import com.ustadmobile.core.db.dao.ContentEntryContentEntryFileJoinDao;
 import com.ustadmobile.core.db.dao.ContentEntryDao;
 import com.ustadmobile.core.db.dao.ContentEntryFileDao;
+import com.ustadmobile.core.db.dao.ContentEntryFileStatusDao;
 import com.ustadmobile.core.db.dao.ContentEntryParentChildJoinDao;
 import com.ustadmobile.core.db.dao.ContentEntryRelatedEntryJoinDao;
 import com.ustadmobile.core.db.dao.CrawJoblItemDao;
@@ -34,6 +35,7 @@ import com.ustadmobile.lib.database.annotation.UmDatabase;
 import com.ustadmobile.lib.database.annotation.UmDbContext;
 import com.ustadmobile.lib.database.annotation.UmRepository;
 import com.ustadmobile.lib.database.annotation.UmSyncOutgoing;
+import com.ustadmobile.lib.db.entities.ContentEntryFileStatus;
 import com.ustadmobile.lib.db.sync.UmSyncableDatabase;
 import com.ustadmobile.lib.db.sync.dao.SyncStatusDao;
 import com.ustadmobile.lib.db.sync.dao.SyncablePrimaryKeyDao;
@@ -81,7 +83,8 @@ import com.ustadmobile.lib.db.sync.entities.SyncablePrimaryKey;
         ContentEntry.class, ContentEntryContentCategoryJoin.class,
         ContentEntryContentEntryFileJoin.class, ContentEntryFile.class,
         ContentEntryParentChildJoin.class, ContentEntryRelatedEntryJoin.class,
-        SyncStatus.class, SyncablePrimaryKey.class, SyncDeviceBits.class
+        SyncStatus.class, SyncablePrimaryKey.class, SyncDeviceBits.class,
+        ContentEntryFileStatus.class
 })
 public abstract class UmAppDatabase implements UmSyncableDatabase{
 
@@ -171,6 +174,8 @@ public abstract class UmAppDatabase implements UmSyncableDatabase{
     public abstract ContentEntryRelatedEntryJoinDao getContentEntryRelatedEntryJoinDao();
 
     public abstract SyncStatusDao getSyncStatusDao();
+
+    public abstract ContentEntryFileStatusDao getContentEntryFileStatusDao();
 
     @UmDbContext
     public abstract Object getContext();
