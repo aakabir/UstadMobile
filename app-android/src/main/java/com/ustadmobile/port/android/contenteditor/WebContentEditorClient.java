@@ -10,9 +10,14 @@ import android.webkit.WebViewClient;
 
 import com.ustadmobile.core.util.UMFileUtil;
 
+import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
+import java.util.ArrayList;
 
+import static com.ustadmobile.core.view.ContentEditorView.RESOURCE_JS_RANGY;
+import static com.ustadmobile.core.view.ContentEditorView.RESOURCE_JS_TINYMCE;
+import static com.ustadmobile.core.view.ContentEditorView.RESOURCE_JS_USTAD_EDITOR;
 import static com.ustadmobile.core.view.ContentEditorView.RESOURCE_JS_USTAD_WIDGET;
 
 /**
@@ -57,10 +62,18 @@ public class WebContentEditorClient extends WebViewClient {
         InputStream inputStream;
         String resourceUri = request.getUrl().toString();
         String mimeType = UmAndroidUriUtil.getMimeType(context,request.getUrl());
-        if(isInnerResource(resourceUri)){
-            try {
-                String resourcePath = UMFileUtil.joinPaths("http",
-                        "/tinymce/"+resourceUri.replace(localUrl+"/",""));
+
+        if(isInnerResource(resourceUri) || isUmEditorResource(resourceUri)){
+            try{
+                String resourcePath;
+                if(isInnerResource(resourceUri)){
+                    resourcePath = UMFileUtil.joinPaths("http",
+                            "/tinymce/"+getResourcePath(resourceUri));
+                }else{
+                    resourcePath = UMFileUtil.joinPaths("http",
+                            "/tinymce/js/"+new File(resourceUri).getName());
+                }
+
                 inputStream = context.getAssets().open(resourcePath);
                 return new WebResourceResponse(mimeType,"utf-8", 200,
                         "OK", request.getRequestHeaders(),inputStream);
@@ -68,8 +81,20 @@ public class WebContentEditorClient extends WebViewClient {
                 e.printStackTrace();
             }
         }
-
         return super.shouldInterceptRequest(view, request);
+    }
+
+    private String getResourcePath(String requestUri){
+        String [] parts = requestUri.split("/");
+        ArrayList<String> newParts = new ArrayList<>();
+        for(int i = 0; i< parts.length;i++){
+            if(i > 3){
+                newParts.add( parts[i]);
+            }
+        }
+        String[] url = new String[newParts.size()];
+        url = newParts.toArray(url);
+        return UMFileUtil.joinPaths(url);
     }
 
     /**
@@ -84,6 +109,17 @@ public class WebContentEditorClient extends WebViewClient {
             }
         }
         return false;
+    }
+
+    /**
+     * Check if the resource is one of the Editor core resource.
+     * @param uri requested resource uri
+     * @return true if are editor core resource otherwise false.
+     */
+    private boolean isUmEditorResource(String uri){
+        return uri.contains(RESOURCE_JS_TINYMCE)
+                || uri.contains(RESOURCE_JS_USTAD_EDITOR)
+                || uri.contains(RESOURCE_JS_RANGY);
     }
 
     /**

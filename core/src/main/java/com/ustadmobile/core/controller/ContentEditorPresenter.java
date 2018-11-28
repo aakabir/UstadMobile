@@ -1,10 +1,8 @@
 package com.ustadmobile.core.controller;
 
+import com.ustadmobile.core.impl.UmCallback;
 import com.ustadmobile.core.view.ContentEditorView;
 
-import java.io.File;
-import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.Hashtable;
 
 import static com.ustadmobile.core.view.ContentEditorView.ACTION_PREVIEW;
@@ -12,8 +10,7 @@ import static com.ustadmobile.core.view.ContentEditorView.ACTION_REDO;
 import static com.ustadmobile.core.view.ContentEditorView.ACTION_TEXT_DIRECTION_LTR;
 import static com.ustadmobile.core.view.ContentEditorView.ACTION_TEXT_DIRECTION_RTL;
 import static com.ustadmobile.core.view.ContentEditorView.ACTION_UNDO;
-import static com.ustadmobile.core.view.ContentEditorView.CONTENT_EDITOR_BODY_RESOURCES;
-import static com.ustadmobile.core.view.ContentEditorView.CONTENT_EDITOR_HEAD_RESOURCES;
+import static com.ustadmobile.core.view.ContentEditorView.CONTENT_ENTRY_FILE_UID;
 import static com.ustadmobile.core.view.ContentEditorView.CONTENT_INSERT_FILL_THE_BLANKS_QN;
 import static com.ustadmobile.core.view.ContentEditorView.CONTENT_INSERT_MULTIPLE_CHOICE_QN;
 import static com.ustadmobile.core.view.ContentEditorView.PARAGRAPH_FORMAT_ALIGN_CENTER;
@@ -36,6 +33,10 @@ public class ContentEditorPresenter extends UstadBaseController<ContentEditorVie
 
     private Hashtable args;
 
+    private String tinyMceBaseUrl;
+
+    private String mountedFileBaseUrl;
+
 
     public ContentEditorPresenter(Object context, Hashtable arguments, ContentEditorView view) {
         super(context, arguments, view);
@@ -45,7 +46,49 @@ public class ContentEditorPresenter extends UstadBaseController<ContentEditorVie
     @Override
     public void onCreate(Hashtable savedState) {
         super.onCreate(savedState);
-        view.startWebServer();
+    }
+
+    public void handleFiles(String baseResourceRequestUrl){
+        this.tinyMceBaseUrl = baseResourceRequestUrl;
+        if(args.get(CONTENT_ENTRY_FILE_UID).equals("0")){
+            view.getFileHelper().createFile(baseResourceRequestUrl,
+                    new UmCallback<Long>() {
+                        @Override
+                        public void onSuccess(Long contentEntryFileUid) {
+                            mountFile(contentEntryFileUid);
+                        }
+
+                        @Override
+                        public void onFailure(Throwable exception) { }
+                    });
+        }else{
+            long contentEntryFileUid = Long.parseLong(String.valueOf(args.get(CONTENT_ENTRY_FILE_UID)));
+            mountFile(contentEntryFileUid);
+        }
+    }
+
+
+    private void mountFile(long contentEntryFileUid){
+        view.getFileHelper().mountFile(contentEntryFileUid, new UmCallback<String>() {
+            @Override
+            public void onSuccess(String requestUrl) {
+                mountedFileBaseUrl = requestUrl;
+                view.runOnUiThread(() -> view.injectTinyMce());
+            }
+
+            @Override
+            public void onFailure(Throwable exception) {
+
+            }
+        });
+    }
+
+    public String getTinyMceBaseUrl(){
+        return tinyMceBaseUrl;
+    }
+
+    public String getMountedFileBaseUrl(){
+        return mountedFileBaseUrl;
     }
 
     public void handleFormatTypeClicked(String formatType, String param){
@@ -141,39 +184,6 @@ public class ContentEditorPresenter extends UstadBaseController<ContentEditorVie
 
             }
         });
-    }
-
-    /**
-     * Check if user opens existing document, if not create a new document and load to the editor
-     * @param file document to be checked.
-     */
-    public void handleDocument(File file){
-        view.runOnUiThread(() -> {
-            if(!file.exists()){
-                //TODO: Runn on background thread and not UI thread.
-                view.createNewDocument();
-            }
-            view.handleResources();
-        });
-
-    }
-
-
-    /**
-     * Check web resource if is one of our core editor resources
-     * @param resource Resource to be checked
-     * @return True if is core resource otherwise false
-     */
-    public boolean isUstadResource(String resource){
-        ArrayList<String> resourceList =
-                new ArrayList(Arrays.asList(CONTENT_EDITOR_HEAD_RESOURCES));
-        resourceList.addAll(Arrays.asList(CONTENT_EDITOR_BODY_RESOURCES));
-        for(String headResource: resourceList){
-            if(headResource.contains(resource)){
-                return true;
-            }
-        }
-        return false;
     }
 
 

@@ -56,14 +56,13 @@ import com.toughra.ustadmobile.R;
 import com.ustadmobile.core.controller.ContentEditorPresenter;
 import com.ustadmobile.core.generated.locale.MessageID;
 import com.ustadmobile.core.impl.UMLog;
-import com.ustadmobile.core.impl.UMStorageDir;
 import com.ustadmobile.core.impl.UstadMobileSystemImpl;
 import com.ustadmobile.core.util.Base64Coder;
 import com.ustadmobile.core.util.UMFileUtil;
 import com.ustadmobile.core.view.ContentEditorView;
 import com.ustadmobile.core.view.ContentPreviewView;
 import com.ustadmobile.port.android.contenteditor.BottomToolbarView;
-import com.ustadmobile.port.android.contenteditor.ContentEditorResourceHandler;
+import com.ustadmobile.port.android.contenteditor.ContentEditorFileHelperAndroid;
 import com.ustadmobile.port.android.contenteditor.ContentFormat;
 import com.ustadmobile.port.android.contenteditor.ContentFormattingHelper;
 import com.ustadmobile.port.android.contenteditor.EditorAnimatedViewSwitcher;
@@ -74,8 +73,8 @@ import com.ustadmobile.port.android.contenteditor.WebContentEditorInterface;
 import com.ustadmobile.port.android.contenteditor.WebJsResponse;
 import com.ustadmobile.port.android.impl.http.AndroidAssetsHandler;
 import com.ustadmobile.port.android.util.UMAndroidUtil;
+import com.ustadmobile.port.sharedse.contenteditor.ContentEditorFileHelper;
 import com.ustadmobile.port.sharedse.impl.http.EmbeddedHTTPD;
-import com.ustadmobile.port.sharedse.impl.http.FileDirectoryHandler;
 
 import org.jsoup.Jsoup;
 import org.jsoup.nodes.Document;
@@ -93,7 +92,7 @@ import java.util.Objects;
 
 import id.zelory.compressor.Compressor;
 
-import static com.ustadmobile.core.controller.CatalogPresenter.SHARED_RESOURCE;
+import static com.ustadmobile.port.android.contenteditor.ContentEditorFileHelperAndroid.LOCAL_ADDRESS;
 import static com.ustadmobile.port.android.contenteditor.ContentFormattingHelper.FORMATTING_ACTIONS_INDEX;
 import static com.ustadmobile.port.android.contenteditor.ContentFormattingHelper.isTobeHighlighted;
 import static com.ustadmobile.port.android.contenteditor.EditorAnimatedViewSwitcher.ANIMATED_SOFT_KEYBOARD_PANEL;
@@ -102,9 +101,14 @@ import static com.ustadmobile.port.android.contenteditor.WebContentEditorClient.
 
 public class ContentEditorActivity extends UstadBaseActivity implements ContentEditorView,
         WebContentEditorChrome.JsLoadingCallback, BottomToolbarView.OnQuickActionMenuItemClicked,
-        ContentFormattingHelper.StateChangeDispatcher , EditorAnimatedViewSwitcher.OnAnimatedViewsClosedListener{
+        ContentFormattingHelper.StateChangeDispatcher ,
+        EditorAnimatedViewSwitcher.OnAnimatedViewsClosedListener{
 
     private static ContentEditorPresenter presenter;
+
+    private ContentEditorFileHelperAndroid fileHelperAndroid;
+
+    private EmbeddedHTTPD embeddedHTTPD;
 
     private EditorAnimatedViewSwitcher viewSwitcher;
 
@@ -124,11 +128,7 @@ public class ContentEditorActivity extends UstadBaseActivity implements ContentE
 
     private boolean isEditorInitialized = false;
 
-    private boolean isDocumentEmpty = true;
-
     private FloatingActionButton startEditing;
-
-    private  String baseUrl = null;
 
     private Hashtable args = null;
 
@@ -146,7 +146,6 @@ public class ContentEditorActivity extends UstadBaseActivity implements ContentE
 
     private static final int FILE_BROWSING_REQUEST = 902;
 
-    private static final String EDITOR_ROOT_DIR = "contentEditor";
 
     private static final String MEDIA_CONTENT_DIR = "media/";
 
@@ -156,10 +155,7 @@ public class ContentEditorActivity extends UstadBaseActivity implements ContentE
 
     private  String index_temp_file;
 
-    private String assetsDir = "assets-" +
-            new SimpleDateFormat("yyyyMMddHHmmss").format(new Date()) + "";
 
-    private File contentDir;
 
     private ContentFormattingHelper formattingHelper;
 
@@ -368,13 +364,6 @@ public class ContentEditorActivity extends UstadBaseActivity implements ContentE
         formattingHelper = ContentFormattingHelper.getInstance();
         formattingHelper.setStateDispatcher(this);
 
-        runOnUiThread(new Runnable() {
-            @Override
-            public void run() {
-
-            }
-        });
-
 
         //Set quick action menus above the keyboard when opened
         mBottomToolbarView.inflateMenu(R.menu.menu_content_editor_quick_actions);
@@ -404,12 +393,16 @@ public class ContentEditorActivity extends UstadBaseActivity implements ContentE
         }
         progressDialog.setMax(100);
         progressDialog.setProgress(0);
-        UMStorageDir [] rootDir = UstadMobileSystemImpl.getInstance().getStorageDirs(SHARED_RESOURCE,this);
-        contentDir = new File(new File(rootDir[0].getDirURI()), EDITOR_ROOT_DIR);
-        if(!contentDir.exists()) contentDir.mkdir();
+
+
         args = UMAndroidUtil.bundleToHashtable(getIntent().getExtras());
+        args.put(CONTENT_ENTRY_FILE_UID,"0");
         index_file = args.get(EDITOR_CONTENT_FILE).toString();
         index_temp_file = "_"+index_file;
+
+        embeddedHTTPD = new EmbeddedHTTPD(0, this);
+        fileHelperAndroid = new ContentEditorFileHelperAndroid(this);
+        fileHelperAndroid.setEmbeddedHTTPD(embeddedHTTPD);
         presenter = new ContentEditorPresenter(this,args,this);
         presenter.onCreate(UMAndroidUtil.bundleToHashtable(savedInstanceState));
 
@@ -476,6 +469,8 @@ public class ContentEditorActivity extends UstadBaseActivity implements ContentE
         editorWebView.setLayerType(View.LAYER_TYPE_HARDWARE, null);
         editorWebView.clearCache(true);
         editorWebView.clearHistory();
+
+        startWebServer();
 
     }
 
@@ -583,7 +578,6 @@ public class ContentEditorActivity extends UstadBaseActivity implements ContentE
 
     @Override
     public void onAnimatedViewsClosed() {
-
         if(openPreview){
             openPreview = false;
             UstadMobileSystemImpl.getInstance().go(ContentPreviewView.VIEW_NAME,
@@ -596,9 +590,9 @@ public class ContentEditorActivity extends UstadBaseActivity implements ContentE
                 handleQuickActions();
                 viewSwitcher.closeAnimatedView(ANIMATED_SOFT_KEYBOARD_PANEL);
                 startEditing.setVisibility(View.VISIBLE);
-                loadIndexFile();
+                injectTinyMce();
             }else{
-                if(new File(contentDir,index_temp_file).delete())moveTaskToBack(true);
+                //if(new File(contentDir,index_temp_file).delete())moveTaskToBack(true);
             }
         }
 
@@ -648,7 +642,6 @@ public class ContentEditorActivity extends UstadBaseActivity implements ContentE
                 break;
             //content changed on the editor
             case ACTION_CONTENT_CHANGED:
-                isDocumentEmpty = content.length() <= 0;
                 executeJsFunction(editorWebView, "ustadEditor.loadContentForPreview",
                         this, callback.getContent());
                 break;
@@ -667,7 +660,7 @@ public class ContentEditorActivity extends UstadBaseActivity implements ContentE
 
                 UstadMobileSystemImpl.l(UMLog.DEBUG,700,
                         content);
-                UMFileUtil.writeToFile(new File(contentDir,"index.html"),index.html());
+                //UMFileUtil.writeToFile(new File(contentDir,"index.html"),index.html());
                 break;
             //start checking if there is any control activated
             case ACTION_CHECK_ACTIVE_CONTROLS:
@@ -741,8 +734,7 @@ public class ContentEditorActivity extends UstadBaseActivity implements ContentE
                     .compressToFile(sourceFile);
         }
 
-        File destination = new File(contentDir, MEDIA_CONTENT_DIR + compressedFile.
-                        getName().replaceAll("\\s+","_"));
+        File destination = new File("", MEDIA_CONTENT_DIR + compressedFile.getName().replaceAll("\\s+","_"));
         UMFileUtil.copyFile(sourceFile,destination);
         String source = MEDIA_CONTENT_DIR + destination.getName();
         progressDialog.setVisibility(View.GONE);
@@ -774,23 +766,26 @@ public class ContentEditorActivity extends UstadBaseActivity implements ContentE
         executeJsFunction(editorWebView,"ustadEditor.requestFocus", this, (String[]) null);
     }
 
-    @Override
+
     public void startWebServer(){
-        EmbeddedHTTPD embeddedHTTPD = new EmbeddedHTTPD(0, this);
+        String assetsDir = "assets-" +
+                new SimpleDateFormat("yyyyMMddHHmmss").format(new Date()) + "";
         embeddedHTTPD.addRoute( assetsDir+"(.)+",  AndroidAssetsHandler.class, this);
-        embeddedHTTPD.addRoute( EDITOR_ROOT_DIR +"(.)+",  FileDirectoryHandler.class, contentDir);
         try {
             embeddedHTTPD.start();
-
-            //TODO: if the server failed to start, it would throw an exception. the following if is redundant
-            if(embeddedHTTPD.isAlive()){
-                baseUrl =  "http://127.0.0.1:"+embeddedHTTPD.getListeningPort()+"/";
-                args.put(ContentPreviewView.PREVIEW_URL,baseUrl+ EDITOR_ROOT_DIR);
-                presenter.handleDocument(new File(contentDir,index_file));
-            }
+            presenter.handleFiles(UMFileUtil.joinPaths(
+                    LOCAL_ADDRESS+embeddedHTTPD.getListeningPort()+"/", assetsDir,"tinymce"
+            ));
         } catch (IOException e) {
             e.printStackTrace();
         }
+    }
+
+
+
+    @Override
+    public ContentEditorFileHelper getFileHelper() {
+        return fileHelperAndroid;
     }
 
 
@@ -937,7 +932,7 @@ public class ContentEditorActivity extends UstadBaseActivity implements ContentE
 
     @Override
     public void createNewDocument() {
-        UMFileUtil.writeToFile(new File(contentDir,index_file),NEW_DOCUMENT_TEMPLATE);
+        //UMFileUtil.writeToFile(new File(contentDir,index_file),NEW_DOCUMENT_TEMPLATE);
     }
 
 
@@ -947,122 +942,25 @@ public class ContentEditorActivity extends UstadBaseActivity implements ContentE
      */
     @Override
     public void handleResources() {
-        new Thread(() -> {
-            ContentEditorResourceHandler resourceHandler = new ContentEditorResourceHandler(
-                    contentDir.getAbsolutePath(),UMFileUtil.joinPaths(baseUrl,assetsDir,"tinymce"));
-            resourceHandler.with(
-                    () -> {
-                        UstadMobileSystemImpl.l(UMLog.DEBUG,700,
-                                "All resources has been copied to the external dirs");
-                        runOnUiThread(this::loadIndexFile);
-                    })
-                    .startCopying();
-        }).start();
+
     }
 
-    /**
-     * Search for all scripts necessary for file editing, if not present then append them
-     * to the temp file then direct them to asset handler to be resolved as files.
-     */
-    private void loadIndexFile() {
-        handleWebViewMargin();
-        if(!isEditorInitialized && viewSwitcher != null){
-            viewSwitcher.closeAnimatedView(ANIMATED_SOFT_KEYBOARD_PANEL);
-        }
-        File source = new File(contentDir, index_file);
-        File destination = new File(contentDir, index_temp_file);
-        try {
-            UMFileUtil.copyFile(source,destination);
-        } catch (IOException e) {
-            e.printStackTrace();
-        }
-        Document htmlDoc = getIndexDocument(index_temp_file);
-        Element docHead = htmlDoc.select("head").first();
-        Element docBody = htmlDoc.select("body").first();
-
-        /*Check if the document is empty and show empty document container*/
-        boolean hasImageContent = docBody.select("img[src]").size() > 0;
-        boolean hasVideoAudioContent = docBody.select("source[src]").size() > 0;
-        isDocumentEmpty = docBody.text().length() <= 0 && !hasImageContent && !hasVideoAudioContent;
-        blankDocumentContainer.setVisibility(isDocumentEmpty ? View.VISIBLE:View.GONE);
-
-        if(docHead != null){
-            Elements headResources = docHead.children();
-
-            for(Element resource: headResources){
-
-                String resourceLink = null;
-                if(resource.tagName().equals("link")){
-                    resourceLink = resource.attr("href");
-                }
-
-                if(resource.tagName().equals("script")){
-                    resourceLink = resource.attr("src");
-                }
-                if(resourceLink != null && presenter.isUstadResource(resourceLink)){
-                    resource.remove();
-                }
-            }
-        }
-
-        Elements headResources = docBody.children();
-
-        for(Element resource: headResources){
-            String resourceLink = null;
-            if(resource.tagName().equals("script")){
-                resourceLink = resource.attr("src");
-            }
-            if(resourceLink !=null && presenter.isUstadResource(resourceLink)){
-                resource.remove();
-            }
-        }
-
-        /*Find resources that should be placed under head tag, and make sure to change widget
-         to load from assets. If those resources are not there then add them*/
-        for (String ref : CONTENT_EDITOR_HEAD_RESOURCES) {
-            if(!docHead.html().contains(ref)){
-                String resource;
-                Element script = Jsoup.parse(ref).select("script[src]").first();
-                if(ref.contains(RESOURCE_JS_USTAD_WIDGET)){
-                    script.attr("src", baseUrl+assetsDir
-                            +"/tinymce/js/plugins/ustadmobile/"+ RESOURCE_JS_USTAD_WIDGET);
-                    resource = script.toString();
-                }else{
-                    resource = ref;
-                }
-                docHead.append(resource);
-            }
-        }
-
-        /*Check if resources which are supposed to live on doc body are there, if not add them.*/
-        for (String ref : CONTENT_EDITOR_BODY_RESOURCES) {
-            if(!docBody.html().contains(ref)){
-                docBody.append(ref);
-            }
-        }
-
-        /*Delete temp index file if exists and write new one*/
-        if(destination.exists()) destination.delete();
-
-        UMFileUtil.writeToFile(destination,htmlDoc.html());
-
-        /*Load temp index file*/
-        if(baseUrl != null){
-            editorWebView.setWebViewClient(new WebContentEditorClient(
-                    this,baseUrl+ EDITOR_ROOT_DIR));
-            progressDialog.setVisibility(View.VISIBLE);
-            editorWebView.loadUrl(UMFileUtil.joinPaths(baseUrl, EDITOR_ROOT_DIR,index_temp_file));
-        }
+    @Override
+    public void injectTinyMce() {
+        editorWebView.setWebViewClient(new WebContentEditorClient(
+                this,presenter.getTinyMceBaseUrl()));
+        editorWebView.loadUrl(UMFileUtil.joinPaths(presenter.getMountedFileBaseUrl(),"index.html"));
     }
+
 
 
     private Document getIndexDocument(String fileIndex){
-        try {
+        /*try {
             File indexFile = new File(contentDir,fileIndex);
             return  Jsoup.parse(UMFileUtil.readTextFile(indexFile.getAbsolutePath()));
         } catch (IOException e) {
             e.printStackTrace();
-        }
+        }*/
         return  null;
     }
 
