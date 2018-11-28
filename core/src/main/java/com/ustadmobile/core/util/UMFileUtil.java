@@ -33,10 +33,12 @@ package com.ustadmobile.core.util;
 import com.ustadmobile.core.impl.UMLog;
 import com.ustadmobile.core.impl.UstadMobileSystemImpl;
 
+import java.io.BufferedOutputStream;
 import java.io.BufferedReader;
 import java.io.BufferedWriter;
 import java.io.File;
 import java.io.FileInputStream;
+import java.io.FileNotFoundException;
 import java.io.FileOutputStream;
 import java.io.FileReader;
 import java.io.FileWriter;
@@ -45,7 +47,10 @@ import java.io.InputStream;
 import java.io.OutputStream;
 import java.util.Enumeration;
 import java.util.Hashtable;
+import java.util.Objects;
 import java.util.Vector;
+import java.util.zip.ZipEntry;
+import java.util.zip.ZipInputStream;
 
 /**
  * Assorted cross platform file utility methods
@@ -839,5 +844,40 @@ public class UMFileUtil {
                 os.write(buffer, 0, length);
             }
         }
+    }
+
+
+    /**
+     * Unzip zipped file to a specific destination directory.
+     * @param sourceFile Source zipped file
+     * @param destDir Directory where zipped file content will be put.
+     * @throws IOException
+     */
+    public static boolean unZipFile(File sourceFile, File destDir) throws IOException {
+        if (!destDir.exists()) {
+            destDir.mkdir();
+        }
+        ZipInputStream zipIn = new ZipInputStream(new FileInputStream(sourceFile));
+        ZipEntry entry = zipIn.getNextEntry();
+        while (entry != null) {
+            File newFile = new File(UMFileUtil.joinPaths(destDir.getAbsolutePath(),entry.getName()));
+            newFile.setLastModified(entry.getTime());
+            if (!entry.isDirectory()) {
+                BufferedOutputStream bos =
+                        new BufferedOutputStream(new FileOutputStream(newFile.getAbsolutePath()));
+                byte[] bytesIn = new byte[1024];
+                int read;
+                while ((read = zipIn.read(bytesIn)) != -1) {
+                    bos.write(bytesIn, 0, read);
+                }
+                bos.close();
+            } else {
+                newFile.mkdir();
+            }
+            zipIn.closeEntry();
+            entry = zipIn.getNextEntry();
+        }
+        zipIn.close();
+        return destDir.list().length > 0;
     }
 }
