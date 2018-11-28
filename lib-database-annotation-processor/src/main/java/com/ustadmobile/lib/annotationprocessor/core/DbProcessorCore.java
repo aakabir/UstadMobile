@@ -1,13 +1,7 @@
 package com.ustadmobile.lib.annotationprocessor.core;
 
-import com.squareup.javapoet.ClassName;
-import com.squareup.javapoet.JavaFile;
-import com.squareup.javapoet.MethodSpec;
-import com.squareup.javapoet.ParameterSpec;
-import com.squareup.javapoet.TypeSpec;
 import com.ustadmobile.lib.database.annotation.UmDao;
 import com.ustadmobile.lib.database.annotation.UmDatabase;
-import java.io.IOException;
 import java.util.HashSet;
 import java.util.Set;
 
@@ -19,14 +13,11 @@ import javax.annotation.processing.RoundEnvironment;
 import javax.annotation.processing.SupportedOptions;
 import javax.lang.model.SourceVersion;
 import javax.lang.model.element.Element;
-import javax.lang.model.element.Modifier;
-import javax.lang.model.element.PackageElement;
 import javax.lang.model.element.TypeElement;
-import javax.tools.Diagnostic;
+
 
 import static com.ustadmobile.lib.annotationprocessor.core.DbProcessorCore.OPT_JDBC_OUTPUT;
 import static com.ustadmobile.lib.annotationprocessor.core.DbProcessorCore.OPT_JERSEY_RESOURCE_OUT;
-import static com.ustadmobile.lib.annotationprocessor.core.DbProcessorCore.OPT_NO_DEFAULT_FACTORY;
 import static com.ustadmobile.lib.annotationprocessor.core.DbProcessorCore.OPT_RETROFIT_OUTPUT;
 import static com.ustadmobile.lib.annotationprocessor.core.DbProcessorCore.OPT_ROOM_OUTPUT;
 
@@ -35,7 +26,7 @@ import static com.ustadmobile.lib.annotationprocessor.core.DbProcessorCore.OPT_R
  * processors for each implementation to be generated.
  */
 
-@SupportedOptions({OPT_ROOM_OUTPUT, OPT_JDBC_OUTPUT, OPT_NO_DEFAULT_FACTORY,
+@SupportedOptions({OPT_ROOM_OUTPUT, OPT_JDBC_OUTPUT,
         OPT_JERSEY_RESOURCE_OUT, OPT_RETROFIT_OUTPUT})
 public class DbProcessorCore extends AbstractProcessor{
 
@@ -46,8 +37,6 @@ public class DbProcessorCore extends AbstractProcessor{
     public static final String OPT_JERSEY_RESOURCE_OUT = "umdb_jersey_res_out";
 
     public static final String OPT_RETROFIT_OUTPUT = "umdb_retrofit_out";
-
-    public static final String OPT_NO_DEFAULT_FACTORY = "umdb_no_default_factory";
 
     private Messager messager;
 
@@ -93,10 +82,6 @@ public class DbProcessorCore extends AbstractProcessor{
     @Override
     public boolean process(Set<? extends TypeElement> annotations, RoundEnvironment roundEnvironment) {
         Set<? extends Element> daoSet = roundEnvironment.getElementsAnnotatedWith(UmDao.class);
-        String defaultFactoryArg = processingEnv.getOptions().get(OPT_NO_DEFAULT_FACTORY);
-        if(defaultFactoryArg == null || !Boolean.parseBoolean(defaultFactoryArg)) {
-            makeDefaultFactoryClass(roundEnvironment);
-        }
 
         boolean result = dbProcessorRoom.process(annotations, roundEnvironment);
         result &= dbProcessorJdbc.process(annotations, roundEnvironment);
@@ -106,37 +91,5 @@ public class DbProcessorCore extends AbstractProcessor{
         return result;
     }
 
-    private void makeDefaultFactoryClass(RoundEnvironment roundEnvironment) {
-        //Generate core factory method
-        for(Element daoClassElement : roundEnvironment.getElementsAnnotatedWith(UmDatabase.class)) {
-            TypeSpec.Builder factoryClassBuilder =
-                    TypeSpec.classBuilder(daoClassElement.getSimpleName().toString() + "_Factory")
-                            .addModifiers(Modifier.PUBLIC);
-            PackageElement packageElement = processingEnv.getElementUtils().getPackageOf(daoClassElement);
-
-            MethodSpec.Builder makeMethodSpec = MethodSpec.methodBuilder(
-                    "make" + daoClassElement.getSimpleName())
-                    .addModifiers(Modifier.PUBLIC, Modifier.STATIC)
-                    .addParameter(ParameterSpec.builder(
-                            ClassName.get("java.lang", "Object"), "context").build())
-                    .returns(ClassName.get((TypeElement)daoClassElement))
-                    .addCode("throw new RuntimeException(\"must be replaced with a platform implementation\");\n");
-
-            factoryClassBuilder.addMethod(makeMethodSpec.build());
-
-            //Create a second version of the same method - with a specific uri.
-            makeMethodSpec.addParameter(ClassName.get(String.class), "uri");
-            factoryClassBuilder.addMethod(makeMethodSpec.build());
-
-
-            try {
-                JavaFile.builder(packageElement.getQualifiedName().toString(),
-                        factoryClassBuilder.build()).build().writeTo(filer);
-            }catch(IOException ioe) {
-                messager.printMessage(Diagnostic.Kind.ERROR, "Exception writing factory class "
-                        + ioe.getMessage());
-            }
-        }
-    }
 
 }
