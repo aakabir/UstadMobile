@@ -1,9 +1,18 @@
 package com.ustadmobile.core.view;
 
+import com.ustadmobile.core.contenteditor.ContentEditorFileHelperCore;
+
 public interface ContentEditorView extends UstadView {
 
     String VIEW_NAME = "ContentEditor";
-    String EDITOR_CONTENT_FILE = "file_name";
+
+    String EDITOR_PREVIEW_PATH = "preview_path";
+
+    String EDITOR_REQUEST_URI = "request_uri";
+
+    String CONTENT_ENTRY_FILE_UID = "content_entry_file_uid";
+
+    String CONTENT_EDITOR_BASE_URL = "content_editor_base_url";
 
     /**
      * List of all available text formatting types.
@@ -50,62 +59,14 @@ public interface ContentEditorView extends UstadView {
     String CONTENT_INSERT_FILL_THE_BLANKS_QN = "FillTheBlanks";
 
     /**
-     * List of files resources to be copied from core tinymce editor dir to external dir.
+     * List of editor core resources.
      */
-    String CONTENT_CSS_USTAD = "ustadmobile.css";
-    String RESOURCE_CSS_BOOTSTRAP = "bootstrap.min.css";
-    String RESOURCE_JS_BOOTSTRAP = "bootstrap.min.js";
+
     String RESOURCE_JS_USTAD_WIDGET = "UstadWidgets.js";
     String RESOURCE_JS_USTAD_EDITOR = "UstadEditor.js";
-    String RESOURCE_JS_JQUERY = "jquery3.3.1.min.js";
     String RESOURCE_JS_TINYMCE = "tinymce.min.js";
-
-    String [] CONTENT_EDITOR_HEAD_RESOURCES = new String[]{
-            "<link href=\"css/ustadmobile.css\" rel=\"stylesheet\" />",
-            "<link href=\"css/bootstrap.min.css\" rel=\"stylesheet\" />",
-            "<script src=\"js/jquery3.3.1.min.js\" type=\"text/javascript\"></script>",
-            "<script src=\"js/tinymce.min.js\" type=\"text/javascript\"></script>",
-            "<script src=\"js/UstadWidgets.js\" type=\"text/javascript\"></script>",
-            "<script src=\"js/UstadEditor.js\" type=\"text/javascript\"></script>"
-    };
-    String [] CONTENT_EDITOR_BODY_RESOURCES = new String[] {
-            "<script src=\"js/bootstrap.min.js\"></script>",
-            "<script>\n" +
-                    "    $(function() {\n" +
-                    "        $('body').css('width', $(window).width());\n" +
-                    "        QuestionWidget.handleEditOff();\n" +
-                    "    });\n" +
-            "</script>"
-    };
-
-    String NEW_DOCUMENT_TEMPLATE = "<!DOCTYPE html>\n" +
-            "<html>\n" +
-            "<head>\n" +
-            "    <meta name=\"viewport\" content=\"width=device-width, initial-scale=1.0\"/>\n" +
-            "    <link href=\"css/ustadmobile.css\" rel=\"stylesheet\">\n" +
-            "    <link href=\"css/bootstrap.min.css\" rel=\"stylesheet\">\n" +
-            "    <script src=\"js/jquery3.3.1.min.js\" type=\"text/javascript\"></script>\n" +
-            "    <script src=\"js/tinymce.min.js\" type=\"text/javascript\"></script>\n" +
-            "    <script src=\"js/UstadWidgets.js\" type=\"text/javascript\"></script>\n" +
-            "    <script src=\"js/UstadEditor.js\" type=\"text/javascript\"></script>\n" +
-            "</head>\n" +
-            "\n" +
-            "<body>\n" +
-            "<div class=\"container-fluid default-margin-top\">\n" +
-            "    <div class=\"row\" id=\"ustad-preview\">\n" +
-            "        <template/>\n" +
-            "    </div>\n" +
-            "</div>\n" +
-            "\n" +
-            "<script src=\"js/bootstrap.min.js\" controls></script>\n" +
-            "<script>\n" +
-            "    $(function() {\n" +
-            "        $('body').css('width', $(window).width());\n" +
-            "        QuestionWidget.handleEditOff();\n" +
-            "    });\n" +
-            "</script>\n" +
-            "</body>\n" +
-            "</html>";
+    String RESOURCE_JS_RANGY = "rangy-core.js";
+    String RESOURCE_BLANK_DOCUMENT = "blankDocument.zip";
 
     /**
      * Set bold formatting on selected/focused content
@@ -214,21 +175,13 @@ public interface ContentEditorView extends UstadView {
      */
     void requestEditorContent();
 
-    /**
-     * Create new document in case it wasn't about document update.
-     */
-    void createNewDocument();
+    void injectTinyMce();
 
     /**
-     * Copy all resources needed for the stand alone preview
-     * from the core tinymce to the external storage.
+     * Get active file helper instance
+     * @return ContentEditorFileHelperCoreSE instance
      */
-    void handleResources();
-
-    /**
-     * Start local web server which will be used for editing purposes.
-     */
-    void startWebServer();
+    ContentEditorFileHelperCore getFileHelper();
 
 
 }

@@ -231,7 +231,7 @@ public class BasePointController extends UstadBaseController implements DialogRe
 
     public void handleStartEditor(){
         Hashtable args = new Hashtable();
-        args.put(ContentEditorView.EDITOR_CONTENT_FILE,"index.html");
+        args.put(ContentEditorView.CONTENT_ENTRY_FILE_UID,"0");
         UstadMobileSystemImpl.getInstance().go(ContentEditorView.VIEW_NAME,args, context);
     }
 

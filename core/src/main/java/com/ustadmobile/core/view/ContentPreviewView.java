@@ -6,8 +6,7 @@ package com.ustadmobile.core.view;
 public interface ContentPreviewView extends UstadView {
 
     String VIEW_NAME = "ContentPreview";
-    String PREVIEW_URL = "base_request_uri";
 
-    void loadPreviewPage(String localUri,String indexFile);
+    void startPreviewing(String requestUri, String indexPath);
 
 }
