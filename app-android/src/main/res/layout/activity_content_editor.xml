@@ -19,7 +19,7 @@
             android:layout_width="match_parent"
             android:layout_height="match_parent">
             <!-- Main content -->
-            <WebView
+            <com.ustadmobile.port.android.contenteditor.UmEditorWebView
                 android:layout_marginBottom="?actionBarSize"
                 android:layout_marginTop="?actionBarSize"
                 android:id="@+id/editor_content"
@@ -107,7 +107,7 @@
             android:layout_width="match_parent"
             android:layout_gravity="bottom"
             android:layout_height="wrap_content">
-            <com.ustadmobile.port.android.contenteditor.BottomToolbarView
+            <com.ustadmobile.port.android.contenteditor.UmEditorToolbarView
                 android:layout_marginRight="14dp"
                 android:id="@+id/um_toolbar_bottom"
                 app:contentInsetLeft="0dp"

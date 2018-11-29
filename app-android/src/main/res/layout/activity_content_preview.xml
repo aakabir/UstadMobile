@@ -17,7 +17,7 @@
         android:layout_height="match_parent"
         android:fillViewport="true">
 
-        <com.ustadmobile.port.android.contenteditor.UstadNestedWebView
+        <com.ustadmobile.port.android.contenteditor.UmEditorNestedScrollView
             android:id="@+id/preview_content"
             android:layout_width="match_parent"
             android:layout_height="match_parent" />
