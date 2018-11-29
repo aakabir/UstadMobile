@@ -45,7 +45,6 @@ import android.view.MenuItem;
 import android.view.View;
 import android.view.ViewGroup;
 import android.webkit.WebSettings;
-import android.webkit.WebView;
 import android.widget.ImageView;
 import android.widget.ProgressBar;
 import android.widget.RelativeLayout;
@@ -61,12 +60,13 @@ import com.ustadmobile.core.util.Base64Coder;
 import com.ustadmobile.core.util.UMFileUtil;
 import com.ustadmobile.core.view.ContentEditorView;
 import com.ustadmobile.core.view.ContentPreviewView;
-import com.ustadmobile.port.android.contenteditor.BottomToolbarView;
+import com.ustadmobile.port.android.contenteditor.UmEditorToolbarView;
 import com.ustadmobile.port.android.contenteditor.ContentEditorFileHelperAndroid;
 import com.ustadmobile.port.android.contenteditor.ContentFormat;
 import com.ustadmobile.port.android.contenteditor.ContentFormattingHelper;
 import com.ustadmobile.port.android.contenteditor.EditorAnimatedViewSwitcher;
 import com.ustadmobile.port.android.contenteditor.UmAndroidUriUtil;
+import com.ustadmobile.port.android.contenteditor.UmEditorWebView;
 import com.ustadmobile.port.android.contenteditor.WebContentEditorChrome;
 import com.ustadmobile.port.android.contenteditor.WebContentEditorClient;
 import com.ustadmobile.port.android.contenteditor.WebContentEditorInterface;
@@ -78,7 +78,6 @@ import com.ustadmobile.port.sharedse.impl.http.EmbeddedHTTPD;
 
 import org.jsoup.Jsoup;
 import org.jsoup.nodes.Document;
-import org.jsoup.nodes.Element;
 import org.jsoup.select.Elements;
 
 import java.io.File;
@@ -103,7 +102,7 @@ import static com.ustadmobile.port.android.contenteditor.EditorAnimatedViewSwitc
 import static com.ustadmobile.port.android.contenteditor.WebContentEditorClient.executeJsFunction;
 
 public class ContentEditorActivity extends UstadBaseActivity implements ContentEditorView,
-        WebContentEditorChrome.JsLoadingCallback, BottomToolbarView.OnQuickActionMenuItemClicked,
+        WebContentEditorChrome.JsLoadingCallback, UmEditorToolbarView.OnQuickActionMenuItemClicked,
         ContentFormattingHelper.StateChangeDispatcher ,
         EditorAnimatedViewSwitcher.OnAnimatedViewsClosedListener{
 
@@ -121,9 +120,9 @@ public class ContentEditorActivity extends UstadBaseActivity implements ContentE
 
     private AppBarLayout umBottomToolbarHolder;
 
-    private BottomToolbarView mBottomToolbarView;
+    private UmEditorToolbarView umEditorToolbarView;
 
-    private WebView editorWebView;
+    private UmEditorWebView umEditorWebView;
 
     private DrawerLayout mContentPageDrawer;
 
@@ -342,7 +341,7 @@ public class ContentEditorActivity extends UstadBaseActivity implements ContentE
         RelativeLayout mInsertMultipleChoice = findViewById(R.id.content_option_multiplechoice);
         RelativeLayout mInsertFillBlanks = findViewById(R.id.content_option_filltheblanks);
         mContentPageDrawer = findViewById(R.id.content_page_drawer);
-        editorWebView = findViewById(R.id.editor_content);
+        umEditorWebView = findViewById(R.id.editor_content);
         progressDialog = findViewById(R.id.progressBar);
         startEditing = findViewById(R.id.btn_start_editing);
         RelativeLayout mFromCamera = findViewById(R.id.multimedia_from_camera);
@@ -353,23 +352,20 @@ public class ContentEditorActivity extends UstadBaseActivity implements ContentE
         TextView bdCreateLabel = findViewById(R.id.editing_label);
         blankDocumentContainer = findViewById(R.id.new_doc_container);
         umBottomToolbarHolder = findViewById(R.id.um_appbar_bottom);
-        mBottomToolbarView = findViewById(R.id.um_toolbar_bottom);
+        umEditorToolbarView = findViewById(R.id.um_toolbar_bottom);
 
         formattingHelper = ContentFormattingHelper.getInstance();
         formattingHelper.setStateDispatcher(this);
 
-
         //Set quick action menus above the keyboard when opened
-        mBottomToolbarView.inflateMenu(R.menu.menu_content_editor_quick_actions);
-        mBottomToolbarView.setOnQuickActionMenuItemClicked(this);
+        umEditorToolbarView.inflateMenu(R.menu.menu_content_editor_quick_actions);
+        umEditorToolbarView.setOnQuickActionMenuItemClicked(this);
 
         viewSwitcher = EditorAnimatedViewSwitcher.getInstance()
                         .with(this,this)
-                        .setViews(rootView, editorWebView,contentOptionsBottomSheetBehavior,
+                        .setViews(rootView, umEditorWebView,contentOptionsBottomSheetBehavior,
                                 formattingBottomSheetBehavior, mediaSourceBottomSheetBehavior,
                                 mContentPageDrawer);
-
-
 
         ViewPager mViewPager = findViewById(R.id.content_types_viewpager);
         TabLayout mTabLayout = findViewById(R.id.content_types_tabs);
@@ -414,7 +410,7 @@ public class ContentEditorActivity extends UstadBaseActivity implements ContentE
 
         startEditing.setOnClickListener(v -> {
             progressDialog.setVisibility(View.VISIBLE);
-            executeJsFunction(editorWebView, "ustadEditor.initTinyMceEditor",
+            executeJsFunction(umEditorWebView, "ustadEditor.initTinyMceEditor",
                     ContentEditorActivity.this, (String[]) null);
         });
 
@@ -452,16 +448,16 @@ public class ContentEditorActivity extends UstadBaseActivity implements ContentE
         mViewPager.setAdapter(adapter);
         mTabLayout.setupWithViewPager(mViewPager);
 
-        WebSettings webSettings = editorWebView.getSettings();
+        WebSettings webSettings = umEditorWebView.getSettings();
         webSettings.setJavaScriptEnabled(true);
         webSettings.setAllowFileAccess(true);
         webSettings.setRenderPriority(WebSettings.RenderPriority.HIGH);
-        editorWebView.setWebChromeClient(new WebContentEditorChrome(this));
-        editorWebView.addJavascriptInterface(
+        umEditorWebView.setWebChromeClient(new WebContentEditorChrome(this));
+        umEditorWebView.addJavascriptInterface(
                 new WebContentEditorInterface(this,this),"UmContentEditor");
-        editorWebView.setLayerType(View.LAYER_TYPE_HARDWARE, null);
-        editorWebView.clearCache(true);
-        editorWebView.clearHistory();
+        umEditorWebView.setLayerType(View.LAYER_TYPE_HARDWARE, null);
+        umEditorWebView.clearCache(true);
+        umEditorWebView.clearHistory();
 
         startWebServer();
 
@@ -556,7 +552,7 @@ public class ContentEditorActivity extends UstadBaseActivity implements ContentE
     @Override
     public void onStateChanged(ContentFormat format) {
         if(format.getFormatId() != 0){
-            mBottomToolbarView.updateMenu();
+            umEditorToolbarView.updateMenu();
         }
     }
 
@@ -623,7 +619,7 @@ public class ContentEditorActivity extends UstadBaseActivity implements ContentE
                     handleWebViewMargin();
                     invalidateOptionsMenu();
                     requestEditorFocus();
-                    editorWebView.postDelayed(() ->
+                    umEditorWebView.postDelayed(() ->
                             viewSwitcher.animateView(ANIMATED_SOFT_KEYBOARD_PANEL),
                             MAX_SOFT_KEYBOARD_DELAY);
                 }
@@ -636,7 +632,7 @@ public class ContentEditorActivity extends UstadBaseActivity implements ContentE
                 break;
             //content changed on the editor
             case ACTION_CONTENT_CHANGED:
-                executeJsFunction(editorWebView, "ustadEditor.preparePreviewContent",
+                executeJsFunction(umEditorWebView, "ustadEditor.preparePreviewContent",
                         this, callback.getContent());
 
                 break;
@@ -649,6 +645,7 @@ public class ContentEditorActivity extends UstadBaseActivity implements ContentE
                 //Update index.html file
                 UMFileUtil.writeToFile(new File(fileHelperAndroid.getDestinationDirPath(),
                         INDEX_FILE),indexFile.html());
+                fileHelperAndroid.removeUnUsedResources(null);
                 break;
 
             //start checking if there is any control activated
@@ -728,7 +725,7 @@ public class ContentEditorActivity extends UstadBaseActivity implements ContentE
         UMFileUtil.copyFile(sourceFile,destination);
         String source = MEDIA_DIRECTORY + destination.getName();
         progressDialog.setVisibility(View.GONE);
-        executeJsFunction(editorWebView, "ustadEditor.insertMedia",
+        executeJsFunction(umEditorWebView, "ustadEditor.insertMedia",
                 this, source,mimeType);
     }
 
@@ -753,7 +750,7 @@ public class ContentEditorActivity extends UstadBaseActivity implements ContentE
 
 
     private void requestEditorFocus(){
-        executeJsFunction(editorWebView,"ustadEditor.requestFocus", this);
+        executeJsFunction(umEditorWebView,"ustadEditor.requestFocus", this);
     }
 
 
@@ -792,109 +789,109 @@ public class ContentEditorActivity extends UstadBaseActivity implements ContentE
 
     @Override
     public void setContentBold() {
-        executeJsFunction(editorWebView,
+        executeJsFunction(umEditorWebView,
                 "ustadEditor.textFormattingBold",this);
     }
 
     @Override
     public void setContentItalic() {
-        executeJsFunction(editorWebView,
+        executeJsFunction(umEditorWebView,
                 "ustadEditor.textFormattingItalic",this);
     }
 
     @Override
     public void setContentUnderlined() {
-        executeJsFunction(editorWebView,
+        executeJsFunction(umEditorWebView,
                 "ustadEditor.textFormattingUnderline",this);
     }
 
     @Override
     public void setContentStrikeThrough() {
-        executeJsFunction(editorWebView,
+        executeJsFunction(umEditorWebView,
                 "ustadEditor.textFormattingStrikeThrough",this);
     }
 
     @Override
     public void setContentFontSize(String fontSize) {
-        executeJsFunction(editorWebView,
+        executeJsFunction(umEditorWebView,
                 "ustadEditor.setFontSize",this, fontSize);
     }
 
     @Override
     public void setContentSuperscript() {
-        executeJsFunction(editorWebView,
+        executeJsFunction(umEditorWebView,
                 "ustadEditor.textFormattingSuperScript",this);
     }
 
     @Override
     public void setContentSubScript() {
-        executeJsFunction(editorWebView,
+        executeJsFunction(umEditorWebView,
                 "ustadEditor.textFormattingSubScript",this);
     }
 
     @Override
     public void setContentJustified() {
-        executeJsFunction(editorWebView,
+        executeJsFunction(umEditorWebView,
                 "ustadEditor.paragraphFullJustification",this);
     }
 
     @Override
     public void setContentCenterAlign() {
-        executeJsFunction(editorWebView,
+        executeJsFunction(umEditorWebView,
                 "ustadEditor.paragraphCenterJustification",this);
     }
 
     @Override
     public void setContentLeftAlign() {
-        executeJsFunction(editorWebView,
+        executeJsFunction(umEditorWebView,
                 "ustadEditor.paragraphLeftJustification",this);
     }
 
     @Override
     public void setContentRightAlign() {
-        executeJsFunction(editorWebView,
+        executeJsFunction(umEditorWebView,
                 "ustadEditor.paragraphRightJustification",this);
     }
 
     @Override
     public void setContentOrderedList() {
-        executeJsFunction(editorWebView,
+        executeJsFunction(umEditorWebView,
                 "ustadEditor.paragraphOrderedListFormatting",this);
     }
 
     @Override
     public void setContentUnOrderList() {
-        executeJsFunction(editorWebView,
+        executeJsFunction(umEditorWebView,
                 "ustadEditor.paragraphUnOrderedListFormatting",this);
     }
 
     @Override
     public void setContentIncreaseIndent() {
-        executeJsFunction(editorWebView,
+        executeJsFunction(umEditorWebView,
                 "ustadEditor.paragraphIndent",this);
     }
 
     @Override
     public void setContentDecreaseIndent() {
-        executeJsFunction(editorWebView,
+        executeJsFunction(umEditorWebView,
                 "ustadEditor.paragraphOutDent",this);
     }
 
     @Override
     public void setContentRedo() {
-        executeJsFunction(editorWebView,
+        executeJsFunction(umEditorWebView,
                 "ustadEditor.editorActionRedo",this);
     }
 
     @Override
     public void setContentUndo() {
-        executeJsFunction(editorWebView,
+        executeJsFunction(umEditorWebView,
                 "ustadEditor.editorActionUndo",this);
     }
 
     @Override
     public void setContentTextDirection(boolean isLTR) {
-        executeJsFunction(editorWebView,
+        executeJsFunction(umEditorWebView,
                 !isLTR ? "ustadEditor.textDirectionRightToLeft":
                         "ustadEditor.textDirectionLeftToRight",this);
         invalidateOptionsMenu();
@@ -902,31 +899,31 @@ public class ContentEditorActivity extends UstadBaseActivity implements ContentE
 
     @Override
     public void insertMultipleChoiceQuestion() {
-        executeJsFunction(editorWebView,
+        executeJsFunction(umEditorWebView,
                 "ustadEditor.insertMultipleChoiceQuestionTemplate", this);
     }
 
     @Override
     public void insertFillTheBlanksQuestion() {
-        executeJsFunction(editorWebView,
+        executeJsFunction(umEditorWebView,
                 "ustadEditor.insertFillInTheBlanksQuestionTemplate", this);
     }
 
     @Override
     public void requestEditorContent() {
-        executeJsFunction(editorWebView, "ustadEditor.getContent",this);
+        executeJsFunction(umEditorWebView, "ustadEditor.getContent",this);
     }
 
 
 
     @Override
     public void injectTinyMce() {
-        editorWebView.setWebViewClient(new WebContentEditorClient(
+        umEditorWebView.setWebViewClient(new WebContentEditorClient(
                 this,presenter.getTinyMceBaseUrl()));
         args.put(ContentEditorView.EDITOR_PREVIEW_PATH,
                 UMFileUtil.joinPaths(presenter.getMountedFileBaseUrl(),INDEX_FILE));
         String url = UMFileUtil.joinPaths(presenter.getMountedFileBaseUrl(),INDEX_TEMP_FILE);
-        editorWebView.loadUrl(url);
+        umEditorWebView.loadUrl(url);
         handleBlankDocumentView();
     }
 
@@ -1033,7 +1030,7 @@ public class ContentEditorActivity extends UstadBaseActivity implements ContentE
     private void checkActivatedControls(){
         if(isEditorInitialized){
             for(ContentFormat format: formattingHelper.getAllFormats()){
-                executeJsFunction(editorWebView, "ustadEditor.checkCurrentActiveControls",
+                executeJsFunction(umEditorWebView, "ustadEditor.checkCurrentActiveControls",
                         this, format.getFormatCommand());
             }
         }
@@ -1050,7 +1047,7 @@ public class ContentEditorActivity extends UstadBaseActivity implements ContentE
         attrs.recycle();
         float marginBottomValue = isEditorInitialized ?  (actionBarSize+6):0;
         ViewGroup.MarginLayoutParams params = (ViewGroup.MarginLayoutParams)
-                editorWebView.getLayoutParams();
+                umEditorWebView.getLayoutParams();
         params.bottomMargin = (int) marginBottomValue;
 
     }

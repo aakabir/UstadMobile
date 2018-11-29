@@ -14,7 +14,7 @@ import com.ustadmobile.core.controller.ContentPreviewPresenter;
 import com.ustadmobile.core.generated.locale.MessageID;
 import com.ustadmobile.core.impl.UstadMobileSystemImpl;
 import com.ustadmobile.core.view.ContentPreviewView;
-import com.ustadmobile.port.android.contenteditor.UstadNestedWebView;
+import com.ustadmobile.port.android.contenteditor.UmEditorNestedScrollView;
 import com.ustadmobile.port.android.contenteditor.WebContentEditorChrome;
 import com.ustadmobile.port.android.contenteditor.WebContentEditorClient;
 import com.ustadmobile.port.android.util.UMAndroidUtil;
@@ -22,7 +22,7 @@ import com.ustadmobile.port.android.util.UMAndroidUtil;
 public class ContentPreviewActivity extends UstadBaseActivity
         implements ContentPreviewView, WebContentEditorChrome.JsLoadingCallback {
 
-    private UstadNestedWebView contentPreview;
+    private UmEditorNestedScrollView contentPreview;
 
     private ProgressBar progressDialog;
 
