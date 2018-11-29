@@ -15,7 +15,7 @@ import android.webkit.WebView;
  * @author kileha3
  */
 
-public class UstadNestedWebView extends WebView implements NestedScrollingChild {
+public class UmEditorNestedScrollView extends WebView implements NestedScrollingChild {
 
     private int mLastY;
 
@@ -27,15 +27,15 @@ public class UstadNestedWebView extends WebView implements NestedScrollingChild 
 
     private NestedScrollingChildHelper mChildHelper;
 
-    public UstadNestedWebView(Context context) {
+    public UmEditorNestedScrollView(Context context) {
         this(context, null);
     }
 
-    public UstadNestedWebView(Context context, AttributeSet attrs) {
+    public UmEditorNestedScrollView(Context context, AttributeSet attrs) {
         this(context, attrs, android.R.attr.webViewStyle);
     }
 
-    public UstadNestedWebView(Context context, AttributeSet attrs, int defStyleAttr) {
+    public UmEditorNestedScrollView(Context context, AttributeSet attrs, int defStyleAttr) {
         super(context, attrs, defStyleAttr);
         mChildHelper = new NestedScrollingChildHelper(this);
         setNestedScrollingEnabled(true);

@@ -20,17 +20,17 @@ import static com.ustadmobile.port.android.contenteditor.ContentFormattingHelper
  *
  * <b>Operational flow:</b>
  * <p>
- *     Use {@link BottomToolbarView#inflateMenu(int)} to inflate all your menus to be shown
+ *     Use {@link UmEditorToolbarView#inflateMenu(int)} to inflate all your menus to be shown
  *     as quick action menus.
  *
- *     Use {@link BottomToolbarView#setOnQuickActionMenuItemClicked(OnQuickActionMenuItemClicked)}
+ *     Use {@link UmEditorToolbarView#setOnQuickActionMenuItemClicked(OnQuickActionMenuItemClicked)}
  *     to set listener which listens for quick action menu clicks.
  *
- *     Use {@link BottomToolbarView#updateMenu(ContentFormat)} to send updated state of the
+ *     Use {@link UmEditorToolbarView#updateMenu()} to send updated state of the
  *     quick action menu. i.e change background color and icon tint color
  * </p>
  */
-public class BottomToolbarView extends Toolbar {
+public class UmEditorToolbarView extends Toolbar {
 
     private OnQuickActionMenuItemClicked onQuickActionMenuItemClicked;
 
@@ -38,7 +38,7 @@ public class BottomToolbarView extends Toolbar {
      * Constructor to be used for Java instantiation.
      * @param context application context
      */
-    public BottomToolbarView(Context context) {
+    public UmEditorToolbarView(Context context) {
         super(context);
     }
 
@@ -48,7 +48,7 @@ public class BottomToolbarView extends Toolbar {
      * @param attrs attribute sets
      * @param defStyleAttr style sets
      */
-    public BottomToolbarView(Context context, @Nullable AttributeSet attrs, int defStyleAttr) {
+    public UmEditorToolbarView(Context context, @Nullable AttributeSet attrs, int defStyleAttr) {
         super(context, attrs, defStyleAttr);
     }
 
@@ -57,7 +57,7 @@ public class BottomToolbarView extends Toolbar {
      * @param context application context
      * @param attrs attribute sets
      */
-    public BottomToolbarView(Context context, @Nullable AttributeSet attrs) {
+    public UmEditorToolbarView(Context context, @Nullable AttributeSet attrs) {
         super(context, attrs);
     }
 
