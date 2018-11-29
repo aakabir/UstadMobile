@@ -19,9 +19,17 @@ import com.ustadmobile.port.sharedse.impl.http.EmbeddedHTTPD;
 import com.ustadmobile.port.sharedse.impl.http.FileDirectoryHandler;
 import com.ustadmobile.port.sharedse.networkmanager.ResumableHttpDownload;
 
+import org.jsoup.Jsoup;
+import org.jsoup.nodes.Document;
+import org.jsoup.nodes.Element;
+import org.jsoup.select.Elements;
+
 import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.List;
 
 import static com.ustadmobile.core.controller.CatalogPresenter.SHARED_RESOURCE;
 
@@ -218,7 +226,42 @@ public class ContentEditorFileHelperAndroid extends ContentEditorFileHelper {
 
     @Override
     public void removeUnUsedResources(UmCallback<Void> callback) {
+        //Get all files in Media directory
+        for(File resource:mediaDestinationDir.listFiles()){
+            if(!isResourceInUse(resource.getName())){
+                if(resource.delete()){
+                    //update zip directory
+                }
+            }
+        }
 
+    }
+
+    private boolean isResourceInUse(String resourceName){
+        try{
+            //Get all media which are in use from the content
+            Elements resourceInUse = new Elements();
+            Document index = Jsoup.parse(UMFileUtil.readTextFile(
+                    new File(destinationFile,INDEX_FILE).getAbsolutePath()));
+            Element previewContainer = index.select("#umPreview").first();
+            if(previewContainer.select("img[src]").size() > 0){
+                resourceInUse.addAll(previewContainer.select("img[src]"));
+            }
+            if(previewContainer.select("source[src]").size() > 0){
+                resourceInUse.addAll(previewContainer.select("source[src]"));
+            }
+
+            for(Element resource: resourceInUse){
+                if(resource.toString().contains(resourceName)){
+                    return true;
+                }
+            }
+
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+
+        return false;
     }
 
     @Override
