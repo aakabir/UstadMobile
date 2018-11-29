@@ -46,15 +46,12 @@ public class WebContentEditorClient extends WebViewClient {
             "templates"
     };
 
-    private String localUrl;
-
     /**
      * @param context application context
      * @param localUrl local base url
      */
     public WebContentEditorClient(Context context,String localUrl){
         this.context = context;
-        this.localUrl = localUrl;
     }
 
     @Override

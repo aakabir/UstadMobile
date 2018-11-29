@@ -636,27 +636,21 @@ public class ContentEditorActivity extends UstadBaseActivity implements ContentE
                 break;
             //content changed on the editor
             case ACTION_CONTENT_CHANGED:
-                executeJsFunction(editorWebView, "ustadEditor.loadContentForPreview",
+                executeJsFunction(editorWebView, "ustadEditor.preparePreviewContent",
                         this, callback.getContent());
-                break;
 
-            //Saving content on file after being changed
+                break;
             case ACTION_SAVE_CONTENT:
                 Document indexFile = getIndexDocument();
-                Elements docContainer = indexFile.select(".container-fluid");
-                if(docContainer.size() > 0){
-                    docContainer.first().html(content);
-                }else{
-                    String wrapped = "<div class=\"container-fluid\">"+content+"</div>";
-                    Element bodyElement = indexFile.select("body").first();
-                    bodyElement.html(wrapped);
-                }
+                Elements contentContainer = indexFile.select("#umPreview");
+                contentContainer.first().html(content);
 
                 UstadMobileSystemImpl.l(UMLog.DEBUG,700, content);
                 //Update index.html file
                 UMFileUtil.writeToFile(new File(fileHelperAndroid.getDestinationDirPath(),
                         INDEX_FILE),indexFile.html());
                 break;
+
             //start checking if there is any control activated
             case ACTION_CHECK_ACTIVE_CONTROLS:
                 checkActivatedControls();
@@ -933,6 +927,11 @@ public class ContentEditorActivity extends UstadBaseActivity implements ContentE
                 UMFileUtil.joinPaths(presenter.getMountedFileBaseUrl(),INDEX_FILE));
         String url = UMFileUtil.joinPaths(presenter.getMountedFileBaseUrl(),INDEX_TEMP_FILE);
         editorWebView.loadUrl(url);
+        handleBlankDocumentView();
+    }
+
+    private void handleBlankDocumentView(){
+        blankDocumentContainer.setVisibility(isDocumentEmpty() ? View.VISIBLE:View.GONE);
     }
 
 
@@ -945,6 +944,12 @@ public class ContentEditorActivity extends UstadBaseActivity implements ContentE
             e.printStackTrace();
         }
         return  null;
+    }
+
+    private boolean isDocumentEmpty(){
+        Document indexFile = getIndexDocument();
+        Elements innerContent = indexFile.select("#ustad-preview");
+        return innerContent.html().length() <= 0;
     }
 
 

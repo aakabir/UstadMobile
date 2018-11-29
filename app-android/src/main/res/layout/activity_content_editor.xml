@@ -14,13 +14,24 @@
         <include
             layout="@layout/toolbar_with_progress"/>
 
-        <!-- Main content -->
-        <WebView
-            android:layout_marginBottom="?actionBarSize"
-            android:layout_marginTop="?actionBarSize"
-            android:id="@+id/editor_content"
+
+        <RelativeLayout
             android:layout_width="match_parent"
-            android:layout_height="match_parent"/>
+            android:layout_height="match_parent">
+            <!-- Main content -->
+            <WebView
+                android:layout_marginBottom="?actionBarSize"
+                android:layout_marginTop="?actionBarSize"
+                android:id="@+id/editor_content"
+                android:layout_width="match_parent"
+                android:layout_height="match_parent"/>
+            <View
+                android:contentDescription="Hide toolbar"
+                android:layout_marginTop="?actionBarSize"
+                android:background="@color/icons"
+                android:layout_width="match_parent"
+                android:layout_height="@dimen/dimen_16dp"/>
+        </RelativeLayout>
 
         <!-- BottomSheet formatting-->
         <include layout="@layout/content_editor_bottom_sheets_main" />
@@ -106,7 +117,6 @@
                 android:layout_height="?attr/actionBarSize"
                 />
         </android.support.design.widget.AppBarLayout>
-
     </android.support.design.widget.CoordinatorLayout>
 
     <android.support.design.widget.NavigationView

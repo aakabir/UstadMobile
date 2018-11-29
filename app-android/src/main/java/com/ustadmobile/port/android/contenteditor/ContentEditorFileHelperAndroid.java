@@ -49,7 +49,7 @@ public class ContentEditorFileHelperAndroid extends ContentEditorFileHelper {
 
     public static final String INDEX_FILE = "index.html";
 
-    public static final String INDEX_TEMP_FILE = "index_temp.html";
+    public static final String INDEX_TEMP_FILE = "index_.html";
 
     public static final String MEDIA_DIRECTORY = "media/";
 

@@ -1,6 +1,6 @@
 
 let QuestionWidget = function(element) {
-    this.element =  $.parseHTML(element);
+   this.element =  $.parseHTML(element);
 };
 QuestionWidget._widgets = {};
 QuestionWidget._widgetListeners = {};
@@ -188,14 +188,14 @@ QuestionWidget.handleEditOff = function(){
 };
 
 QuestionWidget.handleEditOn = function(){
-    const labels = document.querySelectorAll("label");
-    for(let label in labels){
-        if(labels.hasOwnProperty(label))
-            continue;
-        const labelElement = labels[label];
-        labelElement.innerText = "Hello there";
-    }
-    console.log("delete",);
+  const labels = document.querySelectorAll("label");
+  for(let label in labels){
+    if(labels.hasOwnProperty(label))
+    continue;
+    const labelElement = labels[label];
+    labelElement.innerText = "Hello there";
+  }
+  console.log("delete",);
     const questionList = window.document.querySelectorAll(".question");
     if(questionList != null){
         for(const question in questionList){

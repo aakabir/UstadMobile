@@ -3,6 +3,8 @@ function UstadEditor() {if (!(this instanceof UstadEditor))
 
 const ustadEditor = new UstadEditor();
 let activeEditor = null;
+let preventDeleteSelection = false;
+let wasContentSelected = false;
 
 /**
  * Initialize UstadEditor with active editor instance
@@ -31,7 +33,7 @@ ustadEditor.isControlActivated = function(controlCommand){
 };
 
 /**
- * Change editor content font size
+ * Change editor blankDocument font size
  * @param fontSize Size to change to
  * @returns {string | * | void}
  */
@@ -103,7 +105,7 @@ ustadEditor.paragraphOrderedListFormatting = function(){
 };
 
 /**
- * Justify left editor content
+ * Justify left editor blankDocument
  * @returns {Object} TRUE if justified FALSE otherwise
  */
 ustadEditor.paragraphLeftJustification = function(){
@@ -113,7 +115,7 @@ ustadEditor.paragraphLeftJustification = function(){
 };
 
 /**
- * Justify left editor content
+ * Justify left editor blankDocument
  * @returns {Object} TRUE if justified FALSE otherwise
  */
 ustadEditor.paragraphRightJustification = function(){
@@ -123,7 +125,7 @@ ustadEditor.paragraphRightJustification = function(){
 };
 
 /**
- * Justify fully editor content
+ * Justify fully editor blankDocument
  * @returns {Object} TRUE if justified FALSE otherwise
  */
 ustadEditor.paragraphFullJustification = function(){
@@ -133,7 +135,7 @@ ustadEditor.paragraphFullJustification = function(){
 };
 
 /**
- * Justify center editor content
+ * Justify center editor blankDocument
  * @returns {Object} TRUE if justified FALSE otherwise
  */
 ustadEditor.paragraphCenterJustification = function(){
@@ -143,7 +145,7 @@ ustadEditor.paragraphCenterJustification = function(){
 };
 
 /**
- * Indent editor content
+ * Indent editor blankDocument
  * @returns {Object} TRUE if justified FALSE otherwise
  */
 ustadEditor.paragraphOutDent = function(){
@@ -154,7 +156,7 @@ ustadEditor.paragraphOutDent = function(){
 };
 
 /**
- * Indent editor content
+ * Indent editor blankDocument
  * @returns {Object} TRUE if justified FALSE otherwise
  */
 ustadEditor.paragraphIndent = function(){
@@ -243,23 +245,23 @@ ustadEditor.startCheckingActivatedControls = function(){
 
 /**
  * Initialize tinymce on a document
+ * @param showToolbar True when you want to show toolbar menus, False otherwise.
  */
-ustadEditor.initTinyMceEditor = function(){
+ustadEditor.initTinyMceEditor = function(showToolbar = false){
+    this.showToolbar = showToolbar;
     const inlineConfig = {
-        selector: '.container-fluid',
-        menubar: false,
+        selector: '#umPreview',
+        menubar: this.showToolbar,
+        statusbar: this.showToolbar,
         inline: true,
         force_br_newlines : true,
         force_p_newlines : false,
         forced_root_block : '',
         plugins: ['ustadmobile','directionality','lists','noneditable','visualblocks'],
-        toolbar: ['ustadmobile'],
+        toolbar: ['undo redo | bold italic underline strikethrough superscript subscript | alignleft aligncenter alignright alignjustify | bullist numlist outdent indent | fontsizeselect ustadmobile'],
         valid_styles: {
             '*': 'font-size,font-family,color,text-decoration,text-align'
         },
-        content_css: [
-            '//fonts.googleapis.com/css?family=Lato:300,300i,400,400i',
-        ],
         extended_valid_elements : 'label[class],div[onclick|class|data-um-correct|data-um-widget|id],option[selected|value],br[class]',
         style_formats: [{ title: 'Containers', items: [
                 { title: 'section', block: 'section', wrapper: true, merge_siblings: false },
@@ -272,19 +274,25 @@ ustadEditor.initTinyMceEditor = function(){
         }],
         init_instance_callback: function (ed) {
           /**
-           * Listen for text selction event
+           * Listen for text selection event
            * @type {[type]}
            */
-          ed.on('SelectionChange', e => {
+        
+          ed.on('SelectionChange', () => {
             ustadEditor.hideToolbarMenu();
             ustadEditor.handleContentChange();
+            const selection = rangy.getSelection();
+            const range = selection.rangeCount ? selection.getRangeAt(0) : null;
+            preventDeleteSelection = $(range.toHtml()).find("label").length > 0 ||
+             $(range.toHtml()).find("label").length > 0;
+            
           });
 
           /**
            * Listen for node change event
            * @type {[type]}
            */
-          ed.on('NodeChange', e => {
+          ed.on('NodeChange', () => {
             ustadEditor.hideToolbarMenu();
             QuestionWidget.handleListeners();
             ustadEditor.handleContentChange();
@@ -294,32 +302,65 @@ ustadEditor.initTinyMceEditor = function(){
            * Listen for click event inside the editor
            * @type {[type]}
            */
-          ed.on('click', e => {
+          ed.on('click', () => {
             ustadEditor.hideToolbarMenu();
-            UmContentEditor.onControlActivatedCheck(JSON.stringify(ustadEditor.startCheckingActivatedControls()));
-            UmContentEditor.onClickEvent(JSON.stringify({action:'onClickEvent',content:btoa("yes")}));
+            try{
+                UmContentEditor.onControlActivatedCheck(JSON.stringify(ustadEditor.startCheckingActivatedControls()));
+                UmContentEditor.onClickEvent(JSON.stringify({action:'onClickEvent',content:btoa("yes")}));
+            }catch(e){
+                console.log(e);
+            }
           });
 
           /**
            * Listen for the key up event
            * @type {[type]}
            */
-          ed.on('keyup', e => {
+          ed.on('keyup', () => {
             ustadEditor.hideToolbarMenu();
             ustadEditor.handleContentChange();
+            if(wasContentSelected){
+                wasContentSelected = false;
+                ustadEditor.editorActionUndo();
+            }
           });
 
           /**
-           * Listen for the button press and prevent label deletion
+           * Listen for the keyboard keys and prevent important label and divs from being deleted from the editor
            * @type {[type]}
            */
           ed.on('keydown', e => {
             ustadEditor.hideToolbarMenu();
             ustadEditor.handleContentChange();
-            const key = e.key;
-            const isLabel = $(tinymce.activeEditor.selection.getNode()).hasClass("um-labels");
-            const isKey = (key === "Backspace" || key === "Delete" || key === "Enter");
-            if(isKey && isLabel){
+            const deleteKeys = e.key === "Backspace" || e.key === "Delete";
+            const enterKey = e.key === "Enter";
+
+            const selection = tinymce.activeEditor.selection;
+            const activeNode = selection.getNode();
+            const isLabel = $(activeNode).hasClass("um-labels");
+            const isPgBreak = $(activeNode).hasClass("pg-break");
+            const isDeleteQuestionBtn = $(activeNode).hasClass("close");
+            const isCloseSpan = $(activeNode).is("span");
+            const isButtonLabels = $(activeNode).is("button");
+            const isDiv = $(activeNode).is("div");
+              const isChoiceSelector = $(activeNode).hasClass("question-retry-option");
+            let innerDivEmpty = false;
+
+            if(isDiv){
+                const divContent = $(activeNode).text();
+                innerDivEmpty = divContent.length <= 0 || ustadEditor.getCursorPositionRelativeToTheEditableElementContent() <= 0;
+            }
+            const preventLabelsDeletion = deleteKeys && isLabel;
+            const preventTagDeletion = deleteKeys && innerDivEmpty;
+            
+            if(preventDeleteSelection || (enterKey && isLabel)){
+                wasContentSelected = true;
+            }
+            
+            const disableDeleteOrEnterKey = preventLabelsDeletion || preventTagDeletion || isPgBreak ||
+            isDeleteQuestionBtn || isCloseSpan || isButtonLabels || preventLabelsDeletion || isChoiceSelector;
+            
+            if(disableDeleteOrEnterKey){
               e.preventDefault();
               e.stopImmediatePropagation();
               return false
@@ -331,8 +372,8 @@ ustadEditor.initTinyMceEditor = function(){
            * Listen for undo action event
            * @type {[type]}
            */
-          ed.on('undo', e => {
-            ustadEditor.hideToolbarMenu()
+          ed.on('undo', () => {
+            ustadEditor.hideToolbarMenu();
             ustadEditor.handleContentChange();
           });
 
@@ -340,7 +381,7 @@ ustadEditor.initTinyMceEditor = function(){
            * Listen for the redo action event
            * @type {[type]}
            */
-          ed.on('redo', e => {
+          ed.on('redo', () => {
             ustadEditor.hideToolbarMenu();
             ustadEditor.handleContentChange();
           });
@@ -353,9 +394,13 @@ ustadEditor.initTinyMceEditor = function(){
             setTimeout(ustadEditor.requestFocus(), 20);
             setTimeout(ustadEditor.hideToolbarMenu(), 22);
             setTimeout(ustadEditor.switchOnEditorController());
+           try{
             UmContentEditor.onInitEditor(JSON.stringify({action:'onInitEditor',content:"true"}));
             UmContentEditor.onControlActivatedCheck(JSON.stringify(ustadEditor.startCheckingActivatedControls()));
             UmContentEditor.onClickEvent(JSON.stringify({action:'onClickEvent',content:btoa("yes")}));
+           }catch(e){
+               console.log(e); 
+            }
 
         });
     }catch (e) {
@@ -375,7 +420,7 @@ ustadEditor.switchOnEditorController = function(){
 };
 
 /**
- * Get content from the active content editor
+ * Get blankDocument from the active blankDocument editor
  * @returns {*|void}
  */
 ustadEditor.getContent = function(){
@@ -396,18 +441,43 @@ ustadEditor.requestFocus = function () {
  * Hide toolbar menu after successfully initializing the editor
  */
 ustadEditor.hideToolbarMenu = function () {
-    try{
-        $("#ustadmobile-menu").click();
-        $("#mceu_0").hide();
-        $("#mceu_4").hide();
-        $("#mce-editor").on('click',function () {
-            $("#mceu_0").hide();
-            $("#mceu_4").hide();
-        });
-    }catch (e) {
-        console.log("hideToolbarMenu: "+e)
+    if(!this.showToolbar){
+        try{
+            /*
+                add observer to observe toolbar menu to see if tinymce will
+                change it's menu visibility and change it back right away.
+             */
+            const observer = new MutationObserver(function(mutations) {
+                mutations.forEach(function() {
+                    $("div[id^='mceu_']").addClass("hide-element");
+                });
+            });
+            observer.observe(document.querySelector('.mce-container'),
+                { attributes : true, attributeFilter : ['style'] });
+            $("div[id^='mceu_']").addClass("hide-element");
+            $("#ustadmobile-menu").click();
+            $(".mce-container-body").hide();
+        }catch (e) {
+            console.log("hideToolbarMenu: "+e);
+        }
     }
 };
+
+/**
+ * Select all blankDocument on the editor
+ *
+ * ForTesting only.
+ */
+ustadEditor.selectAll = function () {
+    const body = $('body');
+    body.on("click",function () {
+        tinymce.activeEditor.selection.select(tinymce.activeEditor.getBody(), true);
+    });
+   body.click();
+
+};
+
+
 
 /**
  * Insert multiple choice question template to the editor
@@ -438,7 +508,7 @@ ustadEditor.insertFillInTheBlanksQuestionTemplate = function () {
 };
 
 /**
- * Insert multimedia content to the editor
+ * Insert multimedia blankDocument to the editor
  * @param source media absolute path
  * @param mimeType media mime type
  */
@@ -458,13 +528,13 @@ ustadEditor.insertMedia = function(source,mimeType){
             "    <source src=\""+source+"\" type=\""+mimeType+"\">" +
             "</video>";
     }
-    this.executeRawContent("<p class='text-center'>"+mediaContent+"</p>");
+    this.executeRawContent("<p class='text-center'>"+mediaContent+"</p><p style=\"page-break-before: always\" class=\"pg-break\">");
 };
 
 
 /**
- * Insert raw content to the active editor
- * @param content content to be inserted
+ * Insert raw blankDocument to the active editor
+ * @param content blankDocument to be inserted
  */
 ustadEditor.executeRawContent= function(content){
     this.activeEditor.execCommand('mceInsertContent', false, content,{format: 'raw'});
@@ -484,25 +554,41 @@ ustadEditor.executeCommand = function(command,args){
 };
 
 
+
 /**
  * Callback to listen for any changes on the active editor
  */
 ustadEditor.handleContentChange = function(){
-    const contentChangeCallback = JSON.stringify({action:'onContentChanged',content:btoa(this.activeEditor.getContent())});
-    UmContentEditor.onContentChanged(contentChangeCallback);
+    try{
+        UmContentEditor.onContentChanged(JSON.stringify({action:'onContentChanged',content:btoa(this.activeEditor.getContent())}));
+    }catch(e){
+        console.log(e);
+    }
+};
+
+/**
+ * Start content live preview on the editor
+ */
+ustadEditor.startLivePreview = function () {
+    try{
+        document.getElementById("editor-off").click();
+        return {action: 'savePreview', content: btoa(this.activeEditor.getContent()),extraFlag:null};
+    }catch (e) {
+        console.log("startLivePreview:"+e)
+    }
 };
 
 /**
  * Load content into a preview
  * @param fileContent content to be manipulated for preview
  */
-ustadEditor.loadContentForPreview = function (fileContent) {
+ustadEditor.preparePreviewContent = function (fileContent) {
     const editorContent = $("<div/>").html($.parseHTML(atob(fileContent)));
     $(editorContent).find("br").remove();
     $(editorContent).find("label").remove();
     $(editorContent).find("button.add-choice").remove();
     $(editorContent).find('div.question-choice').addClass("question-choice-pointer").removeClass("default-margin-top");
-    $(editorContent).find('div.multichoice').addClass("default-margin-bottom").removeClass("default-margin-top");
+    $(editorContent).find('div.multi-choice').addClass("default-margin-bottom").removeClass("default-margin-top");
     $(editorContent).find('div.select-option').addClass("hide-element").removeClass("show-element");
     $(editorContent).find('div.fill-blanks').addClass("hide-element").removeClass("show-element");
     $(editorContent).find('div.question-choice-answer').addClass("hide-element").removeClass("show-element");
@@ -515,8 +601,11 @@ ustadEditor.loadContentForPreview = function (fileContent) {
     $(editorContent).find('[data-um-preview="main"]').addClass('preview-main default-margin-top');
     $(editorContent).find('[data-um-preview="alert"]').addClass('preview-alert default-margin-top');
     $(editorContent).find('[data-um-preview="support"]').addClass('preview-support default-margin-top');
+    $(editorContent).find('p.pg-break').addClass('hide-element');
+    $(editorContent).find('button.btn-delete').addClass('hide-element');
     return {action:'onSaveContent',content:btoa($('<div/>').html(editorContent).contents().html())};
 };
+
 
 /**
  * Changing editor editing mode
@@ -531,27 +620,9 @@ ustadEditor.changeEditorMode = function(mode){
 };
 
 
-/**
- * Create new document with our basic document template.
- * @returns {Promise<void>} File generation promise (web version)
- */
-ustadEditor.createNewDocument = async function(){
-    console.log("hit document creation process");
-    let promise = new Promise((resolve) => {
-        $.ajax({url: "templates/stand-alone-file.html", success: function(fileContent){
-                const fileContentParts = fileContent.split("<template/>");
-                const standAloneFileContent = fileContentParts[0]+""+fileContentParts[1];
-                resolve(standAloneFileContent);
-            }});
-    });
-
-    const result = await promise;
-    console.log(JSON.stringify({action:'onDocumentCreated',content:btoa(result)}));
-};
-
 
 /**
- * Start content live preview on the editor
+ * Start blankDocument live preview on the editor
  */
 ustadEditor.startLivePreview = function () {
     try{
@@ -560,4 +631,28 @@ ustadEditor.startLivePreview = function () {
     }catch (e) {
         console.log("startLivePreview:"+e)
     }
+};
+
+/**
+ * Find the cursor position relative to the current selected editable area
+ */
+ustadEditor.getCursorPositionRelativeToTheEditableElementContent = function() {
+    if (window.getSelection && window.getSelection().getRangeAt) {
+        const range = window.getSelection().getRangeAt(0);
+        const selectedObj = window.getSelection();
+        let rangeCount = 0;
+        let childNodes = selectedObj.anchorNode.parentNode.childNodes;
+        for (let i = 0; i < childNodes.length; i++) {
+          if (childNodes[i] === selectedObj.anchorNode) {
+            break;
+          }
+          if (childNodes[i].outerHTML)
+            rangeCount += childNodes[i].outerHTML.length;
+          else if (childNodes[i].nodeType === 3) {
+            rangeCount += childNodes[i].textContent.length;
+          }
+        }
+        return range.startOffset + rangeCount;
+      }
+      return -1;
 };

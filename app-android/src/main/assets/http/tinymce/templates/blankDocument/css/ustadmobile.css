@@ -65,7 +65,7 @@ select,button :focus :active{
     margin: 2%;
 }
 
-#ustad-preview{
+#umPreview{
     margin: 2px;
     padding-top: 16px;
 }
@@ -121,7 +121,7 @@ select,button :focus :active{
     margin-top: 10px;
 }
 
-.container-fluid {
+.mce-content-body {
     border: 0 solid transparent !important;
     outline: 0 solid transparent !important;
 }

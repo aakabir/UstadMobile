@@ -799,6 +799,7 @@ public class UMFileUtil {
      * @param content content to write on
      */
     public static void writeToFile(File file,String content){
+        if(file.exists())file.delete();
         try (BufferedWriter writer =
                      new BufferedWriter(new FileWriter(file.getAbsolutePath()))) {
             writer.write(content);
