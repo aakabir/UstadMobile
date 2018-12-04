@@ -1,6 +1,6 @@
 package com.ustadmobile.core.view;
 
-import com.ustadmobile.core.contenteditor.ContentEditorFileHelperCore;
+import com.ustadmobile.core.contenteditor.UmEditorFileHelperCore;
 
 public interface ContentEditorView extends UstadView {
 
@@ -11,8 +11,6 @@ public interface ContentEditorView extends UstadView {
     String EDITOR_REQUEST_URI = "request_uri";
 
     String CONTENT_ENTRY_FILE_UID = "content_entry_file_uid";
-
-    String CONTENT_EDITOR_BASE_URL = "content_editor_base_url";
 
     /**
      * List of all available text formatting types.
@@ -181,7 +179,7 @@ public interface ContentEditorView extends UstadView {
      * Get active file helper instance
      * @return ContentEditorFileHelperCoreSE instance
      */
-    ContentEditorFileHelperCore getFileHelper();
+    UmEditorFileHelperCore getFileHelper();
 
 
 }
