@@ -65,13 +65,13 @@ import com.ustadmobile.port.android.contenteditor.ContentFormat;
 import com.ustadmobile.port.android.contenteditor.ContentFormattingHelper;
 import com.ustadmobile.port.android.contenteditor.EditorAnimatedViewSwitcher;
 import com.ustadmobile.port.android.contenteditor.UmAndroidUriUtil;
-import com.ustadmobile.port.android.contenteditor.UmEditorFileHelperAndroid;
 import com.ustadmobile.port.android.contenteditor.UmEditorToolbarView;
 import com.ustadmobile.port.android.contenteditor.UmEditorWebView;
 import com.ustadmobile.port.android.contenteditor.WebContentEditorChrome;
 import com.ustadmobile.port.android.contenteditor.WebContentEditorClient;
 import com.ustadmobile.port.android.contenteditor.WebContentEditorInterface;
 import com.ustadmobile.port.android.contenteditor.WebJsResponse;
+import com.ustadmobile.port.android.impl.http.AndroidAssetsHandler;
 import com.ustadmobile.port.android.util.UMAndroidUtil;
 import com.ustadmobile.port.sharedse.contenteditor.UmEditorFileHelper;
 
@@ -93,10 +93,10 @@ import static com.ustadmobile.port.android.contenteditor.ContentFormattingHelper
 import static com.ustadmobile.port.android.contenteditor.EditorAnimatedViewSwitcher.ANIMATED_CONTENT_OPTION_PANEL;
 import static com.ustadmobile.port.android.contenteditor.EditorAnimatedViewSwitcher.ANIMATED_SOFT_KEYBOARD_PANEL;
 import static com.ustadmobile.port.android.contenteditor.EditorAnimatedViewSwitcher.MAX_SOFT_KEYBOARD_DELAY;
-import static com.ustadmobile.port.android.contenteditor.UmEditorFileHelperAndroid.INDEX_FILE;
-import static com.ustadmobile.port.android.contenteditor.UmEditorFileHelperAndroid.INDEX_TEMP_FILE;
-import static com.ustadmobile.port.android.contenteditor.UmEditorFileHelperAndroid.MEDIA_DIRECTORY;
 import static com.ustadmobile.port.android.contenteditor.WebContentEditorClient.executeJsFunction;
+import static com.ustadmobile.port.sharedse.contenteditor.UmEditorFileHelper.INDEX_FILE;
+import static com.ustadmobile.port.sharedse.contenteditor.UmEditorFileHelper.INDEX_TEMP_FILE;
+import static com.ustadmobile.port.sharedse.contenteditor.UmEditorFileHelper.MEDIA_DIRECTORY;
 
 public class ContentEditorActivity extends UstadBaseActivity implements ContentEditorView,
         WebContentEditorChrome.JsLoadingCallback, UmEditorToolbarView.OnQuickActionMenuItemClicked,
@@ -105,7 +105,7 @@ public class ContentEditorActivity extends UstadBaseActivity implements ContentE
 
     private static ContentEditorPresenter presenter;
 
-    private UmEditorFileHelperAndroid umEditorFileHelper;
+    private UmEditorFileHelper umEditorFileHelper;
 
     private EditorAnimatedViewSwitcher viewSwitcher;
 
@@ -386,10 +386,12 @@ public class ContentEditorActivity extends UstadBaseActivity implements ContentE
 
         args = UMAndroidUtil.bundleToHashtable(getIntent().getExtras());
 
-        umEditorFileHelper = new UmEditorFileHelperAndroid();
+        umEditorFileHelper = new UmEditorFileHelper();
         umEditorFileHelper.init(this);
         umEditorFileHelper.setZipTaskProgressListener(this);
+        umEditorFileHelper.addBaseAssetHandler(AndroidAssetsHandler.class);
         presenter = new ContentEditorPresenter(this,args,this);
+
         presenter.onCreate(UMAndroidUtil.bundleToHashtable(savedInstanceState));
 
 

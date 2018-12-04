@@ -40,6 +40,9 @@ dependencies {
     implementation "net.lingala.zip4j:zip4j:$version_zip4j"
     implementation "org.json:json:$version_json"
 
+    //jsuop
+    implementation "org.jsoup:jsoup:$version_jsoup"
+
     implementation project(":core")
     testImplementation project (':lib-database-jdbc')
     implementation project(":lib-database")

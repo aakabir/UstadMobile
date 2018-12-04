@@ -1,8 +1,6 @@
 package com.ustadmobile.port.sharedse.contenteditor;
 
 import com.ustadmobile.core.db.UmAppDatabase;
-import com.ustadmobile.core.db.dao.ContentEntryDao;
-import com.ustadmobile.core.db.dao.ContentEntryFileDao;
 import com.ustadmobile.core.impl.UmCallback;
 import com.ustadmobile.test.core.impl.PlatformTestUtil;
 
@@ -16,7 +14,6 @@ import java.util.concurrent.atomic.AtomicReference;
 import static junit.framework.TestCase.assertTrue;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.spy;
-import static org.mockito.Mockito.when;
 
 /**
  * Test class which tests {@link UmEditorFileHelper} to make sure it behaves as expected
@@ -26,7 +23,7 @@ import static org.mockito.Mockito.when;
  */
 public class UmEditorFileHelperTest {
 
-    private UmEditorFileHelper mockedHelper;
+    private UmEditorFileHelper umEditorFileHelper;
 
     private UmAppDatabase umAppDatabase;
 
@@ -37,8 +34,8 @@ public class UmEditorFileHelperTest {
     @Before
     public void setUpSpy(){
         Object context =  PlatformTestUtil.getTargetContext();
-        mockedHelper = spy(UmEditorFileHelper.class);
-        mockedHelper.init(context);
+        umEditorFileHelper = new UmEditorFileHelper();
+        umEditorFileHelper.init(context);
         umAppDatabase = UmAppDatabase.getInstance(context);
         umAppDatabase.clearAllTables();
 
@@ -49,7 +46,7 @@ public class UmEditorFileHelperTest {
     public void givenContentEditorFIleHelper_whenCreateFileCalled_thenShouldCreateBlankFile(){
         CountDownLatch latch = new CountDownLatch(1);
         AtomicReference<String> resultRef = new AtomicReference<>();
-        //mockedHelper.createFile();
+        //umEditorFileHelper.createFile();
 
     }
 
@@ -58,7 +55,7 @@ public class UmEditorFileHelperTest {
         CountDownLatch mLatch = new CountDownLatch(1);
         AtomicReference<String> resultRef = new AtomicReference<>();
 
-        mockedHelper.mountFile(0, new UmCallback<String>() {
+        umEditorFileHelper.mountFile(0, new UmCallback<String>() {
             @Override
             public void onSuccess(String result) {
                 resultRef.set(result);
