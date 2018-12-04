@@ -9,12 +9,12 @@ import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicReference;
 
 /**
- * Test class which tests {@link ContentEditorFileHelper} to make sure it behaves as expected
+ * Test class which tests {@link UmEditorFileHelper} to make sure it behaves as expected
  * when editing/Creating files.
  *
  * @author kileha3
  */
-public class ContentEditorFileHelperTest {
+public class UmEditorFileHelperTest {
 
     @Test
     public void givenContentEditorFIleHelper_whenCreateFileCalled_thenShouldCreateBlankFile(){
@@ -25,7 +25,7 @@ public class ContentEditorFileHelperTest {
     public void givenContentEditorFileHelper_whenMountFileCalled_thenShouldBeAccessibleOnHttp(){
         CountDownLatch latch = new CountDownLatch(1);
 
-        ContentEditorFileHelper helper = null;
+        UmEditorFileHelper helper = null;
         AtomicReference<String> resultRef = new AtomicReference<>();
 
         helper.mountFile(0, new UmCallback<String>() {
