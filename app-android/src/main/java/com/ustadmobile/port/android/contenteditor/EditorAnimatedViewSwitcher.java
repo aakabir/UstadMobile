@@ -313,7 +313,7 @@ public class EditorAnimatedViewSwitcher {
                         openContentPanel = true;
                         setMediaSourceBottomSheetBehavior(false);
                     }else{
-                        setMediaSourceBottomSheetBehavior(true);
+                        setContentOptionBottomSheetBehavior(true);
                     }
                 }
 
