@@ -14,6 +14,7 @@ import com.ustadmobile.lib.db.entities.ContentEntry;
 import com.ustadmobile.lib.db.entities.ContentEntryContentEntryFileJoin;
 import com.ustadmobile.lib.db.entities.ContentEntryFile;
 import com.ustadmobile.lib.db.entities.ContentEntryFileStatus;
+import com.ustadmobile.port.android.impl.http.AndroidAssetsHandler;
 import com.ustadmobile.port.sharedse.contenteditor.UmEditorFileHelper;
 import com.ustadmobile.port.sharedse.impl.http.EmbeddedHTTPD;
 import com.ustadmobile.port.sharedse.impl.http.FileDirectoryHandler;
@@ -29,8 +30,9 @@ import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileOutputStream;
 import java.io.IOException;
-import java.io.InputStream;
+import java.text.SimpleDateFormat;
 import java.util.ArrayList;
+import java.util.Date;
 import java.util.List;
 import java.util.zip.ZipEntry;
 import java.util.zip.ZipInputStream;
@@ -66,9 +68,11 @@ public class UmEditorFileHelperAndroid extends UmEditorFileHelper {
 
     private int usedResourceCounter = 0;
 
+    private String baseRequestUrl = null;
 
-    public UmEditorFileHelperAndroid(Object context) {
-        super(context);
+    @Override
+    public void init(Object context) {
+        super.init(context);
         UMStorageDir[] rootDir =
                 UstadMobileSystemImpl.getInstance().getStorageDirs(SHARED_RESOURCE,context);
         File baseContentDir = new File(rootDir[0].getDirURI());
@@ -78,7 +82,10 @@ public class UmEditorFileHelperAndroid extends UmEditorFileHelper {
         contentEntryFile = new File(baseContentDir,"UmFile-"+System.currentTimeMillis()+".zip");
         repository = UmAccountManager.getRepositoryForActiveAccount(context);
         umAppDatabase = UmAppDatabase.getInstance(context);
+        startWebServer();
     }
+
+
 
     /**
      * Set zip task file progress listener
@@ -89,10 +96,28 @@ public class UmEditorFileHelperAndroid extends UmEditorFileHelper {
     }
 
     @Override
-    public void createFile(String baseResourceUrl,UmCallback<Long> callback) {
+    public boolean startWebServer() {
+        embeddedHTTPD = new EmbeddedHTTPD(0, this);
+        boolean started = false;
+        String assetsDir = "assets-" +
+                new SimpleDateFormat("yyyyMMddHHmmss").format(new Date()) + "";
+        embeddedHTTPD.addRoute( assetsDir+"(.)+",  AndroidAssetsHandler.class, this);
+        try {
+            embeddedHTTPD.start();
+             baseRequestUrl = UMFileUtil.joinPaths(LOCAL_ADDRESS+embeddedHTTPD.getListeningPort()+"/",
+                     assetsDir,"tinymce");
+             started = true;
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+        return started;
+    }
+
+    @Override
+    public void createFile(UmCallback<Long> callback) {
         new Thread(() -> {
             IOException exception = null;
-            String resourceUrl = UMFileUtil.joinPaths(baseResourceUrl,
+            String resourceUrl = UMFileUtil.joinPaths(baseRequestUrl,
                     "templates/"+ContentEditorView.RESOURCE_BLANK_DOCUMENT);
             ResumableHttpDownload resumableHttpDownload = new ResumableHttpDownload(resourceUrl,
                     contentEntryFile.getAbsolutePath());
@@ -109,14 +134,6 @@ public class UmEditorFileHelperAndroid extends UmEditorFileHelper {
                 }
             }
         }).start();
-    }
-
-    /**
-     * Set NanoHTTPD server instance
-     * @param embeddedHTTPD httpd server instance
-     */
-    public void setEmbeddedHTTPD(EmbeddedHTTPD embeddedHTTPD){
-        this.embeddedHTTPD = embeddedHTTPD;
     }
 
     private void handleFileInDb(UmCallback<Long> callback){
@@ -237,11 +254,6 @@ public class UmEditorFileHelperAndroid extends UmEditorFileHelper {
 
     }
 
-    @Override
-    public void updateResource(InputStream sourceInputStream, String destinationPath,
-                               UmCallback<Void> callback) {
-
-    }
 
     @Override
     public void updateFile(UmCallback<Boolean> callback) {
@@ -303,6 +315,11 @@ public class UmEditorFileHelperAndroid extends UmEditorFileHelper {
     @Override
     public String getSourceFilePath() {
         return sourceFile.getAbsolutePath();
+    }
+
+    @Override
+    public String getBaseResourceRequestUrl() {
+        return baseRequestUrl;
     }
 
     @Override
@@ -386,7 +403,7 @@ public class UmEditorFileHelperAndroid extends UmEditorFileHelper {
      * Unzip zipped file to a specific destination directory.
      * @param sourceFile Source zipped file
      * @param destDir Directory where zipped file content will be put.
-     * @throws IOException
+     * @throws IOException Exception thrown when something is wrong
      */
     private boolean unZipFile(File sourceFile, File destDir) throws IOException {
         if (!destDir.exists()) {

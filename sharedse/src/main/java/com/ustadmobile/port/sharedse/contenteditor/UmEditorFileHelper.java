@@ -30,10 +30,11 @@ public abstract class UmEditorFileHelper implements UmEditorFileHelperCore {
     }
 
     /**
-     * Constructor used when creating instance of UmEditorFileHelper
-     * @param context activity context object
+     * Initialize UmEditorFileHelper
+     * @param context activity context
      */
-    public UmEditorFileHelper(Object context){
+    public void  init(Object context){
         this.context = context;
     }
+
 }

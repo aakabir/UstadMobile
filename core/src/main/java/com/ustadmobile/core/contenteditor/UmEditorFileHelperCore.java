@@ -1,6 +1,7 @@
 package com.ustadmobile.core.contenteditor;
 
 import com.ustadmobile.core.impl.UmCallback;
+import com.ustadmobile.port.sharedse.impl.http.EmbeddedHTTPD;
 
 import java.io.InputStream;
 
@@ -18,7 +19,7 @@ import java.io.InputStream;
  *     Use {@link UmEditorFileHelperCore#mountFile} to mount zipped file
  *     to the temporary directory so that can be edited.
  *
- *     Use {@link UmEditorFileHelperCore#updateResource} to add/delete
+ *     Use {@link UmEditorFileHelperCore#updateFile(UmCallback)} to add/delete
  *     resources from the temporary directory/zip file when editing.
  *
  *     Use {@link UmEditorFileHelperCore#removeUnUsedResources} to remove all
@@ -32,11 +33,16 @@ import java.io.InputStream;
  */
 public interface UmEditorFileHelperCore {
 
+    /**
+     * Start internal webserver
+     * @return True if webserver was started Else it wasn't started
+     */
+    boolean startWebServer();
 
     /**
      * Create new file if the file doesn't
      */
-    void createFile(String baseResourceUrl,UmCallback<Long> callback);
+    void createFile(UmCallback<Long> callback);
 
     /**
      * Unzip zipped file to a temporary directory for editing purpose.
@@ -47,12 +53,8 @@ public interface UmEditorFileHelperCore {
 
     /**
      * Update resources to the zipped file and temporary directory when editing
-     * @param sourceInputStream Source file input stream
-     * @param destinationPath Path where it will be copied to.
+     * @param callback
      */
-    void updateResource(InputStream sourceInputStream, String destinationPath,
-                                        UmCallback<Void> callback);
-
     void updateFile(UmCallback<Boolean> callback);
 
     /**
@@ -63,6 +65,8 @@ public interface UmEditorFileHelperCore {
     void removeUnUsedResources(UmCallback<Boolean> callback);
 
     String getSourceFilePath();
+
+    String getBaseResourceRequestUrl();
 
     String getDestinationDirPath();
 

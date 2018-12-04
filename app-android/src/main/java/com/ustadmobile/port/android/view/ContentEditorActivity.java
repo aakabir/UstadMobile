@@ -393,9 +393,8 @@ public class ContentEditorActivity extends UstadBaseActivity implements ContentE
 
         args = UMAndroidUtil.bundleToHashtable(getIntent().getExtras());
 
-        embeddedHTTPD = new EmbeddedHTTPD(0, this);
-        umEditorFileHelper = new UmEditorFileHelperAndroid(this);
-        umEditorFileHelper.setEmbeddedHTTPD(embeddedHTTPD);
+        umEditorFileHelper = new UmEditorFileHelperAndroid();
+        umEditorFileHelper.init(this);
         umEditorFileHelper.setZipFileProgressListener(this);
         presenter = new ContentEditorPresenter(this,args,this);
         presenter.onCreate(UMAndroidUtil.bundleToHashtable(savedInstanceState));
@@ -470,7 +469,9 @@ public class ContentEditorActivity extends UstadBaseActivity implements ContentE
         umEditorWebView.clearCache(true);
         umEditorWebView.clearHistory();
 
-        startWebServer();
+        if(umEditorFileHelper.startWebServer()){
+            presenter.handleFiles();
+        }
 
     }
 
@@ -849,25 +850,6 @@ public class ContentEditorActivity extends UstadBaseActivity implements ContentE
     private void requestEditorFocus(){
         executeJsFunction(umEditorWebView,"ustadEditor.requestFocus", this);
     }
-
-
-    /**
-     * Start internal WebServer for the editor
-     */
-    public void startWebServer(){
-        String assetsDir = "assets-" +
-                new SimpleDateFormat("yyyyMMddHHmmss").format(new Date()) + "";
-        embeddedHTTPD.addRoute( assetsDir+"(.)+",  AndroidAssetsHandler.class, this);
-        try {
-            embeddedHTTPD.start();
-            presenter.handleFiles(UMFileUtil.joinPaths(
-                    LOCAL_ADDRESS+embeddedHTTPD.getListeningPort()+"/", assetsDir,"tinymce"
-            ));
-        } catch (IOException e) {
-            e.printStackTrace();
-        }
-    }
-
 
 
     @Override

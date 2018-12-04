@@ -48,20 +48,18 @@ public class ContentEditorPresenter extends UstadBaseController<ContentEditorVie
         super.onCreate(savedState);
     }
 
-    public void handleFiles(String baseResourceRequestUrl){
-        tinyMceBaseUrl = baseResourceRequestUrl;
+    public void handleFiles(){
+        tinyMceBaseUrl = view.getFileHelper().getBaseResourceRequestUrl();
         args.put(ContentEditorView.EDITOR_REQUEST_URI,tinyMceBaseUrl);
         if(args.get(CONTENT_ENTRY_FILE_UID).equals("0")){
-            view.getFileHelper().createFile(baseResourceRequestUrl,
-                    new UmCallback<Long>() {
-                        @Override
-                        public void onSuccess(Long contentEntryFileUid) {
-                            mountFile(contentEntryFileUid);
-                        }
-
-                        @Override
-                        public void onFailure(Throwable exception) { }
-                    });
+            view.getFileHelper().createFile(new UmCallback<Long>() {
+                @Override
+                public void onSuccess(Long contentEntryFileUid) {
+                    mountFile(contentEntryFileUid);
+                }
+                @Override
+                public void onFailure(Throwable exception) { }
+            });
         }else{
             long contentEntryFileUid = Long.parseLong(String.valueOf(args.get(CONTENT_ENTRY_FILE_UID)));
             mountFile(contentEntryFileUid);
