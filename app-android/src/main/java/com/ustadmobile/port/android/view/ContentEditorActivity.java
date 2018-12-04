@@ -72,10 +72,8 @@ import com.ustadmobile.port.android.contenteditor.WebContentEditorChrome;
 import com.ustadmobile.port.android.contenteditor.WebContentEditorClient;
 import com.ustadmobile.port.android.contenteditor.WebContentEditorInterface;
 import com.ustadmobile.port.android.contenteditor.WebJsResponse;
-import com.ustadmobile.port.android.impl.http.AndroidAssetsHandler;
 import com.ustadmobile.port.android.util.UMAndroidUtil;
 import com.ustadmobile.port.sharedse.contenteditor.UmEditorFileHelper;
-import com.ustadmobile.port.sharedse.impl.http.EmbeddedHTTPD;
 
 import org.jsoup.Jsoup;
 import org.jsoup.nodes.Document;
@@ -83,9 +81,7 @@ import org.jsoup.select.Elements;
 
 import java.io.File;
 import java.io.IOException;
-import java.text.SimpleDateFormat;
 import java.util.ArrayList;
-import java.util.Date;
 import java.util.Hashtable;
 import java.util.List;
 import java.util.Objects;
@@ -99,7 +95,6 @@ import static com.ustadmobile.port.android.contenteditor.EditorAnimatedViewSwitc
 import static com.ustadmobile.port.android.contenteditor.EditorAnimatedViewSwitcher.MAX_SOFT_KEYBOARD_DELAY;
 import static com.ustadmobile.port.android.contenteditor.UmEditorFileHelperAndroid.INDEX_FILE;
 import static com.ustadmobile.port.android.contenteditor.UmEditorFileHelperAndroid.INDEX_TEMP_FILE;
-import static com.ustadmobile.port.android.contenteditor.UmEditorFileHelperAndroid.LOCAL_ADDRESS;
 import static com.ustadmobile.port.android.contenteditor.UmEditorFileHelperAndroid.MEDIA_DIRECTORY;
 import static com.ustadmobile.port.android.contenteditor.WebContentEditorClient.executeJsFunction;
 
@@ -111,8 +106,6 @@ public class ContentEditorActivity extends UstadBaseActivity implements ContentE
     private static ContentEditorPresenter presenter;
 
     private UmEditorFileHelperAndroid umEditorFileHelper;
-
-    private EmbeddedHTTPD embeddedHTTPD;
 
     private EditorAnimatedViewSwitcher viewSwitcher;
 
@@ -395,7 +388,7 @@ public class ContentEditorActivity extends UstadBaseActivity implements ContentE
 
         umEditorFileHelper = new UmEditorFileHelperAndroid();
         umEditorFileHelper.init(this);
-        umEditorFileHelper.setZipFileProgressListener(this);
+        umEditorFileHelper.setZipTaskProgressListener(this);
         presenter = new ContentEditorPresenter(this,args,this);
         presenter.onCreate(UMAndroidUtil.bundleToHashtable(savedInstanceState));
 
@@ -468,10 +461,7 @@ public class ContentEditorActivity extends UstadBaseActivity implements ContentE
         umEditorWebView.setLayerType(View.LAYER_TYPE_HARDWARE, null);
         umEditorWebView.clearCache(true);
         umEditorWebView.clearHistory();
-
-        if(umEditorFileHelper.startWebServer()){
-            presenter.handleFiles();
-        }
+        presenter.handleFiles();
 
     }
 
@@ -554,13 +544,6 @@ public class ContentEditorActivity extends UstadBaseActivity implements ContentE
         return true;
     }
 
-    @Override
-    public void onDestroy() {
-        super.onDestroy();
-        if(formattingHelper != null){
-            formattingHelper.destroy();
-        }
-    }
 
     @Override
     public void onStateChanged(ContentFormat format) {
@@ -578,10 +561,6 @@ public class ContentEditorActivity extends UstadBaseActivity implements ContentE
 
     }
 
-    @Override
-    public void onAnimatedViewsClosed() {
-        handleUpdateFile();
-    }
 
     @Override
     public void onFocusRequested() {
@@ -689,17 +668,32 @@ public class ContentEditorActivity extends UstadBaseActivity implements ContentE
     }
 
     @Override
+    public void onAnimatedViewsClosed() {
+        if(isActivityActive){
+            handleUpdateFile();
+        }
+    }
+
+    @Override
     protected void onResume() {
         super.onResume();
         isActivityActive = true;
+        if(umEditorFileHelper != null){
+            umEditorFileHelper.createTempIndexFile();
+        }
     }
 
     @Override
     protected void onPause() {
         super.onPause();
-        if(isActivityActive && !openPreview){
-            handleUpdateFile();
-            viewSwitcher.closeAnimatedView(ANIMATED_SOFT_KEYBOARD_PANEL);
+        viewSwitcher.closeAnimatedView(ANIMATED_SOFT_KEYBOARD_PANEL);
+    }
+
+    @Override
+    public void onDestroy() {
+        super.onDestroy();
+        if(formattingHelper != null){
+            formattingHelper.destroy();
         }
     }
 
@@ -739,8 +733,13 @@ public class ContentEditorActivity extends UstadBaseActivity implements ContentE
                             @Override
                             public void onSuccess(Boolean result) {
                                 if(result){
-                                    if(!isMultimediaFilePicker){
+                                    umEditorFileHelper.createTempIndexFile();
+                                    if(!openPreview || !isMultimediaFilePicker){
                                         postProcessEditor();
+                                    }else{
+                                        if(isActivityActive){
+                                            handleUpdateFile();
+                                        }
                                     }
                                 }
                             }
@@ -768,6 +767,7 @@ public class ContentEditorActivity extends UstadBaseActivity implements ContentE
         runOnUiThread(() -> {
             if(openPreview){
                 openPreview = false;
+                isActivityActive = false;
                 UstadMobileSystemImpl.getInstance().go(ContentPreviewView.VIEW_NAME,
                         args,getApplicationContext());
             }else{
@@ -778,10 +778,9 @@ public class ContentEditorActivity extends UstadBaseActivity implements ContentE
                     handleQuickActions();
                     viewSwitcher.closeAnimatedView(ANIMATED_SOFT_KEYBOARD_PANEL);
                     startEditing.setVisibility(View.VISIBLE);
-                    injectTinyMce();
+                    //injectTinyMce();
                 }else{
-                    if(new File(umEditorFileHelper.getDestinationDirPath(),INDEX_TEMP_FILE)
-                            .delete())moveTaskToBack(true);
+                    if(new File(umEditorFileHelper.getDestinationDirPath()).delete())finish();
                 }
             }
         });
@@ -1036,7 +1035,7 @@ public class ContentEditorActivity extends UstadBaseActivity implements ContentE
      */
     private boolean isDocumentEmpty(){
         Document indexFile = getIndexDocument();
-        Elements innerContent = indexFile.select("#ustad-preview");
+        Elements innerContent = indexFile.select("#umPreview");
         return innerContent.html().length() <= 0;
     }
 

@@ -16,7 +16,6 @@ import com.ustadmobile.lib.db.entities.ContentEntryFile;
 import com.ustadmobile.lib.db.entities.ContentEntryFileStatus;
 import com.ustadmobile.port.android.impl.http.AndroidAssetsHandler;
 import com.ustadmobile.port.sharedse.contenteditor.UmEditorFileHelper;
-import com.ustadmobile.port.sharedse.impl.http.EmbeddedHTTPD;
 import com.ustadmobile.port.sharedse.impl.http.FileDirectoryHandler;
 import com.ustadmobile.port.sharedse.networkmanager.ResumableHttpDownload;
 
@@ -30,9 +29,7 @@ import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileOutputStream;
 import java.io.IOException;
-import java.text.SimpleDateFormat;
 import java.util.ArrayList;
-import java.util.Date;
 import java.util.List;
 import java.util.zip.ZipEntry;
 import java.util.zip.ZipInputStream;
@@ -56,10 +53,6 @@ public class UmEditorFileHelperAndroid extends UmEditorFileHelper {
 
     private UmAppDatabase umAppDatabase;
 
-    private EmbeddedHTTPD embeddedHTTPD;
-
-    public static final String LOCAL_ADDRESS = "http://127.0.0.1:";
-
     public static final String INDEX_FILE = "index.html";
 
     public static final String INDEX_TEMP_FILE = "index_.html";
@@ -68,13 +61,11 @@ public class UmEditorFileHelperAndroid extends UmEditorFileHelper {
 
     private int usedResourceCounter = 0;
 
-    private String baseRequestUrl = null;
-
     @Override
     public void init(Object context) {
         super.init(context);
         UMStorageDir[] rootDir =
-                UstadMobileSystemImpl.getInstance().getStorageDirs(SHARED_RESOURCE,context);
+                UstadMobileSystemImpl.getInstance().getStorageDirs(SHARED_RESOURCE, context);
         File baseContentDir = new File(rootDir[0].getDirURI());
         File tempBaseDir = new File(baseContentDir,"temp/");
         if(!tempBaseDir.exists())tempBaseDir.mkdir();
@@ -82,36 +73,17 @@ public class UmEditorFileHelperAndroid extends UmEditorFileHelper {
         contentEntryFile = new File(baseContentDir,"UmFile-"+System.currentTimeMillis()+".zip");
         repository = UmAccountManager.getRepositoryForActiveAccount(context);
         umAppDatabase = UmAppDatabase.getInstance(context);
-        startWebServer();
+        embeddedHTTPD.addRoute( assetsDir+"(.)+",  AndroidAssetsHandler.class, context);
     }
-
-
 
     /**
      * Set zip task file progress listener
      * @param zipFileTaskProgressListener listener instance
      */
-    public void setZipFileProgressListener(ZipFileTaskProgressListener zipFileTaskProgressListener) {
+    public void setZipTaskProgressListener(ZipFileTaskProgressListener zipFileTaskProgressListener){
         this.zipTaskListener = zipFileTaskProgressListener;
     }
 
-    @Override
-    public boolean startWebServer() {
-        embeddedHTTPD = new EmbeddedHTTPD(0, this);
-        boolean started = false;
-        String assetsDir = "assets-" +
-                new SimpleDateFormat("yyyyMMddHHmmss").format(new Date()) + "";
-        embeddedHTTPD.addRoute( assetsDir+"(.)+",  AndroidAssetsHandler.class, this);
-        try {
-            embeddedHTTPD.start();
-             baseRequestUrl = UMFileUtil.joinPaths(LOCAL_ADDRESS+embeddedHTTPD.getListeningPort()+"/",
-                     assetsDir,"tinymce");
-             started = true;
-        } catch (IOException e) {
-            e.printStackTrace();
-        }
-        return started;
-    }
 
     @Override
     public void createFile(UmCallback<Long> callback) {
@@ -232,12 +204,7 @@ public class UmEditorFileHelperAndroid extends UmEditorFileHelper {
                                         FileDirectoryHandler.class,extractToPath);
                                 String baseRequestUrl = UMFileUtil.joinPaths(LOCAL_ADDRESS +
                                         embeddedHTTPD.getListeningPort()+"/", mountedPathPrefix);
-                                try {
-                                    UMFileUtil.copyFile(new File(destinationTempDir,INDEX_FILE),
-                                            new File(destinationTempDir,INDEX_TEMP_FILE));
-                                } catch (IOException e) {
-                                    e.printStackTrace();
-                                }
+                                createTempIndexFile();
                                 callback.onSuccess(baseRequestUrl);
                             }else{
                                 callback.onSuccess(null);
@@ -252,6 +219,18 @@ public class UmEditorFileHelperAndroid extends UmEditorFileHelper {
                 })).start();
 
 
+    }
+
+    public void createTempIndexFile(){
+        try {
+            File indexFile = new File(destinationTempDir,INDEX_FILE);
+            File indexTempFile = new File(destinationTempDir,INDEX_TEMP_FILE);
+            if(indexFile.exists() && !indexTempFile.exists()){
+                UMFileUtil.copyFile(indexFile,indexTempFile);
+            }
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
     }
 
 
@@ -335,7 +314,7 @@ public class UmEditorFileHelperAndroid extends UmEditorFileHelper {
     /**
      * Map file structure as on temp directory
      * @param sourceDir Temporary directory to be zipped
-     * @param fileList File struture holder
+     * @param fileList File structure holder
      */
     private void getFileStructure(File sourceDir,List<File> fileList) {
         File[] files = sourceDir.listFiles();

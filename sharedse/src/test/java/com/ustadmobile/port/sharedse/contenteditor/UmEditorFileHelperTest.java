@@ -40,7 +40,7 @@ public class UmEditorFileHelperTest {
 
     @Before
     public void setUpSpy(){
-        Object context =  PlatformTestUtil.getTargetContext();
+        /*Object context =  PlatformTestUtil.getTargetContext();
         mockedHelper = spy(UmEditorFileHelper.class);
         mockedHelper.init(context);
         UmAppDatabase mockedDb = mock(UmAppDatabase.class);
@@ -51,7 +51,7 @@ public class UmEditorFileHelperTest {
         mockedEntryFileDao = mock(ContentEntryFileDao.class);
         UmAppDatabase.setInstance(mockedDb);
         when(mockedDb.getContentEntryDao()).thenReturn(mockedEntryDao);
-        when(mockedDb.getContentEntryFileDao()).thenReturn(mockedEntryFileDao);
+        when(mockedDb.getContentEntryFileDao()).thenReturn(mockedEntryFileDao);*/
 
     }
 

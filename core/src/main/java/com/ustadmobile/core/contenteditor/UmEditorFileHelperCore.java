@@ -1,9 +1,6 @@
 package com.ustadmobile.core.contenteditor;
 
 import com.ustadmobile.core.impl.UmCallback;
-import com.ustadmobile.port.sharedse.impl.http.EmbeddedHTTPD;
-
-import java.io.InputStream;
 
 /**
  * Interface which defines all file operation during content editing process. It is responsible to
@@ -32,12 +29,6 @@ import java.io.InputStream;
  * @author kileha3
  */
 public interface UmEditorFileHelperCore {
-
-    /**
-     * Start internal webserver
-     * @return True if webserver was started Else it wasn't started
-     */
-    boolean startWebServer();
 
     /**
      * Create new file if the file doesn't
