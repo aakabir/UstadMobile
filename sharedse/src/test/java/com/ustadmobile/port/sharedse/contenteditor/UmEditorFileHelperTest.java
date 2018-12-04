@@ -32,26 +32,15 @@ public class UmEditorFileHelperTest {
 
     private UmAppDatabase repository;
 
-    private ContentEntryDao mockedEntryDao;
-
-    private ContentEntryFileDao mockedEntryFileDao;
-
 
 
     @Before
     public void setUpSpy(){
-        /*Object context =  PlatformTestUtil.getTargetContext();
+        Object context =  PlatformTestUtil.getTargetContext();
         mockedHelper = spy(UmEditorFileHelper.class);
         mockedHelper.init(context);
-        UmAppDatabase mockedDb = mock(UmAppDatabase.class);
         umAppDatabase = UmAppDatabase.getInstance(context);
         umAppDatabase.clearAllTables();
-
-        mockedEntryDao = mock(ContentEntryDao.class);
-        mockedEntryFileDao = mock(ContentEntryFileDao.class);
-        UmAppDatabase.setInstance(mockedDb);
-        when(mockedDb.getContentEntryDao()).thenReturn(mockedEntryDao);
-        when(mockedDb.getContentEntryFileDao()).thenReturn(mockedEntryFileDao);*/
 
     }
 
@@ -87,7 +76,7 @@ public class UmEditorFileHelperTest {
             e.printStackTrace();
         }
         String localHost = "12.0.0.1";
-        assertTrue("Returned the right group information",
+        assertTrue("Returned right resource request base url",
                 resultRef.get() != null && resultRef.get().contains(localHost));
     }
 
