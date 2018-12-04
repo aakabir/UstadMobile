@@ -260,7 +260,7 @@ public class UstadMobileSystemImplTest extends UstadMobileSystemImplSE {
 
     @Override
     public InputStream getAssetSync(Object context, String path) throws IOException {
-        return null;
+        return getClass().getResourceAsStream(path);
     }
 
     @Override

@@ -34,8 +34,6 @@ import java.util.zip.ZipEntry;
 import java.util.zip.ZipInputStream;
 import java.util.zip.ZipOutputStream;
 
-import fi.iki.elonen.router.RouterNanoHTTPD;
-
 import static com.ustadmobile.core.controller.CatalogPresenter.SHARED_RESOURCE;
 
 public class UmEditorFileHelper implements UmEditorFileHelperCore {
