@@ -835,18 +835,18 @@ public class UMFileUtil {
 
     /**
      * Copy file from one location to another
-     * @param source File to be copied
      * @param dest Copied file
      * @throws IOException Exception thrown in case of any issues
      */
-    public static void copyFile(File source, File dest) throws IOException {
+    public static boolean copyFile(InputStream is, File dest) throws IOException {
         if(dest.exists()) dest.delete();
-        try (InputStream is = new FileInputStream(source); OutputStream os = new FileOutputStream(dest)) {
+        try (OutputStream os = new FileOutputStream(dest)) {
             byte[] buffer = new byte[1024];
             int length;
             while ((length = is.read(buffer)) > 0) {
                 os.write(buffer, 0, length);
             }
         }
+        return dest.exists();
     }
 }

@@ -57,7 +57,7 @@ public interface UmEditorFileHelperCore {
      * lives in there has been used.
      * @param callback UmCallback
      */
-    void removeUnUsedResources(UmCallback<Boolean> callback);
+    void removeUnUsedResources(UmCallback<Integer> callback);
 
     String getSourceFilePath();
 

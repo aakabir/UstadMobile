@@ -6,6 +6,7 @@ import com.ustadmobile.core.impl.UmCallback;
 import com.ustadmobile.core.view.ContentEditorView;
 import com.ustadmobile.lib.db.entities.ContentEntryFileStatus;
 
+import java.io.File;
 import java.util.Hashtable;
 
 import static com.ustadmobile.core.contenteditor.UmEditorFileHelperCore.INDEX_TEMP_FILE;
@@ -58,7 +59,7 @@ public class ContentEditorPresenter extends UstadBaseController<ContentEditorVie
                 new UmCallback<ContentEntryFileStatus>() {
             @Override
             public void onSuccess(ContentEntryFileStatus result) {
-                if(result == null){
+                if(result == null || !new File(result.getFilePath()).exists()){
                     view.getFileHelper().createFile(new UmCallback<String>() {
                         @Override
                         public void onSuccess(String result) {
