@@ -1,10 +1,14 @@
 package com.ustadmobile.core.controller;
 
+import com.ustadmobile.core.db.UmAppDatabase;
+import com.ustadmobile.core.db.dao.ContentEntryFileStatusDao;
 import com.ustadmobile.core.impl.UmCallback;
 import com.ustadmobile.core.view.ContentEditorView;
+import com.ustadmobile.lib.db.entities.ContentEntryFileStatus;
 
 import java.util.Hashtable;
 
+import static com.ustadmobile.core.contenteditor.UmEditorFileHelperCore.INDEX_TEMP_FILE;
 import static com.ustadmobile.core.view.ContentEditorView.ACTION_PREVIEW;
 import static com.ustadmobile.core.view.ContentEditorView.ACTION_REDO;
 import static com.ustadmobile.core.view.ContentEditorView.ACTION_TEXT_DIRECTION_LTR;
@@ -33,11 +37,6 @@ public class ContentEditorPresenter extends UstadBaseController<ContentEditorVie
 
     private Hashtable args;
 
-    private String tinyMceBaseUrl;
-
-    private String mountedFileBaseUrl;
-
-
     public ContentEditorPresenter(Object context, Hashtable arguments, ContentEditorView view) {
         super(context, arguments, view);
         this.args = arguments;
@@ -48,47 +47,56 @@ public class ContentEditorPresenter extends UstadBaseController<ContentEditorVie
         super.onCreate(savedState);
     }
 
-    public void handleFiles(){
-        tinyMceBaseUrl = view.getFileHelper().getBaseResourceRequestUrl();
-        args.put(ContentEditorView.EDITOR_REQUEST_URI,tinyMceBaseUrl);
-        if(args.get(CONTENT_ENTRY_FILE_UID).equals("0")){
-            view.getFileHelper().createFile(new UmCallback<Long>() {
-                @Override
-                public void onSuccess(Long contentEntryFileUid) {
-                    mountFile(contentEntryFileUid);
-                }
-                @Override
-                public void onFailure(Throwable exception) { }
-            });
-        }else{
-            long contentEntryFileUid = Long.parseLong(String.valueOf(args.get(CONTENT_ENTRY_FILE_UID)));
-            mountFile(contentEntryFileUid);
-        }
-    }
-
-
-    private void mountFile(long contentEntryFileUid){
-        view.getFileHelper().mountFile(contentEntryFileUid, new UmCallback<String>() {
+    /**
+     * Check if content entry has a file associated with it, if yes edit otherwise create new one.
+     */
+    public void handleContentEntryFileStatus(){
+        long contentEntryFileUid = Long.parseLong(String.valueOf(args.get(CONTENT_ENTRY_FILE_UID)));
+        ContentEntryFileStatusDao fileStatusDao =
+                UmAppDatabase.getInstance(context).getContentEntryFileStatusDao();
+        fileStatusDao.findByContentEntryFileUid(contentEntryFileUid,
+                new UmCallback<ContentEntryFileStatus>() {
             @Override
-            public void onSuccess(String requestUrl) {
-                mountedFileBaseUrl = requestUrl;
-                view.runOnUiThread(() -> view.injectTinyMce());
+            public void onSuccess(ContentEntryFileStatus result) {
+                if(result == null){
+                    view.getFileHelper().createFile(new UmCallback<String>() {
+                        @Override
+                        public void onSuccess(String result) {
+                            mountFile(result);
+                        }
+
+                        @Override
+                        public void onFailure(Throwable exception) {
+                            exception.printStackTrace();
+                        }
+                    });
+                }else{
+                    mountFile(result.getFilePath());
+                }
             }
 
             @Override
             public void onFailure(Throwable exception) {
-
+                exception.printStackTrace();
             }
         });
     }
 
-    public String getTinyMceBaseUrl(){
-        return tinyMceBaseUrl;
+
+    private void mountFile(String filePath){
+        view.getFileHelper().mountFile(filePath, new UmCallback<Void>() {
+            @Override
+            public void onSuccess(Void result) {
+                view.runOnUiThread(() -> view.loadIndexFile(INDEX_TEMP_FILE));
+            }
+
+            @Override
+            public void onFailure(Throwable exception) {
+                exception.printStackTrace();
+            }
+        });
     }
 
-    public String getMountedFileBaseUrl(){
-        return mountedFileBaseUrl;
-    }
 
     public void handleFormatTypeClicked(String formatType, String param){
         view.runOnUiThread(() -> {

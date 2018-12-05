@@ -2,6 +2,10 @@ package com.ustadmobile.port.sharedse.contenteditor;
 
 import com.ustadmobile.core.contenteditor.UmEditorFileHelperCore;
 import com.ustadmobile.core.db.UmAppDatabase;
+import com.ustadmobile.core.db.dao.ContentEntryContentEntryFileJoinDao;
+import com.ustadmobile.core.db.dao.ContentEntryDao;
+import com.ustadmobile.core.db.dao.ContentEntryFileDao;
+import com.ustadmobile.core.db.dao.ContentEntryFileStatusDao;
 import com.ustadmobile.core.impl.UMStorageDir;
 import com.ustadmobile.core.impl.UmAccountManager;
 import com.ustadmobile.core.impl.UmCallback;
@@ -52,10 +56,6 @@ public class UmEditorFileHelper implements UmEditorFileHelperCore {
 
     private UmAppDatabase umAppDatabase;
 
-    public static final String INDEX_FILE = "index.html";
-
-    public static final String INDEX_TEMP_FILE = "index_.html";
-
     public static final String MEDIA_DIRECTORY = "media/";
 
     private int usedResourceCounter = 0;
@@ -63,7 +63,9 @@ public class UmEditorFileHelper implements UmEditorFileHelperCore {
 
     private EmbeddedHTTPD embeddedHTTPD;
 
-    private String baseRequestUrl = null;
+    private String baseResourceRequestUrl = null;
+
+    private String mountedTempDirBaseUrl = null;
 
     private ZipFileTaskProgressListener zipTaskListener;
 
@@ -107,15 +109,15 @@ public class UmEditorFileHelper implements UmEditorFileHelperCore {
         if(!tempBaseDir.exists())tempBaseDir.mkdir();
         tempDestinationDir = tempBaseDir;
         contentEntryFile = new File(baseContentDir,"UmFile-"+System.currentTimeMillis()+".zip");
-        repository = UmAccountManager.getRepositoryForActiveAccount(context);
         umAppDatabase = UmAppDatabase.getInstance(context);
+        repository = UmAccountManager.getRepositoryForActiveAccount(context);
     }
 
     private void startWebServer() {
         embeddedHTTPD = new EmbeddedHTTPD(0, this);
         try {
             embeddedHTTPD.start();
-            baseRequestUrl = UMFileUtil.joinPaths(LOCAL_ADDRESS+embeddedHTTPD.getListeningPort()+"/",
+            baseResourceRequestUrl = UMFileUtil.joinPaths(LOCAL_ADDRESS+embeddedHTTPD.getListeningPort()+"/",
                     assetsDir,"tinymce");
         } catch (IOException e) {
             e.printStackTrace();
@@ -132,10 +134,10 @@ public class UmEditorFileHelper implements UmEditorFileHelperCore {
 
 
     @Override
-    public void createFile(UmCallback<Long> callback) {
+    public void createFile(UmCallback<String> callback) {
         new Thread(() -> {
             IOException exception = null;
-            String resourceUrl = UMFileUtil.joinPaths(baseRequestUrl,
+            String resourceUrl = UMFileUtil.joinPaths(baseResourceRequestUrl,
                     "templates/"+ContentEditorView.RESOURCE_BLANK_DOCUMENT);
             ResumableHttpDownload resumableHttpDownload = new ResumableHttpDownload(resourceUrl,
                     contentEntryFile.getAbsolutePath());
@@ -154,55 +156,80 @@ public class UmEditorFileHelper implements UmEditorFileHelperCore {
         }).start();
     }
 
-    private void handleFileInDb(UmCallback<Long> callback){
+    @Override
+    public void mountFile(String filePath, UmCallback<Void> callback) {
+        new Thread(() -> {
+            sourceFile = new File(filePath);
+            String mountedToPath = sourceFile.getName().replace(".zip","");
+            File extractToPath = new File(tempDestinationDir,mountedToPath);
+            destinationTempDir = extractToPath;
+            mediaDestinationDir = new File(destinationTempDir,MEDIA_DIRECTORY);
+            boolean unZipped = false;
+            try {
+                unZipped = unZipFile(sourceFile, destinationTempDir);
+            } catch (IOException e) {
+                e.printStackTrace();
+                callback.onFailure(e);
+            }finally {
+                if(unZipped){
+                    String mountedPathPrefix = "umEditor";
+                    embeddedHTTPD.addRoute( mountedPathPrefix+"(.)+",
+                            FileDirectoryHandler.class,extractToPath);
+                    mountedTempDirBaseUrl = UMFileUtil.joinPaths(LOCAL_ADDRESS +
+                            embeddedHTTPD.getListeningPort()+"/", mountedPathPrefix);
+                    createTempIndexFile();
+                    callback.onSuccess(null);
+                }else{
+                    callback.onSuccess(null);
+                }
+            }
+        }).start();
+    }
+
+
+
+    private void handleFileInDb(UmCallback<String> callback){
 
         long lastModified = System.currentTimeMillis();
-
         ContentEntry contentEntry = new ContentEntry();
         contentEntry.setLastModified(lastModified);
 
         ContentEntryFile mEntryFile = new ContentEntryFile();
         mEntryFile.setLastModified(lastModified);
         mEntryFile.setFileSize(this.contentEntryFile.length());
+        ContentEntryDao contentEntryDao = repository.getContentEntryDao();
+        ContentEntryFileDao fileDao = umAppDatabase.getContentEntryFileDao();
+        ContentEntryFileStatusDao fileStatusDao = umAppDatabase.getContentEntryFileStatusDao();
+        ContentEntryContentEntryFileJoinDao joinDao =
+                umAppDatabase.getContentEntryContentEntryFileJoinDao();
 
-        repository.getContentEntryDao().insertAsync(contentEntry, new UmCallback<Long>() {
+        contentEntryDao.insertAsync(contentEntry, new UmCallback<Long>() {
             @Override
             public void onSuccess(Long contentEntryUid) {
-                umAppDatabase.getContentEntryFileDao()
-                        .insertAsync(mEntryFile, new UmCallback<Long>() {
+                fileDao.insertAsync(mEntryFile, new UmCallback<Long>() {
+                    @Override
+                    public void onSuccess(Long contentEntryFileUid) {
+                        ContentEntryContentEntryFileJoin entryFileJoin =
+                                new ContentEntryContentEntryFileJoin();
+                        entryFileJoin.setCecefjContentEntryFileUid(contentEntryFileUid);
+                        entryFileJoin.setCecefjContentEntryUid(contentEntryUid);
+                        joinDao.insertAsync(entryFileJoin, new UmCallback<Long>() {
                             @Override
-                            public void onSuccess(Long contentEntryFileUid) {
-                                ContentEntryContentEntryFileJoin entryFileJoin =
-                                        new ContentEntryContentEntryFileJoin();
-                                entryFileJoin.setCecefjContentEntryFileUid(contentEntryFileUid);
-                                entryFileJoin.setCecefjContentEntryUid(contentEntryUid);
-                                umAppDatabase.getContentEntryContentEntryFileJoinDao()
-                                        .insertAsync(entryFileJoin, new UmCallback<Long>() {
-                                            @Override
-                                            public void onSuccess(Long cecefUid) {
-                                                ContentEntryFileStatus fileStatus = new ContentEntryFileStatus();
-                                                fileStatus.setCefsContentEntryFileUid(contentEntryFileUid);
-                                                fileStatus.setFilePath(contentEntryFile.getAbsolutePath());
-                                                umAppDatabase.getContentEntryFileStatusDao()
-                                                        .insertAsync(fileStatus, new UmCallback<Long>() {
-                                                            @Override
-                                                            public void onSuccess(Long result) {
-                                                                callback.onSuccess(contentEntryFileUid);
-                                                            }
+                            public void onSuccess(Long cecefUid) {
+                                ContentEntryFileStatus fileStatus = new ContentEntryFileStatus();
+                                fileStatus.setCefsContentEntryFileUid(contentEntryFileUid);
+                                fileStatus.setFilePath(contentEntryFile.getAbsolutePath());
+                                fileStatusDao.insertAsync(fileStatus, new UmCallback<Long>() {
+                                    @Override
+                                    public void onSuccess(Long result) {
+                                        callback.onSuccess(contentEntryFile.getAbsolutePath());
+                                    }
 
-                                                            @Override
-                                                            public void onFailure(Throwable exception) {
-                                                                callback.onFailure(exception);
-                                                            }
-                                                        });
-
-                                            }
-
-                                            @Override
-                                            public void onFailure(Throwable exception) {
-                                                callback.onFailure(exception);
-                                            }
-                                        });
+                                    @Override
+                                    public void onFailure(Throwable exception) {
+                                        callback.onFailure(exception);
+                                    }
+                                });
                             }
 
                             @Override
@@ -210,6 +237,13 @@ public class UmEditorFileHelper implements UmEditorFileHelperCore {
                                 callback.onFailure(exception);
                             }
                         });
+                    }
+
+                    @Override
+                    public void onFailure(Throwable exception) {
+                        callback.onFailure(exception);
+                    }
+                });
             }
 
             @Override
@@ -219,51 +253,6 @@ public class UmEditorFileHelper implements UmEditorFileHelperCore {
         });
     }
 
-
-    @Override
-    public void mountFile(long contentEntryFileUid, UmCallback<String> callback) {
-
-        new Thread(() ->
-                umAppDatabase.getContentEntryFileStatusDao()
-                        .findByContentEntryFileUid(contentEntryFileUid,
-                                new UmCallback<ContentEntryFileStatus>() {
-                                    @Override
-                                    public void onSuccess(ContentEntryFileStatus fileStatus) {
-                                        sourceFile = new File(fileStatus.getFilePath());
-                                        String mountedToPath = new File(fileStatus.getFilePath())
-                                                .getName().replace(".zip","");
-                                        File extractToPath = new File(tempDestinationDir,mountedToPath);
-                                        destinationTempDir = extractToPath;
-                                        mediaDestinationDir = new File(destinationTempDir,MEDIA_DIRECTORY);
-                                        boolean unZipped = false;
-                                        try {
-                                            unZipped = unZipFile(sourceFile, destinationTempDir);
-                                        } catch (IOException e) {
-                                            e.printStackTrace();
-                                            callback.onFailure(e);
-                                        }finally {
-                                            if(unZipped){
-                                                String mountedPathPrefix = "umEditor";
-                                                embeddedHTTPD.addRoute( mountedPathPrefix+"(.)+",
-                                                        FileDirectoryHandler.class,extractToPath);
-                                                String baseRequestUrl = UMFileUtil.joinPaths(LOCAL_ADDRESS +
-                                                        embeddedHTTPD.getListeningPort()+"/", mountedPathPrefix);
-                                                createTempIndexFile();
-                                                callback.onSuccess(baseRequestUrl);
-                                            }else{
-                                                callback.onSuccess(null);
-                                            }
-                                        }
-                                    }
-
-                                    @Override
-                                    public void onFailure(Throwable exception) {
-                                        callback.onFailure(exception);
-                                    }
-                                })).start();
-
-
-    }
 
     public void createTempIndexFile(){
         try {
@@ -342,7 +331,7 @@ public class UmEditorFileHelper implements UmEditorFileHelperCore {
 
     @Override
     public String getBaseResourceRequestUrl() {
-        return baseRequestUrl;
+        return baseResourceRequestUrl;
     }
 
     @Override
@@ -353,6 +342,11 @@ public class UmEditorFileHelper implements UmEditorFileHelperCore {
     @Override
     public String getDestinationMediaDirPath() {
         return mediaDestinationDir.getAbsolutePath();
+    }
+
+    @Override
+    public String getMountedTempDirRequestUrl() {
+        return mountedTempDirBaseUrl;
     }
 
     /**

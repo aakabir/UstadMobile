@@ -106,7 +106,7 @@
         <activity
             android:screenOrientation="portrait"
             android:name="com.ustadmobile.port.android.view.ContentEditorActivity" />
-        <activity android:name="com.ustadmobile.port.android.view.ContentPreviewActivity"/>
+        <activity android:name="com.ustadmobile.port.android.view.ContentEditorPreviewActivity"/>
     </application>
 
 </manifest>

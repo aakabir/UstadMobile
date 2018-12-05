@@ -173,7 +173,11 @@ public interface ContentEditorView extends UstadView {
      */
     void requestEditorContent();
 
-    void injectTinyMce();
+    /**
+     * Load index file
+     * @param indexFile file to be used as index.
+     */
+    void loadIndexFile(String indexFile);
 
     /**
      * Get active file helper instance

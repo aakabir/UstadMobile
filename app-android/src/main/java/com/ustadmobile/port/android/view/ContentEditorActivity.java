@@ -88,14 +88,14 @@ import java.util.Objects;
 
 import id.zelory.compressor.Compressor;
 
+import static com.ustadmobile.core.contenteditor.UmEditorFileHelperCore.INDEX_FILE;
+import static com.ustadmobile.core.contenteditor.UmEditorFileHelperCore.INDEX_TEMP_FILE;
 import static com.ustadmobile.port.android.contenteditor.ContentFormattingHelper.FORMATTING_ACTIONS_INDEX;
 import static com.ustadmobile.port.android.contenteditor.ContentFormattingHelper.isTobeHighlighted;
 import static com.ustadmobile.port.android.contenteditor.EditorAnimatedViewSwitcher.ANIMATED_CONTENT_OPTION_PANEL;
 import static com.ustadmobile.port.android.contenteditor.EditorAnimatedViewSwitcher.ANIMATED_SOFT_KEYBOARD_PANEL;
 import static com.ustadmobile.port.android.contenteditor.EditorAnimatedViewSwitcher.MAX_SOFT_KEYBOARD_DELAY;
 import static com.ustadmobile.port.android.contenteditor.WebContentEditorClient.executeJsFunction;
-import static com.ustadmobile.port.sharedse.contenteditor.UmEditorFileHelper.INDEX_FILE;
-import static com.ustadmobile.port.sharedse.contenteditor.UmEditorFileHelper.INDEX_TEMP_FILE;
 import static com.ustadmobile.port.sharedse.contenteditor.UmEditorFileHelper.MEDIA_DIRECTORY;
 
 public class ContentEditorActivity extends UstadBaseActivity implements ContentEditorView,
@@ -130,6 +130,8 @@ public class ContentEditorActivity extends UstadBaseActivity implements ContentE
     private boolean openPreview = false;
 
     private boolean isMultimediaFilePicker = false;
+
+    private boolean isEditorPreview = false;
 
     private FloatingActionButton startEditing;
 
@@ -409,8 +411,12 @@ public class ContentEditorActivity extends UstadBaseActivity implements ContentE
 
         startEditing.setOnClickListener(v -> {
             progressDialog.setVisibility(View.VISIBLE);
-            executeJsFunction(umEditorWebView, "ustadEditor.initTinyMceEditor",
-                    ContentEditorActivity.this, (String[]) null);
+            if(isEditorPreview){
+                loadIndexFile(INDEX_TEMP_FILE);
+            }else{
+                initializeEditor();
+            }
+
         });
 
         mFromCamera.setOnClickListener(v -> {
@@ -463,7 +469,7 @@ public class ContentEditorActivity extends UstadBaseActivity implements ContentE
         umEditorWebView.setLayerType(View.LAYER_TYPE_HARDWARE, null);
         umEditorWebView.clearCache(true);
         umEditorWebView.clearHistory();
-        presenter.handleFiles();
+        presenter.handleContentEntryFileStatus();
 
     }
 
@@ -592,6 +598,9 @@ public class ContentEditorActivity extends UstadBaseActivity implements ContentE
     @Override
     public void onPageFinishedLoading() {
         progressDialog.setVisibility(View.GONE);
+        if(isEditorPreview){
+            isEditorPreview = false;
+        }
     }
 
     /**
@@ -761,67 +770,6 @@ public class ContentEditorActivity extends UstadBaseActivity implements ContentE
             });
         }
     }
-
-    /**
-     * Process editor state after handling all the unused files and zip file update
-     */
-    private void postProcessEditor(){
-        runOnUiThread(() -> {
-            if(openPreview){
-                openPreview = false;
-                isActivityActive = false;
-                UstadMobileSystemImpl.getInstance().go(ContentPreviewView.VIEW_NAME,
-                        args,getApplicationContext());
-            }else{
-                if(isEditorInitialized){
-                    isEditorInitialized = false;
-                    handleBackNavigationIcon();
-                    invalidateOptionsMenu();
-                    handleQuickActions();
-                    viewSwitcher.closeAnimatedView(ANIMATED_SOFT_KEYBOARD_PANEL);
-                    startEditing.setVisibility(View.VISIBLE);
-                    //injectTinyMce();
-                }else{
-                    if(new File(umEditorFileHelper.getDestinationDirPath()).delete())finish();
-                }
-            }
-        });
-    }
-
-    /**
-     * Insert media file to the editor
-     * @param uri Uri of the file to be inserted
-     * @param fromCamera Flag to indicate if the file was created from the camera
-     * @throws IOException Exception thrown when something is wrong
-     */
-    private void insertMedia(Uri uri, boolean fromCamera) throws IOException {
-        progressDialog.setVisibility(View.VISIBLE);
-        String mimeType = UmAndroidUriUtil.getMimeType(this,uri);
-        File sourceFile;
-        File compressedFile;
-        if(fromCamera){
-            sourceFile = fileFromCamera;
-        }else{
-             sourceFile = new File(Objects.requireNonNull(UmAndroidUriUtil.getPath(this, uri)));
-        }
-        if(mimeType.contains("image")){
-            compressedFile = new Compressor(this)
-                    .setQuality(75)
-                    .setCompressFormat(Bitmap.CompressFormat.WEBP)
-                    .compressToFile(sourceFile);
-        }else{
-            compressedFile = sourceFile;
-        }
-
-        File destination = new File(umEditorFileHelper.getDestinationMediaDirPath(),
-                compressedFile.getName().replaceAll("\\s+","_"));
-        UMFileUtil.copyFile(compressedFile,destination);
-        String source = MEDIA_DIRECTORY + destination.getName();
-        progressDialog.setVisibility(View.GONE);
-        executeJsFunction(umEditorWebView, "ustadEditor.insertMedia",
-                this, source,mimeType);
-    }
-
 
     @Override
     public void onBackPressed() {
@@ -1000,13 +948,14 @@ public class ContentEditorActivity extends UstadBaseActivity implements ContentE
 
 
     @Override
-    public void injectTinyMce() {
+    public void loadIndexFile(String index) {
         umEditorWebView.setWebViewClient(new WebContentEditorClient(
-                this,presenter.getTinyMceBaseUrl()));
-        args.put(ContentEditorView.EDITOR_PREVIEW_PATH,
-                UMFileUtil.joinPaths(presenter.getMountedFileBaseUrl(),INDEX_FILE));
-        String url = UMFileUtil.joinPaths(presenter.getMountedFileBaseUrl(),INDEX_TEMP_FILE);
-        umEditorWebView.loadUrl(url);
+                this,umEditorFileHelper.getBaseResourceRequestUrl()));
+        args.put(ContentEditorView.EDITOR_PREVIEW_PATH, UMFileUtil.joinPaths(
+                umEditorFileHelper.getMountedTempDirRequestUrl(),INDEX_FILE));
+        String urlToLoad =
+                UMFileUtil.joinPaths(umEditorFileHelper.getMountedTempDirRequestUrl(),index);
+        umEditorWebView.loadUrl(urlToLoad);
         handleBlankDocumentView();
     }
 
@@ -1014,6 +963,7 @@ public class ContentEditorActivity extends UstadBaseActivity implements ContentE
      * Show or hide the blank document placeholder view
      */
     private void handleBlankDocumentView(){
+        handleWebViewMargin();
         blankDocumentContainer.setVisibility(isDocumentEmpty() ? View.VISIBLE:View.GONE);
     }
 
@@ -1137,12 +1087,85 @@ public class ContentEditorActivity extends UstadBaseActivity implements ContentE
                 new int[] { android.R.attr.actionBarSize });
         int actionBarSize = (int) attrs.getDimension(0, 0);
         attrs.recycle();
-        float marginBottomValue = isEditorInitialized ?  (actionBarSize+6):0;
+        float marginBottomValue = isEditorInitialized ?  (actionBarSize+8):0;
         ViewGroup.MarginLayoutParams params = (ViewGroup.MarginLayoutParams)
-                umEditorWebView.getLayoutParams();
+                findViewById(R.id.umEditorHolder).getLayoutParams();
         params.bottomMargin = (int) marginBottomValue;
 
     }
+
+    /**
+     * Inject tinymce to the currently loaded page
+     */
+    private void initializeEditor(){
+        executeJsFunction(umEditorWebView, "ustadEditor.initTinyMceEditor",
+                ContentEditorActivity.this, (String[]) null);
+    }
+
+    /**
+     * Process editor state after handling all the unused files and zip file update
+     */
+    private void postProcessEditor(){
+        runOnUiThread(() -> {
+            if(openPreview){
+                openPreview = false;
+                isActivityActive = false;
+                args.put(ContentEditorView.EDITOR_REQUEST_URI,
+                        umEditorFileHelper.getBaseResourceRequestUrl());
+                UstadMobileSystemImpl.getInstance().go(ContentPreviewView.VIEW_NAME,
+                        args,getApplicationContext());
+            }else{
+                if(isEditorInitialized){
+                    isEditorInitialized = false;
+                    isEditorPreview = true;
+                    handleBackNavigationIcon();
+                    invalidateOptionsMenu();
+                    handleQuickActions();
+                    viewSwitcher.closeAnimatedView(ANIMATED_SOFT_KEYBOARD_PANEL);
+                    startEditing.setVisibility(View.VISIBLE);
+                    loadIndexFile(INDEX_FILE);
+                }else{
+                    if(new File(umEditorFileHelper.getDestinationDirPath()).delete())finish();
+                }
+            }
+        });
+    }
+
+    /**
+     * Insert media file to the editor
+     * @param uri Uri of the file to be inserted
+     * @param fromCamera Flag to indicate if the file was created from the camera
+     * @throws IOException Exception thrown when something is wrong
+     */
+    private void insertMedia(Uri uri, boolean fromCamera) throws IOException {
+        progressDialog.setVisibility(View.VISIBLE);
+        String mimeType = UmAndroidUriUtil.getMimeType(this,uri);
+        File sourceFile;
+        File compressedFile;
+        if(fromCamera){
+            sourceFile = fileFromCamera;
+        }else{
+            sourceFile = new File(Objects.requireNonNull(UmAndroidUriUtil.getPath(this, uri)));
+        }
+        if(mimeType.contains("image")){
+            compressedFile = new Compressor(this)
+                    .setQuality(75)
+                    .setCompressFormat(Bitmap.CompressFormat.WEBP)
+                    .compressToFile(sourceFile);
+        }else{
+            compressedFile = sourceFile;
+        }
+
+        File destination = new File(umEditorFileHelper.getDestinationMediaDirPath(),
+                compressedFile.getName().replaceAll("\\s+","_"));
+        UMFileUtil.copyFile(compressedFile,destination);
+        String source = MEDIA_DIRECTORY + destination.getName();
+        progressDialog.setVisibility(View.GONE);
+        executeJsFunction(umEditorWebView, "ustadEditor.insertMedia",
+                this, source,mimeType);
+    }
+
+
 
 
 }

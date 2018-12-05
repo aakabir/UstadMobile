@@ -19,7 +19,7 @@ import com.ustadmobile.port.android.contenteditor.WebContentEditorChrome;
 import com.ustadmobile.port.android.contenteditor.WebContentEditorClient;
 import com.ustadmobile.port.android.util.UMAndroidUtil;
 
-public class ContentPreviewActivity extends UstadBaseActivity
+public class ContentEditorPreviewActivity extends UstadBaseActivity
         implements ContentPreviewView, WebContentEditorChrome.JsLoadingCallback {
 
     private UmEditorNestedScrollView contentPreview;
@@ -39,6 +39,8 @@ public class ContentPreviewActivity extends UstadBaseActivity
         setToolbar(toolbar);
         progressDialog.setMax(100);
         progressDialog.setProgress(0);
+
+        toolbarTitle.setVisibility(View.VISIBLE);
 
         WebSettings webSettings = contentPreview.getSettings();
         webSettings.setJavaScriptEnabled(true);

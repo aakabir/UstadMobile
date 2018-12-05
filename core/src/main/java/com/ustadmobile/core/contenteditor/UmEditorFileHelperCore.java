@@ -30,17 +30,21 @@ import com.ustadmobile.core.impl.UmCallback;
  */
 public interface UmEditorFileHelperCore {
 
+    String INDEX_FILE = "index.html";
+
+    String INDEX_TEMP_FILE = "index_.html";
+
     /**
      * Create new file if the file doesn't
      */
-    void createFile(UmCallback<Long> callback);
+    void createFile(UmCallback<String> callback);
 
     /**
      * Unzip zipped file to a temporary directory for editing purpose.
-     * @param contentEntryFileUid Uid which is used to look-up file location from the database
+     * @param filePath local path of the entry file.
      * @param callback ContentEditorFileHelperCallback
      */
-    void mountFile(long contentEntryFileUid, UmCallback<String> callback);
+    void mountFile(String filePath, UmCallback<Void> callback);
 
     /**
      * Update resources to the zipped file and temporary directory when editing
@@ -62,6 +66,8 @@ public interface UmEditorFileHelperCore {
     String getDestinationDirPath();
 
     String getDestinationMediaDirPath();
+
+    String getMountedTempDirRequestUrl();
 
 
 }

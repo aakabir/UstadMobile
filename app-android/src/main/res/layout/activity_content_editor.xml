@@ -16,13 +16,14 @@
 
 
         <RelativeLayout
+            android:id="@+id/umEditorHolder"
+            android:layout_marginBottom="57dp"
             android:layout_width="match_parent"
             android:layout_height="match_parent">
             <!-- Main content -->
             <com.ustadmobile.port.android.contenteditor.UmEditorWebView
-                android:layout_marginBottom="?actionBarSize"
-                android:layout_marginTop="?actionBarSize"
                 android:id="@+id/editor_content"
+                android:layout_marginTop="?actionBarSize"
                 android:layout_width="match_parent"
                 android:layout_height="match_parent"/>
             <View
