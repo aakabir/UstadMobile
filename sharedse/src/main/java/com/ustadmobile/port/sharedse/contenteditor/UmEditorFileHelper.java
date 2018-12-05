@@ -18,7 +18,6 @@ import com.ustadmobile.lib.db.entities.ContentEntryFile;
 import com.ustadmobile.lib.db.entities.ContentEntryFileStatus;
 import com.ustadmobile.port.sharedse.impl.http.EmbeddedHTTPD;
 import com.ustadmobile.port.sharedse.impl.http.FileDirectoryHandler;
-import com.ustadmobile.port.sharedse.networkmanager.ResumableHttpDownload;
 
 import org.jsoup.Jsoup;
 import org.jsoup.nodes.Document;
@@ -30,6 +29,7 @@ import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileOutputStream;
 import java.io.IOException;
+import java.io.InputStream;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Date;
@@ -71,6 +71,8 @@ public class UmEditorFileHelper implements UmEditorFileHelperCore {
 
     private static final String LOCAL_ADDRESS = "http://127.0.0.1:";
 
+    private boolean isTestExecution = false;
+
     private String assetsDir = "assets-" +
             new SimpleDateFormat("yyyyMMddHHmmss").format(new Date()) + "";
 
@@ -106,9 +108,10 @@ public class UmEditorFileHelper implements UmEditorFileHelperCore {
                 UstadMobileSystemImpl.getInstance().getStorageDirs(SHARED_RESOURCE, context);
         File baseContentDir = new File(rootDir[0].getDirURI());
         File tempBaseDir = new File(baseContentDir,"temp/");
-        if(!tempBaseDir.exists())tempBaseDir.mkdir();
+        if(!tempBaseDir.exists())tempBaseDir.mkdirs();
         tempDestinationDir = tempBaseDir;
         contentEntryFile = new File(baseContentDir,"UmFile-"+System.currentTimeMillis()+".zip");
+        isTestExecution = baseContentDir.getAbsolutePath().startsWith("/var/");
         umAppDatabase = UmAppDatabase.getInstance(context);
         repository = UmAccountManager.getRepositoryForActiveAccount(context);
     }
@@ -136,23 +139,31 @@ public class UmEditorFileHelper implements UmEditorFileHelperCore {
     @Override
     public void createFile(UmCallback<String> callback) {
         new Thread(() -> {
-            IOException exception = null;
-            String resourceUrl = UMFileUtil.joinPaths(baseResourceRequestUrl,
-                    "templates/"+ContentEditorView.RESOURCE_BLANK_DOCUMENT);
-            ResumableHttpDownload resumableHttpDownload = new ResumableHttpDownload(resourceUrl,
-                    contentEntryFile.getAbsolutePath());
-            boolean isDownloaded = false;
-            try{
-                isDownloaded = resumableHttpDownload.download();
-            } catch (IOException e) {
-                exception = e;
-            }finally {
-                if(isDownloaded){
-                    handleFileInDb(callback);
-                }else{
+            String filePath;
+            if(isTestExecution){
+                filePath = "/com/ustadmobile/port/sharedse/";
+            }else{
+                filePath = "http/tinymce/templates";
+            }
+            filePath = UMFileUtil.joinPaths(filePath,ContentEditorView.RESOURCE_BLANK_DOCUMENT);
+            UstadMobileSystemImpl.getInstance().getAsset(context, filePath,
+                    new UmCallback<InputStream>() {
+                @Override
+                public void onSuccess(InputStream result) {
+                    try {
+                        if(UMFileUtil.copyFile(result,contentEntryFile)){
+                            handleFileInDb(callback);
+                        }
+                    } catch (IOException e) {
+                        callback.onFailure(e);
+                    }
+                }
+
+                @Override
+                public void onFailure(Throwable exception) {
                     callback.onFailure(exception);
                 }
-            }
+            });
         }).start();
     }
 
@@ -259,7 +270,7 @@ public class UmEditorFileHelper implements UmEditorFileHelperCore {
             File indexFile = new File(destinationTempDir,INDEX_FILE);
             File indexTempFile = new File(destinationTempDir,INDEX_TEMP_FILE);
             if(indexFile.exists() && !indexTempFile.exists()){
-                UMFileUtil.copyFile(indexFile,indexTempFile);
+                UMFileUtil.copyFile(new FileInputStream(indexFile),indexTempFile);
             }
         } catch (IOException e) {
             e.printStackTrace();
@@ -280,7 +291,7 @@ public class UmEditorFileHelper implements UmEditorFileHelperCore {
 
 
     @Override
-    public void removeUnUsedResources(UmCallback<Boolean> callback) {
+    public void removeUnUsedResources(UmCallback<Integer> callback) {
         new Thread(() -> {
             int unUsedFileCounter = 0;
             File [] allResources = mediaDestinationDir.listFiles();
@@ -289,8 +300,7 @@ public class UmEditorFileHelper implements UmEditorFileHelperCore {
                     if(resource.delete()) unUsedFileCounter++;
                 }
             }
-            callback.onSuccess(unUsedFileCounter ==
-                    (allResources.length - usedResourceCounter) || unUsedFileCounter == 0);
+            callback.onSuccess(unUsedFileCounter);
         }).start();
     }
 
