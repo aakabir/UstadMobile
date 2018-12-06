@@ -5,6 +5,7 @@ import android.content.Context;
 import android.content.Intent;
 import android.support.design.widget.BottomSheetBehavior;
 import android.support.test.InstrumentationRegistry;
+import android.support.test.espresso.web.matcher.DomMatchers;
 import android.support.test.rule.ActivityTestRule;
 import android.support.test.rule.GrantPermissionRule;
 import android.support.test.runner.AndroidJUnit4;
@@ -24,6 +25,8 @@ import java.util.concurrent.TimeUnit;
 import static android.support.test.espresso.Espresso.onView;
 import static android.support.test.espresso.action.ViewActions.click;
 import static android.support.test.espresso.matcher.ViewMatchers.withId;
+import static android.support.test.espresso.web.assertion.WebViewAssertions.webContent;
+import static android.support.test.espresso.web.sugar.Web.onWebView;
 import static com.ustadmobile.core.view.ContentEditorView.TEXT_FORMAT_TYPE_BOLD;
 import static com.ustadmobile.core.view.ContentEditorView.TEXT_FORMAT_TYPE_ITALIC;
 import static junit.framework.Assert.assertEquals;
@@ -38,8 +41,6 @@ import static junit.framework.Assert.assertTrue;
 
 @RunWith(AndroidJUnit4.class)
 public class ContentEditorActivityTest {
-
-    private BottomSheetBehavior formattingBottomSheetBehavior;
 
     private BottomSheetBehavior contentOptionBottomSheet;
 
@@ -68,8 +69,7 @@ public class ContentEditorActivityTest {
 
     @Before
     public void setUp() throws InterruptedException {
-        formattingBottomSheetBehavior = mActivityRule.getActivity().getFormattingBottomSheetBehavior();
-        contentOptionBottomSheet = mActivityRule.getActivity().getContentOptionsBottomSheetBehavior();
+       contentOptionBottomSheet = mActivityRule.getActivity().getContentOptionsBottomSheetBehavior();
         multimediaSourceBottomSheet = mActivityRule.getActivity().getMediaSourceBottomSheetBehavior();
 
         //Wait for proper initialization
@@ -161,10 +161,9 @@ public class ContentEditorActivityTest {
         assertTrue("Editing mode was enabled",
                 mActivityRule.getActivity().isEditorInitialized());
 
-        assertEquals("Multiple question template was added successfully",
-                "multi-choice",mActivityRule.getActivity().getContentTagType());
 
-
+        onWebView().withTimeout(10000, TimeUnit.MILLISECONDS)
+                .check(webContent(DomMatchers.hasElementWithXpath("//div[contains(@class, 'question')]")));
     }
 
     @Test
@@ -185,8 +184,8 @@ public class ContentEditorActivityTest {
         assertTrue("Editing mode was enabled",
                 mActivityRule.getActivity().isEditorInitialized());
 
-        assertEquals("Fill in the blanks question template was added successfully",
-                "fill-the-blanks",mActivityRule.getActivity().getContentTagType());
+        onWebView().withTimeout(10000, TimeUnit.MILLISECONDS)
+                .check(webContent(DomMatchers.hasElementWithXpath("//div[contains(@class, 'question')]")));
     }
 
     @Test

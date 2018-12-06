@@ -91,7 +91,6 @@ import java.util.Objects;
 import id.zelory.compressor.Compressor;
 
 import static com.ustadmobile.core.contenteditor.UmEditorFileHelperCore.INDEX_FILE;
-import static com.ustadmobile.core.contenteditor.UmEditorFileHelperCore.INDEX_TEMP_FILE;
 import static com.ustadmobile.port.android.contenteditor.ContentFormattingHelper.FORMATTING_ACTIONS_INDEX;
 import static com.ustadmobile.port.android.contenteditor.ContentFormattingHelper.isTobeHighlighted;
 import static com.ustadmobile.port.android.contenteditor.EditorAnimatedViewSwitcher.ANIMATED_CONTENT_OPTION_PANEL;
@@ -156,9 +155,6 @@ public class ContentEditorActivity extends UstadBaseActivity implements ContentE
     private View blankDocumentContainer;
 
     private ContentFormattingHelper formattingHelper;
-
-    @VisibleForTesting
-    private String contentTagType = null;
 
 
     /**
@@ -419,7 +415,7 @@ public class ContentEditorActivity extends UstadBaseActivity implements ContentE
         startEditing.setOnClickListener(v -> {
             progressDialog.setVisibility(View.VISIBLE);
             if(isEditorPreview){
-                loadIndexFile(INDEX_TEMP_FILE);
+                loadIndexFile();
             }else{
                 initializeEditor();
             }
@@ -652,10 +648,6 @@ public class ContentEditorActivity extends UstadBaseActivity implements ContentE
                 //Update index.html file
                 UMFileUtil.writeToFile(new File(umEditorFileHelper.getDestinationDirPath(),
                         INDEX_FILE),indexFile.html());
-                Element element = indexFile.select(".question").first();
-                if(element != null){
-                   contentTagType = element.attr("data-um-widget");
-                }
                 break;
 
             //start checking if there is any control activated
@@ -700,9 +692,6 @@ public class ContentEditorActivity extends UstadBaseActivity implements ContentE
     protected void onResume() {
         super.onResume();
         isActivityActive = true;
-        if(umEditorFileHelper != null){
-            umEditorFileHelper.createTempIndexFile();
-        }
     }
 
     @Override
@@ -754,7 +743,6 @@ public class ContentEditorActivity extends UstadBaseActivity implements ContentE
                         @Override
                         public void onSuccess(Boolean result) {
                             if(result){
-                                umEditorFileHelper.createTempIndexFile();
                                 if(!openPreview || !isMultimediaFilePicker){
                                     postProcessEditor();
                                 }else{
@@ -956,13 +944,13 @@ public class ContentEditorActivity extends UstadBaseActivity implements ContentE
 
 
     @Override
-    public void loadIndexFile(String index) {
+    public void loadIndexFile() {
         umEditorWebView.setWebViewClient(new WebContentEditorClient(
                 this,umEditorFileHelper.getBaseResourceRequestUrl()));
         args.put(ContentEditorView.EDITOR_PREVIEW_PATH, UMFileUtil.joinPaths(
                 umEditorFileHelper.getMountedTempDirRequestUrl(),INDEX_FILE));
-        String urlToLoad =
-                UMFileUtil.joinPaths(umEditorFileHelper.getMountedTempDirRequestUrl(),index);
+        String urlToLoad = UMFileUtil.joinPaths(umEditorFileHelper.getMountedTempDirRequestUrl(),
+                INDEX_FILE);
         umEditorWebView.loadUrl(urlToLoad);
         handleBlankDocumentView();
     }
@@ -1131,7 +1119,7 @@ public class ContentEditorActivity extends UstadBaseActivity implements ContentE
                     handleQuickActions();
                     viewSwitcher.closeAnimatedView(ANIMATED_SOFT_KEYBOARD_PANEL);
                     startEditing.setVisibility(View.VISIBLE);
-                    loadIndexFile(INDEX_FILE);
+                    loadIndexFile();
                 }else{
                     if(new File(umEditorFileHelper.getDestinationDirPath()).delete())finish();
                 }
@@ -1179,11 +1167,6 @@ public class ContentEditorActivity extends UstadBaseActivity implements ContentE
         return  isEditorInitialized;
     }
 
-    @VisibleForTesting
-    public BottomSheetBehavior getFormattingBottomSheetBehavior() {
-        return formattingBottomSheetBehavior;
-    }
-
 
     @VisibleForTesting
     public BottomSheetBehavior getMediaSourceBottomSheetBehavior() {
@@ -1205,9 +1188,5 @@ public class ContentEditorActivity extends UstadBaseActivity implements ContentE
         presenter.handleFormatTypeClicked(ACTION_SELECT_ALL,null);
     }
 
-    @VisibleForTesting
-    public String getContentTagType(){
-        return contentTagType;
-    }
 
 }
