@@ -49,6 +49,8 @@ public interface ContentEditorView extends UstadView {
     String ACTION_SAVE_CONTENT ="onSaveContent";
     String ACTION_TEXT_DIRECTION_LTR = "mceDirectionLTR";
     String ACTION_TEXT_DIRECTION_RTL = "mceDirectionRTL";
+    String ACTION_INSERT_CONTENT = "insertContent";
+    String ACTION_SELECT_ALL = "selectAll";
 
     /**
      * Question templates insert command tag.
@@ -167,6 +169,17 @@ public interface ContentEditorView extends UstadView {
      * Insert fill in the blanks template on the content editing area.
      */
     void insertFillTheBlanksQuestion();
+
+    /**
+     * Insert content to the editor
+     * @param content content to be added to the editor
+     */
+    void insertContent(String content);
+
+    /**
+     * Select all content added to to editor
+     */
+    void selectAllContent();
 
     /**
      * Request contents that has been added to the content editing area from tinymCE

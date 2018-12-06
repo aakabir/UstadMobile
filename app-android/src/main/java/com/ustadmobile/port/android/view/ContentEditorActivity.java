@@ -77,9 +77,11 @@ import com.ustadmobile.port.sharedse.contenteditor.UmEditorFileHelper;
 
 import org.jsoup.Jsoup;
 import org.jsoup.nodes.Document;
+import org.jsoup.nodes.Element;
 import org.jsoup.select.Elements;
 
 import java.io.File;
+import java.io.FileInputStream;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Hashtable;
@@ -112,6 +114,8 @@ public class ContentEditorActivity extends UstadBaseActivity implements ContentE
     private BottomSheetBehavior formattingBottomSheetBehavior;
 
     private BottomSheetBehavior mediaSourceBottomSheetBehavior;
+
+    private BottomSheetBehavior contentOptionsBottomSheetBehavior;
 
     private AppBarLayout umBottomToolbarHolder;
 
@@ -152,6 +156,9 @@ public class ContentEditorActivity extends UstadBaseActivity implements ContentE
     private View blankDocumentContainer;
 
     private ContentFormattingHelper formattingHelper;
+
+    @VisibleForTesting
+    private String contentTagType = null;
 
 
     /**
@@ -334,7 +341,7 @@ public class ContentEditorActivity extends UstadBaseActivity implements ContentE
         mediaSourceBottomSheetBehavior = BottomSheetBehavior
                 .from(findViewById(R.id.bottom_multimedia_source_sheet_container));
 
-        BottomSheetBehavior contentOptionsBottomSheetBehavior = BottomSheetBehavior
+        contentOptionsBottomSheetBehavior = BottomSheetBehavior
                 .from(findViewById(R.id.bottom_content_option_sheet_container));
 
         toolbar = findViewById(R.id.um_toolbar);
@@ -645,6 +652,10 @@ public class ContentEditorActivity extends UstadBaseActivity implements ContentE
                 //Update index.html file
                 UMFileUtil.writeToFile(new File(umEditorFileHelper.getDestinationDirPath(),
                         INDEX_FILE),indexFile.html());
+                Element element = indexFile.select(".question").first();
+                if(element != null){
+                   contentTagType = element.attr("data-um-widget");
+                }
                 break;
 
             //start checking if there is any control activated
@@ -736,31 +747,29 @@ public class ContentEditorActivity extends UstadBaseActivity implements ContentE
      */
     private void handleUpdateFile(){
         if(umEditorFileHelper != null){
-            umEditorFileHelper.removeUnUsedResources(new UmCallback<Boolean>() {
+            umEditorFileHelper.removeUnUsedResources(new UmCallback<Integer>() {
                 @Override
-                public void onSuccess(Boolean result) {
-                    if(result){
-                        umEditorFileHelper.updateFile(new UmCallback<Boolean>() {
-                            @Override
-                            public void onSuccess(Boolean result) {
-                                if(result){
-                                    umEditorFileHelper.createTempIndexFile();
-                                    if(!openPreview || !isMultimediaFilePicker){
-                                        postProcessEditor();
-                                    }else{
-                                        if(isActivityActive){
-                                            handleUpdateFile();
-                                        }
+                public void onSuccess(Integer result) {
+                    umEditorFileHelper.updateFile(new UmCallback<Boolean>() {
+                        @Override
+                        public void onSuccess(Boolean result) {
+                            if(result){
+                                umEditorFileHelper.createTempIndexFile();
+                                if(!openPreview || !isMultimediaFilePicker){
+                                    postProcessEditor();
+                                }else{
+                                    if(isActivityActive){
+                                        handleUpdateFile();
                                     }
                                 }
                             }
+                        }
 
-                            @Override
-                            public void onFailure(Throwable exception) {
+                        @Override
+                        public void onFailure(Throwable exception) {
 
-                            }
-                        });
-                    }
+                        }
+                    });
                 }
 
                 @Override
@@ -807,16 +816,6 @@ public class ContentEditorActivity extends UstadBaseActivity implements ContentE
     }
 
 
-    @VisibleForTesting
-    public BottomSheetBehavior getFormattingBottomSheetBehavior() {
-        return formattingBottomSheetBehavior;
-    }
-
-
-    @VisibleForTesting
-    public BottomSheetBehavior getMediaSourceBottomSheetBehavior() {
-        return mediaSourceBottomSheetBehavior;
-    }
 
     @Override
     public void setContentBold() {
@@ -945,6 +944,15 @@ public class ContentEditorActivity extends UstadBaseActivity implements ContentE
         executeJsFunction(umEditorWebView, "ustadEditor.getContent",this);
     }
 
+    @Override
+    public void insertContent(String content){
+        executeJsFunction(umEditorWebView, "ustadEditor.executeRawContent",this,content);
+    }
+
+    @Override
+    public void selectAllContent() {
+        executeJsFunction(umEditorWebView, "ustadEditor.selectAll",this);
+    }
 
 
     @Override
@@ -1158,7 +1166,7 @@ public class ContentEditorActivity extends UstadBaseActivity implements ContentE
 
         File destination = new File(umEditorFileHelper.getDestinationMediaDirPath(),
                 compressedFile.getName().replaceAll("\\s+","_"));
-        UMFileUtil.copyFile(compressedFile,destination);
+        UMFileUtil.copyFile(new FileInputStream(compressedFile),destination);
         String source = MEDIA_DIRECTORY + destination.getName();
         progressDialog.setVisibility(View.GONE);
         executeJsFunction(umEditorWebView, "ustadEditor.insertMedia",
@@ -1166,6 +1174,40 @@ public class ContentEditorActivity extends UstadBaseActivity implements ContentE
     }
 
 
+    @VisibleForTesting
+    public boolean isEditorInitialized(){
+        return  isEditorInitialized;
+    }
 
+    @VisibleForTesting
+    public BottomSheetBehavior getFormattingBottomSheetBehavior() {
+        return formattingBottomSheetBehavior;
+    }
+
+
+    @VisibleForTesting
+    public BottomSheetBehavior getMediaSourceBottomSheetBehavior() {
+        return mediaSourceBottomSheetBehavior;
+    }
+
+    @VisibleForTesting
+    public BottomSheetBehavior getContentOptionsBottomSheetBehavior() {
+        return contentOptionsBottomSheetBehavior;
+    }
+
+    @VisibleForTesting
+    public void insertTestContent(String content){
+        presenter.handleFormatTypeClicked(ACTION_INSERT_CONTENT,content);
+    }
+
+    @VisibleForTesting
+    public void selectAllTestContent(){
+        presenter.handleFormatTypeClicked(ACTION_SELECT_ALL,null);
+    }
+
+    @VisibleForTesting
+    public String getContentTagType(){
+        return contentTagType;
+    }
 
 }
