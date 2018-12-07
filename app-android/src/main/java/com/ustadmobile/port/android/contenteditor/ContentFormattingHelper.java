@@ -59,38 +59,41 @@ public class ContentFormattingHelper {
      */
     public List<ContentFormat> getQuickActions(){
         List<ContentFormat> quickActions = new ArrayList<>();
+        try{
+            ContentFormat bold = getFormatByCommand(TEXT_FORMAT_TYPE_BOLD);
+            bold.setFormatId(R.id.content_action_bold);
+            quickActions.add(bold);
 
-        ContentFormat bold = getFormatByCommand(TEXT_FORMAT_TYPE_BOLD);
-        bold.setFormatId(R.id.content_action_bold);
-        quickActions.add(bold);
+            ContentFormat italic = getFormatByCommand(TEXT_FORMAT_TYPE_ITALIC);
+            italic.setFormatId(R.id.content_action_italic);
+            quickActions.add(italic);
 
-        ContentFormat italic = getFormatByCommand(TEXT_FORMAT_TYPE_ITALIC);
-        italic.setFormatId(R.id.content_action_italic);
-        quickActions.add(italic);
+            ContentFormat underline = getFormatByCommand(TEXT_FORMAT_TYPE_UNDERLINE);
+            underline.setFormatId(R.id.content_action_underline);
+            quickActions.add(underline);
 
-        ContentFormat underline = getFormatByCommand(TEXT_FORMAT_TYPE_UNDERLINE);
-        underline.setFormatId(R.id.content_action_underline);
-        quickActions.add(underline);
+            ContentFormat strikeThrough = getFormatByCommand(TEXT_FORMAT_TYPE_STRIKE);
+            strikeThrough.setFormatId(R.id.content_action_strike_through);
+            quickActions.add(strikeThrough);
 
-        ContentFormat strikeThrough = getFormatByCommand(TEXT_FORMAT_TYPE_STRIKE);
-        strikeThrough.setFormatId(R.id.content_action_strike_through);
-        quickActions.add(strikeThrough);
+            ContentFormat ordered = getFormatByCommand(PARAGRAPH_FORMAT_LIST_ORDERED);
+            ordered.setFormatId(R.id.content_action_ordered_list);
+            quickActions.add(ordered);
 
-        ContentFormat ordered = getFormatByCommand(PARAGRAPH_FORMAT_LIST_ORDERED);
-        ordered.setFormatId(R.id.content_action_ordered_list);
-        quickActions.add(ordered);
+            ContentFormat unordered = getFormatByCommand(PARAGRAPH_FORMAT_LIST_UNORDERED);
+            unordered.setFormatId(R.id.content_action_uordered_list);
+            quickActions.add(unordered);
 
-        ContentFormat unordered = getFormatByCommand(PARAGRAPH_FORMAT_LIST_UNORDERED);
-        unordered.setFormatId(R.id.content_action_uordered_list);
-        quickActions.add(unordered);
+            ContentFormat iIncrease = getFormatByCommand(PARAGRAPH_FORMAT_INDENT_INCREASE);
+            iIncrease.setFormatId(R.id.content_action_indent);
+            quickActions.add(iIncrease);
 
-        ContentFormat iIncrease = getFormatByCommand(PARAGRAPH_FORMAT_INDENT_INCREASE);
-        iIncrease.setFormatId(R.id.content_action_indent);
-        quickActions.add(iIncrease);
-
-        ContentFormat iDecrease = getFormatByCommand(PARAGRAPH_FORMAT_INDENT_DECREASE);
-        iDecrease.setFormatId(R.id.content_action_outdent);
-        quickActions.add(iDecrease);
+            ContentFormat iDecrease = getFormatByCommand(PARAGRAPH_FORMAT_INDENT_DECREASE);
+            iDecrease.setFormatId(R.id.content_action_outdent);
+            quickActions.add(iDecrease);
+        }catch (NullPointerException e){
+            e.printStackTrace();
+        }
         return quickActions;
     }
 

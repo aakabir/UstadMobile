@@ -470,8 +470,6 @@ public class ContentEditorActivity extends UstadBaseActivity implements ContentE
         umEditorWebView.addJavascriptInterface(
                 new WebContentEditorInterface(this,this),"UmContentEditor");
         umEditorWebView.setLayerType(View.LAYER_TYPE_HARDWARE, null);
-        umEditorWebView.clearCache(true);
-        umEditorWebView.clearHistory();
         presenter.handleContentEntryFileStatus();
 
     }
@@ -951,6 +949,8 @@ public class ContentEditorActivity extends UstadBaseActivity implements ContentE
                 umEditorFileHelper.getMountedTempDirRequestUrl(),INDEX_FILE));
         String urlToLoad = UMFileUtil.joinPaths(umEditorFileHelper.getMountedTempDirRequestUrl(),
                 INDEX_FILE);
+        umEditorWebView.clearCache(true);
+        umEditorWebView.clearHistory();
         umEditorWebView.loadUrl(urlToLoad);
         handleBlankDocumentView();
     }
@@ -1121,7 +1121,7 @@ public class ContentEditorActivity extends UstadBaseActivity implements ContentE
                     startEditing.setVisibility(View.VISIBLE);
                     loadIndexFile();
                 }else{
-                    if(new File(umEditorFileHelper.getDestinationDirPath()).delete())finish();
+                    if(deleteTempDir(new File(umEditorFileHelper.getDestinationDirPath())))finish();
                 }
             }
         });
@@ -1159,6 +1159,16 @@ public class ContentEditorActivity extends UstadBaseActivity implements ContentE
         progressDialog.setVisibility(View.GONE);
         executeJsFunction(umEditorWebView, "ustadEditor.insertMedia",
                 this, source,mimeType);
+    }
+
+    private boolean deleteTempDir(File dir) {
+        File[] contents = dir.listFiles();
+        if (contents != null) {
+            for (File file : contents) {
+                deleteTempDir(file);
+            }
+        }
+        return dir.delete();
     }
 
 
