@@ -394,27 +394,33 @@ processTestResources.dependsOn copyTestResources
 
 /* Task which creates zip blankDocument which is used for blank document templatet*/
 task createBlankDocumentZip(type: Zip) {
-    def templateDir = "${rootDir}/app-android/src/main/assets/http/tinymce/templates"
-    from templateDir+"/blankDocument"
+    def tinymceAssetPath = "${rootDir}/app-android/src/main/assets/http/tinymce/"
+    File tinyMceDir = new File(tinymceAssetPath)
+    if(!tinyMceDir.exists()){
+        tinyMceDir.mkdir()
+    }
+    def templateDir = tinymceAssetPath + "templates"
+
+    from templateDir + "/blankDocument"
     include '*'
     include '*/*'
     archiveName 'blankDocument.zip'
     destinationDir(file(templateDir))
 
     doLast {
-        delete templateDir+"/blankDocument"
+        delete templateDir + "/blankDocument"
     }
 }
 compileJava.dependsOn createBlankDocumentZip
 
 /*Task which copies all tinymce resources from lib-content-editor directory to android assets*/
 task copyTinyMceResources(type: Copy){
-    def tinMceDir = "${rootDir}/app-android/src/main/assets/http/tinymce"
+    def tinymceAssetPath = "${rootDir}/app-android/src/main/assets/http/tinymce"
     from "${rootDir}/lib-content-editor"
-    into tinMceDir
+    into tinymceAssetPath
 
     doLast {
-        delete tinMceDir+"/test"
+        delete tinymceAssetPath + "/test"
     }
 
 }
