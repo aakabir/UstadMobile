@@ -46,7 +46,7 @@ public interface UmEditorFileHelperCore {
 
     /**
      * Update resources to the zipped file and temporary directory when editing
-     * @param callback
+     * @param callback UmCallback
      */
     void updateFile(UmCallback<Boolean> callback);
 
@@ -57,14 +57,34 @@ public interface UmEditorFileHelperCore {
      */
     void removeUnUsedResources(UmCallback<Integer> callback);
 
+    /**
+     * Get source file path i.e zipped file
+     * @return file path
+     */
     String getSourceFilePath();
 
+    /**
+     * Get base tinymce resource request url
+     * @return tinymce localhost address
+     */
     String getBaseResourceRequestUrl();
 
+    /**
+     * Get file temporary directory path
+     * @return directory path
+     */
     String getDestinationDirPath();
 
+    /**
+     * Get media directory path after unzipping the file.
+     * @return media path
+     */
     String getDestinationMediaDirPath();
 
+    /**
+     * Get base request for the mounted file temporary directory
+     * @return localhost address
+     */
     String getMountedTempDirRequestUrl();
 
 

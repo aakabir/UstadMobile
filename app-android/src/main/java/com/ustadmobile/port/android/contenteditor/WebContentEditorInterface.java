@@ -9,14 +9,9 @@ import android.webkit.JavascriptInterface;
  *
  * <b>Operational flow</b>
  * <p>
- *     Use {@link WebContentEditorInterface#onContentChanged(String)}
- *     to pass current content editor content.
- *
- *     Use {@link WebContentEditorInterface#onTextSelected(String)}
- *     to listen for text highlighting.
- *
- *     On JS side make sure you call the method with UmCotentEditor,
- *     i.e UmCotentEditor.onContentChanged
+ *    On JS side make sure you call the method with UmCotentEditor,
+ *     i.e UmCotentEditor.onContentChanged so that below methods can
+ *     be invoked on android native.
  * </p>
  */
 public class WebContentEditorInterface {
@@ -46,6 +41,10 @@ public class WebContentEditorInterface {
         }
     }
 
+    /**
+     * Listen for text selection on active editor
+     * @param callbackValue Value passed from the JS side
+     */
     @JavascriptInterface
     public void onTextSelected(String callbackValue){
         try{
@@ -55,6 +54,10 @@ public class WebContentEditorInterface {
         }
     }
 
+    /**
+     * Listen for activity editor click events
+     * @param callbackValue Value passed from the JS side
+     */
     @JavascriptInterface
     public void onClickEvent(String callbackValue){
         try{
@@ -64,6 +67,10 @@ public class WebContentEditorInterface {
         }
     }
 
+    /**
+     * Listen for the active control checks
+     * @param callbackValue Value passed from the JS side
+     */
     @JavascriptInterface
     public void onControlActivatedCheck(String callbackValue){
         try{
@@ -73,6 +80,10 @@ public class WebContentEditorInterface {
         }
     }
 
+    /**
+     * Listen for tinymce injection to the webpage
+     * @param callbackValue Value passed from the JS side
+     */
     @JavascriptInterface
     public void onInitEditor(String callbackValue){
         try{
