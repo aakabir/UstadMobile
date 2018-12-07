@@ -391,6 +391,31 @@ task copyTestResources(type: Copy) {
 processTestResources.dependsOn copyTestResources
 
 
+
+/* Task which create zip blankDocument as empty document*/
+task createBlankDocumentZip(type: Zip) {
+    def baseDir = "${rootDir}/app-android/src/main/assets/http/tinymce/templates"
+    from baseDir+"/blankDocument"
+    include '*'
+    include '*/*'
+    archiveName 'blankDocument.zip'
+    destinationDir(file(baseDir))
+}
+compileJava.dependsOn createBlankDocumentZip
+
+/*Task which copies all tinymce resources from dev-content-editor directory to android assets*/
+task copyTinyMceResources(type: Copy){
+    from "${rootDir}/dev-content-editor"
+    into "${rootDir}/app-android/src/main/assets/http/tinymce"
+
+    doLast {
+        delete "${rootDir}/app-android/src/main/assets/http/tinymce/test"
+    }
+
+}
+createBlankDocumentZip.dependsOn copyTinyMceResources
+
+
 publishing {
     publications {
         maven(MavenPublication) {
