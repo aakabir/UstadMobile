@@ -5,6 +5,7 @@ const ustadEditor = new UstadEditor();
 let activeEditor = null;
 let preventDeleteSelection = false;
 let wasContentSelected = false;
+let selectedContentLength = 0;
 
 /**
  * Initialize UstadEditor with active editor instance
@@ -151,7 +152,6 @@ ustadEditor.paragraphCenterJustification = function(){
 ustadEditor.paragraphOutDent = function(){
     this.executeCommand("Outdent",null);
     const isActive = this.isControlActivated("Outdent");
-    this.hideToolbarMenu();
     return {action:'activeControl',content:btoa("Outdent-"+isActive)};
 };
 
@@ -273,133 +273,143 @@ ustadEditor.initTinyMceEditor = function(showToolbar = false){
             ]
         }],
         init_instance_callback: function (ed) {
-          /**
-           * Listen for text selection event
-           * @type {[type]}
-           */
-        
-          ed.on('SelectionChange', () => {
-            ustadEditor.hideToolbarMenu();
-            ustadEditor.handleContentChange();
-            const selection = rangy.getSelection();
-            const range = selection.rangeCount ? selection.getRangeAt(0) : null;
-            preventDeleteSelection = $(range.toHtml()).find("label").length > 0 ||
-             $(range.toHtml()).find("label").length > 0;
-            
-          });
+            /**
+             * Listen for text selection event
+             * @type {[type]}
+             */
 
-          /**
-           * Listen for node change event
-           * @type {[type]}
-           */
-          ed.on('NodeChange', () => {
-            ustadEditor.hideToolbarMenu();
-            QuestionWidget.handleListeners();
-            ustadEditor.handleContentChange();
-          });
+            ed.on('SelectionChange', () => {
+                const selection = rangy.getSelection();
+                const range = selection.rangeCount ? selection.getRangeAt(0) : null;
+                selectedContentLength = range.toHtml().length;
+                preventDeleteSelection = ($(range.toHtml()).find("label").length > 0 ||
+                    $(range.toHtml()).find("label").length > 0) &&
+                    (range.toHtml().includes("<div") || range.toHtml().includes("<label"));
+            });
 
-          /**
-           * Listen for click event inside the editor
-           * @type {[type]}
-           */
-          ed.on('click', () => {
-            ustadEditor.hideToolbarMenu();
-            try{
-                UmContentEditor.onControlActivatedCheck(JSON.stringify(ustadEditor.startCheckingActivatedControls()));
-                UmContentEditor.onClickEvent(JSON.stringify({action:'onClickEvent',content:btoa("yes")}));
-            }catch(e){
-                console.log(e);
-            }
-          });
+            /**
+             * Listen for node change event
+             * @type {[type]}
+             */
+            ed.on('NodeChange', (e) => {
+                QuestionWidget.handleListeners();
+                console.log("UmEditor","NodeChange:",e);
+            });
 
-          /**
-           * Listen for the key up event
-           * @type {[type]}
-           */
-          ed.on('keyup', () => {
-            ustadEditor.hideToolbarMenu();
-            ustadEditor.handleContentChange();
-            if(wasContentSelected){
-                wasContentSelected = false;
-                ustadEditor.editorActionUndo();
-            }
-          });
+            /**
+             * Listen for click event inside the editor
+             * @type {[type]}
+             */
+            ed.on('click', (e) => {
+                console.log("UmEditor","Click:",e);
+                try{
+                    UmContentEditor.onControlActivatedCheck(JSON.stringify(ustadEditor.startCheckingActivatedControls()));
+                    UmContentEditor.onClickEvent(JSON.stringify({action:'onClickEvent',content:btoa("yes")}));
+                }catch(e){
+                    console.log(e);
+                }
+            });
 
-          /**
-           * Listen for the keyboard keys and prevent important label and divs from being deleted from the editor
-           * @type {[type]}
-           */
-          ed.on('keydown', e => {
-            ustadEditor.hideToolbarMenu();
-            ustadEditor.handleContentChange();
-            const deleteKeys = e.key === "Backspace" || e.key === "Delete";
-            const enterKey = e.key === "Enter";
+            /**
+             * Listen for the key up event
+             * @type {[type]}
+             */
+            ed.on('keyup', (e) => {
+                console.log("UmEditor","KeyUp:",e);
+                if(wasContentSelected){
+                    wasContentSelected = false;
+                    ustadEditor.editorActionUndo();
+                }
+            });
 
-            const selection = tinymce.activeEditor.selection;
-            const activeNode = selection.getNode();
-            const isLabel = $(activeNode).hasClass("um-labels");
-            const isPgBreak = $(activeNode).hasClass("pg-break");
-            const isDeleteQuestionBtn = $(activeNode).hasClass("close");
-            const isCloseSpan = $(activeNode).is("span");
-            const isButtonLabels = $(activeNode).is("button");
-            const isDiv = $(activeNode).is("div");
-              const isChoiceSelector = $(activeNode).hasClass("question-retry-option");
-            let innerDivEmpty = false;
+            /**
+             * Listen for the keyboard keys and prevent important label and divs from being deleted from the editor
+             * @type {[type]}
+             */
+            ed.on('keydown', e => {
+                console.log("UmEditor","KeyDown:",e);
+                const deleteKeys = e.key === "Backspace" || e.key === "Delete";
+                const enterKey = e.key === "Enter";
 
-            if(isDiv){
-                const divContent = $(activeNode).text();
-                innerDivEmpty = divContent.length <= 0 || ustadEditor.getCursorPositionRelativeToTheEditableElementContent() <= 0;
-            }
-            const preventLabelsDeletion = deleteKeys && isLabel;
-            const preventTagDeletion = deleteKeys && innerDivEmpty;
-            
-            if(preventDeleteSelection || (enterKey && isLabel)){
-                wasContentSelected = true;
-            }
-            
-            const disableDeleteOrEnterKey = preventLabelsDeletion || preventTagDeletion || isPgBreak ||
-            isDeleteQuestionBtn || isCloseSpan || isButtonLabels || preventLabelsDeletion || isChoiceSelector;
-            
-            if(disableDeleteOrEnterKey){
-              e.preventDefault();
-              e.stopImmediatePropagation();
-              return false
-            }
+                const selection = tinymce.activeEditor.selection;
+                const activeNode = selection.getNode();
+                const isLabel = $(activeNode).hasClass("um-labels");
+                const isPgBreak = $(activeNode).hasClass("pg-break");
+                const isDeleteQuestionBtn = $(activeNode).hasClass("close");
+                const isCloseSpan = $(activeNode).is("span");
+                const isButtonLabels = $(activeNode).is("button");
+                const isDiv = $(activeNode).is("div");
+                const isChoiceSelector = $(activeNode).hasClass("question-retry-option");
+                let innerDivEmpty = false;
 
-          });
+                if(isDiv){
+                    const divContent = $(activeNode).text();
+                    innerDivEmpty = divContent.length <= 0 || ustadEditor.getCursorPositionRelativeToTheEditableElementContent() <= 0;
+                }
 
-          /**
-           * Listen for undo action event
-           * @type {[type]}
-           */
-          ed.on('undo', () => {
-            ustadEditor.hideToolbarMenu();
-            ustadEditor.handleContentChange();
-          });
+                const preventLabelsDeletion = deleteKeys && isLabel;
+                const preventTagDeletion = deleteKeys && innerDivEmpty;
 
-          /**
-           * Listen for the redo action event
-           * @type {[type]}
-           */
-          ed.on('redo', () => {
-            ustadEditor.hideToolbarMenu();
-            ustadEditor.handleContentChange();
-          });
+                if(preventDeleteSelection || (enterKey && isLabel)){
+                    wasContentSelected = true;
+                }
+
+                const disableDeleteOrEnterKey = isPgBreak || isDeleteQuestionBtn || isCloseSpan || isButtonLabels || preventLabelsDeletion || isChoiceSelector;
+
+                if(selectedContentLength === 0){
+                    if(preventTagDeletion || disableDeleteOrEnterKey){
+                        e.preventDefault();
+                        e.stopImmediatePropagation();
+                        return false
+                    }
+                }else{
+                    if(disableDeleteOrEnterKey && preventDeleteSelection || disableDeleteOrEnterKey){
+                        e.preventDefault();
+                        e.stopImmediatePropagation();
+                        return false
+                    }
+                }
+
+
+            });
         }
     };
     try{
         tinymce.init(inlineConfig).then(function () {
+
             ustadEditor.init(tinymce.activeEditor);
             QuestionWidget.handleListeners();
+            QuestionWidget.handleEditOn();
             setTimeout(ustadEditor.requestFocus(), 20);
-            setTimeout(ustadEditor.hideToolbarMenu(), 22);
+            ustadEditor.hideToolbarMenu();
             setTimeout(ustadEditor.switchOnEditorController());
-           try{
-            UmContentEditor.onInitEditor(JSON.stringify({action:'onInitEditor',content:"true"}));
-            UmContentEditor.onControlActivatedCheck(JSON.stringify(ustadEditor.startCheckingActivatedControls()));
-            UmContentEditor.onClickEvent(JSON.stringify({action:'onClickEvent',content:btoa("yes")}));
-           }catch(e){
-               console.log(e); 
+
+            let filters = {
+                attributes: true, characterData: true, childList: true, subtree: true,
+                attributeOldValue: true, characterDataOldValue: true
+            };
+
+            //add observer to watch content changes
+            const contentChangeObserver = new MutationObserver(function() {
+                ustadEditor.handleContentChange();
+            });
+            contentChangeObserver.observe(document.querySelector('#umPreview'),filters);
+
+            //add observer to watch toolbar style change
+            const toolbarChangeObserver = new MutationObserver(function(mutations) {
+                mutations.forEach(function() {
+                    ustadEditor.hideToolbarMenu();
+                });
+            });
+            filters = { attributes : true, attributeFilter : ['style'] };
+            toolbarChangeObserver.observe(document.querySelector('.mce-container'),filters);
+
+            try{
+                UmContentEditor.onInitEditor(JSON.stringify({action:'onInitEditor',content:"true"}));
+                UmContentEditor.onControlActivatedCheck(JSON.stringify(ustadEditor.startCheckingActivatedControls()));
+                UmContentEditor.onClickEvent(JSON.stringify({action:'onClickEvent',content:btoa("yes")}));
+            }catch(e){
+                console.log(e);
             }
 
         });
@@ -433,7 +443,6 @@ ustadEditor.getContent = function(){
  */
 ustadEditor.requestFocus = function () {
     this.executeCommand("mceFocus",null);
-    this.hideToolbarMenu();
     return this.isControlActivated("mceFocus");
 };
 
@@ -443,17 +452,6 @@ ustadEditor.requestFocus = function () {
 ustadEditor.hideToolbarMenu = function () {
     if(!this.showToolbar){
         try{
-            /*
-                add observer to observe toolbar menu to see if tinymce will
-                change it's menu visibility and change it back right away.
-             */
-            const observer = new MutationObserver(function(mutations) {
-                mutations.forEach(function() {
-                    $("div[id^='mceu_']").addClass("hide-element");
-                });
-            });
-            observer.observe(document.querySelector('.mce-container'),
-                { attributes : true, attributeFilter : ['style'] });
             $("div[id^='mceu_']").addClass("hide-element");
             $("#ustadmobile-menu").click();
             $(".mce-container-body").hide();
@@ -465,7 +463,6 @@ ustadEditor.hideToolbarMenu = function () {
 
 /**
  * Select all blankDocument on the editor
- *
  * ForTesting only.
  */
 ustadEditor.selectAll = function () {
@@ -473,7 +470,7 @@ ustadEditor.selectAll = function () {
     body.on("click",function () {
         tinymce.activeEditor.selection.select(tinymce.activeEditor.getBody(), true);
     });
-   body.click();
+    body.click();
 
 };
 
@@ -547,9 +544,9 @@ ustadEditor.executeRawContent= function(content){
  */
 ustadEditor.executeCommand = function(command,args){
     try{
-      this.activeEditor.execCommand(command, false,args);
+        this.activeEditor.execCommand(command, false,args);
     }catch(e){
-      console.log("executeCommand: "+e);
+        console.log("executeCommand: "+e);
     }
 };
 
@@ -594,15 +591,17 @@ ustadEditor.preparePreviewContent = function (fileContent) {
     $(editorContent).find('div.question-choice-answer').addClass("hide-element").removeClass("show-element");
     $(editorContent).find('.question-retry-btn').addClass("hide-element").removeClass("show-element");
     $(editorContent).find('div.question-choice-feedback').addClass("hide-element").removeClass("show-element");
-    $(editorContent).find('div.question-answer').addClass("hide-element").removeClass("show-element");
-
-    $(editorContent).find('div.question').addClass('card col-sm-12 col-lg-12 default-padding-bottom default-margin-bottom default-padding-top');
     $(editorContent).find('div.question-choice').addClass('alert alert-secondary');
+    $(editorContent).find('p.pg-break').addClass('hide-element');
+    $(editorContent).find('button.btn-delete').removeClass("show-element").addClass('hide-element');
+    $(editorContent).find('.default-theme').removeClass('no-padding');
+    $(editorContent).find('.question-body').addClass("default-margin-bottom no-left-padding");
+    $(editorContent).find('.question-answer').addClass("no-padding no-left-padding default-margin-bottom");
+    $(editorContent).find('.fill-answer-inputs').addClass("no-padding");
     $(editorContent).find('[data-um-preview="main"]').addClass('preview-main default-margin-top');
     $(editorContent).find('[data-um-preview="alert"]').addClass('preview-alert default-margin-top');
     $(editorContent).find('[data-um-preview="support"]').addClass('preview-support default-margin-top');
-    $(editorContent).find('p.pg-break').addClass('hide-element');
-    $(editorContent).find('button.btn-delete').addClass('hide-element');
+    $(editorContent).find('div.question').addClass('card default-padding-top default-padding-bottom');
     return {action:'onSaveContent',content:btoa($('<div/>').html(editorContent).contents().html())};
 };
 
@@ -633,6 +632,8 @@ ustadEditor.startLivePreview = function () {
     }
 };
 
+
+
 /**
  * Find the cursor position relative to the current selected editable area
  */
@@ -643,16 +644,16 @@ ustadEditor.getCursorPositionRelativeToTheEditableElementContent = function() {
         let rangeCount = 0;
         let childNodes = selectedObj.anchorNode.parentNode.childNodes;
         for (let i = 0; i < childNodes.length; i++) {
-          if (childNodes[i] === selectedObj.anchorNode) {
-            break;
-          }
-          if (childNodes[i].outerHTML)
-            rangeCount += childNodes[i].outerHTML.length;
-          else if (childNodes[i].nodeType === 3) {
-            rangeCount += childNodes[i].textContent.length;
-          }
+            if (childNodes[i] === selectedObj.anchorNode) {
+                break;
+            }
+            if (childNodes[i].outerHTML)
+                rangeCount += childNodes[i].outerHTML.length;
+            else if (childNodes[i].nodeType === 3) {
+                rangeCount += childNodes[i].textContent.length;
+            }
         }
         return range.startOffset + rangeCount;
-      }
-      return -1;
+    }
+    return -1;
 };

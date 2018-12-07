@@ -1,6 +1,6 @@
 
 let QuestionWidget = function(element) {
-   this.element =  $.parseHTML(element);
+    this.element =  $.parseHTML(element);
 };
 QuestionWidget._widgets = {};
 QuestionWidget._widgetListeners = {};
@@ -42,22 +42,20 @@ QuestionWidget.prototype.init = function() {};
 
 QuestionWidget.prototype.editOn = function(){
 
-    tinymce.activeEditor.dom.removeClass(
-        tinymce.activeEditor.dom.select('div.question'),'card default-margin-bottom default-padding-top');
+    tinymce.activeEditor.dom.removeClass(tinymce.activeEditor.dom.select('div.question'),'card default-margin-bottom default-padding-top');
 
     $(this.element).find("label").remove();
     $(this.element).find(".question-retry-option")
-        .before("<label class='um-labels col-sm-12 col-lg-10'>"+QuestionWidget.PLACEHOLDERS_LABELS.labelForQuestionRetryOption+"</label><br/>");
+        .before("<label class='um-labels col-sm-12 col-lg-10 no-left-padding'>"+QuestionWidget.PLACEHOLDERS_LABELS.labelForQuestionRetryOption+"</label><br/>");
     $(this.element).find(".question-retry-option").removeClass("hide-element").addClass("show-element");
     $(this.element).find(".pg-break").removeClass("hide-element").addClass("show-element");
-    $(this.element).find(".btn-delete").removeClass("hide-element").addClass("show-element");
+    $(this.element).find(".btn-delete").removeClass("hide-element").addClass("show-element").html(' <span aria-hidden="true">&times;</span>');
     $(this.element).find(".question-answer").removeClass("hide-element").addClass("show-element");
     $(this.element).find(".question-choice-answer").removeClass("hide-element").addClass("show-element");
     $(this.element).find('[data-um-preview="main"]').removeClass("preview-main default-margin-top");
     $(this.element).find('[data-um-preview="alert"]').removeClass("preview-alert default-margin-top");
     $(this.element).find('[data-um-preview="support"]').removeClass("preview-support default-margin-top");
-    $(this.element).find(".question-body").before("<label class='um-labels'>"+QuestionWidget.PLACEHOLDERS_LABELS.labelForQuestionBodyText+"</label><br/>");
-
+    $(this.element).find(".question-body").removeClass("default-margin-bottom").before("<label class='um-labels'>"+QuestionWidget.PLACEHOLDERS_LABELS.labelForQuestionBodyText+"</label><br/>");
     if(QuestionWidget.isNewQuestion){
         $(this.element).find(".question-body").html(QuestionWidget.PLACEHOLDERS_LABELS.placeholderForTheQuestionText);
         $(this.element).find(".question-choice-body").html(QuestionWidget.PLACEHOLDERS_LABELS.placeholderForTheChoiceText);
@@ -162,6 +160,7 @@ QuestionWidget.handleListeners = function () {
     }
 };
 
+
 /**
  * Handle the editor controls when editing mode is OFF ie. attaching listeners
  */
@@ -188,14 +187,7 @@ QuestionWidget.handleEditOff = function(){
 };
 
 QuestionWidget.handleEditOn = function(){
-  const labels = document.querySelectorAll("label");
-  for(let label in labels){
-    if(labels.hasOwnProperty(label))
-    continue;
-    const labelElement = labels[label];
-    labelElement.innerText = "Hello there";
-  }
-  console.log("delete",);
+
     const questionList = window.document.querySelectorAll(".question");
     if(questionList != null){
         for(const question in questionList){
@@ -270,6 +262,7 @@ MultiChoiceQuestionWidget.prototype.attachEditListeners = function() {
  */
 FillTheBlanksQuestionWidget.prototype.attachEditListeners = function() {
     QuestionWidget.prototype.addListeners.apply(this, arguments);
+    $("button.btn-delete").on('click', this.deleteQuestion.bind(this));
 };
 
 
@@ -461,7 +454,12 @@ QuestionWidget.prototype.setRetryOption = function(event){
  */
 QuestionWidget.prototype.deleteQuestion = function(event){
     const questionElement = $(event.target).closest("div div.question");
+    $(questionElement).nextUntil(".question").remove();
     $(questionElement).remove();
+
+    if($.find(".question").length === 0){
+        $.find("p").remove();
+    }
 };
 
 

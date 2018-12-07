@@ -3,10 +3,25 @@ html {
 }
 
 body{
-  min-height: 100%;
+    min-height: 100%;
 }
-.question{
-    padding: 1%;
+
+#umPreview {
+    margin: 0px;
+    padding-top: 10px;
+    border: 0 solid transparent !important;
+    outline: 0 solid transparent !important;
+}
+
+
+.no-padding {
+    padding: 0 !important;
+    margin: 0 !important;
+}
+
+.no-left-padding{
+    padding-left: 0 !important;
+    margin-left: 0 !important;
 }
 
 .hide-element{
@@ -65,14 +80,10 @@ select,button :focus :active{
     margin: 2%;
 }
 
-#umPreview{
-    margin: 2px;
-    padding-top: 16px;
-}
 
 /*data edit and data preview control classes*/
 .preview-main{
-    font-size: 1.2em;
+    font-size: 1.12em;
     color: black;
 }
 
@@ -121,10 +132,6 @@ select,button :focus :active{
     margin-top: 10px;
 }
 
-.mce-content-body {
-    border: 0 solid transparent !important;
-    outline: 0 solid transparent !important;
-}
 
 .selected-choice{
     background-color: black !important;
@@ -136,4 +143,8 @@ select,button :focus :active{
 
 .selected-choice:hover {
     box-shadow: 0 6px 12px rgba(0,0,0,0.19), 0 6px 6px rgba(0,0,0,0.23);
+}
+
+.card{
+    margin-bottom:16px;
 }
