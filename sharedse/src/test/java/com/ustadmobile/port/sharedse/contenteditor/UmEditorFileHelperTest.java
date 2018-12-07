@@ -20,6 +20,7 @@ import java.util.concurrent.atomic.AtomicReference;
 
 import static junit.framework.TestCase.assertTrue;
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertNotNull;
 
 /**
  * Test class which tests {@link UmEditorFileHelper} to make sure it behaves as expected
@@ -31,11 +32,13 @@ public class UmEditorFileHelperTest {
 
     private UmEditorFileHelper umEditorFileHelper;
 
-    private String indexTempFile = "index_.html";
+    private String indexFile = "index.html";
+
+    private static final int MAX_WAITING_TIME = 20;
 
 
     @Before
-    public void setUpSpy(){
+    public void setup(){
         Object context =  PlatformTestUtil.getTargetContext();
         umEditorFileHelper = new UmEditorFileHelper();
         umEditorFileHelper.init(context);
@@ -58,8 +61,10 @@ public class UmEditorFileHelperTest {
 
     @Test
     public void givenContentEditorFIleHelper_whenCreateFileCalled_thenShouldCreateBlankFile(){
+
         CountDownLatch mLatch = new CountDownLatch(1);
         AtomicReference<String> resultRef = new AtomicReference<>();
+
         umEditorFileHelper.createFile(new UmCallback<String>() {
             @Override
             public void onSuccess(String result) {
@@ -73,18 +78,24 @@ public class UmEditorFileHelperTest {
             }
         });
 
-        try { mLatch.await(20, TimeUnit.SECONDS); }
+        try { mLatch.await(MAX_WAITING_TIME, TimeUnit.SECONDS); }
         catch(InterruptedException e) {
             e.printStackTrace();
         }
+
+
+        assertNotNull("Empty file object returned not null", resultRef.get());
+
         assertTrue("Empty file was created successfully", resultRef.get() != null
                 && resultRef.get().endsWith(".zip") && new File(resultRef.get()).exists());
 
     }
 
     @Test
-    public void givenContentEditorFileHelper_whenMountFileCalled_thenShouldBeAccessibleOnHttp(){
+    public void givenContentEditorFileHelper_whenMountFileCalled_thenShouldBeAccessibleOnHttp() throws IOException {
+
         CountDownLatch mLatch = new CountDownLatch(1);
+
         umEditorFileHelper.createFile(new UmCallback<String>() {
             @Override
             public void onSuccess(String result) {
@@ -107,31 +118,30 @@ public class UmEditorFileHelperTest {
             }
         });
 
-        try { mLatch.await(20, TimeUnit.SECONDS); }
+        try { mLatch.await(MAX_WAITING_TIME, TimeUnit.SECONDS); }
         catch(InterruptedException e) {
             e.printStackTrace();
         }
 
-        try{
+        URL url = new URL(UMFileUtil.joinPaths(umEditorFileHelper.getMountedTempDirRequestUrl(),
+                indexFile));
+        HttpURLConnection urlConn = (HttpURLConnection) url.openConnection();
+        urlConn.connect();
+        int responseCode = urlConn.getResponseCode();
+        urlConn.disconnect();
 
-            URL url = new URL(UMFileUtil.joinPaths(umEditorFileHelper.getMountedTempDirRequestUrl(),
-                    "index.html"));
-            HttpURLConnection urlConn = (HttpURLConnection) url.openConnection();
-            urlConn.connect();
 
-            assertTrue("File was extracted to temporary directory",
-                    new File(umEditorFileHelper.getDestinationDirPath()).exists());
+        assertTrue("File was extracted to temporary directory",
+                new File(umEditorFileHelper.getDestinationDirPath()).exists());
 
-            assertEquals("File was successfully mounted and can be accessed via HTTP",
-                    HttpURLConnection.HTTP_OK, urlConn.getResponseCode());
-        } catch (IOException e) {
-            e.printStackTrace();
-        }
+        assertEquals("File was successfully mounted and can be accessed via HTTP",
+                HttpURLConnection.HTTP_OK, responseCode);
 
     }
 
     @Test
     public void givenContentEditorFileHelper_whenUnUsedResourceFound_thenShouldBeRemoved(){
+
         CountDownLatch mLatch = new CountDownLatch(1);
         AtomicReference<Integer> resultRef = new AtomicReference<>();
         AtomicReference<Boolean> copyResultRef = new AtomicReference<>();
@@ -147,8 +157,8 @@ public class UmEditorFileHelperTest {
                         //copy index_.html file to media directory which won't be used at all
                         try {
                             InputStream is = new FileInputStream(new File(umEditorFileHelper
-                                    .getDestinationDirPath(), indexTempFile));
-                            File dest = new File(umEditorFileHelper.getDestinationMediaDirPath(), indexTempFile);
+                                    .getDestinationDirPath(), indexFile));
+                            File dest = new File(umEditorFileHelper.getDestinationMediaDirPath(), indexFile);
                             boolean copied = UMFileUtil.copyFile(is,dest) ;
                             copyResultRef.set(copied);
 
@@ -166,6 +176,8 @@ public class UmEditorFileHelperTest {
                                         exception.printStackTrace();
                                     }
                                 });
+                            }else{
+                                mLatch.countDown();
                             }
 
                         } catch (IOException e) {
@@ -186,8 +198,7 @@ public class UmEditorFileHelperTest {
             }
         });
 
-        try { mLatch.await(20, TimeUnit.SECONDS); }
-        catch(InterruptedException e) {
+        try { mLatch.await(MAX_WAITING_TIME, TimeUnit.SECONDS); } catch(InterruptedException e) {
             e.printStackTrace();
         }
 
@@ -200,6 +211,7 @@ public class UmEditorFileHelperTest {
 
     @Test
     public void givenContentUpdated_whenTmpDirZipped_thenShouldBeUpdatedInZip(){
+
         CountDownLatch mLatch = new CountDownLatch(1);
         AtomicReference<Boolean> zipResultRef = new AtomicReference<>();
         AtomicReference<Boolean> copyResultRef = new AtomicReference<>();
@@ -215,8 +227,8 @@ public class UmEditorFileHelperTest {
                         //update media directory with temp file
                         try {
                             InputStream is = new FileInputStream(new File(umEditorFileHelper
-                                    .getDestinationDirPath(), indexTempFile));
-                            File dest = new File(umEditorFileHelper.getDestinationMediaDirPath(), indexTempFile);
+                                    .getDestinationDirPath(), indexFile));
+                            File dest = new File(umEditorFileHelper.getDestinationMediaDirPath(), indexFile);
                             boolean copied = UMFileUtil.copyFile(is,dest);
                             copyResultRef.set(copied);
 
@@ -234,6 +246,8 @@ public class UmEditorFileHelperTest {
 
                                     }
                                 });
+                            }else{
+                                mLatch.countDown();
                             }
 
                         } catch (IOException e) {
@@ -254,7 +268,7 @@ public class UmEditorFileHelperTest {
             }
         });
 
-        try { mLatch.await(20, TimeUnit.SECONDS); }
+        try { mLatch.await(MAX_WAITING_TIME, TimeUnit.SECONDS); }
         catch(InterruptedException e) {
             e.printStackTrace();
         }
@@ -266,6 +280,7 @@ public class UmEditorFileHelperTest {
 
     @Test
     public void givenContentAddedToTmpDir_whenTmpDirZipped_thenShouldBeInZip(){
+
         CountDownLatch mLatch = new CountDownLatch(1);
         AtomicReference<Boolean> zipResultRef = new AtomicReference<>();
         AtomicReference<Boolean> zipCheckRef = new AtomicReference<>();
@@ -282,8 +297,8 @@ public class UmEditorFileHelperTest {
                         //update media directory with temp file
                         try {
                             InputStream is = new FileInputStream(new File(umEditorFileHelper
-                                    .getDestinationDirPath(), indexTempFile));
-                            File dest = new File(umEditorFileHelper.getDestinationMediaDirPath(), indexTempFile);
+                                    .getDestinationDirPath(), indexFile));
+                            File dest = new File(umEditorFileHelper.getDestinationMediaDirPath(), indexFile);
                             boolean copied = UMFileUtil.copyFile(is,dest) ;
                             updateResultRef.set(copied);
 
@@ -297,8 +312,7 @@ public class UmEditorFileHelperTest {
                                         umEditorFileHelper.mountFile(umEditorFileHelper.getSourceFilePath(), new UmCallback<Void>() {
                                             @Override
                                             public void onSuccess(Void result) {
-                                                File fileInZip = new File(umEditorFileHelper.getDestinationMediaDirPath(),
-                                                        indexTempFile);
+                                                File fileInZip = new File(umEditorFileHelper.getDestinationMediaDirPath(), indexFile);
                                                 zipCheckRef.set(fileInZip.exists());
                                                 mLatch.countDown();
                                             }
@@ -316,6 +330,8 @@ public class UmEditorFileHelperTest {
                                         exception.printStackTrace();
                                     }
                                 });
+                            }else{
+                                mLatch.countDown();
                             }
 
                         } catch (IOException e) {
@@ -336,8 +352,7 @@ public class UmEditorFileHelperTest {
             }
         });
 
-        try { mLatch.await(20, TimeUnit.SECONDS); }
-        catch(InterruptedException e) {
+        try { mLatch.await(MAX_WAITING_TIME, TimeUnit.SECONDS); } catch(InterruptedException e) {
             e.printStackTrace();
         }
 

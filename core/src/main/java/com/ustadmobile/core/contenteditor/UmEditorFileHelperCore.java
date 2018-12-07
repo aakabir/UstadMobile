@@ -32,8 +32,6 @@ public interface UmEditorFileHelperCore {
 
     String INDEX_FILE = "index.html";
 
-    String INDEX_TEMP_FILE = "index_.html";
-
     /**
      * Create new file if the file doesn't
      */

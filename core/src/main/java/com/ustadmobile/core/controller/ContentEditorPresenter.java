@@ -9,9 +9,10 @@ import com.ustadmobile.lib.db.entities.ContentEntryFileStatus;
 import java.io.File;
 import java.util.Hashtable;
 
-import static com.ustadmobile.core.contenteditor.UmEditorFileHelperCore.INDEX_TEMP_FILE;
+import static com.ustadmobile.core.view.ContentEditorView.ACTION_INSERT_CONTENT;
 import static com.ustadmobile.core.view.ContentEditorView.ACTION_PREVIEW;
 import static com.ustadmobile.core.view.ContentEditorView.ACTION_REDO;
+import static com.ustadmobile.core.view.ContentEditorView.ACTION_SELECT_ALL;
 import static com.ustadmobile.core.view.ContentEditorView.ACTION_TEXT_DIRECTION_LTR;
 import static com.ustadmobile.core.view.ContentEditorView.ACTION_TEXT_DIRECTION_RTL;
 import static com.ustadmobile.core.view.ContentEditorView.ACTION_UNDO;
@@ -88,7 +89,7 @@ public class ContentEditorPresenter extends UstadBaseController<ContentEditorVie
         view.getFileHelper().mountFile(filePath, new UmCallback<Void>() {
             @Override
             public void onSuccess(Void result) {
-                view.runOnUiThread(() -> view.loadIndexFile(INDEX_TEMP_FILE));
+                view.runOnUiThread(() -> view.loadIndexFile());
             }
 
             @Override
@@ -188,6 +189,12 @@ public class ContentEditorPresenter extends UstadBaseController<ContentEditorVie
 
                 case CONTENT_INSERT_MULTIPLE_CHOICE_QN:
                     view.insertMultipleChoiceQuestion();
+                    break;
+                case ACTION_INSERT_CONTENT:
+                    view.insertContent(param);
+                    break;
+                case ACTION_SELECT_ALL:
+                    view.selectAllContent();
                     break;
 
             }

@@ -58,7 +58,6 @@ public class UmEditorFileHelper implements UmEditorFileHelperCore {
 
     public static final String MEDIA_DIRECTORY = "media/";
 
-    private int usedResourceCounter = 0;
     protected Object context;
 
     private EmbeddedHTTPD embeddedHTTPD;
@@ -143,7 +142,7 @@ public class UmEditorFileHelper implements UmEditorFileHelperCore {
             if(isTestExecution){
                 filePath = "/com/ustadmobile/port/sharedse/";
             }else{
-                filePath = "http/tinymce/templates";
+                filePath = "/http/tinymce/templates";
             }
             filePath = UMFileUtil.joinPaths(filePath,ContentEditorView.RESOURCE_BLANK_DOCUMENT);
             UstadMobileSystemImpl.getInstance().getAsset(context, filePath,
@@ -153,6 +152,8 @@ public class UmEditorFileHelper implements UmEditorFileHelperCore {
                     try {
                         if(UMFileUtil.copyFile(result,contentEntryFile)){
                             handleFileInDb(callback);
+                        }else{
+                            callback.onFailure(new Throwable("File was not copied"));
                         }
                     } catch (IOException e) {
                         callback.onFailure(e);
@@ -188,7 +189,6 @@ public class UmEditorFileHelper implements UmEditorFileHelperCore {
                             FileDirectoryHandler.class,extractToPath);
                     mountedTempDirBaseUrl = UMFileUtil.joinPaths(LOCAL_ADDRESS +
                             embeddedHTTPD.getListeningPort()+"/", mountedPathPrefix);
-                    createTempIndexFile();
                     callback.onSuccess(null);
                 }else{
                     callback.onSuccess(null);
@@ -265,18 +265,6 @@ public class UmEditorFileHelper implements UmEditorFileHelperCore {
     }
 
 
-    public void createTempIndexFile(){
-        try {
-            File indexFile = new File(destinationTempDir,INDEX_FILE);
-            File indexTempFile = new File(destinationTempDir,INDEX_TEMP_FILE);
-            if(indexFile.exists() && !indexTempFile.exists()){
-                UMFileUtil.copyFile(new FileInputStream(indexFile),indexTempFile);
-            }
-        } catch (IOException e) {
-            e.printStackTrace();
-        }
-    }
-
 
     @Override
     public void updateFile(UmCallback<Boolean> callback) {
@@ -318,8 +306,6 @@ public class UmEditorFileHelper implements UmEditorFileHelperCore {
             if(previewContainer.select("source[src]").size() > 0){
                 resourceInUse.addAll(previewContainer.select("source[src]"));
             }
-
-            usedResourceCounter = resourceInUse.size();
 
             for(Element resource: resourceInUse){
                 if(resource.toString().contains(resourceName)){
@@ -375,9 +361,7 @@ public class UmEditorFileHelper implements UmEditorFileHelperCore {
     private void getFileStructure(File sourceDir,List<File> fileList) {
         File[] files = sourceDir.listFiles();
         for (File file : files) {
-            if(!file.getName().endsWith(INDEX_TEMP_FILE)){
-                fileList.add(file);
-            }
+            fileList.add(file);
             if (file.isDirectory()) {
                 getFileStructure(file,fileList);
             }

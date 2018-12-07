@@ -187,10 +187,9 @@ public interface ContentEditorView extends UstadView {
     void requestEditorContent();
 
     /**
-     * Load index file
-     * @param indexFile file to be used as index.
+     * Load index file to the webview
      */
-    void loadIndexFile(String indexFile);
+    void loadIndexFile();
 
     /**
      * Get active file helper instance
