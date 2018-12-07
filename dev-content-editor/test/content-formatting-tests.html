@@ -1,0 +1,82 @@
+<!--
+Test using mocha-chrome use  mocha-chrome content-formatting-tests.html --timeout 3000
+-->
+<html lang="en">
+<head>
+    <meta charset="utf-8">
+    <title>Text and Paragraph Formatting Tests</title>
+    <link href="../css/mocha-style.css" rel="stylesheet" />
+    <script src="../js/tinymce.min.js"></script>
+    <script>
+        /*Font size index on blankDocument callback*/
+        const fontSizeStatusIndex = 2;
+
+        /*Command status index on blankDocument callback*/
+        const formatStatusIndex = 1;
+
+        /*default tinymce configuration*/
+        const inlineConfig = {
+            selector: '#mce-editor',
+            menubar: false,
+            inline: true,
+            plugins: [
+                'ustadmobile','directionality','lists'
+            ],
+            toolbar:false,
+            valid_styles: {
+                '*': 'font-size,font-family,color,text-decoration,text-align'
+            },
+            setup: function (editor) {
+                editor.on('init', function () {
+                    editor.focus();
+                    editor.execCommand('mceInsertContent', false, "<span>Test started</span>",{format: 'raw'});
+                    ustadEditor.init(editor);
+                });
+            }
+        };
+        tinymce.init(inlineConfig);
+
+    </script>
+</head>
+<body>
+
+<!--Container to show test results-->
+<div id="mocha"></div>
+
+<!--Container for the TinyMCE editor-->
+<div id="mce-editor">
+    Lorem Ipsum is simply dummy text of the printing and typesetting industry.Lorem Ipsum is simply dummy text of the
+    printing and typesetting industry.Lorem Ipsum is simply dummy text of the printing and typesetting industry.Lorem
+    Ipsum is simply dummy text of the printing and typesetting industry.Lorem Ipsum is simply dummy text of the printing
+    and typesetting industry.
+</div>
+<script src="../js/jquery3.3.1.min.js" type="text/javascript"></script>
+<!-- Editor event invocation-->
+<script src="../js/UstadEditor.js"></script>
+<!--Assertion library-->
+<script src="../js/chai.js"></script>
+<!--Testing framework-->
+<script src="../js/mocha.js"></script>
+<!--Setting up mocha testing framework-->
+<script>mocha.setup('bdd')</script>
+<!--All test cases for test ustadEditor-->
+<script src="test.text.js"></script>
+<!--All test cases for paragraph ustadEditor-->
+<script src="test.paragraph.js"></script>
+<!--All test cases for text direction-->
+<script src="test.text-direction.js"></script>
+<!--All test cases for font size-->
+<script src="test.font-size.js"></script>
+<!--All test cases for editor actions-->
+<script src="test.editor-action.js"></script>
+<script>
+
+    //run all tests
+    setTimeout(() =>{
+        mocha.checkLeaks();
+        mocha.run();
+    },900);
+
+</script>
+</body>
+</html>

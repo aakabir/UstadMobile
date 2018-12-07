@@ -1,2 +1,3 @@
 /build
-.idea/assetWizardSettings.xml 
+.idea/assetWizardSettings.xml
+/src/main/assets/http/tinymce/*
