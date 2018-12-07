@@ -163,7 +163,7 @@ public class ContentEditorActivityTest {
 
 
         onWebView().withTimeout(10000, TimeUnit.MILLISECONDS)
-                .check(webContent(DomMatchers.hasElementWithXpath("//div[contains(@class, 'question')]")));
+                .check(webContent(DomMatchers.hasElementWithXpath("//div[contains(@data-um-widget, 'multi-choice')]")));
     }
 
     @Test
@@ -185,7 +185,7 @@ public class ContentEditorActivityTest {
                 mActivityRule.getActivity().isEditorInitialized());
 
         onWebView().withTimeout(10000, TimeUnit.MILLISECONDS)
-                .check(webContent(DomMatchers.hasElementWithXpath("//div[contains(@class, 'question')]")));
+                .check(webContent(DomMatchers.hasElementWithXpath("//div[contains(@data-um-widget, 'fill-the-blanks')]")));
     }
 
     @Test
