@@ -110,7 +110,27 @@
         <activity
             android:theme="@style/Theme.UstadTheme"
             android:screenOrientation="portrait"
+            android:configChanges="orientation|keyboardHidden|keyboard|screenSize"
             android:name="com.ustadmobile.port.android.view.ContentEditorPreviewActivity"/>
+
+        <activity android:name="com.ustadmobile.port.android.view.WebChunkActivity"
+            android:configChanges="orientation|keyboardHidden|keyboard|screenSize"
+            android:theme="@style/Theme.UstadTheme"
+            android:label=""
+           />
+        <activity android:name="com.ustadmobile.port.android.view.DummyActivity"
+            android:configChanges="orientation|keyboardHidden|keyboard|screenSize"
+            android:theme="@style/Theme.UstadTheme"
+            android:label="" />
+        <activity android:name="com.ustadmobile.port.android.view.ContentEntryListActivity"
+            android:configChanges="orientation|keyboardHidden|keyboard|screenSize"
+            android:theme="@style/Theme.UstadTheme"
+            android:label="" />
+
+        <activity android:name="com.ustadmobile.port.android.view.ContentEntryDetailActivity"
+            android:configChanges="orientation|keyboardHidden|keyboard|screenSize"
+            android:theme="@style/Theme.UstadTheme"
+            android:label="" />
     </application>
 
 </manifest>

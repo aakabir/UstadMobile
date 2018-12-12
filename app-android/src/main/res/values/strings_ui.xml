@@ -12,6 +12,7 @@
     <string name='course_catalog_load_error'>Sorry: Error loading %s :</string>
     <string name="download">Download</string>
     <string name="downloaded" value="81">Downloaded</string>
+    <string name="libraries">Libraries</string>
     <string name="paused">Paused</string>
     <string name="pause_download">Pause download</string>
     <string name='download_q'>Download?</string>
@@ -274,4 +275,6 @@
     <string name="content_blank_doc_title">Blank document</string>
     <string name="content_blank_doc_click_label">Click</string>
     <string name="content_blank_doc_start_label">to start editing.</string>
+
+    <string name="content_entry_not_found">ContentEntry Not Found</string>
 </resources>

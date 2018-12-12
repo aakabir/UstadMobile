@@ -796,7 +796,10 @@ public class NetworkManagerAndroid extends NetworkManager implements EmbeddedHTT
         String deviceIpAddress=isConnected ? getDeviceIPAddress():"";
         HashMap<String,String> record=new HashMap<>();
         record.put(SD_TXT_KEY_PORT,String.valueOf(getHttpListeningPort()));
-        record.put(SD_TXT_KEY_BT_MAC, deviceBluetoothMacAddress);
+
+        if(deviceBluetoothMacAddress != null)
+            record.put(SD_TXT_KEY_BT_MAC, deviceBluetoothMacAddress);
+
         record.put(SD_TXT_KEY_IP_ADDR, deviceIpAddress);
         return record;
     }
@@ -808,6 +811,9 @@ public class NetworkManagerAndroid extends NetworkManager implements EmbeddedHTT
      * @return String: Device bluetooth address
      */
     public String getBluetoothMacAddress(){
+        if(BluetoothAdapter.getDefaultAdapter() == null)
+            return null;
+
         String address = BluetoothAdapter.getDefaultAdapter().getAddress();
         if (address.equals(DEFAULT_BLUETOOTH_ADDRESS)) {
             try {

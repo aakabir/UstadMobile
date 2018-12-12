@@ -68,7 +68,6 @@ import com.ustadmobile.core.fs.contenttype.ScormTypePluginFs;
 import com.ustadmobile.core.fs.contenttype.XapiPackageTypePluginFs;
 import com.ustadmobile.core.fs.db.ContainerFileHelper;
 import com.ustadmobile.core.impl.ContainerMountRequest;
-import com.ustadmobile.core.impl.UMDownloadCompleteReceiver;
 import com.ustadmobile.core.impl.UMLog;
 import com.ustadmobile.core.impl.UmCallback;
 import com.ustadmobile.core.impl.UstadMobileSystemImpl;
@@ -82,8 +81,12 @@ import com.ustadmobile.core.view.BasePointView;
 import com.ustadmobile.core.view.CatalogEntryView;
 import com.ustadmobile.core.view.CatalogView;
 import com.ustadmobile.core.view.ContainerView;
+
 import com.ustadmobile.core.view.ContentEditorView;
+import com.ustadmobile.core.view.ContentEntryDetailView;
+import com.ustadmobile.core.view.ContentEntryView;
 import com.ustadmobile.core.view.ContentPreviewView;
+import com.ustadmobile.core.view.DummyView;
 import com.ustadmobile.core.view.H5PContentView;
 import com.ustadmobile.core.view.LoginView;
 import com.ustadmobile.core.view.RegistrationView;
@@ -185,6 +188,9 @@ public class UstadMobileSystemImplAndroid extends UstadMobileSystemImplSE {
         viewNameToAndroidImplMap.put(DownloadDialogView.VIEW_NAME, DownloadDialogFragment.class);
         viewNameToAndroidImplMap.put(ContentEditorView.VIEW_NAME, ContentEditorActivity.class);
         viewNameToAndroidImplMap.put(ContentPreviewView.VIEW_NAME, ContentEditorPreviewActivity.class);
+        viewNameToAndroidImplMap.put(ContentEntryView.VIEW_NAME, ContentEntryListActivity.class);
+        viewNameToAndroidImplMap.put(ContentEntryDetailView.VIEW_NAME, ContentEntryDetailActivity.class);
+        viewNameToAndroidImplMap.put(DummyView.VIEW_NAME, DummyActivity.class);
     }
 
     /**
@@ -216,8 +222,6 @@ public class UstadMobileSystemImplAndroid extends UstadMobileSystemImplSE {
     public static final String START_AUTH = "START_AUTH";
 
     private WeakHashMap<Context, AppViewAndroid> appViews;
-
-    private HashMap<UMDownloadCompleteReceiver, BroadcastReceiver> downloadCompleteReceivers;
 
     private Timer sendStatementsTimer;
 
@@ -377,7 +381,6 @@ public class UstadMobileSystemImplAndroid extends UstadMobileSystemImplSE {
     public UstadMobileSystemImplAndroid() {
         logger = new UMLogAndroid();
         appViews = new WeakHashMap<>();
-        downloadCompleteReceivers = new HashMap<>();
         networkManagerAndroid = new NetworkManagerAndroid();
         networkManagerAndroid.setServiceConnectionMap(networkServiceConnections);
     }

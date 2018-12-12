@@ -48,6 +48,7 @@ import javax.annotation.processing.Messager;
 import javax.annotation.processing.ProcessingEnvironment;
 import javax.annotation.processing.RoundEnvironment;
 import javax.lang.model.element.AnnotationMirror;
+import javax.lang.model.element.AnnotationValue;
 import javax.lang.model.element.Element;
 import javax.lang.model.element.ElementKind;
 import javax.lang.model.element.ExecutableElement;
@@ -68,6 +69,8 @@ import javax.ws.rs.core.MediaType;
 
 import static com.ustadmobile.lib.annotationprocessor.core.DbProcessorUtils.capitalize;
 import static com.ustadmobile.lib.annotationprocessor.core.DbProcessorUtils.findElementWithAnnotation;
+import static com.ustadmobile.lib.database.jdbc.JdbcDatabaseUtils.PRODUCT_NAME_POSTGRES;
+import static com.ustadmobile.lib.database.jdbc.JdbcDatabaseUtils.PRODUCT_NAME_SQLITE;
 
 /**
  * This base processor is overriden to make platform specific implementations of the database. By
@@ -106,6 +109,20 @@ public abstract class AbstractDbProcessor {
 
         for(Element dbClassElement : roundEnvironment.getElementsAnnotatedWith(UmDatabase.class)) {
             try {
+                HashMap<Integer, TypeElement> tableIdMap = new HashMap<>();
+                for(TypeElement entityType : findEntityTypes((TypeElement)dbClassElement)) {
+                    int tableId = entityType.getAnnotation(UmEntity.class).tableId();
+                    if(tableId != 0 && tableIdMap.containsKey(tableId)) {
+                        messager.printMessage(Diagnostic.Kind.ERROR, "Duplicate UmEntity " +
+                                "tableId: " + tableId + " assigned to " +
+                                entityType.getQualifiedName() + " and " +
+                                tableIdMap.get(tableId).getQualifiedName(), entityType);
+                    }
+
+                    tableIdMap.put(tableId, entityType);
+                }
+
+
                 processDbClass((TypeElement)dbClassElement, destination);
 
                 for(Element subElement : dbClassElement.getEnclosedElements()) {
@@ -703,14 +720,13 @@ public abstract class AbstractDbProcessor {
             .add("long _toLocalChangeSeq = Long.MAX_VALUE;\n")
             .add("boolean _isMaster = _syncableDb.isMaster();\n")
             .beginControlFlow("if(_isMaster)")
-                .add("long _changeSeqNum = _syncableDb.getSyncStatusDao().getAndIncrementNextMasterChangeSeqNum($L, 1);\n",
-                    umEntityAnnotation.tableId())
-                .add("_response.setSyncedUpToMasterChangeSeqNum(_changeSeqNum + 1);\n")
-                .add("_toMasterChangeSeq = _changeSeqNum - 1;\n")
+//                .add("long _changeSeqNum = _syncableDb.getSyncStatusDao().getMasterChangeSeqNum($L);\n",
+//                    umEntityAnnotation.tableId())
+//                .add("_toMasterChangeSeq = _changeSeqNum - 1;\n")
                 .beginControlFlow("for($T _changed : $L)",
                         entityType, incomingChangesParamName)
-                    .add("_changed.set$L(_changeSeqNum);\n",
-                            capitalize(masterChangeSeqFieldEl.getSimpleName()))
+//                    .add("_changed.set$L(_changeSeqNum);\n",
+//                            capitalize(masterChangeSeqFieldEl.getSimpleName()))
                     .add("_changed.set$L(0);\n", capitalize(localChangeSeqFieldEl.getSimpleName()))
                 .endControlFlow()
             .endControlFlow()
@@ -745,6 +761,10 @@ public abstract class AbstractDbProcessor {
             .endControlFlow()
             .add("insertList(_insertList);\n")
             .add("updateList(_updateList);\n")
+            .beginControlFlow("if(_isMaster)")
+                .add("_response.setSyncedUpToMasterChangeSeqNum(_syncableDb.getSyncStatusDao()" +
+                        ".getMasterChangeSeqNum($L) - 1);\n", umEntityAnnotation.tableId())
+            .endControlFlow()
             .add("_response.setRemoteChangedEntities($L($L, $L, $L, $L, $L));\n",
                     findChangedEntitiesMethod.getSimpleName(),
                     fromLocalChangeSeqNumParam.getSimpleName(), "_toLocalChangeSeq",
@@ -800,18 +820,22 @@ public abstract class AbstractDbProcessor {
                 .add("$1T _syncableDb = ($1T)$2L;\n", UmSyncableDatabase.class, dbName)
                 .add("$T _syncStatus = _syncableDb.getSyncStatusDao().getByUid($L);\n",
                         SyncStatus.class, umEntityAnnotation.tableId())
-                .add("$T<$T> _locallyChangedEntities = $L(_syncStatus.getSyncedToLocalChangeSeqNum(), $L);\n",
+                .add("$T<$T> _locallyChangedEntities = $L(_syncStatus.getSyncedToLocalChangeSeqNum() + 1, $L);\n",
                         List.class, entityType, findLocalChangesMethod.getSimpleName(),
                         accountPersonUidParam.getSimpleName())
                 .add("$T<$T> _remoteChanges = $L.$L(_locallyChangedEntities, 0, " +
-                        "_syncStatus.getSyncedToMasterChangeNum(), $L);\n",
+                        "_syncStatus.getSyncedToMasterChangeNum() + 1, $L);\n",
                         SyncResponse.class, entityType, otherDaoParam.getSimpleName(),
                         syncIncomingMethod.getSimpleName(),
                         accountPersonUidParam.getSimpleName())
                 .beginControlFlow("if(_remoteChanges != null)")
+                    //TODO: Add code to handle if any changes happened whilst this sync was ongoing
+                    //TODO: e.g. before replace, check if there was any change to the local change
+                    // sequence number, then bump the change numbers for these entities so they get
+                    //picked up by the next sync round
                     .add("replaceList(_remoteChanges.getRemoteChangedEntities());\n")
                     .add("_syncableDb.getSyncStatusDao().updateSyncedToChangeSeqNums(" +
-                                "$L, _syncStatus.getLocalChangeSeqNum(), " +
+                                "$1L, _syncableDb.getSyncStatusDao().getLocalChangeSeqNum($1L) - 1, " +
                                 "_remoteChanges.getSyncedUpToMasterChangeSeqNum());\n",
                         umEntityAnnotation.tableId())
                 .endControlFlow();
@@ -856,48 +880,6 @@ public abstract class AbstractDbProcessor {
         block.add(String.join(", ", paramNames));
 
         return block.add(")").build();
-    }
-
-    /**
-     * Generate a CodeBlock that will increment the change sequence numbers on an entity class
-     * or List/Array thereof.
-     *
-     * @param paramType TypeMirror representing the parameter type
-     * @param paramVariableName The variable name of the parameter
-     * @param dbVariableName The variable name of the database class itself
-     * @param syncableDbVariableName The variable name of the database class,
-     *                               casted to UmSyncableDatabase, or null if none is available.
-     * @param method The method that is being generated. This is used only to generate error messages
-     *               (e.g. when local / master change sequence numbers are missing)
-     * @param daoType The DAO class that is being generated. This is also used only to generate error
-     *                messages.
-     *
-     * @return CodeBlock that will increment teh change sequence numbers on an entity class or List/Array thereof
-     */
-    protected CodeBlock generateIncrementChangeSeqNumsCodeBlock(TypeMirror paramType,
-                                                                String paramVariableName,
-                                                                String dbVariableName,
-                                                                String syncableDbVariableName,
-                                                                ExecutableElement method,
-                                                                TypeElement daoType) {
-
-        CodeBlock.Builder codeBlock = CodeBlock.builder();
-        if(syncableDbVariableName == null) {
-            codeBlock.add("$1T _syncableDb = ($1T)$2L;\n", UmSyncableDatabase.class, dbVariableName);
-            syncableDbVariableName = "_syncableDb";
-        }
-
-        codeBlock.beginControlFlow("if($L.isMaster())", syncableDbVariableName);
-        generateIncrementSection(codeBlock, UmSyncMasterChangeSeqNum.class, paramType,
-                paramVariableName, syncableDbVariableName,
-                "getAndIncrementNextMasterChangeSeqNum", method, daoType);
-        codeBlock.nextControlFlow("else");
-        generateIncrementSection(codeBlock, UmSyncLocalChangeSeqNum.class, paramType,
-                paramVariableName, syncableDbVariableName,
-                "getAndIncrementNextLocalChangeSeqNum", method, daoType);
-        codeBlock.endControlFlow();
-
-        return codeBlock.build();
     }
 
     /**
@@ -1037,62 +1019,64 @@ public abstract class AbstractDbProcessor {
         return codeBlock.build();
     }
 
-    private void generateIncrementSection(CodeBlock.Builder codeBlock,
-                                          Class<? extends Annotation> annotation,
-                                          TypeMirror paramType,
-                                          String paramVariableName,
-                                          String syncableDbVariableName,
-                                          String changeSeqNumMethodName,
-                                          ExecutableElement daoMethod,
-                                          TypeElement daoType) {
-        String elementVarName = paramVariableName;
-        TypeElement paramEntityTypeElement;
-        if(DbProcessorUtils.isList(paramType, processingEnv)) {
-            paramEntityTypeElement = (TypeElement)processingEnv.getTypeUtils().asElement(
-                    DbProcessorUtils.getArrayOrListComponentType(paramType, processingEnv));
-        }else {
-            paramEntityTypeElement = (TypeElement)processingEnv.getTypeUtils().asElement(paramType);
+    /**
+     * Note: When an update is run, we need to make sure the database triggers runs once, and only once.
+     * Query methods that run an update query don't touch the sync sequence numbers, and the trigger
+     * will when the change sequence number is unchanged after an update. With the Update method, all
+     * fields are updated. If the object supplied has a different value (e.g. it came from a query,
+     * and then other update methods etc. were run), then the new and old change seq num values won't
+     * match, and that won't cause the trigger to run. Therefor when running an annotated update
+     * method, we set all change seq numbers to zero. A second trigger condition catches this, and
+     * the trigger runs appropriately.
+     *
+     * @param daoMethod
+     * @param daoType
+     * @param sycnableDbVariableName
+     * @return
+     */
+    protected CodeBlock.Builder generateUpdateSetChangeSeqNumSection(ExecutableElement daoMethod,
+                                                        TypeElement daoType,
+                                                        String sycnableDbVariableName) {
+        CodeBlock.Builder codeBlock = CodeBlock.builder();
+
+        codeBlock.beginControlFlow("if($L.isMaster())", sycnableDbVariableName);
+        DaoMethodInfo methodInfo = new DaoMethodInfo(daoMethod, daoType, processingEnv);
+        boolean isListOrArray = methodInfo.hasArrayOrListParameter();
+        List<Class<? extends Annotation>> seqNumAnnotations = Arrays.asList(
+                UmSyncMasterChangeSeqNum.class, UmSyncLocalChangeSeqNum.class);
+        TypeElement entityType = (TypeElement)processingEnv.getTypeUtils().asElement(
+                methodInfo.resolveEntityParameterComponentType());
+        boolean elseAdded = false;
+        for(Class<? extends Annotation> annotation : seqNumAnnotations) {
+            if(isListOrArray) {
+                codeBlock.beginControlFlow("for($T _entity : $L)", entityType,
+                        methodInfo.getEntityParameterElement().getSimpleName());
+            }
+            Element seqNumElement = findElementWithAnnotation(entityType, annotation,
+                    processingEnv);
+
+            if(seqNumElement != null) {
+                codeBlock.add("$L.set$L(0);\n", isListOrArray ? "_entity" :
+                                methodInfo.getEntityParameterElement().getSimpleName(),
+                        capitalize(seqNumElement.getSimpleName()));
+            }else {
+                messager.printMessage(Diagnostic.Kind.ERROR, formatMethodForErrorMessage(daoMethod,
+                        daoType) + ": generate update seq num section: cannot find element annotated " +
+                        annotation.getCanonicalName(), daoType);
+            }
+
+            if(isListOrArray)
+                codeBlock.endControlFlow();
+
+            if(!elseAdded) {
+                codeBlock.nextControlFlow("else");
+                elseAdded = true;
+            }
         }
 
+        codeBlock.endControlFlow();
 
-        String numChangesStr;
-        if(DbProcessorUtils.isList(paramType, processingEnv)) {
-            numChangesStr = paramVariableName + ".size()";
-        }else if(paramType.getKind().equals(TypeKind.ARRAY)) {
-            numChangesStr = paramVariableName = ".length";
-        }else {
-            numChangesStr = "1";
-        }
-
-        int tableNum = paramEntityTypeElement.getAnnotation(UmEntity.class).tableId();
-        codeBlock.add("long _changeSeqNum = $L.getSyncStatusDao().$L($L, $L);\n",
-                syncableDbVariableName, changeSeqNumMethodName, tableNum, numChangesStr);
-
-        boolean isListOrArray = paramType.getKind().equals(TypeKind.ARRAY)
-                || DbProcessorUtils.isList(paramType, processingEnv);
-        if(isListOrArray) {
-            codeBlock.beginControlFlow("for($T _element : $L)",
-                    DbProcessorUtils.getArrayOrListComponentType(paramType, processingEnv),
-                    paramVariableName);
-            elementVarName = "_element";
-        }
-
-        Element changeSeqNumElement = findElementWithAnnotation(paramEntityTypeElement, annotation,
-                processingEnv);
-        if(changeSeqNumElement == null) {
-            messager.printMessage(Diagnostic.Kind.ERROR, formatMethodForErrorMessage(daoMethod,
-                    daoType) + ": method requires entity that has a local and master change " +
-                    "sequence number fields, but " + paramEntityTypeElement.getQualifiedName() +
-                    " has no variable annotated with @" + annotation.getSimpleName());
-            return;
-        }
-
-        codeBlock.add("$L.set$L(_changeSeqNum$L);\n", elementVarName,
-                capitalize(changeSeqNumElement.getSimpleName()),
-                isListOrArray ? "++" : "");
-        if(isListOrArray) {
-            codeBlock.endControlFlow();
-        }
+        return codeBlock;
     }
 
     /**
@@ -1256,6 +1240,145 @@ public abstract class AbstractDbProcessor {
         methodBuilder.addCode(codeBlock.build());
 
         return methodBuilder;
+    }
+
+
+    /**
+     * Get the TypeElements that correspond to the entities on the @UmDatabase annotation of the given
+     * TypeElement
+     *
+     * TODO: make sure that we check each annotation, this currently **ASSUMES** the first annotation is @UmDatabase
+     *
+     * @param dbTypeElement TypeElement representing the class with the @UmDatabase annotation
+     * @return List of TypeElement that represents the values found on entities
+     */
+    protected List<TypeElement> findEntityTypes(TypeElement dbTypeElement){
+        List<TypeElement> entityTypeElements = new ArrayList<>();
+        Map<? extends ExecutableElement, ? extends AnnotationValue> annotationEntryMap =
+                dbTypeElement.getAnnotationMirrors().get(0).getElementValues();
+        for(Map.Entry<? extends ExecutableElement, ? extends AnnotationValue> entry :
+                annotationEntryMap.entrySet()) {
+            String key = entry.getKey().getSimpleName().toString();
+            Object value = entry.getValue().getValue();
+            if (key.equals("entities")) {
+                List<? extends AnnotationValue> typeMirrors =
+                        (List<? extends AnnotationValue>) value;
+                for(AnnotationValue entityValue : typeMirrors) {
+                    entityTypeElements.add((TypeElement) processingEnv.getTypeUtils()
+                            .asElement((TypeMirror) entityValue.getValue()));
+                }
+            }
+        }
+
+        return entityTypeElements;
+    }
+
+
+    /**
+     * Add the required statements to the codeblock for code that will add the needed triggers
+     * for change sequence numbers to be updated on insert or update of an entity.
+     *
+     * @param sqlProductName SQLite or Postgres as per JdbcDatabaseUtils.PRODUCT_NAME_ constants
+     * @param execSqlMethod a method, accessible in this codeblock, that will run SQL e.g. 'statement.executeUpdate'
+     * @param dbType TypeElement representing the database
+     * @param codeBlock CodeBlock to add to
+     */
+    public void addCreateTriggersForEntitiesToCodeBlock(String sqlProductName,
+                                                        String execSqlMethod,
+                                                        TypeElement dbType,
+                                                        CodeBlock.Builder codeBlock) {
+        List<TypeElement> entityTypes = findEntityTypes(dbType);
+        boolean isFirst = true;
+        String ifStmtStr = "if(_entityClass.equals($T.class))";
+        for(TypeElement entityType : entityTypes) {
+            if(!DbProcessorUtils.entityHasChangeSequenceNumbers(entityType, processingEnv))
+                continue;
+
+            if(isFirst)
+                codeBlock.beginControlFlow(ifStmtStr, entityType);
+            else
+                codeBlock.nextControlFlow("else " + ifStmtStr, entityType);
+
+
+            Element localChangeSeqnumEl = DbProcessorUtils.findElementWithAnnotation(entityType,
+                    UmSyncLocalChangeSeqNum.class, processingEnv);
+            Element masterChangeSeqNumEl = DbProcessorUtils.findElementWithAnnotation(entityType,
+                    UmSyncMasterChangeSeqNum.class, processingEnv);
+
+            Map<String, String> triggerSqlArgs = new HashMap<>();
+            triggerSqlArgs.put("tableNameLower",
+                    entityType.getSimpleName().toString().toLowerCase());
+            triggerSqlArgs.put("tableName", entityType.getSimpleName().toString());
+            triggerSqlArgs.put("localCsnName", localChangeSeqnumEl.getSimpleName().toString());
+            triggerSqlArgs.put("masterCsnName", masterChangeSeqNumEl.getSimpleName().toString());
+            triggerSqlArgs.put("pkName", DbProcessorUtils.findElementWithAnnotation(entityType,
+                    UmPrimaryKey.class, processingEnv).getSimpleName().toString());
+            triggerSqlArgs.put("tableId", ""+entityType.getAnnotation(UmEntity.class).tableId());
+            triggerSqlArgs.put("execSqlMethod", execSqlMethod);
+
+            codeBlock.addNamed("String _tableColName_$tableName:L = isMaster() ? " +
+                    "$masterCsnName:S : $localCsnName:S;\n", triggerSqlArgs);
+            codeBlock.add("String _syncStatusColName_$L = isMaster() ? $S: $S;\n",
+                    entityType.getSimpleName(), "masterChangeSeqNum", "localChangeSeqNum");
+
+            Map<String, String> triggerTemplateArgs = new HashMap<>(triggerSqlArgs);
+            triggerTemplateArgs.put("triggerOn", "update");
+            String triggerTemplate =
+                    "CREATE TRIGGER $triggerOn:L_csn_$tableNameLower:L " +
+                            "AFTER $triggerOn:L ON $tableName:L FOR EACH ROW ";
+            codeBlock.addNamed("String _createUpdateTriggerStmt_$tableName:L = \""
+                            + triggerTemplate + " WHEN (NEW.\" + _tableColName_$tableName:L + \" = 0" + //
+                            " OR OLD.\" + _tableColName_$tableName:L + \" " +
+                            "= NEW.\" + _tableColName_$tableName:L  + \") \";\n",
+                    triggerTemplateArgs);
+
+            triggerTemplateArgs.put("triggerOn", "insert");
+            codeBlock.addNamed("String _createInsertTriggerStmt_$tableName:L = \"" +
+                            triggerTemplate + "\";\n",
+                    triggerTemplateArgs);
+
+
+            codeBlock.addNamed("String _triggerSql_$tableNameLower:L = \"" +
+                            "UPDATE $tableName:L " +
+                            "SET \" + _tableColName_$tableName:L + \" = " +
+                            "(SELECT \" + _syncStatusColName_$tableName:L + \" FROM SyncStatus WHERE tableId = $tableId:L) " +
+                            "WHERE $pkName:L = NEW.$pkName:L; " +
+                            "UPDATE SyncStatus SET \" + " +
+                            "_syncStatusColName_$tableName:L + \" = \" + _syncStatusColName_$tableName:L + \" + 1 " +
+                            " WHERE tableId = $tableId:L; " +
+                            "\";\n"
+                    , triggerSqlArgs);
+            codeBlock.addNamed("$execSqlMethod:L(\"INSERT INTO SyncStatus(tableId, " +
+                        "localChangeSeqNum, masterChangeSeqNum, syncedToMasterChangeNum, syncedToLocalChangeSeqNum) " +
+                            "VALUES($tableId:L, 1, 1, 0, 0)\");\n",
+                    triggerSqlArgs);
+
+            if(sqlProductName.equals(PRODUCT_NAME_SQLITE)) {
+                codeBlock.addNamed("$execSqlMethod:L(_createUpdateTriggerStmt_$tableName:L " +
+                                " + \" BEGIN \" + _triggerSql_$tableNameLower:L + \" END\");\n",
+                        triggerSqlArgs);
+                codeBlock.addNamed("$execSqlMethod:L(_createInsertTriggerStmt_$tableName:L " +
+                                " + \" BEGIN \" + _triggerSql_$tableNameLower:L + \" END\");\n",
+                        triggerSqlArgs);
+            }else if(sqlProductName.equals(PRODUCT_NAME_POSTGRES)) {
+                codeBlock.addNamed("$execSqlMethod:L(\"CREATE OR REPLACE FUNCTION " +
+                                " increment_csn_$tableNameLower:L_fn() RETURNS trigger AS $$$$ BEGIN \"" +
+                                " + _triggerSql_$tableNameLower:L + \" RETURN null; END $$$$ " +
+                                "LANGUAGE plpgsql\");\n",
+                        triggerSqlArgs);
+                codeBlock.addNamed("$execSqlMethod:L(\"CREATE TRIGGER " +
+                        "increment_csn_$tableNameLower:L_trigger AFTER UPDATE OR INSERT ON " +
+                        "$tableName:L FOR EACH ROW WHEN (pg_trigger_depth() = 0) " +
+                        "EXECUTE PROCEDURE increment_csn_$tableNameLower:L_fn()\");\n", triggerSqlArgs);
+            }
+
+
+            isFirst = false;
+        }
+
+        if(!isFirst)
+            codeBlock.endControlFlow();//end the if statement only if there was one
+
     }
 
 }
