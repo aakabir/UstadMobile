@@ -10,7 +10,6 @@ import java.io.File;
 import java.util.Hashtable;
 
 import static com.ustadmobile.core.view.ContentEditorView.ACTION_INSERT_CONTENT;
-import static com.ustadmobile.core.view.ContentEditorView.ACTION_PREVIEW;
 import static com.ustadmobile.core.view.ContentEditorView.ACTION_REDO;
 import static com.ustadmobile.core.view.ContentEditorView.ACTION_SELECT_ALL;
 import static com.ustadmobile.core.view.ContentEditorView.ACTION_TEXT_DIRECTION_LTR;
@@ -61,7 +60,7 @@ public class ContentEditorPresenter extends UstadBaseController<ContentEditorVie
             @Override
             public void onSuccess(ContentEntryFileStatus result) {
                 if(result == null || !new File(result.getFilePath()).exists()){
-                    view.getFileHelper().createFile(new UmCallback<String>() {
+                    view.getFileHelper().createFile(contentEntryFileUid,new UmCallback<String>() {
                         @Override
                         public void onSuccess(String result) {
                             mountFile(result);
@@ -177,10 +176,6 @@ public class ContentEditorPresenter extends UstadBaseController<ContentEditorVie
 
                 case ACTION_TEXT_DIRECTION_RTL:
                     view.setContentTextDirection(false);
-                    break;
-
-                case ACTION_PREVIEW:
-                    view.requestEditorContent();
                     break;
 
                 case CONTENT_INSERT_FILL_THE_BLANKS_QN:

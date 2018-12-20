@@ -35,7 +35,7 @@ public interface UmEditorFileHelperCore {
     /**
      * Create new file if the file doesn't
      */
-    void createFile(UmCallback<String> callback);
+    void createFile(long contentEntryUid,UmCallback<String> callback);
 
     /**
      * Unzip zipped file to a temporary directory for editing purpose.

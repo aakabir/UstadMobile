@@ -39,13 +39,11 @@ public interface ContentEditorView extends UstadView {
     /**
      * List of all actions to be taken from the editing screen.
      */
-    String ACTION_PREVIEW = "Preview";
+
     String ACTION_REDO = "Redo";
     String ACTION_UNDO = "Undo";
     String ACTION_INIT_EDITOR ="onInitEditor";
-    String ACTION_CHECK_ACTIVE_CONTROLS ="onActiveControlCheck";
     String ACTION_CONTROLS_ACTIVATED ="activeControl";
-    String ACTION_CONTENT_CHANGED ="onContentChanged";
     String ACTION_SAVE_CONTENT ="onSaveContent";
     String ACTION_TEXT_DIRECTION_LTR = "mceDirectionLTR";
     String ACTION_TEXT_DIRECTION_RTL = "mceDirectionRTL";
@@ -62,11 +60,11 @@ public interface ContentEditorView extends UstadView {
      * List of editor core resources.
      */
 
-    String RESOURCE_JS_USTAD_WIDGET = "UstadWidgets.js";
-    String RESOURCE_JS_USTAD_EDITOR = "UstadEditor.js";
+    String RESOURCE_JS_USTAD_WIDGET = "UmQuestionWidget.js";
+    String RESOURCE_JS_USTAD_EDITOR = "UmContentEditorCore.js";
     String RESOURCE_JS_TINYMCE = "tinymce.min.js";
     String RESOURCE_JS_RANGY = "rangy-core.js";
-    String RESOURCE_BLANK_DOCUMENT = "blankDocument.zip";
+    String RESOURCE_BLANK_DOCUMENT = "umEditorBlankDoc.zip";
 
     /**
      * Set bold formatting on selected/focused content
@@ -180,11 +178,6 @@ public interface ContentEditorView extends UstadView {
      * Select all content added to to editor
      */
     void selectAllContent();
-
-    /**
-     * Request contents that has been added to the content editing area from tinymCE
-     */
-    void requestEditorContent();
 
     /**
      * Load index file to the webview
