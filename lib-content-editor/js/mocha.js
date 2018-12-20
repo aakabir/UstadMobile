@@ -101,7 +101,7 @@
 
             /**
              * Function to allow assertion libraries to throw errors directly into mocha.
-             * This is useful when running tests in a browser because window.onerror will
+             * This is useful when running test in a browser because window.onerror will
              * only receive the 'message' attribute of the Error.
              */
             mocha.throwError = function(err) {
@@ -427,7 +427,7 @@
         };
 
         /**
-         * Set or get a number of allowed retries on failed tests
+         * Set or get a number of allowed retries on failed test
          *
          * @api private
          * @param {number} n
@@ -525,7 +525,7 @@
                 /**
                  * Describe a "suite" with the given `title`
                  * and callback `fn` containing nested suites
-                 * and/or tests.
+                 * and/or test.
                  */
 
                 context.describe = context.context = function(title, fn) {
@@ -634,7 +634,7 @@
                 },
 
                 /**
-                 * Execute before running tests.
+                 * Execute before running test.
                  *
                  * @param {string} name
                  * @param {Function} fn
@@ -644,7 +644,7 @@
                 },
 
                 /**
-                 * Execute after running tests.
+                 * Execute after running test.
                  *
                  * @param {string} name
                  * @param {Function} fn
@@ -976,7 +976,7 @@
 
                 /**
                  * Describe a "suite" with the given `title` and callback `fn` containing
-                 * nested suites and/or tests.
+                 * nested suites and/or test.
                  */
                 context.suite = function(title, fn) {
                     return common.suite.create({
@@ -1110,12 +1110,12 @@
              *   - `reporter` reporter instance, defaults to `mocha.reporters.spec`
              *   - `globals` array of accepted globals
              *   - `timeout` timeout in milliseconds
-             *   - `retries` number of times to retry failed tests
+             *   - `retries` number of times to retry failed test
              *   - `bail` bail on the first test failure
              *   - `slow` milliseconds to wait before considering a test slow
              *   - `ignoreLeaks` ignore global leaks
              *   - `fullTrace` display the full stack-trace on failing
-             *   - `grep` string or regexp to filter tests with
+             *   - `grep` string or regexp to filter test with
              *
              * @class Mocha
              * @param {Object} options
@@ -1304,10 +1304,10 @@
                 runner.on('end', function() {
                     var stats = reporter.stats;
                     if (stats.failures) {
-                        var msg = stats.failures + ' of ' + runner.total + ' tests failed';
+                        var msg = stats.failures + ' of ' + runner.total + ' test failed';
                         notify(msg, {name: 'mocha', title: 'Failed', image: image('error')});
                     } else {
-                        notify(stats.passes + ' tests passed in ' + stats.duration + 'ms', {
+                        notify(stats.passes + ' test passed in ' + stats.duration + 'ms', {
                             name: 'mocha',
                             title: 'Passed',
                             image: image('ok')
@@ -1489,7 +1489,7 @@
             };
 
             /**
-             * Set the number of times to retry failed tests.
+             * Set the number of times to retry failed test.
              *
              * @param {Number} retry times
              * @return {Mocha}
@@ -1534,7 +1534,7 @@
             };
 
             /**
-             * Makes all tests async (accepting a callback)
+             * Makes all test async (accepting a callback)
              *
              * @return {Mocha}
              * @api public
@@ -1587,7 +1587,7 @@
             };
 
             /**
-             * Pending tests and tests marked skip fail the suite
+             * Pending test and test marked skip fail the suite
              * @returns {Mocha}
              */
             Mocha.prototype.forbidPending = function() {
@@ -1596,13 +1596,13 @@
             };
 
             /**
-             * Run tests and invoke `fn()` when complete.
+             * Run test and invoke `fn()` when complete.
              *
              * Note that `loadFiles` relies on Node's `require` to execute
              * the test interface functions and will be subject to the
              * cache - if the files are already in the `require` cache,
-             * they will effectively be skipped. Therefore, to run tests
-             * multiple times or to run tests in files that are already
+             * they will effectively be skipped. Therefore, to run test
+             * multiple times or to run test in files that are already
              * in the `require` cache, make sure to clear them from the
              * cache first in whichever manner best suits your needs.
              *
@@ -2042,7 +2042,7 @@
              * All other reporters generally
              * inherit from this reporter, providing
              * stats such as test duration, number
-             * of tests passed / failed etc.
+             * of test passed / failed etc.
              *
              * @memberof Mocha.reporters
              * @public
@@ -3510,7 +3510,7 @@
 
             /**
              * Draw the "scoreboard" showing the number
-             * of passes, failures and pending tests.
+             * of passes, failures and pending test.
              *
              * @api private
              */
@@ -3748,13 +3748,13 @@
                 options.close = reporterOptions.close || ']';
                 options.verbose = reporterOptions.verbose || false;
 
-                // tests started
+                // test started
                 runner.on('start', function() {
                     console.log();
                     cursor.hide();
                 });
 
-                // tests complete
+                // test complete
                 runner.on('test end', function() {
                     complete++;
 
@@ -3779,7 +3779,7 @@
                     }
                 });
 
-                // tests are complete, output some stats
+                // test are complete, output some stats
                 // and the failures if any
                 runner.once('end', function() {
                     cursor.show();
@@ -3946,7 +3946,7 @@
             });
 
             runner.once('end', function() {
-                console.log('# tests ' + (passes + failures));
+                console.log('# test ' + (passes + failures));
                 console.log('# pass ' + passes);
                 console.log('# fail ' + failures);
             });
@@ -4611,7 +4611,7 @@
                 var msg =
                     'Timeout of ' +
                     ms +
-                    'ms exceeded. For async tests and hooks, ensure "done()" is called; if returning a Promise, ensure it resolves.';
+                    'ms exceeded. For async test and hooks, ensure "done()" is called; if returning a Promise, ensure it resolves.';
                 if (this.file) {
                     msg += ' (' + this.file + ')';
                 }
@@ -4669,7 +4669,7 @@
              *   - `start`  execution started
              *   - `end`  execution complete
              *   - `suite`  (suite) test suite execution started
-             *   - `suite end`  (suite) all tests (and sub-suites) have finished
+             *   - `suite end`  (suite) all test (and sub-suites) have finished
              *   - `test`  (test) test execution started
              *   - `test end`  (test) test completed
              *   - `hook`  (hook) hook execution started
@@ -4720,8 +4720,8 @@
             inherits(Runner, EventEmitter);
 
             /**
-             * Run tests with full titles matching `re`. Updates runner.total
-             * with number of tests matched.
+             * Run test with full titles matching `re`. Updates runner.total
+             * with number of test matched.
              *
              * @api public
              * @public
@@ -4739,7 +4739,7 @@
             };
 
             /**
-             * Returns the number of tests matching the grep search for the
+             * Returns the number of test matching the grep search for the
              * given suite.
              *
              * @memberof Mocha.Runner
@@ -4882,14 +4882,14 @@
              *
              * Hook failures work in the following pattern:
              * - If bail, then exit
-             * - Failed `before` hook skips all tests in a suite and subsuites,
+             * - Failed `before` hook skips all test in a suite and subsuites,
              *   but jumps to corresponding `after` hook
-             * - Failed `before each` hook skips remaining tests in a
+             * - Failed `before each` hook skips remaining test in a
              *   suite and jumps to corresponding `after each` hook,
              *   which is run only once
              * - Failed `after` hook does not alter
              *   execution order
-             * - Failed `after each` hook skips remaining tests in a
+             * - Failed `after each` hook skips remaining test in a
              *   suite and subsuites, but executes other `after each`
              *   hooks
              *
@@ -5082,7 +5082,7 @@
             };
 
             /**
-             * Run tests in the given `suite` and invoke the callback `fn()` when complete.
+             * Run test in the given `suite` and invoke the callback `fn()` when complete.
              *
              * @api private
              * @param {Suite} suite
@@ -5150,7 +5150,7 @@
                         // Run immediately only if we have defined a grep. When we
                         // define a grep — It can cause maximum callstack error if
                         // the grep is doing a large recursive loop by neglecting
-                        // all tests. The run immediately function also comes with
+                        // all test. The run immediately function also comes with
                         // a performance cost. So we don't want to run immediately
                         // if we run the whole test suite, because running the whole
                         // test suite don't do any immediate recursive loops. Thus,
@@ -5282,7 +5282,7 @@
                         return done();
                     }
 
-                    // Avoid grep neglecting large number of tests causing a
+                    // Avoid grep neglecting large number of test causing a
                     // huge recursive loop and thus a maximum call stack error.
                     // See comment in `this.runTests()` for more information.
                     if (self._grep !== self._defaultGrep) {
@@ -5406,7 +5406,7 @@
 
             /**
              * Cleans up the references to all the deferred functions
-             * (before/after/beforeEach/afterEach) and tests of a Suite.
+             * (before/after/beforeEach/afterEach) and test of a Suite.
              * These must be deleted otherwise a memory leak can happen,
              * as those functions may reference variables from closures,
              * thus those variables can never be garbage collected as long
@@ -5526,20 +5526,20 @@
              */
             function filterOnly(suite) {
                 if (suite._onlyTests.length) {
-                    // If the suite contains `only` tests, run those and ignore any nested suites.
+                    // If the suite contains `only` test, run those and ignore any nested suites.
                     suite.tests = suite._onlyTests;
                     suite.suites = [];
                 } else {
-                    // Otherwise, do not run any of the tests in this suite.
+                    // Otherwise, do not run any of the test in this suite.
                     suite.tests = [];
                     suite._onlySuites.forEach(function(onlySuite) {
-                        // If there are other `only` tests/suites nested in the current `only` suite, then filter that `only` suite.
-                        // Otherwise, all of the tests on this `only` suite should be run, so don't filter it.
+                        // If there are other `only` test/suites nested in the current `only` suite, then filter that `only` suite.
+                        // Otherwise, all of the test on this `only` suite should be run, so don't filter it.
                         if (hasOnly(onlySuite)) {
                             filterOnly(onlySuite);
                         }
                     });
-                    // Run the `only` suites, as well as any other suites that have `only` tests/suites as descendants.
+                    // Run the `only` suites, as well as any other suites that have `only` test/suites as descendants.
                     suite.suites = suite.suites.filter(function(childSuite) {
                         return (
                             suite._onlySuites.indexOf(childSuite) !== -1 || filterOnly(childSuite)
@@ -5854,7 +5854,7 @@
         };
 
         /**
-         * Run `fn(test[, done])` before running tests.
+         * Run `fn(test[, done])` before running test.
          *
          * @api private
          * @param {string} title
@@ -5878,7 +5878,7 @@
         };
 
         /**
-         * Run `fn(test[, done])` after running tests.
+         * Run `fn(test[, done])` after running test.
          *
          * @api private
          * @param {string} title
@@ -6021,7 +6021,7 @@
         };
 
         /**
-         * Return the total number of tests.
+         * Return the total number of test.
          *
          * @memberof Mocha.Suite
          * @public
@@ -6037,7 +6037,7 @@
         };
 
         /**
-         * Iterates through each suite recursively to find all tests. Applies a
+         * Iterates through each suite recursively to find all test. Applies a
          * function in the format `fn(test)`.
          *
          * @api private

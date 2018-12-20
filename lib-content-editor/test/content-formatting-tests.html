@@ -1,5 +1,5 @@
 <!--
-Test using mocha-chrome use  mocha-chrome content-formatting-tests.html --timeout 3000
+Test using mocha-chrome use  mocha-chrome content-formatting-test.html --timeout 3000
 -->
 <html lang="en">
 <head>
@@ -30,7 +30,6 @@ Test using mocha-chrome use  mocha-chrome content-formatting-tests.html --timeou
                 editor.on('init', function () {
                     editor.focus();
                     editor.execCommand('mceInsertContent', false, "<span>Test started</span>",{format: 'raw'});
-                    ustadEditor.init(editor);
                 });
             }
         };
@@ -52,7 +51,7 @@ Test using mocha-chrome use  mocha-chrome content-formatting-tests.html --timeou
 </div>
 <script src="../js/jquery3.3.1.min.js" type="text/javascript"></script>
 <!-- Editor event invocation-->
-<script src="../js/UstadEditor.js"></script>
+<script src="../js/UmContentEditorCore.js"></script>
 <!--Assertion library-->
 <script src="../js/chai.js"></script>
 <!--Testing framework-->
@@ -71,7 +70,7 @@ Test using mocha-chrome use  mocha-chrome content-formatting-tests.html --timeou
 <script src="test.editor-action.js"></script>
 <script>
 
-    //run all tests
+    //run all test
     setTimeout(() =>{
         mocha.checkLeaks();
         mocha.run();

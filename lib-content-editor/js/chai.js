@@ -9710,7 +9710,7 @@
                     return comparatorResult;
                 }
                 // To allow comparators to override *any* behavior, we ran them first. Since it didn't decide
-                // what to do, we need to make sure to return the basic tests first before we move on.
+                // what to do, we need to make sure to return the basic test first before we move on.
                 var simpleResult = simpleEqual(leftHandOperand, rightHandOperand);
                 if (simpleResult !== null) {
                     // Don't memoize this, it takes longer to set/retrieve than to just compare.

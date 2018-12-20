@@ -268,3 +268,6 @@ app-gwt/*
 .classpath
 .settings
 
+#umEditor files
+/lib-content-editor/templates/umEditorBlankDoc.zip
+

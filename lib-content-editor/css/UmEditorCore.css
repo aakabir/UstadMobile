@@ -1,16 +1,13 @@
-html {
-    display: table;
-}
-
 body{
-    min-height: 100%;
+    padding: 0 !important;
+    margin: 0 !important;
 }
 
 #umPreview {
-    margin: 0px;
-    padding-top: 10px;
-    border: 0 solid transparent !important;
-    outline: 0 solid transparent !important;
+    position: absolute;
+    top: 50px; right: 0; bottom: 0; left: 0;
+    border: 0 solid transparent;
+    background-color: white;
 }
 
 
@@ -35,7 +32,7 @@ body{
 .um-labels{
     margin-top: 16px;
     z-index: -200;
-    color: #767676;
+    color: #767676 !important;
     cursor: pointer;
     font-size: .8em;
     line-height: 1.4em;
@@ -147,4 +144,9 @@ select,button :focus :active{
 
 .card{
     margin-bottom:16px;
+}
+
+button.qn-retry{
+    color: white !important;
+    margin-right: -20px !important;
 }
