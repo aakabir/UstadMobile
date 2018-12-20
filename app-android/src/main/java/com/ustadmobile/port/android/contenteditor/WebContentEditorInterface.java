@@ -28,11 +28,25 @@ public class WebContentEditorInterface {
     }
 
     /**
+     * Listen for tinymce injection to the webpage
+     * @param callbackValue Value passed from the JS side
+     */
+    @JavascriptInterface
+    public void onInitEditor(String callbackValue){
+        try{
+            activity.runOnUiThread(() -> callback.onCallbackReceived(callbackValue));
+        }catch (Exception e){
+            e.printStackTrace();
+        }
+    }
+
+
+    /**
      * Listen for value changes on the javascript to the native android.
      * @param callbackValue Value passed from the JS side
      */
     @JavascriptInterface
-    public void onContentChanged(String callbackValue){
+    public void onSaveContent(String callbackValue){
         try{
             activity.runOnUiThread(() ->
                     callback.onCallbackReceived(callbackValue));
@@ -72,25 +86,11 @@ public class WebContentEditorInterface {
      * @param callbackValue Value passed from the JS side
      */
     @JavascriptInterface
-    public void onControlActivatedCheck(String callbackValue){
+    public void onControlsStateChanged(String callbackValue){
         try{
             activity.runOnUiThread(() -> callback.onCallbackReceived(callbackValue));
         }catch (Exception e){
             e.printStackTrace();
         }
     }
-
-    /**
-     * Listen for tinymce injection to the webpage
-     * @param callbackValue Value passed from the JS side
-     */
-    @JavascriptInterface
-    public void onInitEditor(String callbackValue){
-        try{
-            activity.runOnUiThread(() -> callback.onCallbackReceived(callbackValue));
-        }catch (Exception e){
-            e.printStackTrace();
-        }
-    }
-
 }

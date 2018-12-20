@@ -26,12 +26,6 @@
                 android:layout_marginTop="?actionBarSize"
                 android:layout_width="match_parent"
                 android:layout_height="match_parent"/>
-            <View
-                android:contentDescription="Hide toolbar"
-                android:layout_marginTop="?actionBarSize"
-                android:background="@color/icons"
-                android:layout_width="match_parent"
-                android:layout_height="@dimen/dimen_16dp"/>
         </RelativeLayout>
 
         <!-- BottomSheet formatting-->

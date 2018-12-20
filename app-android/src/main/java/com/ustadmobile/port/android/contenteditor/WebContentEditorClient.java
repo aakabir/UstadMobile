@@ -1,8 +1,6 @@
 package com.ustadmobile.port.android.contenteditor;
 
 import android.content.Context;
-import android.webkit.JavascriptInterface;
-import android.webkit.ValueCallback;
 import android.webkit.WebResourceRequest;
 import android.webkit.WebResourceResponse;
 import android.webkit.WebView;
@@ -19,6 +17,7 @@ import static com.ustadmobile.core.view.ContentEditorView.RESOURCE_JS_RANGY;
 import static com.ustadmobile.core.view.ContentEditorView.RESOURCE_JS_TINYMCE;
 import static com.ustadmobile.core.view.ContentEditorView.RESOURCE_JS_USTAD_EDITOR;
 import static com.ustadmobile.core.view.ContentEditorView.RESOURCE_JS_USTAD_WIDGET;
+import static com.ustadmobile.port.sharedse.contenteditor.UmEditorFileHelper.EDITOR_BASE_DIR_NAME;
 
 /**
  * Class which handles HTTP request from WebView and native-to-js client interaction
@@ -65,10 +64,10 @@ public class WebContentEditorClient extends WebViewClient {
                 String resourcePath;
                 if(isInnerResource(resourceUri)){
                     resourcePath = UMFileUtil.joinPaths("http",
-                            "/tinymce/"+getResourcePath(resourceUri));
+                            "/"+ EDITOR_BASE_DIR_NAME +"/"+getResourcePath(resourceUri));
                 }else{
                     resourcePath = UMFileUtil.joinPaths("http",
-                            "/tinymce/js/"+new File(resourceUri).getName());
+                            "/"+ EDITOR_BASE_DIR_NAME +"/js/"+new File(resourceUri).getName());
                 }
 
                 inputStream = context.getAssets().open(resourcePath);
