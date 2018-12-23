@@ -273,6 +273,14 @@ umContentEditor.requestFocus =  () =>  {
     return this.isControlActivated("mceFocus");
 };
 
+umContentEditor.selectAll =  () => {
+    const body = $('body');
+    body.on("click",function () {
+        tinymce.activeEditor.selection.select(tinymce.activeEditor.getBody(), true);
+    });
+    body.click();
+};
+
 /**
  * Execute normal formatting commands
  * @param command command to be executed
@@ -308,13 +316,8 @@ getCursorPositionRelativeToTheEditableElementContent = ()  =>  {
 };
 
 
-umContentEditor.generateContentForPreview =  (content)  => {
-    const previewContent = UmQuestionWidget.saveContentEditor(content);
-    console.log("Selection",previewContent);
-    return {action:'onSaveContent',content:btoa(previewContent)};
-};
 
-umContentEditor.getQuestionBreak = () => {
+umContentEditor.generateQuestionBreak = () => {
     let questionBreak = "";
     for(let counter = 0 ; counter < 2;counter++){
         questionBreak = questionBreak + '<p style="page-break-before: always" class="pg-break">';
@@ -322,19 +325,20 @@ umContentEditor.getQuestionBreak = () => {
     return questionBreak;
 };
 
-checkActivatedControls = () => {
+umContentEditor.checkActivatedControls = () => {
     const commandStatus = [];
     for(let command in UmContentEditorCore.formattingCommandList){
         if(!UmContentEditorCore.formattingCommandList.hasOwnProperty(command))
           continue;
           const commandString = UmContentEditorCore.formattingCommandList[command];
           const commandState = {};
+          const status = this.isToolBarButtonActive(commandString);
           commandState.command = commandString;
-          commandState.status = this.isToolBarButtonActive(commandString) === "true";
+          commandState.status = status === null ? false : status;
           commandStatus.push(commandState);
     }
     try{
-        UmContentEditor.onControlActivatedCheck(JSON.stringify({action:'onActiveControlCheck',content:btoa(JSON.stringify(commandStatus))}));
+        UmContentEditor.onControlsStateChanged(JSON.stringify({action:'onActiveControlCheck',content:btoa(JSON.stringify(commandStatus))}));
     }catch(e){
         console.log(e);
     }
@@ -350,7 +354,7 @@ insertQuestionTemplate = (questionTypeIndex) => {
             $(questionNode).find(".question-choice").attr("id",nextChoiceId);
             questionNode = $(questionNode).prop('outerHTML');
             UmQuestionWidget.setQuestionStatus(true);
-            tinyMCE.activeEditor.execCommand('mceInsertContent', false, questionNode,{format: 'raw'});
+            umContentEditor.insertContentRaw(questionNode);
             this.setCursorPositionAtRootElementEnd();
         }});
 };
@@ -371,79 +375,71 @@ umContentEditor.insertMediaContent = (source, mimeType) => {
             "    <source src=\""+source+"\" type=\""+mimeType+"\">" +
             "</video>";
     }
-    mediaContent = "<p class='text-center'>"+mediaContent+"</p><p style=\"page-break-before: always\" class=\"pg-break\">";
-    tinyMCE.activeEditor.execCommand('mceInsertContent', false, mediaContent,{format: 'raw'});
+    mediaContent = "<p class='text-center'>"+mediaContent+"</p>"+umContentEditor.generateQuestionBreak();
+    umContentEditor.insertContentRaw(mediaContent);
+};
+
+umContentEditor.insertContentRaw = (content) =>{
+    tinyMCE.activeEditor.execCommand('mceInsertContent', false, content,{format: 'raw'});
 };
 
 
 
 handleCursorPositionFocus = element => {
-    const labelText = $(element).text();
-    const questionRoot = $(element).closest("div .question");
-    const questionElement = $(questionRoot).children();
-    const questionType = $(questionRoot).attr("data-um-widget");
-    let elementToFocus = null;
-    switch (labelText) {
-        case UmQuestionWidget.PLACEHOLDERS_LABELS.labelForQuestionBodyText:
-            elementToFocus = questionElement.get(3);
-            break;
-        case UmQuestionWidget.PLACEHOLDERS_LABELS.labelForFillTheBlanksPromptInput:
-            elementToFocus = $(questionElement.get(5)).children().get(2);
-            break;
-        case UmQuestionWidget.PLACEHOLDERS_LABELS.labelForFillTheBlanksAnswerBodyText:
-            elementToFocus = $(questionElement.get(5)).children().get(2);
-            break;
-        case UmQuestionWidget.PLACEHOLDERS_LABELS.labelForQuestionRightFeedbackText:
-            elementToFocus = $(questionElement.get(5)).children().get(5);
-            break;
-        case UmQuestionWidget.PLACEHOLDERS_LABELS.labelForQuestionWrongFeedbackText:
-            elementToFocus = $(questionElement.get(5)).children().get(8);
-            break;
-        case UmQuestionWidget.PLACEHOLDERS_LABELS.labelForQuestionRetryOption:
-            if(questionType === UmQuestionWidget.WIDGET_NAME_MULTICHOICE){
-                elementToFocus = findClosestElement(element,questionRoot).get(0)
-            }else{
-                elementToFocus = $(questionElement.get(5)).children().get(8);
-            }
-            break;
-        case UmQuestionWidget.PLACEHOLDERS_LABELS.labelForCheckAnswerInputPromptBtn:
-            elementToFocus = $(questionElement.get(5)).children().get(2);
-            break;
-        case UmQuestionWidget.PLACEHOLDERS_LABELS.labelForChoiceBodyText:
-            elementToFocus = findClosestElement(element,questionRoot).get(2);
-            break;
-        case UmQuestionWidget.PLACEHOLDERS_LABELS.labelForFeedbackBodyText:
-            elementToFocus = findClosestElement(element,questionRoot).get(6);
-            console.log("forcing",elementToFocus);
-        case UmQuestionWidget.PLACEHOLDERS_LABELS.labelForRightAnswerOption:
-            elementToFocus = findClosestElement(element,questionRoot).get(4);
-            break;
-    }
+   try{
+       const labelText = $(element).text();
+       const questionRoot = $(element).closest("div .question");
+       const questionElement = $(questionRoot).children();
+       const questionType = $(questionRoot).attr("data-um-widget");
+       let elementToFocus = null;
 
-    if($(element).hasClass("question") || $(element).hasClass("input-group")){
-        elementToFocus = questionElement.get(3);
-    }else if($(element).hasClass("question-retry-option") || $(element).hasClass("question-retry-holder")){
-        if(questionType === UmQuestionWidget.WIDGET_NAME_MULTICHOICE){
-            elementToFocus = $(questionElement).children().get(6);
-        }else{
-            elementToFocus = $(questionElement.get(5)).children().get(8);
-        }
-    }
+       if(labelText === UmQuestionWidget.PLACEHOLDERS_LABELS.labelForQuestionBodyText){
+           elementToFocus = questionElement.get(3);
+       }else if(labelText === UmQuestionWidget.PLACEHOLDERS_LABELS.labelForFillTheBlanksPromptInput){
+           elementToFocus = $(questionElement.get(5)).children().get(2);
+       }else if(labelText === UmQuestionWidget.PLACEHOLDERS_LABELS.labelForFillTheBlanksAnswerBodyText){
+           elementToFocus = $(questionElement.get(5)).children().get(2);
+       }else if(labelText === UmQuestionWidget.PLACEHOLDERS_LABELS.labelForQuestionRightFeedbackText){
+           elementToFocus = $(questionElement.get(5)).children().get(5);
+       }else if(labelText === UmQuestionWidget.PLACEHOLDERS_LABELS.labelForQuestionWrongFeedbackText){
+           elementToFocus = $(questionElement.get(5)).children().get(8);
+       } else if (labelText === UmQuestionWidget.PLACEHOLDERS_LABELS.labelForQuestionRetryOption) {
+           if (questionType === UmQuestionWidget.WIDGET_NAME_MULTICHOICE) {
+               elementToFocus = $(questionElement.get(questionElement.length - 4)).children().get(5)
+           } else {
+               elementToFocus = $(questionElement.get(5)).children().get(8);
+           }
+       } else if (labelText === UmQuestionWidget.PLACEHOLDERS_LABELS.labelForCheckAnswerInputPromptBtn) {
+           elementToFocus = $(questionElement.get(5)).children().get(2);
+       } else if (labelText === UmQuestionWidget.PLACEHOLDERS_LABELS.labelForChoiceBodyText) {
+           elementToFocus = $(element).next().next().get(0);
+       } else if (labelText === UmQuestionWidget.PLACEHOLDERS_LABELS.labelForFeedbackBodyText) {
+           elementToFocus = $(element).next().next().get(0);
+       } else if (labelText === UmQuestionWidget.PLACEHOLDERS_LABELS.labelForRightAnswerOption) {
+           elementToFocus = $(element).prev().get(0);
+       }else if($(element).hasClass("question") && $(element).hasAttribute("id") || $(element).hasClass("input-group")){
+           elementToFocus = questionElement.get(3);
+       }else if($(element).hasClass("question-retry-option") || $(element).hasClass("question-retry-holder")){
+           if(questionType === UmQuestionWidget.WIDGET_NAME_MULTICHOICE){
+               elementToFocus = $(questionElement).children().get(6);
+           }else{
+               elementToFocus = $(questionElement.get(5)).children().get(8);
+           }
+       }
 
-    if(elementToFocus && !$(elementToFocus).hasClass("question")){
-        this.setCursorPositionAtAnyGivenEditableElement(elementToFocus);
-    }
+       if(elementToFocus && !$(elementToFocus).hasClass("question")){
+           this.setCursorPositionAtAnyGivenEditableElement(elementToFocus);
+       }
+   }catch (e) {
+       console.log("handleCursorPositionFocus: "+e);
+   }
 };
 
-findClosestElement = (element,rootElement) =>{
-    const choiceId = $(element).closest("div.question-choice").attr("id");
-    const closeElement = $(rootElement).find("#" + choiceId).children();
-    return closeElement;
-};
+
 
 setCursorPositionAtRootElementEnd = (rootElement) =>{
     if(rootElement == null){
-        rootElement = document.getElementById("umPreview");
+        rootElement = document.getElementById("umEditor");
     }
     const range = document.createRange();
     const selection = window.getSelection();
@@ -472,7 +468,7 @@ setCursorPositionAtAnyGivenEditableElement = (element) => {
 
 umContentEditor.initEditor = (showToolbar = false) => {
     const configs = {
-        selector: '#umPreview',
+        selector: '#umEditor',
         height: $(window).height(),
         menubar: showToolbar,
         statusbar: showToolbar,
@@ -495,7 +491,7 @@ umContentEditor.initEditor = (showToolbar = false) => {
                         let questionWidget = UmQuestionWidget.handleQuestionNode(questionNode);
                         questionWidget = questionWidget.startEditing(ed);
                         questionWidget = $("<div>").append(questionWidget)
-                            .append('<p style="page-break-before: always" class="pg-break"><br ');
+                            .append(umContentEditor.generateQuestionBreak());
                         const tempNode =  tinymce.html.DomParser().parse($(questionWidget).html());
                         nodes[node].replace(tempNode);
                         UmQuestionWidget.handleWidgetListeners(true);
@@ -530,7 +526,7 @@ umContentEditor.initEditor = (showToolbar = false) => {
              * @type {[type]}
              */
             ed.on('click', e => {
-                this.checkActivatedControls();
+                umContentEditor.checkActivatedControls();
                 const selection = ed.selection;
                 const activeNode = selection.getNode();
                 this.protectedSection = $(activeNode).hasClass("um-labels")
@@ -610,6 +606,7 @@ umContentEditor.initEditor = (showToolbar = false) => {
         configs.toolbar = ['undo redo | bold italic underline strikethrough superscript subscript | alignleft aligncenter alignright alignjustify | bullist numlist outdent indent | fontsizeselect'];
     }
     tinymce.init(configs).then(() => {
+        rangy.init();
         umContentEditor.requestFocus();
         UmQuestionWidget.setEditingMode(true);
         if($(".question").length > 0){
@@ -621,20 +618,40 @@ umContentEditor.initEditor = (showToolbar = false) => {
             console.log("onInitEditor: "+e);
         }
 
-        //add observer to watch content changes
-        let filters = {
-            attributes: true, characterData: true, childList: true, subtree: true,
-            attributeOldValue: true, characterDataOldValue: true
-        };
-        const contentChangeObserver = new MutationObserver(function() {
-            const content = umContentEditor.generateContentForPreview(btoa(tinyMCE.activeEditor.getContent()));
-            try{
-                UmContentEditor.onContentChanged(JSON.stringify({action:'onContentChanged',content:content}));
-            }catch (e) {
-                console.log("onContentChanged:",e);
-            }
-        });
-        contentChangeObserver.observe(document.querySelector('#umPreview'),filters);
+        try{
+
+
+            //add observer to watch content changes
+            let contentWatcherFilters = {
+                attributes: true, characterData: true, childList: true, subtree: true,
+                attributeOldValue: true, characterDataOldValue: true
+            };
+
+            const contentChangeObserver = new MutationObserver(function() {
+
+                const previewContent = JSON.stringify({action:'onSaveContent',
+                    content:UmQuestionWidget.saveContentEditor(btoa(tinyMCE.activeEditor.getContent()))});
+                console.log("forcing",previewContent);
+                try{
+                    UmContentEditor.onSaveContent(previewContent);
+                }catch (e) {
+                    console.log("onContentChanged:",e);
+                }
+            });
+            contentChangeObserver.observe(document.querySelector('#umEditor'),contentWatcherFilters);
+
+
+            let menuWatcherFilter = {
+                attributes : true,
+                attributeFilter : ['style']
+            };
+            const menuStateChangeObserver = new MutationObserver(function() {
+                umContentEditor.checkActivatedControls();
+            });
+            menuStateChangeObserver.observe(document.querySelector('.mce-panel'),menuWatcherFilter);
+        }catch (e) {
+            console.log("Observers ",e);
+        }
     });
 };
 

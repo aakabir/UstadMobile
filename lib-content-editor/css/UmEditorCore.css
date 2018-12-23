@@ -3,12 +3,16 @@ body{
     margin: 0 !important;
 }
 
-#umPreview {
+#umEditor {
     position: absolute;
-    top: 50px; right: 0; bottom: 0; left: 0;
+    top: 0; right: 0; bottom: 0; left: 0;
+    padding: 16px !important;
     border: 0 solid transparent;
     background-color: white;
+    height: auto;
+    font-size: 1em;
 }
+
 
 
 .no-padding {
@@ -30,10 +34,12 @@ body{
 }
 
 .um-labels{
-    margin-top: 16px;
+    padding-top: 14px;
+    padding-bottom: 2px;
     z-index: -200;
     color: #767676 !important;
     cursor: pointer;
+    width: 100%;
     font-size: .8em;
     line-height: 1.4em;
 }
@@ -41,7 +47,8 @@ body{
 .select-option{
     border: 1px solid #ccc;
     margin-left: 16px;
-    max-width: 90%;
+    padding-left: 0;
+    max-width: 100%;
     border-radius: 3px;
     overflow: hidden;
     background: white;
@@ -150,3 +157,4 @@ button.qn-retry{
     color: white !important;
     margin-right: -20px !important;
 }
+

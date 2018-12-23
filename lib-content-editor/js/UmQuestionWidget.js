@@ -89,7 +89,7 @@ UmQuestionWidget.saveContentEditor = (content) => {
     $(editorContent).find('[data-um-preview="support"]').addClass('preview-support default-margin-top');
     $(editorContent).find('div.question').addClass('card default-padding-top default-padding-bottom');
     editorContent = $('<div/>').html(editorContent).contents().html();
-    return editorContent;
+    return btoa(editorContent);
 };
 
 
@@ -151,23 +151,19 @@ UmQuestionWidget.prototype.startEditing = function() {
         $(this.element).find(".question-choice-feedback").addClass("show-element").removeClass("hide-element");
     }
 
-    //$(this.element).find("button.qn-retry").css("color","white").css("margin-right","-30px").addClass(".default-margin-top");
-
     $(this.element).find(".question-retry-option").html("" +
-        "<select class='question-retry-option-select col-sm-12'>" +
+        "<select class='question-retry-option-select'>" +
         "  <option value=\"true\">"+UmQuestionWidget.PLACEHOLDERS_LABELS.labelForTrueOptionText+"</option>" +
         "  <option value=\"false\" selected=\"selected\">"+UmQuestionWidget.PLACEHOLDERS_LABELS.labelFalseOptionText+"</option>" +
         "</select>");
     $(this.element).find(".question-choice-answer").html("" +
-        "<select class='question-choice-answer-select col-sm-12'>" +
+        "<select class='question-choice-answer-select'>" +
         "  <option value=\"true\">"+UmQuestionWidget.PLACEHOLDERS_LABELS.labelForTrueOptionText+"</option>" +
         "  <option value=\"false\" selected=\"selected\">"+UmQuestionWidget.PLACEHOLDERS_LABELS.labelFalseOptionText+"</option>" +
         "</select>");
 
     $(this.element).find(".question-retry-option")
         .before("<label class='um-labels no-left-padding'>"+UmQuestionWidget.PLACEHOLDERS_LABELS.labelForQuestionRetryOption+"</label><br/>");
-
-
     return this.element;
 };
 
@@ -229,7 +225,7 @@ UmQuestionWidget.handleWidgetListeners = () => {
             UmMultiChoiceQuestionWidget.prototype.addChoice(event);
         }else if($(event.target).hasClass("btn-delete") || $(event.target).is("span")){
             UmQuestionWidget.prototype.onQuestionDeletion(event);
-        }else if($(event.target).hasClass("question-choice")){
+        }else if($(event.target).hasClass("question-choice") || $(event.target).hasClass("question-choice-body")){
            if(!UmQuestionWidget.isEditingMode){
                UmMultiChoiceQuestionWidget.prototype.onQuestionAnswerChecked(event);
            }
@@ -259,7 +255,7 @@ UmMultiChoiceQuestionWidget.prototype.addChoice = function(event){
         "<div class=\"question-choice-feedback\" data-um-edit-only=\"true\">"
         +UmQuestionWidget.PLACEHOLDERS_LABELS.placeholderForTheChoiceFeedback+"</div>" +
         "<label class=\"um-labels\">"+UmQuestionWidget.PLACEHOLDERS_LABELS.labelForRightAnswerOption+"</label><br>" +
-        "<div class=\"question-choice-answer select-option col-sm-3 show-element col-lg-3\">" +
+        "<div class=\"question-choice-answer select-option col-sm-12 show-element col-lg-12\">" +
         "<select><option value=\"true\">"+UmQuestionWidget.PLACEHOLDERS_LABELS.labelForTrueOptionText+"</option>" +
         "<option selected=\"selected\" value=\"false\">"+UmQuestionWidget.PLACEHOLDERS_LABELS.labelFalseOptionText+"</option>" +
         "</select></div></div>";

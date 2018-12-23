@@ -210,10 +210,10 @@ public class UmEditorFileHelper implements UmEditorFileHelperCore {
         mEntryFile.setContentEntryFileUid(contentEntryFileUid);
         mEntryFile.setFileSize(this.contentEntryFile.length());
         ContentEntryDao contentEntryDao = repository.getContentEntryDao();
-        ContentEntryFileDao fileDao = umAppDatabase.getContentEntryFileDao();
+        ContentEntryFileDao fileDao = repository.getContentEntryFileDao();
         ContentEntryFileStatusDao fileStatusDao = umAppDatabase.getContentEntryFileStatusDao();
         ContentEntryContentEntryFileJoinDao joinDao =
-                umAppDatabase.getContentEntryContentEntryFileJoinDao();
+                repository.getContentEntryContentEntryFileJoinDao();
 
         contentEntryDao.insertAsync(contentEntry, new UmCallback<Long>() {
             @Override
