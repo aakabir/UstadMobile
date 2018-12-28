@@ -88,7 +88,9 @@ import com.ustadmobile.core.view.ContentEntryView;
 import com.ustadmobile.core.view.ContentPreviewView;
 import com.ustadmobile.core.view.DummyView;
 import com.ustadmobile.core.view.H5PContentView;
+import com.ustadmobile.core.view.Login2View;
 import com.ustadmobile.core.view.LoginView;
+import com.ustadmobile.core.view.Register2View;
 import com.ustadmobile.core.view.RegistrationView;
 import com.ustadmobile.core.view.ScormPackageView;
 import com.ustadmobile.core.view.SettingsDataSyncListView;
@@ -166,6 +168,7 @@ public class UstadMobileSystemImplAndroid extends UstadMobileSystemImplSE {
     static {
 
         viewNameToAndroidImplMap.put(LoginView.VIEW_NAME, LoginDialogFragment.class);
+        viewNameToAndroidImplMap.put(Login2View.VIEW_NAME, Login2Activity.class);
         viewNameToAndroidImplMap.put(ContainerView.VIEW_NAME, ContainerActivity.class);
         viewNameToAndroidImplMap.put(CatalogView.VIEW_NAME, CatalogActivity.class);
         viewNameToAndroidImplMap.put(UserSettingsView.VIEW_NAME, UserSettingsActivity.class);
@@ -191,6 +194,7 @@ public class UstadMobileSystemImplAndroid extends UstadMobileSystemImplSE {
         viewNameToAndroidImplMap.put(ContentEntryView.VIEW_NAME, ContentEntryListActivity.class);
         viewNameToAndroidImplMap.put(ContentEntryDetailView.VIEW_NAME, ContentEntryDetailActivity.class);
         viewNameToAndroidImplMap.put(DummyView.VIEW_NAME, DummyActivity.class);
+        viewNameToAndroidImplMap.put(Register2View.VIEW_NAME, Register2Activity.class);
     }
 
     /**

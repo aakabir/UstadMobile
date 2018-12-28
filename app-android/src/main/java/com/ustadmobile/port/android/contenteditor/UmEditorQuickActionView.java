@@ -20,17 +20,17 @@ import static com.ustadmobile.port.android.contenteditor.ContentFormattingHelper
  *
  * <b>Operational flow:</b>
  * <p>
- *     Use {@link UmEditorToolbarView#inflateMenu(int)} to inflate all your menus to be shown
+ *     Use {@link UmEditorQuickActionView#inflateMenu(int)} to inflate all your menus to be shown
  *     as quick action menus.
  *
- *     Use {@link UmEditorToolbarView#setOnQuickActionMenuItemClicked(OnQuickActionMenuItemClicked)}
+ *     Use {@link UmEditorQuickActionView#setOnQuickActionMenuItemClicked(OnQuickActionMenuItemClicked)}
  *     to set listener which listens for quick action menu clicks.
  *
- *     Use {@link UmEditorToolbarView#updateMenu()} to send updated state of the
+ *     Use {@link UmEditorQuickActionView#updateMenu()} to send updated state of the
  *     quick action menu. i.e change background color and icon tint color
  * </p>
  */
-public class UmEditorToolbarView extends Toolbar {
+public class UmEditorQuickActionView extends Toolbar {
 
     private OnQuickActionMenuItemClicked onQuickActionMenuItemClicked;
 
@@ -38,7 +38,7 @@ public class UmEditorToolbarView extends Toolbar {
      * Constructor to be used for Java instantiation.
      * @param context application context
      */
-    public UmEditorToolbarView(Context context) {
+    public UmEditorQuickActionView(Context context) {
         super(context);
     }
 
@@ -48,7 +48,7 @@ public class UmEditorToolbarView extends Toolbar {
      * @param attrs attribute sets
      * @param defStyleAttr style sets
      */
-    public UmEditorToolbarView(Context context, @Nullable AttributeSet attrs, int defStyleAttr) {
+    public UmEditorQuickActionView(Context context, @Nullable AttributeSet attrs, int defStyleAttr) {
         super(context, attrs, defStyleAttr);
     }
 
@@ -57,7 +57,7 @@ public class UmEditorToolbarView extends Toolbar {
      * @param context application context
      * @param attrs attribute sets
      */
-    public UmEditorToolbarView(Context context, @Nullable AttributeSet attrs) {
+    public UmEditorQuickActionView(Context context, @Nullable AttributeSet attrs) {
         super(context, attrs);
     }
 

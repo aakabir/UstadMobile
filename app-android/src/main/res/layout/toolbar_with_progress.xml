@@ -6,6 +6,7 @@
     android:layout_height="wrap_content"
     android:fitsSystemWindows="true"
     android:id="@+id/appbar"
+    android:elevation="@dimen/dimen_4dp"
     android:theme="@style/ThemeOverlay.AppCompat.Dark.ActionBar">
     <android.support.v7.widget.Toolbar
         android:id="@+id/um_toolbar"
@@ -25,7 +26,9 @@
             android:layout_height="match_parent" />
     </android.support.v7.widget.Toolbar>
 
+
     <ProgressBar
+        android:visibility="gone"
         android:progressDrawable="@drawable/progress_bar_drawable"
         style="?android:attr/progressBarStyleHorizontal"
         android:id="@+id/progressBar"

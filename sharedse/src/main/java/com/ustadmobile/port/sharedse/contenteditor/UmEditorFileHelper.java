@@ -33,8 +33,11 @@ import java.io.InputStream;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Date;
+import java.util.Enumeration;
 import java.util.List;
+import java.util.Objects;
 import java.util.zip.ZipEntry;
+import java.util.zip.ZipFile;
 import java.util.zip.ZipInputStream;
 import java.util.zip.ZipOutputStream;
 
@@ -71,6 +74,8 @@ public class UmEditorFileHelper implements UmEditorFileHelperCore {
     private static final String LOCAL_ADDRESS = "http://127.0.0.1:";
 
     private boolean isTestExecution = false;
+
+    private static String tempFile = ".media-hide.info";
 
     private String assetsDir = "assets-" +
             new SimpleDateFormat("yyyyMMddHHmmss").format(new Date()) + "";
@@ -195,6 +200,7 @@ public class UmEditorFileHelper implements UmEditorFileHelperCore {
                     callback.onSuccess(null);
                 }
             }
+
         }).start();
     }
 
@@ -208,7 +214,7 @@ public class UmEditorFileHelper implements UmEditorFileHelperCore {
 
         ContentEntryFile mEntryFile = new ContentEntryFile();
         mEntryFile.setContentEntryFileUid(contentEntryFileUid);
-        mEntryFile.setFileSize(this.contentEntryFile.length());
+        mEntryFile.setFileSize(contentEntryFile.length());
         ContentEntryDao contentEntryDao = repository.getContentEntryDao();
         ContentEntryFileDao fileDao = repository.getContentEntryFileDao();
         ContentEntryFileStatusDao fileStatusDao = umAppDatabase.getContentEntryFileStatusDao();
@@ -220,7 +226,7 @@ public class UmEditorFileHelper implements UmEditorFileHelperCore {
             public void onSuccess(Long contentEntryUid) {
                 fileDao.insertAsync(mEntryFile, new UmCallback<Long>() {
                     @Override
-                    public void onSuccess(Long contentEntryFileUid) {
+                    public void onSuccess(Long fileUid) {
                         ContentEntryContentEntryFileJoin entryFileJoin =
                                 new ContentEntryContentEntryFileJoin();
                         entryFileJoin.setCecefjContentEntryFileUid(contentEntryFileUid);
@@ -229,7 +235,7 @@ public class UmEditorFileHelper implements UmEditorFileHelperCore {
                             @Override
                             public void onSuccess(Long cecefUid) {
                                 ContentEntryFileStatus fileStatus = new ContentEntryFileStatus();
-                                fileStatus.setCefsUid(contentEntryUid);
+                                fileStatus.setCefsUid(contentEntryUid.intValue());
                                 fileStatus.setCefsContentEntryFileUid(contentEntryFileUid);
                                 fileStatus.setFilePath(contentEntryFile.getAbsolutePath());
                                 fileStatusDao.insertAsync(fileStatus, new UmCallback<Long>() {
@@ -284,10 +290,12 @@ public class UmEditorFileHelper implements UmEditorFileHelperCore {
     public void removeUnUsedResources(UmCallback<Integer> callback) {
         new Thread(() -> {
             int unUsedFileCounter = 0;
-            File [] allResources = mediaDestinationDir.listFiles();
-            for(File resource:allResources){
-                if(!isResourceInUse(resource.getName())){
-                    if(resource.delete()) unUsedFileCounter++;
+            if(mediaDestinationDir != null){
+                File [] allResources = mediaDestinationDir.listFiles();
+                for(File resource:allResources){
+                    if(!isResourceInUse(resource.getName()) && !resource.getName().equals(tempFile)){
+                        if(resource.delete()) unUsedFileCounter++;
+                    }
                 }
             }
             callback.onSuccess(unUsedFileCounter);
@@ -376,7 +384,6 @@ public class UmEditorFileHelper implements UmEditorFileHelperCore {
      * @return True if zip file was created successfully
      */
     private boolean createZipFiles(List<File> fileList) {
-        if(sourceFile.exists())sourceFile.delete();
         int fileCounter = 0;
         try {
             FileOutputStream fos = new FileOutputStream(sourceFile);
@@ -427,31 +434,42 @@ public class UmEditorFileHelper implements UmEditorFileHelperCore {
      * @throws IOException Exception thrown when something is wrong
      */
     private boolean unZipFile(File sourceFile, File destDir) throws IOException {
-        if (!destDir.exists()) {
-            destDir.mkdir();
-        }
-        ZipInputStream zipIn = new ZipInputStream(new FileInputStream(sourceFile));
-        ZipEntry entry = zipIn.getNextEntry();
-        while (entry != null) {
-            File newFile = new File(UMFileUtil.joinPaths(destDir.getAbsolutePath(),entry.getName()));
-            newFile.setLastModified(entry.getTime());
-            if (!entry.isDirectory()) {
-                BufferedOutputStream bos =
-                        new BufferedOutputStream(new FileOutputStream(newFile.getAbsolutePath()));
-                byte[] bytesIn = new byte[1024];
-                int read;
-                while ((read = zipIn.read(bytesIn)) != -1) {
-                    bos.write(bytesIn, 0, read);
+        if(!destDir.exists()) destDir.mkdirs();
+
+        ZipInputStream zipIn = new ZipInputStream(new FileInputStream(sourceFile.getAbsoluteFile()));
+        ZipEntry zipEntry = zipIn.getNextEntry();
+
+        while(zipEntry != null){
+
+            String fileName = zipEntry.getName();
+            File fileToCreate = new File(destDir , fileName);
+            fileToCreate.setLastModified(zipEntry.getTime());
+
+            if(!fileToCreate.getParentFile().isDirectory()){
+                if(!fileToCreate.getParentFile().mkdirs()) {
+                    throw new RuntimeException("Could not create directory to extract to: " +
+                            fileToCreate.getParentFile());
                 }
-                bos.close();
-            } else {
-                newFile.mkdir();
             }
+            if(!zipEntry.isDirectory()){
+                FileOutputStream fos = new FileOutputStream(fileToCreate);
+                int read;
+                byte[] buffer = new byte[1024];
+                while ((read = zipIn.read(buffer)) > 0) {
+                    fos.write(buffer, 0, read);
+                }
+
+                fos.close();
+            }
+
             zipIn.closeEntry();
-            entry = zipIn.getNextEntry();
+            zipEntry = zipIn.getNextEntry();
         }
+
+        zipIn.closeEntry();
         zipIn.close();
-        return destDir.list().length > 0;
+
+        return Objects.requireNonNull(destDir.listFiles()).length > 0;
     }
 
 }

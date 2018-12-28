@@ -9,6 +9,7 @@ import android.content.Intent;
 import android.content.pm.PackageManager;
 import android.content.res.TypedArray;
 import android.graphics.Bitmap;
+import android.graphics.Color;
 import android.net.Uri;
 import android.os.Build;
 import android.os.Bundle;
@@ -57,15 +58,15 @@ import com.ustadmobile.core.generated.locale.MessageID;
 import com.ustadmobile.core.impl.UMLog;
 import com.ustadmobile.core.impl.UmCallback;
 import com.ustadmobile.core.impl.UstadMobileSystemImpl;
-import com.ustadmobile.core.util.Base64Coder;
 import com.ustadmobile.core.util.UMFileUtil;
 import com.ustadmobile.core.view.ContentEditorView;
 import com.ustadmobile.core.view.ContentPreviewView;
+import com.ustadmobile.lib.util.Base64Coder;
 import com.ustadmobile.port.android.contenteditor.ContentFormat;
 import com.ustadmobile.port.android.contenteditor.ContentFormattingHelper;
 import com.ustadmobile.port.android.contenteditor.EditorAnimatedViewSwitcher;
 import com.ustadmobile.port.android.contenteditor.UmAndroidUriUtil;
-import com.ustadmobile.port.android.contenteditor.UmEditorToolbarView;
+import com.ustadmobile.port.android.contenteditor.UmEditorQuickActionView;
 import com.ustadmobile.port.android.contenteditor.UmEditorWebView;
 import com.ustadmobile.port.android.contenteditor.WebContentEditorChrome;
 import com.ustadmobile.port.android.contenteditor.WebContentEditorClient;
@@ -100,7 +101,7 @@ import static com.ustadmobile.port.sharedse.contenteditor.UmEditorFileHelper.EDI
 import static com.ustadmobile.port.sharedse.contenteditor.UmEditorFileHelper.MEDIA_DIRECTORY;
 
 public class ContentEditorActivity extends UstadBaseActivity implements ContentEditorView,
-        WebContentEditorChrome.JsLoadingCallback, UmEditorToolbarView.OnQuickActionMenuItemClicked,
+        WebContentEditorChrome.JsLoadingCallback, UmEditorQuickActionView.OnQuickActionMenuItemClicked,
         ContentFormattingHelper.StateChangeDispatcher ,UmEditorFileHelper.ZipFileTaskProgressListener,
         EditorAnimatedViewSwitcher.OnAnimatedViewsClosedListener {
 
@@ -116,11 +117,15 @@ public class ContentEditorActivity extends UstadBaseActivity implements ContentE
 
     private AppBarLayout umBottomToolbarHolder;
 
-    private UmEditorToolbarView umEditorToolbarView;
+    private UmEditorQuickActionView umEditorQuickActionView;
 
     private UmEditorWebView umEditorWebView;
 
     private DrawerLayout mContentPageDrawer;
+
+    private View rootView;
+
+    private View docNotFoundView;
 
     private Toolbar toolbar;
 
@@ -131,6 +136,8 @@ public class ContentEditorActivity extends UstadBaseActivity implements ContentE
     private boolean openPreview = false;
 
     private boolean isMultimediaFilePicker = false;
+
+    private boolean fileNotFound = false;
 
     private boolean isEditorPreview = false;
 
@@ -156,6 +163,29 @@ public class ContentEditorActivity extends UstadBaseActivity implements ContentE
 
     private static final String EDITOR_METHOD_PREFIX = "umContentEditor.";
 
+    private class CommandStatus{
+
+        private String command;
+
+        private boolean status;
+
+        public String getCommand() {
+            return command;
+        }
+
+        public void setCommand(String command) {
+            this.command = command;
+        }
+
+        public boolean isActive() {
+            return status;
+        }
+
+        public void setStatus(boolean status) {
+            this.status = status;
+        }
+    }
+
 
     /**
      * Content formatting adapter which handles formatting sections
@@ -173,7 +203,7 @@ public class ContentEditorActivity extends UstadBaseActivity implements ContentE
 
         @Override
         public Fragment getItem(int position) {
-            return new FormattingFragment().newInstance(position);
+            return new FormattingFragment().newInstance(formattingHelper,position);
         }
 
         @Override
@@ -209,8 +239,6 @@ public class ContentEditorActivity extends UstadBaseActivity implements ContentE
             void setContentFormats(List<ContentFormat> contentFormats) {
                 this.contentFormats = contentFormats;
                 notifyDataSetChanged();
-
-
             }
 
             @NonNull
@@ -231,7 +259,6 @@ public class ContentEditorActivity extends UstadBaseActivity implements ContentE
                 if(!isTobeHighlighted(format.getFormatCommand())){
                     changeState(mIcon,mLayout,false);
                 }
-                ContentFormattingHelper formattingHelper = ContentFormattingHelper.getInstance();
                 mLayout.setOnClickListener(v -> {
                     if(!format.getFormatCommand().equals(TEXT_FORMAT_TYPE_FONT)){
                         changeState(mIcon,mLayout,true);
@@ -279,8 +306,9 @@ public class ContentEditorActivity extends UstadBaseActivity implements ContentE
 
         }
 
-        public FormattingFragment newInstance(int formatType) {
+        public FormattingFragment newInstance(ContentFormattingHelper formattingHelper,int formatType) {
             this.formattingType = formatType;
+            this.formattingHelper = formattingHelper;
             return this;
         }
 
@@ -291,7 +319,6 @@ public class ContentEditorActivity extends UstadBaseActivity implements ContentE
                     container, false);
             RecyclerView mRecyclerView = rootView.findViewById(R.id.formats_list);
             adapter = new FormatsAdapter();
-            formattingHelper = ContentFormattingHelper.getInstance();
             formattingHelper.setStateDispatcher(this);
             adapter.setContentFormats(formattingHelper.getFormatListByType(formattingType));
             GridLayoutManager mLayoutManager = new GridLayoutManager(getContext(),
@@ -348,22 +375,24 @@ public class ContentEditorActivity extends UstadBaseActivity implements ContentE
         umEditorWebView = findViewById(R.id.editor_content);
         progressDialog = findViewById(R.id.progressBar);
         startEditing = findViewById(R.id.btn_start_editing);
+        docNotFoundView = findViewById(R.id.doc_not_found);
         RelativeLayout mFromCamera = findViewById(R.id.multimedia_from_camera);
         RelativeLayout mFromDevice = findViewById(R.id.multimedia_from_device);
-        View rootView = findViewById(R.id.coordinationLayout);
+        rootView = findViewById(R.id.coordinationLayout);
         TextView blankDocTitle = findViewById(R.id.blank_doc_title);
         TextView bdClickLabel = findViewById(R.id.click_label);
         TextView bdCreateLabel = findViewById(R.id.editing_label);
         blankDocumentContainer = findViewById(R.id.new_doc_container);
         umBottomToolbarHolder = findViewById(R.id.um_appbar_bottom);
-        umEditorToolbarView = findViewById(R.id.um_toolbar_bottom);
+        umEditorQuickActionView = findViewById(R.id.um_toolbar_bottom);
 
         formattingHelper = ContentFormattingHelper.getInstance();
         formattingHelper.setStateDispatcher(this);
+        umEditorWebView.setBackgroundColor(Color.TRANSPARENT);
 
         //Set quick action menus above the keyboard when opened
-        umEditorToolbarView.inflateMenu(R.menu.menu_content_editor_quick_actions);
-        umEditorToolbarView.setOnQuickActionMenuItemClicked(this);
+        umEditorQuickActionView.inflateMenu(R.menu.menu_content_editor_quick_actions);
+        umEditorQuickActionView.setOnQuickActionMenuItemClicked(this);
 
         viewSwitcher = EditorAnimatedViewSwitcher.getInstance()
                         .with(this,this)
@@ -505,7 +534,11 @@ public class ContentEditorActivity extends UstadBaseActivity implements ContentE
             mContentPageDrawer.openDrawer(GravityCompat.END);
 
         }else if(itemId == android.R.id.home){
-            viewSwitcher.closeActivity();
+            if(fileNotFound){
+                finish();
+            }else{
+                viewSwitcher.closeActivity();
+            }
 
         }else if(itemId == R.id.content_action_format){
 
@@ -557,7 +590,7 @@ public class ContentEditorActivity extends UstadBaseActivity implements ContentE
     @Override
     public void onStateChanged(ContentFormat format) {
         if(format.getFormatId() != 0){
-            umEditorToolbarView.updateMenu();
+            umEditorQuickActionView.updateMenu();
         }
     }
 
@@ -641,17 +674,19 @@ public class ContentEditorActivity extends UstadBaseActivity implements ContentE
                         INDEX_FILE),indexFile.html());
                 break;
 
-            //Callback received after checking which control are activated
+            //Callback received upon completion of all controls status check
             case ACTION_CONTROLS_ACTIVATED:
-                /*String formatCommand = content.split("-")[0];
-                String formatStatus = content.split("-")[1];
-                ContentFormat format = formattingHelper.getFormatByCommand(formatCommand);
-                try{
-                    format.setActive(Boolean.parseBoolean(formatStatus));
-                    formattingHelper.updateFormat(format);
-                }catch (NullPointerException e){
-                    e.printStackTrace();
-                }*/
+                Gson gson = new Gson();
+                CommandStatus [] statuses = gson.fromJson(content,CommandStatus[].class);
+                for(CommandStatus status: statuses){
+                    ContentFormat format = ContentFormattingHelper
+                            .getFormatByCommand(status.getCommand());
+                    if(format != null){
+                        format.setActive(status.isActive());
+                        formattingHelper.updateFormat(format);
+                    }
+                }
+
                 break;
         }
     }
@@ -782,6 +817,13 @@ public class ContentEditorActivity extends UstadBaseActivity implements ContentE
         return umEditorFileHelper;
     }
 
+    @Override
+    public void showNotFoundErrorMessage() {
+        fileNotFound = true;
+        umEditorWebView.setVisibility(View.GONE);
+        docNotFoundView.setVisibility(View.VISIBLE);
+        startEditing.setVisibility(View.GONE);
+    }
 
 
     @Override
@@ -1087,7 +1129,9 @@ public class ContentEditorActivity extends UstadBaseActivity implements ContentE
                     startEditing.setVisibility(View.VISIBLE);
                     loadIndexFile();
                 }else{
-                    if(deleteTempDir(new File(umEditorFileHelper.getDestinationDirPath())))finish();
+                    if(deleteTempDir(new File(umEditorFileHelper.getDestinationDirPath()))){
+                        finish();
+                    }
                 }
             }
         });
@@ -1128,13 +1172,22 @@ public class ContentEditorActivity extends UstadBaseActivity implements ContentE
     }
 
     private boolean deleteTempDir(File dir) {
-        File[] contents = dir.listFiles();
-        if (contents != null) {
-            for (File file : contents) {
-                deleteTempDir(file);
+        File[] files = dir.listFiles();
+        boolean success = true;
+        if (files != null) {
+            for (File file : files) {
+                if (file.isDirectory()) {
+                    success &= deleteTempDir(file);
+                }
+                if (!file.delete()) {
+                    success = false;
+                }
             }
         }
-        return dir.delete();
+        if(dir.exists()){
+            success = dir.delete();
+        }
+        return success;
     }
 
 

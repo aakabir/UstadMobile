@@ -47,7 +47,7 @@ repositories {
 dependencies {
     implementation "org.json:json:$version_json"
     implementation "net.sf.kxml:kxml2:$version_kxml"
-    implementation "com.ustadmobile.qrcodelibomrfork:qrcode-core:$version_qrcodelibfork"
+
     implementation project(':lib-database')
     compileOnly project(':lib-database-entities')
     implementation project(':lib-database-runtime')
@@ -58,11 +58,27 @@ dependencies {
     testImplementation project(":core-tests")
     testImplementation project(":sharedse")
     testImplementation project(":app-javase")
-    testImplementation project(":lib-core-fs-tests")
+    testImplementation project(":lib-database-jdbc")
+    testImplementation project(":lib-database-entities")
+    testImplementation project(":app-rest-server")
+
     testImplementation "org.nanohttpd:nanohttpd:$version_nanohttpd"
     testImplementation "org.nanohttpd:nanohttpd-nanolets:$version_nanohttpd"
-    testImplementation project(":sharedse-tests")
     testImplementation "junit:junit:$version_junit"
+    testImplementation "org.mockito:mockito-core:$version_core_mockito"
+
+    //Jersey dependencies
+    testImplementation "org.glassfish.jersey.core:jersey-server:$version_jersey"
+    testImplementation "org.glassfish.jersey.containers:jersey-container-servlet:$version_jersey"
+    testImplementation "org.glassfish.jersey.core:jersey-client:$version_jersey"
+    testImplementation "org.glassfish.jersey.inject:jersey-hk2:$version_jersey"
+    testImplementation "org.glassfish.jersey.media:jersey-media-json-jackson:$version_jersey"
+    testImplementation "org.glassfish.jersey.containers:jersey-container-grizzly2-http:$version_jersey"
+
+    //JNDI and SQLite dependencies for test database
+    implementation "com.github.h-thurow:simple-jndi:$version_simple_jndi"
+    implementation "org.apache.commons:commons-pool2:$version_apache_commons_pool2"
+    implementation "org.xerial:sqlite-jdbc:$version_sqlite_jdbc"
 }
 
 
@@ -386,6 +402,7 @@ task convertAppConfigToPropertiesXml {
  */
 task copyTestResources(type: Copy) {
     from "${projectDir}/src/test/resources"
+    from "${projectDir}/src/main/assets"
     from "${projectDir}/../core-tests/src/main/resources"
     into "${buildDir}/classes/test"
 }
@@ -426,7 +443,7 @@ task createUmEditorBlankDocumentArchive(type: Zip) {
     destinationDir(file(templatePath))
 
     doLast {
-        delete templatePath + "/umEditorBlankDoc"
+       delete templatePath + "/umEditorBlankDoc"
     }
 }
 copyUmEditorResources.dependsOn(createUmEditorBlankDocumentArchive)
@@ -443,7 +460,7 @@ task prepareUmEditorDirectories << {
     def blankDocMediaPath = blankDocPath +"media/"
 
 
-    File  blankDocRootDir = new File(blankDocPath)
+    File blankDocRootDir = new File(blankDocPath)
     File blankDocJsDir = new File(blankDocJsPath)
     File blankDocCssDir = new File(blankDocCssPath)
     File blankDocMediaDir = new File(blankDocMediaPath)
@@ -458,6 +475,7 @@ task prepareUmEditorDirectories << {
     }
     if(!blankDocMediaDir.exists()){
         blankDocMediaDir.mkdir()
+        new File("$blankDocMediaDir/.media-hide.info").text = "media-dir"
     }
     if(!blankDocJsDir.exists()){
         blankDocJsDir.mkdir()

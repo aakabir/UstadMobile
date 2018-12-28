@@ -1,11 +1,13 @@
 package com.ustadmobile.port.android.view;
 
+import android.graphics.Color;
 import android.os.Bundle;
 import android.support.v7.app.ActionBar;
 import android.support.v7.widget.Toolbar;
 import android.view.MenuItem;
 import android.view.View;
 import android.webkit.WebSettings;
+import android.webkit.WebView;
 import android.widget.ProgressBar;
 import android.widget.TextView;
 
@@ -22,7 +24,7 @@ import com.ustadmobile.port.android.util.UMAndroidUtil;
 public class ContentEditorPreviewActivity extends UstadBaseActivity
         implements ContentPreviewView, WebContentEditorChrome.JsLoadingCallback {
 
-    private UmEditorNestedScrollView contentPreview;
+    private WebView contentPreview;
 
     private ProgressBar progressDialog;
 
@@ -33,6 +35,7 @@ public class ContentEditorPreviewActivity extends UstadBaseActivity
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_content_preview);
         contentPreview = findViewById(R.id.preview_content);
+        contentPreview.setBackgroundColor(Color.TRANSPARENT);
         Toolbar toolbar = findViewById(R.id.um_toolbar);
         toolbarTitle = findViewById(R.id.toolbarTitle);
         progressDialog = findViewById(R.id.progressBar);

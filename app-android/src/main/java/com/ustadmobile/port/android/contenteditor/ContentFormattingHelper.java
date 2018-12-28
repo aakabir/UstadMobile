@@ -42,22 +42,28 @@ public class ContentFormattingHelper {
 
     private static List<ContentFormat> formatList = new ArrayList<>();
 
+    private static List<ContentFormat> quickActionList = new ArrayList<>();
+
     private List<StateChangeDispatcher> dispatcherList = new CopyOnWriteArrayList<>();
 
     public static ContentFormattingHelper getInstance() {
         if(instance == null){
             instance = new ContentFormattingHelper();
-            prepareFormattingList();
+            formatList = prepareFormattingList();
+            quickActionList = prepareQuickActions();
         }
         return instance;
     }
-
 
     /**
      * Construct quick action menu items
      * @return list of all quick action menus
      */
-    public List<ContentFormat> getQuickActions(){
+    List<ContentFormat> getQuickActions(){
+        return quickActionList;
+    }
+
+    private static List<ContentFormat> prepareQuickActions(){
         List<ContentFormat> quickActions = new ArrayList<>();
         try{
             ContentFormat bold = getFormatByCommand(TEXT_FORMAT_TYPE_BOLD);
@@ -97,8 +103,7 @@ public class ContentFormattingHelper {
         return quickActions;
     }
 
-
-    private static void prepareFormattingList(){
+    private static List<ContentFormat> prepareFormattingList(){
         List<ContentFormat> mText = new ArrayList<>();
         List<ContentFormat> mDirection = new ArrayList<>();
         List<ContentFormat> mParagraph = new ArrayList<>();
@@ -136,9 +141,11 @@ public class ContentFormattingHelper {
                 ACTION_TEXT_DIRECTION_LTR,false,FORMATTING_ACTIONS_INDEX));
         mDirection.add(new ContentFormat(R.drawable.ic_format_textdirection_r_to_l_white_24dp,
                 ACTION_TEXT_DIRECTION_RTL,false,FORMATTING_ACTIONS_INDEX));
-        formatList.addAll(mText);
-        formatList.addAll(mParagraph);
-        formatList.addAll(mDirection);
+        List<ContentFormat> allFormats = new ArrayList<>();
+        allFormats.addAll(mText);
+        allFormats.addAll(mParagraph);
+        allFormats.addAll(mDirection);
+        return allFormats;
     }
 
     /**
@@ -161,7 +168,7 @@ public class ContentFormattingHelper {
      * @param command formatting command to be found
      * @return found content format
      */
-    public ContentFormat getFormatByCommand(String command){
+    public static ContentFormat getFormatByCommand(String command){
         ContentFormat contentFormat = null;
         for(ContentFormat format: formatList){
             if(format.getFormatCommand().equals(command)){

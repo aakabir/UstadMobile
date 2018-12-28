@@ -1,18 +1,34 @@
 body{
     padding: 0 !important;
     margin: 0 !important;
+    height: 100%;
+    background-color: white;
+}
+
+.container-fluid{
+    padding: 0 !important;
+    border: 0 solid transparent;
+    top: 0; bottom: 0; right: 0; left: 0;
 }
 
 #umEditor {
     position: absolute;
-    top: 0; right: 0; bottom: 0; left: 0;
-    padding: 16px !important;
+    top: 0; right: 0; left: 0;
     border: 0 solid transparent;
     background-color: white;
-    height: auto;
+    padding:16px !important;
+    width: 100vw;
     font-size: 1em;
 }
 
+p {
+    margin: 4px 0 !important;
+    width: 100%;
+}
+
+.extra-content{
+    min-height: 40px;
+}
 
 
 .no-padding {
@@ -69,7 +85,6 @@ select {
     -webkit-appearance: none;
 }
 
-
 select,button :focus :active{
     outline: none;
 }
@@ -101,19 +116,22 @@ select,button :focus :active{
 }
 
 .default-margin-bottom{
-    margin-bottom: 16px;
+    margin-bottom: 16px !important;
 }
 
 .default-margin-top{
-    margin-top: 10px;
+    margin-top: 10px !important;
 }
 
+.default-padding{
+    padding: 16px !important;
+}
 .default-padding-top{
-    padding-top: 16px;
+    padding-top: 16px !important;
 }
 
 .default-padding-bottom{
-    padding-bottom: 16px;
+    padding-bottom: 16px !important;
 }
 
 .question-choice-pointer{
@@ -153,8 +171,15 @@ select,button :focus :active{
     margin-bottom:16px;
 }
 
+.um-row{
+    padding: 8px;
+    display:-ms-flexbox;display:flex;-ms-flex-wrap:wrap;flex-wrap:wrap;
+}
+
 button.qn-retry{
     color: white !important;
     margin-right: -20px !important;
 }
+
+
 

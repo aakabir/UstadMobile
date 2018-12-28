@@ -44,6 +44,8 @@ import com.ustadmobile.core.tincan.TinCanResultListener;
 import com.ustadmobile.core.util.MessagesHashtable;
 import com.ustadmobile.core.util.UMFileUtil;
 import com.ustadmobile.core.util.UMIOUtils;
+import com.ustadmobile.core.view.Login2View;
+import com.ustadmobile.lib.db.entities.UmAccount;
 import com.ustadmobile.lib.util.UMUtil;
 import com.ustadmobile.core.view.AppView;
 import com.ustadmobile.core.view.LoginView;
@@ -238,6 +240,13 @@ public abstract class UstadMobileSystemImpl {
     }
 
     /**
+     * Only for testing purposes (e.g. to use a mockito spy)
+     */
+    public static void setMainInstance(UstadMobileSystemImpl instance) {
+        mainInstance = instance;
+    }
+
+    /**
      * Convenience shortcut for logging
      * @see UMLog#l(int, int, java.lang.String)
      *
@@ -355,15 +364,12 @@ public abstract class UstadMobileSystemImpl {
      * Starts the user interface for the app
      */
     public void startUI(Object context) {
-        String activeUser = getActiveUser(context);
-        String activeUserAuth = getActiveUserAuth(context);
-        getLogger().l(UMLog.VERBOSE, 402, activeUser);
-
+        UmAccount activeAccount = UmAccountManager.getActiveAccount(context);
 
 
         if(getAppConfigBoolean(AppConfig.KEY_FIRST_DEST_LOGIN_REQUIRED, context)
-                && (activeUser == null || activeUserAuth == null)) {
-            go(LoginView.VIEW_NAME, null, context);
+                && activeAccount == null) {
+            go(Login2View.VIEW_NAME, null, context);
         }else {
             go(getAppConfigString(AppConfig.KEY_FIRST_DEST, null, context), context);
         }

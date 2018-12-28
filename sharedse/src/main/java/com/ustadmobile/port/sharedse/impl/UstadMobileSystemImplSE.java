@@ -22,7 +22,7 @@ import com.ustadmobile.core.impl.http.UmHttpRequest;
 import com.ustadmobile.core.impl.http.UmHttpResponse;
 import com.ustadmobile.core.impl.http.UmHttpResponseCallback;
 import com.ustadmobile.core.model.CourseProgress;
-import com.ustadmobile.core.util.Base64Coder;
+import com.ustadmobile.lib.util.Base64Coder;
 import com.ustadmobile.core.util.UMFileUtil;
 import com.ustadmobile.core.util.UMIOUtils;
 import com.ustadmobile.port.sharedse.impl.http.UmHttpCallSe;

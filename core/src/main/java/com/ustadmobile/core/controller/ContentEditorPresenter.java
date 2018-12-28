@@ -49,7 +49,7 @@ public class ContentEditorPresenter extends UstadBaseController<ContentEditorVie
     }
 
     /**
-     * Check if content entry has a file associated with it, if yes edit otherwise create new one.
+     * Check if content entry has a local file associated with it, if yes edit otherwise create new one.
      */
     public void handleContentEntryFileStatus(){
         long contentEntryFileUid = Long.parseLong(String.valueOf(args.get(CONTENT_ENTRY_FILE_UID)));
@@ -59,7 +59,7 @@ public class ContentEditorPresenter extends UstadBaseController<ContentEditorVie
                 new UmCallback<ContentEntryFileStatus>() {
             @Override
             public void onSuccess(ContentEntryFileStatus result) {
-                if(result == null || !new File(result.getFilePath()).exists()){
+                if(result == null){
                     view.getFileHelper().createFile(contentEntryFileUid,new UmCallback<String>() {
                         @Override
                         public void onSuccess(String result) {
@@ -71,8 +71,13 @@ public class ContentEditorPresenter extends UstadBaseController<ContentEditorVie
                             exception.printStackTrace();
                         }
                     });
+
                 }else{
-                    mountFile(result.getFilePath());
+                    if(!new File(result.getFilePath()).exists()){
+                        view.runOnUiThread(() -> view.showNotFoundErrorMessage());
+                    }else{
+                        mountFile(result.getFilePath());
+                    }
                 }
             }
 
@@ -88,7 +93,11 @@ public class ContentEditorPresenter extends UstadBaseController<ContentEditorVie
         view.getFileHelper().mountFile(filePath, new UmCallback<Void>() {
             @Override
             public void onSuccess(Void result) {
-                view.runOnUiThread(() -> view.loadIndexFile());
+                if(filePath.length() > 0){
+                    view.runOnUiThread(() -> view.loadIndexFile());
+                }else{
+                    view.runOnUiThread(() -> view.showNotFoundErrorMessage());
+                }
             }
 
             @Override

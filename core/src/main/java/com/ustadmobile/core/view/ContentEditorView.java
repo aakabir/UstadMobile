@@ -13,7 +13,7 @@ public interface ContentEditorView extends UstadView {
     String CONTENT_ENTRY_FILE_UID = "content_entry_file_uid";
 
     /**
-     * List of all available text formatting types.
+     * List of all available text formatting.
      */
 
     String TEXT_FORMAT_TYPE_BOLD = "Bold";
@@ -25,7 +25,7 @@ public interface ContentEditorView extends UstadView {
     String TEXT_FORMAT_TYPE_SUB= "Subscript";
 
     /**
-     * List of all available paragraph formatting types.
+     * List of all available paragraph formatting.
      */
     String PARAGRAPH_FORMAT_ALIGN_CENTER = "JustifyCenter";
     String PARAGRAPH_FORMAT_ALIGN_LEFT = "JustifyLeft";
@@ -42,12 +42,16 @@ public interface ContentEditorView extends UstadView {
 
     String ACTION_REDO = "Redo";
     String ACTION_UNDO = "Undo";
-    String ACTION_INIT_EDITOR ="onInitEditor";
-    String ACTION_CONTROLS_ACTIVATED ="activeControl";
-    String ACTION_SAVE_CONTENT ="onSaveContent";
     String ACTION_TEXT_DIRECTION_LTR = "mceDirectionLTR";
     String ACTION_TEXT_DIRECTION_RTL = "mceDirectionRTL";
     String ACTION_INSERT_CONTENT = "insertContent";
+
+    /**
+     * List of callback received from JS to control native behavior
+     */
+    String ACTION_INIT_EDITOR ="onInitEditor";
+    String ACTION_CONTROLS_ACTIVATED ="onActiveControlCheck";
+    String ACTION_SAVE_CONTENT ="onSaveContent";
     String ACTION_SELECT_ALL = "selectAll";
 
     /**
@@ -190,5 +194,6 @@ public interface ContentEditorView extends UstadView {
      */
     UmEditorFileHelperCore getFileHelper();
 
+    void showNotFoundErrorMessage();
 
 }

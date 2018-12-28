@@ -24,6 +24,7 @@ import com.ustadmobile.core.impl.UMLog;
 import com.ustadmobile.core.impl.UstadMobileConstants;
 import com.ustadmobile.core.impl.UstadMobileSystemImpl;
 import com.ustadmobile.port.android.impl.UstadMobileSystemImplAndroid;
+import com.ustadmobile.port.android.netwokmanager.UmAppDatabaseSyncService;
 import com.ustadmobile.port.android.util.UMAndroidUtil;
 
 import java.lang.ref.WeakReference;
@@ -60,6 +61,20 @@ public abstract class UstadBaseActivity extends AppCompatActivity implements Ser
 
     private boolean isStarted = false;
 
+    private ServiceConnection mSyncServiceConnection = new ServiceConnection() {
+        @Override
+        public void onServiceConnected(ComponentName name, IBinder service) {
+            mSyncServiceBound = true;
+        }
+
+        @Override
+        public void onServiceDisconnected(ComponentName name) {
+            mSyncServiceBound = false;
+        }
+    };
+
+    private boolean mSyncServiceBound = false;
+
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         //bind to the LRS forwarding service
@@ -72,6 +87,10 @@ public abstract class UstadBaseActivity extends AppCompatActivity implements Ser
         super.onCreate(savedInstanceState);
         localeOnCreate = UstadMobileSystemImpl.getInstance().getDisplayedLocale(this);
 
+
+        Intent syncServiceIntent = new Intent(this, UmAppDatabaseSyncService.class);
+        bindService(syncServiceIntent, mSyncServiceConnection,
+                Context.BIND_AUTO_CREATE|Context.BIND_ADJUST_WITH_ACTIVITY);
     }
 
     @Override
@@ -231,6 +250,10 @@ public abstract class UstadBaseActivity extends AppCompatActivity implements Ser
         super.onDestroy();
         LocalBroadcastManager.getInstance(this).unregisterReceiver(mLocaleChangeBroadcastReceiver);
         UstadMobileSystemImplAndroid.getInstanceAndroid().handleActivityDestroy(this);
+
+        if(mSyncServiceBound) {
+            unbindService(mSyncServiceConnection);
+        }
     }
 
     public Object getContext() {
