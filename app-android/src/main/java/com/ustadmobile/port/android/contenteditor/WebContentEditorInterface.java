@@ -93,4 +93,13 @@ public class WebContentEditorInterface {
             e.printStackTrace();
         }
     }
+
+    @JavascriptInterface
+    public void onContentCut(String callbackValue) {
+        try{
+            activity.runOnUiThread(() -> callback.onCallbackReceived(callbackValue));
+        }catch (Exception e){
+            e.printStackTrace();
+        }
+    }
 }
