@@ -13,6 +13,9 @@ import android.webkit.JavascriptInterface;
  *     i.e UmCotentEditor.onContentChanged so that below methods can
  *     be invoked on android native.
  * </p>
+ *
+ * @author kileha3
+ *
  */
 public class WebContentEditorInterface {
 

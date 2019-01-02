@@ -30,6 +30,9 @@ import static com.ustadmobile.port.android.contenteditor.ContentFormattingHelper
  *     Use {@link UmEditorActionView#updateMenu()} to send updated state of the
  *     quick action menu. i.e change background color and icon tint color
  * </p>
+ *
+ * @author kileha3
+ *
  */
 public class UmEditorActionView extends Toolbar {
 

@@ -27,7 +27,7 @@ public class ContentFormat {
      * @param active Flag to indicate if the format is active or not
      * @param formatType Flag which shows which type of the formatting is.
      */
-    public ContentFormat(int formatIcon, String formatCommand, boolean active, int formatType) {
+    ContentFormat(int formatIcon, String formatCommand, boolean active, int formatType) {
         this.formatIcon = formatIcon;
         this.formatCommand = formatCommand;
         this.active = active;
@@ -42,8 +42,8 @@ public class ContentFormat {
      * @param formatType Flag which shows which type of the formatting is.
      * @param formatId formatting id.
      */
-    public ContentFormat(int formatIcon, String formatCommand, boolean active,
-                         int formatType,int formatId) {
+    ContentFormat(int formatIcon, String formatCommand, boolean active,
+                  int formatType, int formatId) {
         this.formatIcon = formatIcon;
         this.formatCommand = formatCommand;
         this.active = active;
@@ -51,8 +51,8 @@ public class ContentFormat {
         this.formatId = formatId;
     }
 
-    public ContentFormat(int formatIcon, String formatCommand, boolean active,
-                         int formatType,int formatId,int formatTitle) {
+    ContentFormat(int formatIcon, String formatCommand, boolean active,
+                  int formatType, int formatId, int formatTitle) {
         this.formatIcon = formatIcon;
         this.formatCommand = formatCommand;
         this.active = active;

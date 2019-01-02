@@ -26,6 +26,7 @@ import static com.ustadmobile.core.view.ContentEditorView.*;
  * </p>
  *
  * @see ContentEditorView for the command list
+ *
  * @author kileha3
  *
  */

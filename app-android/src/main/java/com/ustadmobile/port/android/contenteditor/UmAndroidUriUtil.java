@@ -23,6 +23,7 @@ import android.webkit.MimeTypeMap;
  * </p>
  *
  * @author kileha3
+ *
  */
 
 public class UmAndroidUriUtil {

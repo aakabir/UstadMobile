@@ -10,6 +10,9 @@ import com.ustadmobile.core.impl.UstadMobileSystemImpl;
 /**
  * Class which is responsible to handle all page loads and native-to-js client interaction.
  * It is also responsible to handle all Javascript console logs.
+ *
+ * @author kileha3
+ *
  */
 public class WebContentEditorChrome  extends WebChromeClient {
 

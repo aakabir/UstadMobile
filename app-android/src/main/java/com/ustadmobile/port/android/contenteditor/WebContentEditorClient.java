@@ -32,6 +32,7 @@ import static com.ustadmobile.port.sharedse.contenteditor.UmEditorFileHelper.EDI
  *  log a message or return value
  *
  * @author kileha3
+ *
  */
 public class WebContentEditorClient extends WebViewClient {
 

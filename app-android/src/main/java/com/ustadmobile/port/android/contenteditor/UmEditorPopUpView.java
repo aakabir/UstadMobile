@@ -25,6 +25,26 @@ import java.util.List;
 
 import static android.content.Context.LAYOUT_INFLATER_SERVICE;
 
+/**
+ * Customized PopUpWindow which handle both language directionality and content font size option.
+ * It can handle any option with format as content list.
+ *
+ * <b>Operational flow:</b>
+ * <p>
+ *     Use {@link UmEditorPopUpView#setMenuList(List)} to to add list of all formats you want to
+ *     appear as popup options
+ *
+ *     Use {@link UmEditorPopUpView#setWidthDimen(int)} to set width of the popup view
+ *
+ *     Use {@link UmEditorPopUpView#showIcons(boolean)} to enable icons on the popup list items
+ *
+ *     Use {@link UmEditorPopUpView#show(boolean, OnPopUpMenuClickListener)} to show the options
+ * </p>
+ *
+ * @author kileha3
+ *
+ */
+
 public class UmEditorPopUpView {
 
     private Context context;
@@ -40,17 +60,37 @@ public class UmEditorPopUpView {
     private OnPopUpMenuClickListener listener;
 
 
+    /**
+     * Interface which is used to handle popup item clicks
+     */
     public interface OnPopUpMenuClickListener {
-
+        /**
+         * Invoked when an item is clicked
+         * @param format selected format
+         */
         void onMenuClicked(ContentFormat format);
     }
 
+    /**
+     * Handle dimension types
+     */
     public static class UmPopUpDim{
-        public static int DIMEN_FULL_WIDTH = ListPopupWindow.WRAP_CONTENT;
+        /**
+         * Dimension for shorter text version (Font sizes)
+         */
         public static int DIMEN_MIN_WIDTH = 300;
-        public static int DIMEN_MID_WIDTH = 450;
+
+        /**
+         * Dimension for shorter text with icons (Directionality)
+         */
+        static int DIMEN_MID_WIDTH = 450;
     }
 
+    /**
+     * Constrictor used to initialize PopUp view.
+     * @param context Application context
+     * @param anchor View where popup view will be anchored
+     */
     public UmEditorPopUpView(Context context,View anchor) {
         this.context = context;
         this.anchorView = anchor;
@@ -79,22 +119,42 @@ public class UmEditorPopUpView {
         recyclerView.setAdapter(popUpAdapter);
     }
 
+    /**
+     * Set popup list items
+     * @param menuList Lust of all items to be set on popup view
+     * @return UmEditorPopUpView instance
+     */
     public UmEditorPopUpView setMenuList(List<ContentFormat> menuList){
         popUpAdapter.setMenuList(menuList);
         return this;
     }
 
+    /**
+     * Set width of the popup view
+     * @param popUpWidth dimension to be set
+     * @return UmEditorPopUpView instance
+     */
     public UmEditorPopUpView setWidthDimen(int popUpWidth){
         popupWindow.setWidth(popUpWidth);
         return this;
     }
 
-
+    /**
+     * Enable view to show/hide icons on the list
+     * @param visible Show when true otherwise hide.
+     * @return UmEditorPopUpView instance
+     */
     public UmEditorPopUpView showIcons(boolean visible){
        this.visible = visible;
         return this;
     }
 
+    /**
+     * Show popup window to the UI
+     * @param isToolBarAnchored True when popup will be anchored on toolbar view
+     *                          otherwise false.
+     * @param listener Listen to listen for the popup list item clicks.
+     */
     public void show(boolean isToolBarAnchored,OnPopUpMenuClickListener listener){
         this.listener = listener;
         if(!isToolBarAnchored){

@@ -40,6 +40,8 @@ import java.util.logging.Handler;
  *     Use {@link EditorAnimatedViewSwitcher#closeActivity()} to handle activity closing task
  *     which will close all the activity views before shutting down.
  * </p>
+ *
+ * @author kileha3
  */
 public class EditorAnimatedViewSwitcher {
 

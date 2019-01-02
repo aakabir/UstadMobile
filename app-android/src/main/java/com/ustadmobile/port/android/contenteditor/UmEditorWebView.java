@@ -10,6 +10,9 @@ import android.webkit.WebView;
 
 /**
  * Custom webView which handles dispatch all key events to the JS side.
+ *
+ * @author kileha3
+ *
  */
 public class UmEditorWebView  extends WebView {
 
