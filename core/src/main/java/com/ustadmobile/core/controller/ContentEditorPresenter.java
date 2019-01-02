@@ -180,11 +180,11 @@ public class ContentEditorPresenter extends UstadBaseController<ContentEditorVie
                     break;
 
                 case ACTION_TEXT_DIRECTION_LTR:
-                    view.setContentTextDirection(true);
+                    view.setContentTextDirection(formatType);
                     break;
 
                 case ACTION_TEXT_DIRECTION_RTL:
-                    view.setContentTextDirection(false);
+                    view.setContentTextDirection(formatType);
                     break;
 
                 case CONTENT_INSERT_FILL_THE_BLANKS_QN:
