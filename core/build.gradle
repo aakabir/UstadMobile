@@ -481,6 +481,7 @@ task prepareUmEditorDirectories << {
         blankDocJsDir.mkdir()
     }
 
+
     //copy index.html
     copy {
         from templatePath+"index.html"
@@ -498,6 +499,11 @@ task prepareUmEditorDirectories << {
     copy {
         from rawProjectPath+"/js/bootstrap.min.js", rawProjectPath+"/js/jquery3.3.1.min.js", rawProjectPath+"/js/UmContentEditorCore.js", rawProjectPath+"/js/UmQuestionWidget.js"
         into blankDocJsPath
+    }
+
+    copy{
+        from rawProjectPath+"/icons"
+        into blankDocPath+"icons"
     }
 }
 createUmEditorBlankDocumentArchive.dependsOn(prepareUmEditorDirectories)

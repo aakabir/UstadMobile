@@ -683,17 +683,19 @@ umContentEditor.initEditor = (showToolbar = false) => {
 
                 this.handleCursorFocusPosition(activeNode);
                 const hasQuestions = $("#umEditor").find(".question").length > 0;
-                const isBelowQuestion = $($(activeNode).prev()).hasClass("question");
-                const isNotBelowQuestion = $($(activeNode).prev()).hasClass("extra-content");
+                const isBelowQuestion = $($($(activeNode).parent()).prev()).hasClass("question");
+                const isNotBelowQuestion = $($($(activeNode).parent()).prev()).hasClass("extra-content");
 
+                console.log("prevActive1",isNotBelowQuestion)
+                console.log("prevActive2",isBelowQuestion)
                 if(disableKeys &&  hasQuestions){
                     if(isNotBelowQuestion || $(activeNode).hasClass("mce-content-body")
-                        || (isParagraph && !$($(activeNode).parent()).attr("class").includes("question"))){
+                        || (isParagraph && isNotBelowQuestion)){
                         return true;
                     }
                     this.preventKeyboardKey(e);
                 }else{
-                    if(isBelowQuestion && deleteKeys){
+                    if(isBelowQuestion && deleteKeys && innerTextContentLength === 0){
                         console.log("pasting","prevent");
                         this.preventKeyboardKey(e);
                     }else{
