@@ -61,6 +61,7 @@ umContentEditor.setFontSize = (fontSize) => {
  * @returns {Object} TRUE if succeed FALSE otherwise
  */
 umContentEditor.editorActionUndo = () => {
+    console.log("observing","undo perfomed")
     this.executeCommand("Undo",null);
     const isActive = this.isControlActivated("Undo");
     return {action:'activeControl',content:btoa("Undo-"+isActive)};
@@ -294,23 +295,27 @@ executeCommand = (command, args) => {
     }
 };
 
-getCursorPositionRelativeToTheEditableElementContent = ()  =>  {
-    if (window.getSelection && window.getSelection().getRangeAt) {
-        const range = window.getSelection().getRangeAt(0);
-        const selectedObj = window.getSelection();
-        let rangeCount = 0;
-        let childNodes = selectedObj.anchorNode.parentNode.childNodes;
-        for (let i = 0; i < childNodes.length; i++) {
-            if (childNodes[i] === selectedObj.anchorNode) {
-                break;
+umContentEditor.getCursorPositionRelativeToTheEditableElementContent = ()  =>  {
+    try{
+        if (window.getSelection && window.getSelection().getRangeAt) {
+            const range = window.getSelection().getRangeAt(0);
+            const selectedObj = window.getSelection();
+            let rangeCount = 0;
+            let childNodes = selectedObj.anchorNode.parentNode.childNodes;
+            for (let i = 0; i < childNodes.length; i++) {
+                if (childNodes[i] === selectedObj.anchorNode) {
+                    break;
+                }
+                if (childNodes[i].outerHTML)
+                    rangeCount += childNodes[i].outerHTML.length;
+                else if (childNodes[i].nodeType === 3) {
+                    rangeCount += childNodes[i].textContent.length;
+                }
             }
-            if (childNodes[i].outerHTML)
-                rangeCount += childNodes[i].outerHTML.length;
-            else if (childNodes[i].nodeType === 3) {
-                rangeCount += childNodes[i].textContent.length;
-            }
+            return range.startOffset + rangeCount;
         }
-        return range.startOffset + rangeCount;
+    }catch (e) {
+        console.log("getCursorPositionRelativeToTheEditableElementContent:",e);
     }
     return -1;
 };
@@ -344,19 +349,16 @@ insertQuestionTemplate = (questionTypeIndex) => {
             let questionNode = $(templateHtmlContent).attr("id",nextQuestionId);
             $(questionNode).find(".question-choice").attr("id",nextChoiceId);
             questionNode = $(questionNode).prop('outerHTML');
-            UmQuestionWidget.setQuestionStatus(true);
-            tinymce.activeEditor.dom.add(tinymce.activeEditor.getBody(), 'p', {class: 'pg-break',style:'page-break-before: always'}, '');
-            this.setCursorPositionAtAnyGivenEditableElement(this.getLastEditableElement());
-            umContentEditor.insertContentRaw(questionNode);
-            this.scrollToElement(this.getLastEditableElement());
-            this.setCursorPositionAtAnyGivenEditableElement(this.getLastExtraContentWidget());
-            tinymce.activeEditor.dom.remove(tinymce.activeEditor.dom.select('p.pg-break'));
+            questionNode = $("<div>").append(questionNode).append(UmQuestionWidget.EXTRA_CONTENT_WIDGET);
+            questionNode = $(questionNode).html();
+            console.log("question",questionNode);
+            this.insertQuestionNodeContent(questionNode);
         }});
 };
 
 getLastExtraContentWidget = () => {
     const extraContentWidgets = $("#umEditor").find('.extra-content');
-    return $(extraContentWidgets[extraContentWidgets.length - 1]).get(0);
+    return $($(extraContentWidgets[extraContentWidgets.length - 1]).get(0)).children().get(0);
 };
 
 getLastEditableElement = () =>{
@@ -372,27 +374,50 @@ getLastEditableElement = () =>{
 
 
 umContentEditor.insertMediaContent = (source, mimeType) => {
-    const width = $(window).width();
     let mediaContent = null;
     if(mimeType.includes("image")){
-        mediaContent = "<img src=\""+source+"\" class=\"um-media img-fluid\" width=\""+width+"\"/>";
+        mediaContent = "<img src=\""+source+"\" class=\"um-media img-fluid\"/>";
     }else if(mimeType.includes("audio")){
         mediaContent =
-            "<video controls class='media-audio'>" +
+            "<video controls controlsList=\"nodownload\" class='media-audio'>" +
             "    <source src=\""+source+"\" type=\""+mimeType+"\">" +
             "</video>";
     }else{
         mediaContent =
-            "<video controls class='um-media img-fluid' width='"+width+"'>" +
+            "<video controls controlsList=\"nodownload\" class='um-media video-fluid'>" +
             "    <source src=\""+source+"\" type=\""+mimeType+"\">" +
             "</video>";
     }
-    mediaContent = "<p class='text-center'>"+mediaContent+"</p><br/>";
+    mediaContent = "<p></p><p>"+mediaContent+"</p><p></p>";
     umContentEditor.insertContentRaw(mediaContent);
+    const currentCursorPositionElement = tinymce.activeEditor.selection;
+    const activeNode = currentCursorPositionElement.getNode();
+    console.log("Current",activeNode);
+
 };
 
 umContentEditor.insertContentRaw = (content) =>{
-    tinyMCE.activeEditor.execCommand('mceInsertContent', false, content,{format: 'raw'});
+    tinyMCE.activeEditor.execCommand('mceInsertContent', false, content);
+};
+
+
+
+
+insertQuestionNodeContent = (questionNode,pastFromClipboard = false) => {
+    UmQuestionWidget.setQuestionStatus(true);
+    if(!pastFromClipboard){
+        tinymce.activeEditor.dom.add(tinymce.activeEditor.getBody(), 'p', {class: 'pg-break',style:'page-break-before: always'}, '');
+    }else{
+        const currentCursorPositionElement = tinymce.activeEditor.selection;
+        const activeNode = currentCursorPositionElement.getNode();
+        const extraContent = $(activeNode).closest("div div.extra-content");
+        $(extraContent).after(UmQuestionWidget.PAGE_BREAK);
+    }
+    this.setCursorPositionAtAnyGivenEditableElement(this.getLastEditableElement());
+    umContentEditor.insertContentRaw(questionNode);
+    this.scrollToElement(this.getLastEditableElement());
+    this.setCursorPositionAtAnyGivenEditableElement(this.getLastExtraContentWidget());
+    tinymce.activeEditor.dom.remove(tinymce.activeEditor.dom.select('p.pg-break'));
 };
 
 
@@ -400,14 +425,16 @@ handleCursorFocusPosition = element => {
    try{
        if($(element).is("label") || $(element).is("button") || $(element).hasClass("close")
            || $(element).hasClass("question") || $(element).hasClass("question-retry-option")
-           || $(element).hasClass("question-retry-holder") || $(element).hasClass("input-group")){
+           ||  $(element).is("img") || $(element).hasClass("question-retry-holder")
+           || $(element).hasClass("input-group") || $(element).hasClass("question-action-holder")){
 
            const labelText = $(element).text();
            const questionRoot = $(element).closest("div .question");
            const questionElement = $(questionRoot).children();
            const questionType = $(questionRoot).attr("data-um-widget");
            let elementToFocus = null;
-           if(labelText === UmQuestionWidget.PLACEHOLDERS_LABELS.labelForQuestionBodyText){
+           if(labelText === UmQuestionWidget.PLACEHOLDERS_LABELS.labelForQuestionBodyText
+               || $(element).hasClass("question-action-holder")){
                elementToFocus = questionElement.get(3);
            }else if(labelText === UmQuestionWidget.PLACEHOLDERS_LABELS.labelForFillTheBlanksPromptInput ||
                labelText === UmQuestionWidget.PLACEHOLDERS_LABELS.labelForFillTheBlanksAnswerBodyText){
@@ -430,15 +457,20 @@ handleCursorFocusPosition = element => {
                elementToFocus = $(element).next().get(0);
            } else if (labelText === UmQuestionWidget.PLACEHOLDERS_LABELS.labelForRightAnswerOption) {
                elementToFocus = $(element).prev().get(0);
-           }else if($(element).hasClass("add-choice")){
+           }else if($(element).hasClass("add-choice") || $(element).hasClass("img-delete-inner")){
                setTimeout(function () {
                    const questionChoices = $(questionRoot).find(".question-choice");
-                   elementToFocus = $(questionChoices.get(questionChoices.length -1)).children().get(2);
+                   if(questionChoices && questionChoices.length > 0){
+                       elementToFocus = $(questionChoices.get(questionChoices.length -1)).children().get(3);
+                   }else{
+                       elementToFocus = questionElement.get(3);
+                   }
                    setCursorPositionAtAnyGivenEditableElement(elementToFocus);
                    scrollToElement(elementToFocus);
                },200);
-           } else if($(element).hasClass("question") || $(element).hasClass("input-group")){
-               elementToFocus = questionElement.get(3);
+           } else if($(element).hasClass("img-delete") || $(element).hasClass("question") || $(element).hasClass("input-group")){
+               elementToFocus = $(questionElement.get(3)).children().get(0);
+               console.log("pasting",elementToFocus);
            }else if($(element).hasClass("question-retry-option") || $(element).hasClass("question-retry-holder")){
                if(questionType === UmQuestionWidget.WIDGET_NAME_MULTICHOICE){
                    elementToFocus = $(questionElement).children().get(6);
@@ -446,7 +478,6 @@ handleCursorFocusPosition = element => {
                    elementToFocus = $(questionElement.get(5)).children().get(8);
                }
            }
-
            if(elementToFocus && !$(elementToFocus).hasClass("question")){
                this.setCursorPositionAtAnyGivenEditableElement(elementToFocus);
            }
@@ -484,6 +515,7 @@ scrollToElement = (element) => {
 
 setCursorPositionAtAnyGivenEditableElement = (element) => {
    try{
+       element = element === null ? $("#umEditor").children().get(0):element;
        const range = document.createRange();
        const sel = window.getSelection();
        range.setStart(element, 0);
@@ -496,6 +528,20 @@ setCursorPositionAtAnyGivenEditableElement = (element) => {
    }
 };
 
+
+umContentEditor.setCursor = (element = null,isRoot) =>{
+    if(isRoot){
+        this.setCursorPositionAtRootElementEnd(element);
+    }else{
+        this.setCursorPositionAtAnyGivenEditableElement(element);
+    }
+};
+
+preventKeyboardKey = e =>{
+    e.preventDefault();
+    e.stopImmediatePropagation();
+    return false;
+};
 
 umContentEditor.initEditor = (showToolbar = false) => {
     const configs = {
@@ -522,8 +568,7 @@ umContentEditor.initEditor = (showToolbar = false) => {
                         if($(questionNode).attr("id") != null){
                             let questionWidget = UmQuestionWidget.handleQuestionNode(questionNode);
                             questionWidget = questionWidget.startEditing();
-                            questionWidget = $("<div>").append(questionWidget)
-                                .append(UmQuestionWidget.EXTRA_CONTENT_WIDGET);
+                            questionWidget = $("<div>").append(questionWidget);
                             const tempNode =  tinymce.html.DomParser().parse($(questionWidget).html());
                             nodes[node].replace(tempNode);
                         }
@@ -554,6 +599,19 @@ umContentEditor.initEditor = (showToolbar = false) => {
                 }
             });
 
+            ed.on('Paste', e => {
+                e.stopPropagation();
+                e.preventDefault();
+
+                let clipboardData = e.clipboardData || window.clipboardData;
+                const content = clipboardData.getData('Text');
+                if($(content).hasClass("question")){
+                    this.insertQuestionNodeContent(content,true);
+                }else{
+                    umContentEditor.insertContentRaw(content)
+                }
+            });
+
 
             /**
              * Listen for click event inside the editor
@@ -563,9 +621,8 @@ umContentEditor.initEditor = (showToolbar = false) => {
                 umContentEditor.checkActivatedControls();
                 const selection = ed.selection;
                 const activeNode = selection.getNode();
-                this.protectedSection = $(activeNode).hasClass("um-labels")
-                    || $(activeNode).hasClass("close") ||  $(activeNode).is("span")
-                    || $(activeNode).is("button") || $(activeNode).hasClass("pg-break")
+                this.protectedSection = $(activeNode).hasClass("um-labels") || $(activeNode).is("button")
+                    || $(activeNode).hasClass("pg-break")
                     || $(activeNode).hasClass("question-retry-option");
                 this.handleCursorFocusPosition(e.target);
             });
@@ -581,14 +638,14 @@ umContentEditor.initEditor = (showToolbar = false) => {
                 }
             });
 
+
             /**
              * Listen for the keyboard keys and prevent important label and divs from being deleted from the editor
              * @type {[type]}
              */
-            ed.on('keydown', e => {
+            ed.on('keydown', (e) => {
                 const deleteKeys = e.key === "Backspace" || e.key === "Delete";
                 const enterKey = e.key === "Enter";
-
                 const currentCursorPositionElement = tinymce.activeEditor.selection;
                 const activeNode = currentCursorPositionElement.getNode();
                 const isLabel = $(activeNode).hasClass("um-labels");
@@ -596,6 +653,7 @@ umContentEditor.initEditor = (showToolbar = false) => {
                 const isCloseSpan = $(activeNode).is("span");
                 const isButtonLabels = $(activeNode).is("button");
                 const isParagraph = $(activeNode).is("p");
+                const isDiv = $(activeNode).is("div");
                 const isChoiceSelector = $(activeNode).hasClass("question-retry-option");
                 const isInputGroup = $(activeNode).hasClass("input-group");
                 const preventEditorDiv = $(activeNode).attr("id") === "umEditor";
@@ -604,13 +662,12 @@ umContentEditor.initEditor = (showToolbar = false) => {
 
                 const preventLabelsDeletion = deleteKeys && isLabel;
 
-
                 if(isParagraph){
                     const divWrapper = $(activeNode).closest("div");
                     if(divWrapper){
                         const divParagraphs = $(divWrapper).children();
                         this.protectedSection = divParagraphs.length === 1 && deleteKeys && ((innerHtmlContentLength > 0 || innerTextContentLength > 0)
-                            && this.getCursorPositionRelativeToTheEditableElementContent() === 0)
+                            && umContentEditor.getCursorPositionRelativeToTheEditableElementContent() === 0)
                     }else{
                         this.protectedSection = false;
                     }
@@ -620,14 +677,29 @@ umContentEditor.initEditor = (showToolbar = false) => {
                     wasContentSelected = true;
                 }
 
-                let disableKeys = this.selectedContentLength === 0 && (isDeleteQuestionBtn || isCloseSpan || isButtonLabels || preventLabelsDeletion ||
+                const disableKeys = this.selectedContentLength === 0 && (isDeleteQuestionBtn || isCloseSpan || isButtonLabels || preventLabelsDeletion ||
                     isChoiceSelector || isInputGroup || (preventEditorDiv && deleteKeys))||
-                    this.protectedSection || isProtectedElement;
+                    this.protectedSection || isProtectedElement || isLabel || isDiv;
+
                 this.handleCursorFocusPosition(activeNode);
-                if(disableKeys || isLabel){
-                    e.preventDefault();
-                    e.stopImmediatePropagation();
-                    return false
+                const hasQuestions = $("#umEditor").find(".question").length > 0;
+                const isBelowQuestion = $($(activeNode).prev()).hasClass("question");
+                const isNotBelowQuestion = $($(activeNode).prev()).hasClass("extra-content");
+
+                if(disableKeys &&  hasQuestions){
+                    if(isNotBelowQuestion || $(activeNode).hasClass("mce-content-body")
+                        || (isParagraph && !$($(activeNode).parent()).attr("class").includes("question"))){
+                        return true;
+                    }
+                    this.preventKeyboardKey(e);
+                }else{
+                    if(isBelowQuestion && deleteKeys){
+                        console.log("pasting","prevent");
+                        this.preventKeyboardKey(e);
+                    }else{
+                        console.log("pasting","allowing key");
+                    }
+
                 }
             });
         }
@@ -650,6 +722,7 @@ umContentEditor.initEditor = (showToolbar = false) => {
             editorWrapper.append(UmQuestionWidget.EXTRA_CONTENT_WIDGET);
             setCursorPositionAtAnyGivenEditableElement(editorWrapper.children().get(0))
         }
+        tinymce.activeEditor.dom.remove(tinymce.activeEditor.dom.select('p.pg-break'));
         try{
             UmContentEditor.onInitEditor(JSON.stringify({action:'onInitEditor',content:"true"}));
         }catch (e) {
@@ -666,6 +739,13 @@ umContentEditor.initEditor = (showToolbar = false) => {
             };
 
             const contentChangeObserver = new MutationObserver(function() {
+                const editorContainer = $("#umEditor");
+                const textHolder = editorContainer.find(".extra-content");
+                if(textHolder.length === 0){
+                    editorContainer.find("p").remove();
+                    editorContainer.append(UmQuestionWidget.EXTRA_CONTENT_WIDGET);
+                    umContentEditor.setCursor(null,false);
+                }
                 const previewContent = JSON.stringify({action:'onSaveContent',
                     content:UmQuestionWidget.saveContentEditor(btoa(tinyMCE.activeEditor.getContent()))});
                 try{
@@ -674,9 +754,10 @@ umContentEditor.initEditor = (showToolbar = false) => {
                     console.log("onContentChanged:",e);
                 }
             });
+
             contentChangeObserver.observe(document.querySelector('#umEditor'),contentWatcherFilters);
 
-            let menuWatcherFilter = {
+            const menuWatcherFilter = {
                 attributes : true,
                 attributeFilter : ['style']
             };
@@ -684,10 +765,12 @@ umContentEditor.initEditor = (showToolbar = false) => {
                 umContentEditor.checkActivatedControls();
             });
             menuStateChangeObserver.observe(document.querySelector('.mce-panel'),menuWatcherFilter);
+
         }catch (e) {
             console.log("Observers ",e);
         }
     });
+
 };
 
 
