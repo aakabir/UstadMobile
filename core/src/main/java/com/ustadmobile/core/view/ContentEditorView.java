@@ -53,6 +53,7 @@ public interface ContentEditorView extends UstadView {
     String ACTION_CONTROLS_ACTIVATED ="onActiveControlCheck";
     String ACTION_SAVE_CONTENT ="onSaveContent";
     String ACTION_SELECT_ALL = "selectAll";
+    String ACTION_CONTENT_CUT = "onContentCut";
 
     /**
      * Question templates insert command tag.
@@ -158,9 +159,9 @@ public interface ContentEditorView extends UstadView {
 
     /**
      * Change language directionality (LTR / RTL)
-     * @param isLTR True if it is supposed to be changed to LTR which is like a default.
+     * @param command Tinymce command for language directionality.
      */
-    void setContentTextDirection(boolean isLTR);
+    void setContentTextDirection(String  command);
 
     /**
      * Insert multi-choice question template on the content editing area
