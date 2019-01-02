@@ -13,7 +13,7 @@
         android:background="@color/icons"
         android:layout_height="match_parent">
         <include
-            layout="@layout/toolbar_with_progress"/>
+            layout="@layout/toolbar_with_um_progress"/>
 
 
         <RelativeLayout
@@ -132,7 +132,7 @@
             android:layout_width="match_parent"
             android:layout_gravity="bottom"
             android:layout_height="wrap_content">
-            <com.ustadmobile.port.android.contenteditor.UmEditorQuickActionView
+            <com.ustadmobile.port.android.contenteditor.UmEditorActionView
                 android:layout_marginRight="14dp"
                 android:id="@+id/um_toolbar_bottom"
                 app:contentInsetLeft="0dp"
