@@ -16,6 +16,8 @@ public class ContentFormat {
 
     private int formatType;
 
+    private int formatTitle;
+
     private int formatId = 0;
 
     /**
@@ -30,6 +32,33 @@ public class ContentFormat {
         this.formatCommand = formatCommand;
         this.active = active;
         this.formatType = formatType;
+    }
+
+    /**
+     * Constructor which will be used to create an instance of content formatting.
+     * @param formatIcon Formatting icon
+     * @param formatCommand Formatting executable command
+     * @param active Flag to indicate if the format is active or not
+     * @param formatType Flag which shows which type of the formatting is.
+     * @param formatId formatting id.
+     */
+    public ContentFormat(int formatIcon, String formatCommand, boolean active,
+                         int formatType,int formatId) {
+        this.formatIcon = formatIcon;
+        this.formatCommand = formatCommand;
+        this.active = active;
+        this.formatType = formatType;
+        this.formatId = formatId;
+    }
+
+    public ContentFormat(int formatIcon, String formatCommand, boolean active,
+                         int formatType,int formatId,int formatTitle) {
+        this.formatIcon = formatIcon;
+        this.formatCommand = formatCommand;
+        this.active = active;
+        this.formatType = formatType;
+        this.formatId = formatId;
+        this.formatTitle = formatTitle;
     }
 
     /**
@@ -105,5 +134,13 @@ public class ContentFormat {
 
     public void setFormatId(int formatId) {
         this.formatId = formatId;
+    }
+
+    public int getFormatTitle() {
+        return formatTitle;
+    }
+
+    public void setFormatTitle(int formatTitle) {
+        this.formatTitle = formatTitle;
     }
 }
