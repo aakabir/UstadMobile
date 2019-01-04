@@ -1,20 +1,20 @@
-package com.muungwana.android.ui;
+package com.ustadmobile.port.android.contenteditor;
 
 import android.graphics.Rect;
 import android.support.v7.widget.RecyclerView;
 import android.view.View;
 
 /**
- * Created by Kileha on 9/6/16.
+ * Created by Kileha3
  */
 
-public class GridSpacingItemDecoration extends RecyclerView.ItemDecoration {
+public class UmGridSpacingItemDecoration extends RecyclerView.ItemDecoration {
 
     private int spanCount;
     private int spacing;
     private boolean includeEdge;
 
-    public GridSpacingItemDecoration(int spanCount, int spacing, boolean includeEdge) {
+    public UmGridSpacingItemDecoration(int spanCount, int spacing, boolean includeEdge) {
         this.spanCount = spanCount;
         this.spacing = spacing;
         this.includeEdge = includeEdge;
