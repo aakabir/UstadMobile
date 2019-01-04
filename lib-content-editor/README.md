@@ -42,14 +42,14 @@ Make sure you install chrome before running any tests using mocha-chrome.
 ```
 
 #### As android support lib (android)
-See how we used it to implement our editor on dev-content-editor branch, use <a href="/app-android/src/main/java/com/ustadmobile/port/android/view/ContentEditorActivity.java">ContentEditorActivity.java</a> to understand the logical flow
+See how we used it to implement our editor on dev-content-editor branch, use [ContentEditorActivity.java](../app-android/src/main/java/com/ustadmobile/port/android/view/ContentEditorActivity.java) to understand the logical flow
 
 ## Running the tests
 
 You can quickly run tests on web browser or using mocha-chrome.
 * <b>Run on web browser</b><br/>
-Locate <a href='test/content-formatting-tests.html'>content-formatting-tests.html</a> 
-and <a href='test/content-template-tests.html'>content-template-tests.html</a> 
+Locate [content-formatting-tests.html](test/content-formatting-tests.html) 
+and [content-template-tests.html](test/content-template-tests.html) 
 under test directory and run as html files.
 
 * <b>Run with mocha-chrome - Terminal </b><br/>
@@ -69,7 +69,7 @@ and
 
 ## Adding custom template
 You may easily create your own html content template and add it to the template directory, 
-with its functionality implemented on both  <a href='templates/UmContentEditorCore.js'>UmContentEditorCore.js</a> and <a href='templates/and UmQuestionWidget.js'>and UmQuestionWidget.js</a>
+with its functionality implemented on both  [UmContentEditorCore.js](templates/UmContentEditorCore.js) and [and UmQuestionWidget.js](templates/and UmQuestionWidget.js)
 
  
 
