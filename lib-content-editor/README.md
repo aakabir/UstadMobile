@@ -62,6 +62,11 @@ and
  mocha-chrome content-template-test.html --timeout 5000
 ```
 
+* <b>Run with gradle</b>
+ ```
+ ./gradlew :lib-content-editor:test
+```
+
 ## Adding custom template
 You may easily create your own html content template and add it to the template directory, 
 with its functionality implemented on both  <a href='templates/UmContentEditorCore.js'>UmContentEditorCore.js</a> and <a href='templates/and UmQuestionWidget.js'>and UmQuestionWidget.js</a>
