@@ -34,11 +34,11 @@ import static android.content.Context.LAYOUT_INFLATER_SERVICE;
  *     Use {@link UmEditorPopUpView#setMenuList(List)} to to add list of all formats you want to
  *     appear as popup options
  *
- *     Use {@link UmEditorPopUpView#setWidthDimen(int)} to set width of the popup view
+ *     Use {@link UmEditorPopUpView#setWidthDimen(int, boolean)} to set width of the popup view
  *
  *     Use {@link UmEditorPopUpView#showIcons(boolean)} to enable icons on the popup list items
  *
- *     Use {@link UmEditorPopUpView#show(boolean, OnPopUpMenuClickListener)} to show the options
+ *     Use {@link UmEditorPopUpView#showIcons(boolean)} to showWithListener the options
  * </p>
  *
  * @author kileha3
@@ -57,6 +57,8 @@ public class UmEditorPopUpView {
 
     private boolean visible = true;
 
+    private boolean isToolBarAnchored = false;
+
     private OnPopUpMenuClickListener listener;
 
 
@@ -71,20 +73,6 @@ public class UmEditorPopUpView {
         void onMenuClicked(ContentFormat format);
     }
 
-    /**
-     * Handle dimension types
-     */
-    public static class UmPopUpDim{
-        /**
-         * Dimension for shorter text version (Font sizes)
-         */
-        public static int DIMEN_MIN_WIDTH = 300;
-
-        /**
-         * Dimension for shorter text with icons (Directionality)
-         */
-        static int DIMEN_MID_WIDTH = 450;
-    }
 
     /**
      * Constrictor used to initialize PopUp view.
@@ -95,7 +83,6 @@ public class UmEditorPopUpView {
         this.context = context;
         this.anchorView = anchor;
         initializePopUpWindow();
-        setWidthDimen(UmPopUpDim.DIMEN_MID_WIDTH);
     }
 
     private void initializePopUpWindow(){
@@ -131,16 +118,22 @@ public class UmEditorPopUpView {
 
     /**
      * Set width of the popup view
-     * @param popUpWidth dimension to be set
+     * @param displayWidth dimension to be set
+     * @param isToolBarAnchored True when popup will be anchored on toolbar view
+     *                          otherwise false.
      * @return UmEditorPopUpView instance
      */
-    public UmEditorPopUpView setWidthDimen(int popUpWidth){
-        popupWindow.setWidth(popUpWidth);
+    public UmEditorPopUpView setWidthDimen(int displayWidth,boolean isToolBarAnchored){
+        this.isToolBarAnchored = isToolBarAnchored;
+        double width = displayWidth <= 320 ? (isToolBarAnchored ? 0.77 : 0.57):
+                (isToolBarAnchored ? 1.25 : 0.83);
+        popupWindow.setWidth((int) (width * displayWidth));
         return this;
     }
 
+
     /**
-     * Enable view to show/hide icons on the list
+     * Enable view to showWithListener/hide icons on the list
      * @param visible Show when true otherwise hide.
      * @return UmEditorPopUpView instance
      */
@@ -151,11 +144,9 @@ public class UmEditorPopUpView {
 
     /**
      * Show popup window to the UI
-     * @param isToolBarAnchored True when popup will be anchored on toolbar view
-     *                          otherwise false.
      * @param listener Listen to listen for the popup list item clicks.
      */
-    public void show(boolean isToolBarAnchored,OnPopUpMenuClickListener listener){
+    public void showWithListener(OnPopUpMenuClickListener listener){
         this.listener = listener;
         if(!isToolBarAnchored){
             popupWindow.showAtLocation(anchorView,Gravity.BOTTOM,-250,100);
