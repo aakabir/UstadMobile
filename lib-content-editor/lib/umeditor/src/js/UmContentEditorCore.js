@@ -1,25 +1,53 @@
-function UmContentEditorCore() {if (!(this instanceof UmContentEditorCore))
-    return new UmContentEditorCore();}
+/**
+ * Class which handle all content editor operation
+ * @returns {*|UmContentEditorCore}
+ * @constructor
+ *
+ * @author kileha3
+ */
+let UmContentEditorCore = function() {};
 
-const umContentEditor = new UmContentEditorCore();
-
+/**
+ * Template location path
+ * @type {string} path
+ */
 const questionTemplatesDir = "templates/";
 
+/**
+ * Index of the multiple choice question document template in the template list
+ * @type {number} index
+ */
 const indexMultipleChoiceQuestionType = 0;
 
+/**
+ * Index of the fill in the blank document template in the template list
+ * @type {number} index
+ */
 const indexFillTheBlanksQuestionType = 1;
 
+/**
+ * Flag which shows if by any chance content was selected
+ * @type {boolean} True when selection was performed otherwise false.
+ */
 let wasContentSelected = false;
 
+/**
+ * Flag which hold a value when content get selected and it includes protected content
+ * @type {boolean} True if
+ */
 let isProtectedElement = false;
 
 
-
+/**
+ * List of all tinymce formatting commands which will be used by native side.
+ * @type {string[]} list of commands
+ */
 UmContentEditorCore.formattingCommandList = [
     'Bold','Underline','Italic','Strikethrough','Superscript','Subscript','JustifyCenter','JustifyLeft',
     'JustifyRight','JustifyFull', 'Indent','Outdent','JustifyLeft','JustifyCenter', 'JustifyRight',
-    'JustifyFull','InsertUnorderedList','InsertOrderedList','mceDirectionLTR','mceDirectionRTL'
+    'JustifyFull','InsertUnorderedList','InsertOrderedList','mceDirectionLTR','mceDirectionRTL','FontSize'
 ];
+
 
 UmContentEditorCore.sectionType = {
   sectionBody:1,
@@ -32,7 +60,7 @@ UmContentEditorCore.sectionType = {
  * {@link https://www.tiny.cloud/docs/advanced/editor-command-identifiers/}
  * @returns {boolean} TRUE if is active otherwise FALSE
  */
-isToolBarButtonActive = (buttonIdentifier) => {
+UmContentEditorCore.prototype.isToolBarButtonActive = (buttonIdentifier) => {
     return tinyMCE.activeEditor.queryCommandState(buttonIdentifier);
 };
 
@@ -40,241 +68,241 @@ isToolBarButtonActive = (buttonIdentifier) => {
  * Check if the control was executed at least once.
  * @param controlCommand
  */
-isControlActivated = (controlCommand) => {
+UmContentEditorCore.prototype.isControlActivated = (controlCommand) => {
     return tinyMCE.activeEditor.queryCommandValue(controlCommand) != null;
 };
 
 /**
- * Change editor blankDocument font size
- * @param fontSize Size to change to
- * @returns {string | * | void}
+ * Change editor font size
+ * @param fontSize font size to change to
+ * @returns {{action: string, content: string}} callback object
  */
-umContentEditor.setFontSize = (fontSize) => {
-    this.executeCommand("FontSize",""+fontSize+"pt");
+UmContentEditorCore.setFontSize = (fontSize) => {
+    UmContentEditorCore.executeCommand("FontSize",""+fontSize+"pt");
     const activeFont = tinyMCE.activeEditor.queryCommandValue("FontSize");
-    const isActive = this.isControlActivated("FontSize");
+    const isActive = UmContentEditorCore.prototype.isControlActivated("FontSize");
     return {action:'activeControl',content:btoa("FontSize-"+isActive+"-"+activeFont)};
 };
 
 /**
  * Undo previously performed action
- * @returns {Object} TRUE if succeed FALSE otherwise
+ * @returns {{action: string, content: string}} callback object
  */
-umContentEditor.editorActionUndo = () => {
-    console.log("observing","undo perfomed")
-    this.executeCommand("Undo",null);
-    const isActive = this.isControlActivated("Undo");
+UmContentEditorCore.editorActionUndo = () => {
+    UmContentEditorCore.executeCommand("Undo",null);
+    const isActive = UmContentEditorCore.prototype.isControlActivated("Undo");
     return {action:'activeControl',content:btoa("Undo-"+isActive)};
 };
 
+
 /**
  * Redo previously performed action
- * @returns {Object} TRUE if succeed FALSE otherwise
+ * @returns {{action: string, content: string}} callback object
  */
-umContentEditor.editorActionRedo = () => {
-    this.executeCommand("Redo",null);
-    const isActive = this.isControlActivated("Redo");
+UmContentEditorCore.editorActionRedo = () => {
+    UmContentEditorCore.executeCommand("Redo",null);
+    const isActive = UmContentEditorCore.prototype.isControlActivated("Redo");
     return {action:'activeControl',content:btoa("Redo-"+isActive)};
 };
 
 /**
  * Set text direction from Left to Right
- * @returns {Object} TRUE if direction changed otherwise FALSE
+ * @returns {{action: string, content: string}} callback object
  */
-umContentEditor.textDirectionLeftToRight = () => {
-    this.executeCommand('mceDirectionLTR');
-    const isActive = this.isControlActivated("mceDirectionLTR");
+UmContentEditorCore.textDirectionLeftToRight = () => {
+    UmContentEditorCore.executeCommand('mceDirectionLTR');
+    const isActive = UmContentEditorCore.prototype.isControlActivated("mceDirectionLTR");
     return {action:'activeControl',content:btoa("mceDirectionLTR-"+isActive)};
 };
 
 /**
  * Set text direction from Right to Left
- * @returns {Object} TRUE if direction changed otherwise FALSE
+ * @returns {{action: string, content: string}} callback object
  */
-umContentEditor.textDirectionRightToLeft = () => {
-    this.executeCommand("mceDirectionRTL",null);
-    const isActive = this.isControlActivated("mceDirectionRTL");
+UmContentEditorCore.textDirectionRightToLeft = () => {
+    const isActive = tinyMCE.activeEditor.execCommand("mceDirectionRTL");
+    console.log("execution",isActive);
     return {action:'activeControl',content:btoa("mceDirectionRTL-"+isActive)};
 };
 
 /**
  * Remove or insert un-ordered list
- * @returns {Object} TRUE inserted and FALSE otherwise
+ * @returns {{action: string, content: string}} callback object
  */
-umContentEditor.paragraphUnOrderedListFormatting = () => {
-    this.executeCommand("InsertUnorderedList",null);
-    const isActive = this.isToolBarButtonActive("InsertUnorderedList");
+UmContentEditorCore.paragraphUnOrderedListFormatting = () => {
+    UmContentEditorCore.executeCommand("InsertUnorderedList",null);
+    const isActive = UmContentEditorCore.prototype.isToolBarButtonActive("InsertUnorderedList");
     return {action:'activeControl',content:btoa("InsertUnorderedList-"+isActive)};
 };
 
 /**
  * Remove or insert ordered list
- * @returns {Object} TRUE inserted and FALSE otherwise
+ * @returns {{action: string, content: string}} callback object
  */
-umContentEditor.paragraphOrderedListFormatting = () => {
-    this.executeCommand("InsertOrderedList",null);
-    const isActive = this.isToolBarButtonActive("InsertOrderedList");
+UmContentEditorCore.paragraphOrderedListFormatting = () => {
+    UmContentEditorCore.executeCommand("InsertOrderedList",null);
+    const isActive = UmContentEditorCore.prototype.isToolBarButtonActive("InsertOrderedList");
     return {action:'activeControl',content:btoa("InsertOrderedList-"+isActive)};
 };
 
 /**
- * Justify left editor blankDocument
- * @returns {Object} TRUE if justified FALSE otherwise
+ * Justify editor content to the left
+ * @returns {{action: string, content: string}} callback object
  */
-umContentEditor.paragraphLeftJustification = () => {
-    this.executeCommand("JustifyLeft",null);
-    const isActive = this.isToolBarButtonActive("JustifyLeft");
+UmContentEditorCore.paragraphLeftJustification = () => {
+    UmContentEditorCore.executeCommand("JustifyLeft",null);
+    const isActive = UmContentEditorCore.prototype.isToolBarButtonActive("JustifyLeft");
     return {action:'activeControl',content:btoa("JustifyLeft-"+isActive)};
 };
 
 /**
- * Justify left editor blankDocument
- * @returns {Object} TRUE if justified FALSE otherwise
+ * Justify editor content to the right.
+ * @returns {{action: string, content: string}} callback object
  */
-umContentEditor.paragraphRightJustification = () => {
-    this.executeCommand("JustifyRight",null);
-    const isActive = this.isToolBarButtonActive("JustifyRight");
+UmContentEditorCore.paragraphRightJustification = () => {
+    UmContentEditorCore.executeCommand("JustifyRight",null);
+    const isActive = UmContentEditorCore.prototype.isToolBarButtonActive("JustifyRight");
     return {action:'activeControl',content:btoa("JustifyRight-"+isActive)};
 };
 
 /**
- * Justify fully editor blankDocument
- * @returns {Object} TRUE if justified FALSE otherwise
+ * Justify content editor fully
+ * @returns {{action: string, content: string}} callback object
  */
-umContentEditor.paragraphFullJustification = () => {
-    this.executeCommand("JustifyFull",null);
-    const isActive = this.isToolBarButtonActive("JustifyFull");
+UmContentEditorCore.paragraphFullJustification = () => {
+    UmContentEditorCore.executeCommand("JustifyFull",null);
+    const isActive = UmContentEditorCore.prototype.isToolBarButtonActive("JustifyFull");
     return {action:'activeControl',content:btoa("JustifyFull-"+isActive)};
 };
 
 /**
- * Justify center editor blankDocument
- * @returns {Object} TRUE if justified FALSE otherwise
+ * Justify editor content at the center
+ * @returns {{action: string, content: string}} callback object
  */
-umContentEditor.paragraphCenterJustification = () => {
-    this.executeCommand("JustifyCenter",null);
-    const isActive = this.isToolBarButtonActive("JustifyCenter");
+UmContentEditorCore.paragraphCenterJustification = () => {
+    UmContentEditorCore.executeCommand("JustifyCenter",null);
+    const isActive = UmContentEditorCore.prototype.isToolBarButtonActive("JustifyCenter");
     return {action:'activeControl',content:btoa("JustifyCenter-"+isActive)};
 };
 
 /**
- * Indent editor blankDocument
- * @returns {Object} TRUE if justified FALSE otherwise
+ * Indent editor content
+ * @returns {{action: string, content: string}} callback object
  */
-umContentEditor.paragraphOutDent = () => {
-    this.executeCommand("Outdent",null);
-    const isActive = this.isControlActivated("Outdent");
+UmContentEditorCore.paragraphOutDent = () => {
+    UmContentEditorCore.executeCommand("Outdent",null);
+    const isActive = UmContentEditorCore.prototype.isControlActivated("Outdent");
     return {action:'activeControl',content:btoa("Outdent-"+isActive)};
 };
 
 /**
- * Indent editor blankDocument
- * @returns {Object} TRUE if justified FALSE otherwise
+ * Indent editor content
+ * @returns {{action: string, content: string}} callback object
  */
-umContentEditor.paragraphIndent = () => {
-    this.executeCommand("Indent",null);
-    const isActive = this.isControlActivated("Indent");
+UmContentEditorCore.paragraphIndent = () => {
+    UmContentEditorCore.executeCommand("Indent",null);
+    const isActive = UmContentEditorCore.prototype.isControlActivated("Indent");
     return {action:'activeControl',content:btoa("Indent-"+isActive)};
 };
 
 /**
- * Apply bold ustadEditor to a text
- * @returns {Object} TRUE if applied otherwise FALSE
+ * Apply bold format to text on the editor
+ * @returns {{action: string, content: string}} callback object
  */
-umContentEditor.textFormattingBold = () => {
-    this.executeCommand("Bold",null);
-    const isActive = this.isToolBarButtonActive("Bold");
+UmContentEditorCore.textFormattingBold = () => {
+    UmContentEditorCore.executeCommand("Bold",null);
+    const isActive = UmContentEditorCore.prototype.isToolBarButtonActive("Bold");
     return {action:'activeControl',content:btoa("Bold-"+isActive)};
 };
 
 /**
- * Apply italic ustadEditor to a text
- * @returns {Object} TRUE if applied otherwise FALSE
+ * Apply italic format to text on the editor
+ * @returns {{action: string, content: string}} callback object
  */
-umContentEditor.textFormattingItalic = () => {
-    this.executeCommand("Italic",null);
-    const isActive = this.isToolBarButtonActive("Italic");
+UmContentEditorCore.textFormattingItalic = () => {
+    UmContentEditorCore.executeCommand("Italic",null);
+    const isActive = UmContentEditorCore.prototype.isToolBarButtonActive("Italic");
     return {action:'activeControl',content:btoa("Italic-"+isActive)};
 };
 
 /**
- * Apply underline ustadEditor to a text
- * @returns {Object} TRUE if applied otherwise FALSE
+ * Apply underline format to text on the editor
+ * @returns {{action: string, content: string}} callback object
  */
-umContentEditor.textFormattingUnderline = () => {
-    this.executeCommand("Underline",null);
-    const isActive = this.isToolBarButtonActive("Underline");
+UmContentEditorCore.textFormattingUnderline = () => {
+    UmContentEditorCore.executeCommand("Underline",null);
+    const isActive = UmContentEditorCore.prototype.isToolBarButtonActive("Underline");
     return {action:'activeControl',content:btoa("Underline-"+isActive)};
 };
 
 /**
- * Apply strike-through ustadEditor to a text
- * @returns {Object} TRUE if applied otherwise FALSE
+ * Apply strike-through format to text on editor
+ * @returns {{action: string, content: string}} callback object
  */
-umContentEditor.textFormattingStrikeThrough = () => {
-    this.executeCommand("Strikethrough",null);
-    const isActive = this.isToolBarButtonActive("Strikethrough");
+UmContentEditorCore.textFormattingStrikeThrough = () => {
+    UmContentEditorCore.executeCommand("Strikethrough",null);
+    const isActive = UmContentEditorCore.prototype.isToolBarButtonActive("Strikethrough");
     return {action:'activeControl',content:btoa("Strikethrough-"+isActive)};
 };
 
 /**
- * Apply superscript ustadEditor to a text
- * @returns {Object} TRUE if applied otherwise FALSE
+ * Apply superscript format to text on editor
+ * @returns {{action: string, content: string}} callback object
  */
-umContentEditor.textFormattingSuperScript = () => {
-    this.executeCommand("Superscript",null);
-    const isActive = this.isToolBarButtonActive("Superscript");
+UmContentEditorCore.textFormattingSuperScript = () => {
+    UmContentEditorCore.executeCommand("Superscript",null);
+    const isActive = UmContentEditorCore.prototype.isToolBarButtonActive("Superscript");
     return {action:'activeControl',content:btoa("Superscript-"+isActive)};
 };
 
 /**
- * Apply subscript ustadEditor to a text
- * @returns {Object} TRUE if applied otherwise FALSE
+ * Apply subscript format to text on editor
+ * @returns {{action: string, content: string}} callback object
  */
-umContentEditor.textFormattingSubScript = () => {
-    this.executeCommand("Subscript",null);
-    const isActive = this.isToolBarButtonActive("Subscript");
+UmContentEditorCore.textFormattingSubScript = () => {
+    UmContentEditorCore.executeCommand("Subscript",null);
+    const isActive = UmContentEditorCore.prototype.isToolBarButtonActive("Subscript");
     return {action:'activeControl',content:btoa("Subscript-"+isActive)};
 };
 
 /**
  * Check if the current selected editor node has controls activated to it
  * @param commandValue control to check from
- * @returns {{action: string, content: string}}
+ * @returns {{action: string, content: string}} callback object
  */
-umContentEditor.checkCurrentActiveControls = (commandValue) => {
-    const isActive = this.isToolBarButtonActive(commandValue);
+UmContentEditorCore.checkCurrentActiveControls = (commandValue) => {
+    const isActive = UmContentEditorCore.prototype.isToolBarButtonActive(commandValue);
     return {action:'activeControl',content:btoa(commandValue+"-"+isActive)};
 };
 
-/**
- * Start checking for active controls  and reactivate
- * @returns {{action: string, content: string}}
- */
-umContentEditor.startCheckingActivatedControls = () => {
-    return {action:'onActiveControlCheck',content:btoa("yes")};
-};
 
 /**
  * Insert multiple choice question template to the editor
  */
-umContentEditor.insertMultipleChoiceQuestionTemplate =  () =>  {
-    this.insertQuestionTemplate(indexMultipleChoiceQuestionType);
+UmContentEditorCore.insertMultipleChoiceQuestionTemplate =  () =>  {
+    UmContentEditorCore.prototype.insertQuestionTemplate(indexMultipleChoiceQuestionType);
 };
 
 /**
  * Insert fill in the blanks question template to the editor
  */
-umContentEditor.insertFillInTheBlanksQuestionTemplate =  () =>  {
-    this.insertQuestionTemplate(indexFillTheBlanksQuestionType);
+UmContentEditorCore.insertFillInTheBlanksQuestionTemplate =  () =>  {
+    UmContentEditorCore.prototype.insertQuestionTemplate(indexFillTheBlanksQuestionType);
 };
 
-umContentEditor.requestFocus =  () =>  {
-    this.executeCommand("mceFocus",null);
-    return this.isControlActivated("mceFocus");
+/**
+ * Request focus to the tinymce
+ * @returns focus object
+ */
+UmContentEditorCore.prototype.requestFocus =  () =>  {
+    UmContentEditorCore.executeCommand("mceFocus",null);
+    return UmContentEditorCore.prototype.isControlActivated("mceFocus");
 };
 
-umContentEditor.selectAll =  () => {
+/**
+ * Select all content in document body
+ */
+UmContentEditorCore.selectAll =  () => {
     const body = $('body');
     body.on("click",function () {
         tinymce.activeEditor.selection.select(tinymce.activeEditor.getBody(), true);
@@ -287,7 +315,7 @@ umContentEditor.selectAll =  () => {
  * @param command command to be executed
  * @param args extra value to be passed on eg. font size
  */
-executeCommand = (command, args) => {
+UmContentEditorCore.executeCommand = (command, args) => {
     try{
         tinyMCE.activeEditor.execCommand(command, false,args);
     }catch(e){
@@ -295,7 +323,28 @@ executeCommand = (command, args) => {
     }
 };
 
-umContentEditor.getCursorPositionRelativeToTheEditableElementContent = ()  =>  {
+
+/**
+ * Get current node directionality, if it was not set then it should inherit parent's directionality
+ * @returns {string} directionality tag.
+ */
+UmContentEditorCore.prototype.getNodeDirectionality = () => {
+    const currentNode = $(tinymce.activeEditor.selection.getNode());
+    const parentDirectionality = getComputedStyle(currentNode.parent().get(0)).direction;
+    const currentNodeDirectionality = getComputedStyle(currentNode.get(0)).direction;
+
+    if(currentNodeDirectionality !== parentDirectionality){
+        return currentNodeDirectionality;
+    }
+    return parentDirectionality;
+};
+
+
+/**
+ * Get current position of the cursor placed on editable content.
+ * @returns {number} position at character based index
+ */
+UmContentEditorCore.prototype.getCursorPositionRelativeToTheEditableElementContent = ()  =>  {
     try{
         if (window.getSelection && window.getSelection().getRangeAt) {
             const range = window.getSelection().getRangeAt(0);
@@ -320,19 +369,31 @@ umContentEditor.getCursorPositionRelativeToTheEditableElementContent = ()  =>  {
     return -1;
 };
 
-
-umContentEditor.checkActivatedControls = () => {
+/**
+ * Check tinymce controls state.
+ */
+UmContentEditorCore.prototype.checkActivatedControls = () => {
     const commandStatus = [];
     for(let command in UmContentEditorCore.formattingCommandList){
         if(!UmContentEditorCore.formattingCommandList.hasOwnProperty(command))
           continue;
           const commandString = UmContentEditorCore.formattingCommandList[command];
           const commandState = {};
-          const status = this.isToolBarButtonActive(commandString);
+          let status = null;
+          if(commandString === "FontSize"){
+              status = tinyMCE.activeEditor.queryCommandValue(commandString).replace("px","");
+          }else if(commandString ==="mceDirectionLTR"){
+              status = UmContentEditorCore.prototype.getNodeDirectionality() === "ltr";
+          }else if(commandString ==="mceDirectionRTL"){
+              status = UmContentEditorCore.prototype.getNodeDirectionality() === "rtl";
+          }else{
+              status = UmContentEditorCore.prototype.isToolBarButtonActive(commandString);
+          }
           commandState.command = commandString;
           commandState.status = status === null ? false : status;
           commandStatus.push(commandState);
     }
+
     try{
         UmContentEditor.onControlsStateChanged(JSON.stringify({action:'onActiveControlCheck',content:btoa(JSON.stringify(commandStatus))}));
     }catch(e){
@@ -340,28 +401,39 @@ umContentEditor.checkActivatedControls = () => {
     }
 };
 
-
-insertQuestionTemplate = (questionTypeIndex) => {
+/**
+ * Prepare and Insert question template on the editor
+ * @param questionTypeIndex index of the question type in the list.
+ */
+UmContentEditorCore.prototype.insertQuestionTemplate = (questionTypeIndex) => {
     const questionTemplateList = ['question-multiple-choice.html','question-fill-the-blanks.html'];
-    const nextQuestionId = UmQuestionWidget.QUESTION_ID_TAG+UmQuestionWidget.getNextQuestionId();
-    const nextChoiceId = UmQuestionWidget.CHOICE_ID_TAG+UmQuestionWidget.getNextQuestionId();
+    const nextQuestionId = UmQuestionWidget.QUESTION_ID_TAG+UmQuestionWidget.getNextUniqueId();
+    const nextChoiceId = UmQuestionWidget.CHOICE_ID_TAG+UmQuestionWidget.getNextUniqueId();
     $.ajax({url: questionTemplatesDir+questionTemplateList[questionTypeIndex], success: (templateHtmlContent) => {
             let questionNode = $(templateHtmlContent).attr("id",nextQuestionId);
             $(questionNode).find(".question-choice").attr("id",nextChoiceId);
             questionNode = $(questionNode).prop('outerHTML');
             questionNode = $("<div>").append(questionNode).append(UmQuestionWidget.EXTRA_CONTENT_WIDGET);
             questionNode = $(questionNode).html();
-            console.log("question",questionNode);
-            this.insertQuestionNodeContent(questionNode);
+            UmContentEditorCore.prototype.insertQuestionNodeContent(questionNode);
         }});
 };
 
-getLastExtraContentWidget = () => {
+
+/**
+ * Get last extra content widget in the content editor
+ * @returns content widget element
+ */
+UmContentEditorCore.prototype.getLastExtraContentWidget = () => {
     const extraContentWidgets = $("#umEditor").find('.extra-content');
     return $($(extraContentWidgets[extraContentWidgets.length - 1]).get(0)).children().get(0);
 };
 
-getLastEditableElement = () =>{
+/**
+ * Get last editable element in the editor
+ * @returns content widget element
+ */
+UmContentEditorCore.prototype.getLastEditableElement = () =>{
     const editor = $("#umEditor");
     const pageBreaks = editor.find('.pg-break');
     if(pageBreaks.length === 0){
@@ -372,56 +444,71 @@ getLastEditableElement = () =>{
 };
 
 
-
-umContentEditor.insertMediaContent = (source, mimeType) => {
+/**
+ * Insert media content in the template.
+ * @param source media source path.
+ * @param mimeType media mimetype.
+ */
+UmContentEditorCore.insertMediaContent = (source, mimeType) => {
     let mediaContent = null;
     if(mimeType.includes("image")){
-        mediaContent = "<img src=\""+source+"\" class=\"um-media img-fluid\"/>";
+        mediaContent = '<img src="'+source+'" class="um-media img-fluid">';
     }else if(mimeType.includes("audio")){
-        mediaContent =
-            "<video controls controlsList=\"nodownload\" class='media-audio'>" +
-            "    <source src=\""+source+"\" type=\""+mimeType+"\">" +
-            "</video>";
+        mediaContent = '<audio controls controlsList="nodownload" class="um-media"><source src="'+source+'" type="'+mimeType+'"></audio>';
     }else{
-        mediaContent =
-            "<video controls controlsList=\"nodownload\" class='um-media video-fluid'>" +
-            "    <source src=\""+source+"\" type=\""+mimeType+"\">" +
-            "</video>";
+        mediaContent = '<video controls controlsList="nodownload" class="um-media"><source src="'+source+'" type="'+mimeType+'"></video>'
     }
-    mediaContent = "<p></p><p>"+mediaContent+"</p><p></p>";
-    umContentEditor.insertContentRaw(mediaContent);
-    const currentCursorPositionElement = tinymce.activeEditor.selection;
-    const activeNode = currentCursorPositionElement.getNode();
-    console.log("Current",activeNode);
+    mediaContent = mediaContent + '<p></p>';
+    const currentElement = $(tinymce.activeEditor.selection.getNode());
+    if(currentElement.is("p")){
+        $(currentElement).after(mediaContent);
+    }else{
+        UmContentEditorCore.insertContentRaw(mediaContent)
+    }
+
+    const parentChildren = $(currentElement.parent()).children();
+    UmContentEditorCore.prototype.setCursor(parentChildren.get(parentChildren.length - 1),false);
 
 };
 
-umContentEditor.insertContentRaw = (content) =>{
-    tinyMCE.activeEditor.execCommand('mceInsertContent', false, content);
+
+/**
+ * Tinymce command to insert content in the editor
+ * @param content content to be inserted in the editor.
+ */
+UmContentEditorCore.insertContentRaw = (content) =>{
+    tinymce.activeEditor.execCommand('mceInsertContent', false, content);
 };
 
 
-
-
-insertQuestionNodeContent = (questionNode,pastFromClipboard = false) => {
+/**
+ * Handle question node when inserted/modified to the editor (This will be called on editor preInit)
+ * @param questionNode Question html content
+ * @param isFromClipboard False when the node was inserted from template else will
+ * be coming from clipboard.
+ */
+UmContentEditorCore.prototype.insertQuestionNodeContent = (questionNode,isFromClipboard = false) => {
     UmQuestionWidget.setQuestionStatus(true);
-    if(!pastFromClipboard){
+    if(!isFromClipboard){
         tinymce.activeEditor.dom.add(tinymce.activeEditor.getBody(), 'p', {class: 'pg-break',style:'page-break-before: always'}, '');
     }else{
-        const currentCursorPositionElement = tinymce.activeEditor.selection;
-        const activeNode = currentCursorPositionElement.getNode();
+        const activeNode = tinymce.activeEditor.selection.getNode();
         const extraContent = $(activeNode).closest("div div.extra-content");
         $(extraContent).after(UmQuestionWidget.PAGE_BREAK);
     }
-    this.setCursorPositionAtAnyGivenEditableElement(this.getLastEditableElement());
-    umContentEditor.insertContentRaw(questionNode);
-    this.scrollToElement(this.getLastEditableElement());
-    this.setCursorPositionAtAnyGivenEditableElement(this.getLastExtraContentWidget());
+    UmContentEditorCore.prototype.setCursorToANode(UmContentEditorCore.prototype.getLastEditableElement());
+    UmContentEditorCore.insertContentRaw(questionNode);
+    UmContentEditorCore.prototype.scrollToElement(UmContentEditorCore.prototype.getLastEditableElement());
+    UmContentEditorCore.prototype.setCursorToANode(UmContentEditorCore.prototype.getLastExtraContentWidget());
     tinymce.activeEditor.dom.remove(tinymce.activeEditor.dom.select('p.pg-break'));
 };
 
 
-handleCursorFocusPosition = element => {
+/**
+ * Check next focusable area when someone click protected area.
+ * @param element clicked target element.
+ */
+UmContentEditorCore.prototype.setFocusToNextFocusableArea = element => {
    try{
        if($(element).is("label") || $(element).is("button") || $(element).hasClass("close")
            || $(element).hasClass("question") || $(element).hasClass("question-retry-option")
@@ -465,12 +552,11 @@ handleCursorFocusPosition = element => {
                    }else{
                        elementToFocus = questionElement.get(3);
                    }
-                   setCursorPositionAtAnyGivenEditableElement(elementToFocus);
-                   scrollToElement(elementToFocus);
+                   UmContentEditorCore.prototype.setCursorToANode(elementToFocus);
+                   UmContentEditorCore.prototype.scrollToElement(elementToFocus);
                },200);
            } else if($(element).hasClass("img-delete") || $(element).hasClass("question") || $(element).hasClass("input-group")){
                elementToFocus = $(questionElement.get(3)).children().get(0);
-               console.log("pasting",elementToFocus);
            }else if($(element).hasClass("question-retry-option") || $(element).hasClass("question-retry-holder")){
                if(questionType === UmQuestionWidget.WIDGET_NAME_MULTICHOICE){
                    elementToFocus = $(questionElement).children().get(6);
@@ -479,17 +565,19 @@ handleCursorFocusPosition = element => {
                }
            }
            if(elementToFocus && !$(elementToFocus).hasClass("question")){
-               this.setCursorPositionAtAnyGivenEditableElement(elementToFocus);
+               UmContentEditorCore.prototype.setCursorToANode(elementToFocus);
            }
        }
    }catch (e) {
-       console.log("handleCursorFocusPosition: "+e);
+       console.log("setFocusToNextFocusableArea: "+e);
    }
 };
 
-
-
-setCursorPositionAtRootElementEnd = (rootElement) =>{
+/**
+ * Set cursor to the root editable element.
+ * @param rootElement root target element.
+ */
+UmContentEditorCore.prototype.setCursorPositionAtRootElementEnd = (rootElement) =>{
     if(rootElement == null){
         rootElement = document.getElementById("umEditor");
     }
@@ -507,13 +595,22 @@ setCursorPositionAtRootElementEnd = (rootElement) =>{
     }
 };
 
-scrollToElement = (element) => {
+
+/**
+ * Scroll to the targeted element in the editor.
+ * @param element target element
+ */
+UmContentEditorCore.prototype.scrollToElement = (element) => {
     if (!!element && element.scrollIntoView) {
         element.scrollIntoView({ behavior: 'smooth', block: 'center'});
     }
 };
 
-setCursorPositionAtAnyGivenEditableElement = (element) => {
+/**
+ * Set cursor to a specific editor node
+ * @param element target editor node.
+ */
+UmContentEditorCore.prototype.setCursorToANode = (element) => {
    try{
        element = element === null ? $("#umEditor").children().get(0):element;
        const range = document.createRange();
@@ -524,26 +621,37 @@ setCursorPositionAtAnyGivenEditableElement = (element) => {
        sel.addRange(range);
        element.focus();
    }catch (e) {
-       console.log("setCursorPositionAtAnyGivenEditableElement",e)
+       console.log("setCursorToANode",e)
    }
 };
 
 
-umContentEditor.setCursor = (element = null,isRoot) =>{
+UmContentEditorCore.prototype.setCursor = (element = null,isRoot) =>{
     if(isRoot){
-        this.setCursorPositionAtRootElementEnd(element);
+        UmContentEditorCore.prototype.setCursorPositionAtRootElementEnd(element);
     }else{
-        this.setCursorPositionAtAnyGivenEditableElement(element);
+        UmContentEditorCore.prototype.setCursorToANode(element);
     }
 };
 
-preventKeyboardKey = e =>{
+
+/**
+ * Prevent keyboard key and stop propagation
+ * @param e tinymce event
+ * @returns {boolean} true if the task succeeded.
+ */
+UmContentEditorCore.prototype.preventKeyboardKey = e =>{
     e.preventDefault();
     e.stopImmediatePropagation();
     return false;
 };
 
-umContentEditor.initEditor = (showToolbar = false) => {
+
+/**
+ * Initialize tinymce editor to the document element.
+ * @param showToolbar Show toolbar element when true otherwise false.
+ */
+UmContentEditorCore.initEditor = (showToolbar = false) => {
     const configs = {
         selector: '#umEditor',
         height: $(window).height(),
@@ -553,7 +661,7 @@ umContentEditor.initEditor = (showToolbar = false) => {
         force_br_newlines : false,
         force_p_newlines : true,
         forced_root_block : '',
-        plugins: ['directionality','lists','noneditable','visualblocks'],
+        plugins: ['directionality','lists'],
         toolbar: showToolbar,
         content_css: [
             '//fonts.googleapis.com/css?family=Lato:300,300i,400,400i',
@@ -566,7 +674,7 @@ umContentEditor.initEditor = (showToolbar = false) => {
                             continue;
                         const questionNode = tinymce.html.Serializer().serialize(nodes[node]);
                         if($(questionNode).attr("id") != null){
-                            let questionWidget = UmQuestionWidget.handleQuestionNode(questionNode);
+                            let questionWidget = UmQuestionWidget.handleWidgetNode(questionNode);
                             questionWidget = questionWidget.startEditing();
                             questionWidget = $("<div>").append(questionWidget);
                             const tempNode =  tinymce.html.DomParser().parse($(questionWidget).html());
@@ -606,9 +714,9 @@ umContentEditor.initEditor = (showToolbar = false) => {
                 let clipboardData = e.clipboardData || window.clipboardData;
                 const content = clipboardData.getData('Text');
                 if($(content).hasClass("question")){
-                    this.insertQuestionNodeContent(content,true);
+                    UmContentEditorCore.prototype.insertQuestionNodeContent(content,true);
                 }else{
-                    umContentEditor.insertContentRaw(content)
+                    UmContentEditorCore.insertContentRaw(content)
                 }
             });
 
@@ -618,13 +726,14 @@ umContentEditor.initEditor = (showToolbar = false) => {
              * @type {[type]}
              */
             ed.on('click', e => {
-                umContentEditor.checkActivatedControls();
+                UmContentEditorCore.prototype.checkActivatedControls();
                 const selection = ed.selection;
                 const activeNode = selection.getNode();
                 this.protectedSection = $(activeNode).hasClass("um-labels") || $(activeNode).is("button")
                     || $(activeNode).hasClass("pg-break")
                     || $(activeNode).hasClass("question-retry-option");
-                this.handleCursorFocusPosition(e.target);
+                UmContentEditorCore.prototype.getNodeDirectionality();
+                UmContentEditorCore.prototype.setFocusToNextFocusableArea(e.target);
             });
 
             /**
@@ -634,7 +743,7 @@ umContentEditor.initEditor = (showToolbar = false) => {
             ed.on('keyup', () => {
                 if(wasContentSelected){
                     wasContentSelected = false;
-                    umContentEditor.editorActionUndo();
+                    UmContentEditorCore.editorActionUndo();
                 }
             });
 
@@ -646,62 +755,61 @@ umContentEditor.initEditor = (showToolbar = false) => {
             ed.on('keydown', (e) => {
                 const deleteKeys = e.key === "Backspace" || e.key === "Delete";
                 const enterKey = e.key === "Enter";
-                const currentCursorPositionElement = tinymce.activeEditor.selection;
-                const activeNode = currentCursorPositionElement.getNode();
-                const isLabel = $(activeNode).hasClass("um-labels");
-                const isDeleteQuestionBtn = $(activeNode).hasClass("close");
-                const isCloseSpan = $(activeNode).is("span");
-                const isButtonLabels = $(activeNode).is("button");
-                const isParagraph = $(activeNode).is("p");
-                const isDiv = $(activeNode).is("div");
-                const isChoiceSelector = $(activeNode).hasClass("question-retry-option");
-                const isInputGroup = $(activeNode).hasClass("input-group");
-                const preventEditorDiv = $(activeNode).attr("id") === "umEditor";
-                const innerTextContentLength = UmQuestionWidget.removeSpaces($(activeNode).text()).length;
-                const innerHtmlContentLength = UmQuestionWidget.removeSpaces($(activeNode).html()).length;
 
-                const preventLabelsDeletion = deleteKeys && isLabel;
-
-                if(isParagraph){
-                    const divWrapper = $(activeNode).closest("div");
-                    if(divWrapper){
-                        const divParagraphs = $(divWrapper).children();
-                        this.protectedSection = divParagraphs.length === 1 && deleteKeys && ((innerHtmlContentLength > 0 || innerTextContentLength > 0)
-                            && umContentEditor.getCursorPositionRelativeToTheEditableElementContent() === 0)
-                    }else{
-                        this.protectedSection = false;
-                    }
-                }
-
-                if((this.protectedSection && this.selectedContentLength > 0) || (enterKey && isLabel)){
-                    wasContentSelected = true;
-                }
-
-                const disableKeys = this.selectedContentLength === 0 && (isDeleteQuestionBtn || isCloseSpan || isButtonLabels || preventLabelsDeletion ||
-                    isChoiceSelector || isInputGroup || (preventEditorDiv && deleteKeys))||
-                    this.protectedSection || isProtectedElement || isLabel || isDiv;
-
-                this.handleCursorFocusPosition(activeNode);
-                const hasQuestions = $("#umEditor").find(".question").length > 0;
-                const isBelowQuestion = $($($(activeNode).parent()).prev()).hasClass("question");
-                const isNotBelowQuestion = $($($(activeNode).parent()).prev()).hasClass("extra-content");
-
-                console.log("prevActive1",isNotBelowQuestion)
-                console.log("prevActive2",isBelowQuestion)
-                if(disableKeys &&  hasQuestions){
-                    if(isNotBelowQuestion || $(activeNode).hasClass("mce-content-body")
-                        || (isParagraph && isNotBelowQuestion)){
-                        return true;
-                    }
-                    this.preventKeyboardKey(e);
+                if(this.selectedContentLength === 0 || !deleteKeys){
+                    console.log("checkEvent","proceed");
                 }else{
-                    if(isBelowQuestion && deleteKeys && innerTextContentLength === 0){
-                        console.log("pasting","prevent");
-                        this.preventKeyboardKey(e);
-                    }else{
-                        console.log("pasting","allowing key");
+                    const currentCursorPositionElement = tinymce.activeEditor.selection;
+                    const activeNode = currentCursorPositionElement.getNode();
+                    const isLabel = $(activeNode).hasClass("um-labels");
+                    const isDeleteQuestionBtn = $(activeNode).hasClass("close");
+                    const isCloseSpan = $(activeNode).is("span");
+                    const isButtonLabels = $(activeNode).is("button");
+                    const isParagraph = $(activeNode).is("p");
+                    const isDiv = $(activeNode).is("div");
+                    const isChoiceSelector = $(activeNode).hasClass("question-retry-option");
+                    const isInputGroup = $(activeNode).hasClass("input-group");
+                    const preventEditorDiv = $(activeNode).attr("id") === "umEditor";
+                    const innerTextContentLength = UmQuestionWidget.removeSpaces($(activeNode).text()).length;
+                    const innerHtmlContentLength = UmQuestionWidget.removeSpaces($(activeNode).html()).length;
+
+                    const preventLabelsDeletion = deleteKeys && isLabel;
+
+                    if(isParagraph){
+                        const divWrapper = $(activeNode).closest("div");
+                        if(divWrapper){
+                            const divParagraphs = $(divWrapper).children();
+                            this.protectedSection = divParagraphs.length === 1 && deleteKeys && ((innerHtmlContentLength > 0 || innerTextContentLength > 0)
+                                && UmContentEditorCore.prototype.getCursorPositionRelativeToTheEditableElementContent() === 0)
+                        }else{
+                            this.protectedSection = false;
+                        }
                     }
 
+                    if((this.protectedSection && this.selectedContentLength > 0) || (enterKey && isLabel)){
+                        wasContentSelected = true;
+                    }
+
+                    const disableKeys = this.selectedContentLength === 0 && (isDeleteQuestionBtn || isCloseSpan || isButtonLabels || preventLabelsDeletion ||
+                        isChoiceSelector || isInputGroup || (preventEditorDiv && deleteKeys))||
+                        this.protectedSection || isProtectedElement || isLabel || isDiv;
+
+                    UmContentEditorCore.prototype.setFocusToNextFocusableArea(activeNode);
+                    const hasQuestions = $("#umEditor").find(".question").length > 0;
+                    const isBelowQuestion = $($($(activeNode).parent()).prev()).hasClass("question");
+                    const isNotBelowQuestion = $($($(activeNode).parent()).prev()).hasClass("extra-content");
+
+                    if(disableKeys &&  hasQuestions){
+                        if(isNotBelowQuestion || $(activeNode).hasClass("mce-content-body")
+                            || (isParagraph && isNotBelowQuestion)){
+                            return true;
+                        }
+                        UmContentEditorCore.prototype.preventKeyboardKey(e);
+                    }else{
+                        if(isBelowQuestion && deleteKeys && innerTextContentLength === 0){
+                            UmContentEditorCore.prototype.preventKeyboardKey(e);
+                        }
+                    }
                 }
             });
         }
@@ -710,19 +818,22 @@ umContentEditor.initEditor = (showToolbar = false) => {
     if(showToolbar){
         configs.toolbar = ['undo redo | bold italic underline strikethrough superscript subscript | alignleft aligncenter alignright alignjustify | bullist numlist outdent indent | fontsizeselect'];
     }
+
     tinymce.init(configs).then(() => {
+
         rangy.init();
-        umContentEditor.requestFocus();
+        UmContentEditorCore.prototype.requestFocus();
         UmQuestionWidget.setEditingMode(true);
+
         if($(".question").length > 0){
-            this.setCursorPositionAtRootElementEnd();
+            UmContentEditorCore.prototype.setCursorPositionAtRootElementEnd();
         }else{
             const editorWrapper = $("#umEditor");
             if(UmQuestionWidget.removeSpaces($(editorWrapper.children().get(0)).text()).length === 0){
                 $(editorWrapper.children().get(0)).remove();
             }
             editorWrapper.append(UmQuestionWidget.EXTRA_CONTENT_WIDGET);
-            setCursorPositionAtAnyGivenEditableElement(editorWrapper.children().get(0))
+            UmContentEditorCore.prototype.setCursorToANode(editorWrapper.children().get(0))
         }
         tinymce.activeEditor.dom.remove(tinymce.activeEditor.dom.select('p.pg-break'));
         try{
@@ -732,8 +843,6 @@ umContentEditor.initEditor = (showToolbar = false) => {
         }
 
         try{
-
-
             //add observer to watch content changes
             let contentWatcherFilters = {
                 attributes: true, characterData: true, childList: true, subtree: true,
@@ -746,8 +855,9 @@ umContentEditor.initEditor = (showToolbar = false) => {
                 if(textHolder.length === 0){
                     editorContainer.find("p").remove();
                     editorContainer.append(UmQuestionWidget.EXTRA_CONTENT_WIDGET);
-                    umContentEditor.setCursor(null,false);
+                    UmContentEditorCore.prototype.setCursor(null,false);
                 }
+                setTimeout(() => {UmContentEditorCore.prototype.checkActivatedControls()},300);
                 const previewContent = JSON.stringify({action:'onSaveContent',
                     content:UmQuestionWidget.saveContentEditor(btoa(tinyMCE.activeEditor.getContent()))});
                 try{
@@ -756,15 +866,15 @@ umContentEditor.initEditor = (showToolbar = false) => {
                     console.log("onContentChanged:",e);
                 }
             });
-
             contentChangeObserver.observe(document.querySelector('#umEditor'),contentWatcherFilters);
+
 
             const menuWatcherFilter = {
                 attributes : true,
                 attributeFilter : ['style']
             };
             const menuStateChangeObserver = new MutationObserver(function() {
-                umContentEditor.checkActivatedControls();
+                setTimeout(() => {UmContentEditorCore.prototype.checkActivatedControls()},300);
             });
             menuStateChangeObserver.observe(document.querySelector('.mce-panel'),menuWatcherFilter);
 

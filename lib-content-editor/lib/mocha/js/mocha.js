@@ -12953,7 +12953,7 @@ OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
                 this.decoder = null;
                 this.encoding = null;
                 if (options.encoding) {
-                    if (!StringDecoder) StringDecoder = require('string_decoder/').StringDecoder;
+                    if (!StringDecoder) StringDecoder = require('lib/mocha/js/mocha').StringDecoder;
                     this.decoder = new StringDecoder(options.encoding);
                     this.encoding = options.encoding;
                 }
@@ -13109,7 +13109,7 @@ OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 // backwards compatibility.
             Readable.prototype.setEncoding = function (enc) {
-                if (!StringDecoder) StringDecoder = require('string_decoder/').StringDecoder;
+                if (!StringDecoder) StringDecoder = require('lib/mocha/js/mocha').StringDecoder;
                 this._readableState.decoder = new StringDecoder(enc);
                 this._readableState.encoding = enc;
                 return this;

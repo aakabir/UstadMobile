@@ -1,4 +1,10 @@
-
+/**
+ * Class which handle all widgets on the tinymce editor
+ * @param element node element in the editor
+ * @constructor
+ *
+ * @author kileha3
+ */
 let UmQuestionWidget = function(element) {
     this.element =  $.parseHTML(element);
 };
@@ -76,8 +82,12 @@ UmQuestionWidget.setEditingMode = (isEditingMode) => {
     UmQuestionWidget.isEditingMode = isEditingMode;
 };
 
+/**
+ * Create html version for stand alone document preview which will run without tinymce.
+ * @param content tinymce editor content
+ * @returns {string} generated html content in base 64 format
+ */
 UmQuestionWidget.saveContentEditor = (content) => {
-
     let editorContent = $("<div/>").html($.parseHTML(atob(content)));
     $(editorContent).find("br").remove();
     $(editorContent).find("label").remove();
@@ -105,9 +115,15 @@ UmQuestionWidget.saveContentEditor = (content) => {
     $(editorContent).find('.action-inner').removeClass("show-element").addClass("hide-element");
     $(editorContent).find('.question-answer').removeClass("hide-element").addClass("show-element");
     editorContent = $('<div/>').html(editorContent).contents().html();
+    console.log("preview",editorContent);
     return btoa(editorContent);
 };
 
+/**
+ * Check if the selected text is one of the labels defined
+ * @param selectedText text from selected section
+ * @returns {boolean} True is among label list otherwise false
+ */
 UmQuestionWidget.isLabelText = (selectedText) => {
     let isLabel = false;
     for (let label in UmQuestionWidget.PLACEHOLDERS_LABELS) {
@@ -122,28 +138,35 @@ UmQuestionWidget.isLabelText = (selectedText) => {
     return isLabel;
 };
 
-
-UmQuestionWidget.getNextQuestionId = (idLength = 8) => {
+/**
+ * Genrate random unique id for the question and choices.
+ * @param idLength
+ * @returns {string}
+ */
+UmQuestionWidget.getNextUniqueId = (idLength = 8) => {
     const chars = '0123456789abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ';
     let questionId = '';
     for (let i = idLength; i > 0; --i) questionId += chars[Math.floor(Math.random() * chars.length)];
     return questionId;
 };
 
-
-UmQuestionWidget.handleQuestionNode =  (questionNode) => {
-    const questionId =  $(questionNode).attr("id");
+/**
+ * Manage question and other plain text nodes in the editor.
+ * @param editorNode any html blocked added to the editor
+ */
+UmQuestionWidget.handleWidgetNode =  (editorNode) => {
+    const questionId =  $(editorNode).attr("id");
     if(!UmQuestionWidget._widgets[questionId]) {
-        const widgetType = $(questionNode).attr("data-um-widget");
+        const widgetType = $(editorNode).attr("data-um-widget");
         switch(widgetType) {
             case UmQuestionWidget.WIDGET_NAME_MULTICHOICE:
-                UmQuestionWidget._widgets[questionId] = new UmMultiChoiceQuestionWidget(questionNode);
+                UmQuestionWidget._widgets[questionId] = new UmMultiChoiceQuestionWidget(editorNode);
                 break;
             case UmQuestionWidget.WIDGET_NAME_FILL_BLANKS:
-                UmQuestionWidget._widgets[questionId] = new UmFillTheBlanksQuestionWidget(questionNode);
+                UmQuestionWidget._widgets[questionId] = new UmFillTheBlanksQuestionWidget(editorNode);
                 break;
             case UmQuestionWidget.WIDGET_NAME_OTHER_CONTENT:
-                UmQuestionWidget._widgets[questionId] = new UmOtherContentWidget(questionNode);
+                UmQuestionWidget._widgets[questionId] = new UmOtherContentWidget(editorNode);
                 break;
         }
     }
@@ -152,6 +175,10 @@ UmQuestionWidget.handleQuestionNode =  (questionNode) => {
 
 
 /*Widget start editing starts*/
+/**
+ * Switch on editing mode to the question widget
+ * @returns question widget with controls
+ */
 UmQuestionWidget.prototype.startEditing = function() {
     $(this.element).find("label").remove();
     $(this.element).find(".question-action-holder").removeClass("hide-element").addClass("show-element");
@@ -203,11 +230,18 @@ UmQuestionWidget.prototype.startEditing = function() {
     return this.element;
 };
 
+/**
+ * Switch on editing mode to the other widget
+ * @returns question widget with controls
+ */
 UmOtherContentWidget.prototype.startEditing = function() {
     UmQuestionWidget.prototype.startEditing.apply(this, arguments);
 };
 
-
+/**
+ * Switch on editing mode to the multiple choice question widget
+ * @returns question widget with controls
+ */
 UmMultiChoiceQuestionWidget.prototype.startEditing = function(){
     UmQuestionWidget.prototype.startEditing.apply(this, arguments);
     $(this.element).find(".question-add-choice").removeClass("hide-element").addClass("show-element")
@@ -223,7 +257,7 @@ UmMultiChoiceQuestionWidget.prototype.startEditing = function(){
         if(!choices.hasOwnProperty(choice))
             continue;
         if($(choices[choice]).hasClass("question-choice")){
-            $(choices[choice]).attr("id",UmQuestionWidget.CHOICE_ID_TAG+ UmQuestionWidget.getNextQuestionId());
+            $(choices[choice]).attr("id",UmQuestionWidget.CHOICE_ID_TAG+ UmQuestionWidget.getNextUniqueId());
         }
 
     }
@@ -231,7 +265,10 @@ UmMultiChoiceQuestionWidget.prototype.startEditing = function(){
     return this.element;
 };
 
-
+/**
+ * Switch on editing mode to the fill the blanks question widget
+ * @returns question widget with controls
+ */
 UmFillTheBlanksQuestionWidget.prototype.startEditing = function(){
     UmQuestionWidget.prototype.startEditing.apply(this, arguments);
     $(this.element).find(".fill-blanks").removeClass("hide-element").addClass("show-element");
@@ -249,11 +286,14 @@ UmFillTheBlanksQuestionWidget.prototype.startEditing = function(){
 
 
 /*Widget events listeners starts*/
+/**
+ * Handle all document editing and previewing events
+ */
 UmQuestionWidget.handleWidgetListeners = () => {
     const bodySelector = $('body');
     bodySelector.off('click').off('change');
-    //Click events
     bodySelector.on('click', event => {
+        console.log("preview",event.target);
         if($(event.target).hasClass("qn-retry")){
             UmQuestionWidget.prototype.onQuestionRetryButtonClicked(event);
         }else if($(event.target).hasClass("fill-the-blanks-check")){
@@ -268,7 +308,9 @@ UmQuestionWidget.handleWidgetListeners = () => {
             UmQuestionWidget.prototype.onQuestionChoiceDeletion(event);
         }else if($(event.target).hasClass("img-cut")){
             UmQuestionWidget.prototype.onQuestionCut(event);
-        }else if($(event.target).hasClass("question-choice") || $(event.target).hasClass("question-choice-body")) {
+        }else if($(event.target).hasClass("question-choice")
+            || $(event.target).hasClass("question-choice-body")
+            || $($(event.target).parent()).hasClass("question-choice-body")) {
             if (!UmQuestionWidget.isEditingMode) {
                 UmMultiChoiceQuestionWidget.prototype.onQuestionAnswerChecked(event);
             }
@@ -289,9 +331,13 @@ UmQuestionWidget.handleWidgetListeners = () => {
 
 
 /*Widget event handling starts*/
+/**
+ * Action invoked when choice is added to the multiple choice question
+ * @param event choice addition event object
+ */
 UmMultiChoiceQuestionWidget.prototype.addChoice = function(event){
-    const choiceUiHolder = "<div id='"+UmQuestionWidget.getNextQuestionId()+"' class=\"question-choice col-sm-12 col-md-12 col-lg-12 default-theme no-padding\" data-um-correct=\"false\" data-um-preview=\"support\" id='"
-        +UmQuestionWidget.CHOICE_ID_TAG+UmQuestionWidget.getNextQuestionId()+"'>" +
+    const choiceUiHolder = "<div id='"+UmQuestionWidget.getNextUniqueId()+"' class=\"question-choice col-sm-12 col-md-12 col-lg-12 default-theme no-padding\" data-um-correct=\"false\" data-um-preview=\"support\" id='"
+        +UmQuestionWidget.CHOICE_ID_TAG+UmQuestionWidget.getNextUniqueId()+"'>" +
        "<img class=\"question-action action-inner img-delete-inner float-right show-element\" src=\"icons/delete-black.png\">" +
         "<label class=\"um-labels\">"+UmQuestionWidget.PLACEHOLDERS_LABELS.labelForChoiceBodyText+"</label><br>" +
        "<div class=\"question-choice-body\">"+UmQuestionWidget.PLACEHOLDERS_LABELS.placeholderForTheChoiceText+"</div>" +
@@ -310,6 +356,10 @@ UmMultiChoiceQuestionWidget.prototype.addChoice = function(event){
 };
 
 
+/**
+ * Action invoked when fill in the blanks question check button is clicked.
+ * @param event check answer click event object
+ */
 UmMultiChoiceQuestionWidget.prototype.onQuestionAnswerChecked = function(event){
     const choiceElement = $(event.target).closest("div .question-choice");
     const questionElement = $(event.target).closest("div div.question");
@@ -344,10 +394,19 @@ UmMultiChoiceQuestionWidget.prototype.onQuestionAnswerChecked = function(event){
     }
 };
 
+/**
+ * Strip all white space on answers for comparison
+ * @param value string to be manipulated
+ * @returns plain text
+ */
 UmQuestionWidget.removeSpaces = (value)=>{
     return value.replace(/(\r\n|\n|\r)/gm,"").replace(/\s/g, "");
 };
 
+/**
+ * Action invoked when multiple choice question choice is clicked
+ * @param event choice selection event object
+ */
 UmFillTheBlanksQuestionWidget.prototype.onQuestionAnswerChecked = (event) =>{
     const questionElement = $(event.target).closest("div div.question");
     const choiceElement = $(questionElement).find(".fill-blanks");
@@ -376,12 +435,18 @@ UmFillTheBlanksQuestionWidget.prototype.onQuestionAnswerChecked = (event) =>{
     }
 };
 
-
+/**
+ * Action invoked when correct answer choice value changed
+ * @param event Correct answer value change event object
+ */
 UmMultiChoiceQuestionWidget.prototype.onChoiceStateChange = (event) => {
     $(event.target).closest("div .question-choice").attr("data-um-correct",$(event.target).val());
 };
 
-
+/**
+ * Action invoked when question retry value changed changed (When deciding whether the question can be retried or not)
+ * @param event question retry value change event object
+ */
 UmQuestionWidget.prototype.onQuestionRetrySelectionChange = (event) => {
     const questionElement = $(event.target).closest("div div.question");
     const canBeRetried = $(event.target).val() === 'true';
@@ -389,6 +454,10 @@ UmQuestionWidget.prototype.onQuestionRetrySelectionChange = (event) => {
     $(this.element).find("br").remove();
 };
 
+/**
+ * Action invoked when question retry button is clicked
+ * @param event question answer retry event object
+ */
 UmQuestionWidget.prototype.onQuestionRetryButtonClicked = (event) => {
     const questionElement = $(event.target).closest("div.question");
     $(questionElement).find(".question-choice-pointer").removeClass("selected-choice");
@@ -396,7 +465,10 @@ UmQuestionWidget.prototype.onQuestionRetryButtonClicked = (event) => {
     $(questionElement).find(".question-retry-btn").removeClass("show-element").addClass("hide-element");
 };
 
-
+/**
+ * Action invoked when question is deleted from the editor
+ * @param event question delete event object
+ */
 UmQuestionWidget.prototype.onQuestionDeletion = (event) => {
     const questionElement = $(event.target).closest("div div.question");
     const extraOrEmptyContent = $(questionElement).next();
@@ -407,11 +479,19 @@ UmQuestionWidget.prototype.onQuestionDeletion = (event) => {
     $(questionElement).remove();
 };
 
+/**
+ * Action invoked when question choice is being deleted from the editor
+ * @param event question choice delete event object
+ */
 UmQuestionWidget.prototype.onQuestionChoiceDeletion = (event) => {
     const questionChoice = $(event.target).closest("div div.question-choice");
     $(questionChoice).remove();
 };
 
+/**
+ * Action invoked when question is cut from the editor
+ * @param event cut event object
+ */
 UmQuestionWidget.prototype.onQuestionCut = event => {
     let questionElement = $(event.target).closest("div div.question");
     $(questionElement).select();

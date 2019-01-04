@@ -145,12 +145,15 @@ select,button :focus :active{
 
 .media-audio{
     max-height: 53px !important;
+    margin: 10px 0 10px 0 !important;
+    width: 100%;
 }
 
 .um-media{
-    margin-top: 10px !important;
+    margin: 10px 0 10px 0 !important;
     background: transparent !important;
-    width: 100%;
+    max-width:100%;
+    height:auto;
 }
 
 
@@ -195,6 +198,18 @@ button.qn-retry{
 
 .question-action-holder{
     padding: 8px;
+}
+
+audio::-internal-media-controls-download-button {
+    display:none;
+}
+
+audio::-webkit-media-controls-enclosure {
+    overflow:hidden;
+}
+
+audio::-webkit-media-controls-panel {
+    width: calc(100% + 30px); /* Adjust as needed */
 }
 
 

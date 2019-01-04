@@ -6,56 +6,56 @@ describe('Paragraph Formatting', function() {
 
     describe('#JustifyLeft', function() {
         it('Should apply left justification to the blankDocument', function() {
-            const callback = umContentEditor.paragraphLeftJustification();
+            const callback = UmContentEditorCore.paragraphLeftJustification();
             atob(callback.content).split("-")[formatStatusIndex].should.equal('true');
         });
     });
 
     describe('#JustifyRight', function() {
         it('Should apply right justification to the blankDocument', function() {
-            const callback = umContentEditor.paragraphRightJustification();
+            const callback = UmContentEditorCore.paragraphRightJustification();
             atob(callback.content).split("-")[formatStatusIndex].should.equal('true');
         });
     });
 
     describe('#JustifyFull', function() {
         it('Should apply full justification to the blankDocument', function() {
-            const callback = umContentEditor.paragraphFullJustification();
+            const callback = UmContentEditorCore.paragraphFullJustification();
             atob(callback.content).split("-")[formatStatusIndex].should.equal('true');
         });
     });
 
     describe('#JustifyCenter', function() {
         it('Should apply center justification to the blankDocument', function() {
-            const callback = umContentEditor.paragraphCenterJustification();
+            const callback = UmContentEditorCore.paragraphCenterJustification();
             atob(callback.content).split("-")[formatStatusIndex].should.equal('true');
         });
     });
 
     describe('#Indent', function() {
         it('Should apply blankDocument Indent', function() {
-            const callback = umContentEditor.paragraphIndent();
+            const callback = UmContentEditorCore.paragraphIndent();
             atob(callback.content).split("-")[formatStatusIndex].should.equal('true');
         });
     });
 
     describe('#Outdent', function() {
         it('Should apply blankDocument Outdent', function() {
-            const callback = umContentEditor.paragraphOutDent();
+            const callback = UmContentEditorCore.paragraphOutDent();
             atob(callback.content).split("-")[formatStatusIndex].should.equal('true');
         });
     });
 
     describe('#OrderedList', function() {
         it('Should add ordered list to the blankDocument', function() {
-            const callback = umContentEditor.paragraphOrderedListFormatting();
+            const callback = UmContentEditorCore.paragraphOrderedListFormatting();
             atob(callback.content).split("-")[formatStatusIndex].should.equal('true');
         });
     });
 
     describe('#UnOrderedList', function() {
         it('Should add unordered list to the blankDocument', function() {
-            const callback = umContentEditor.paragraphUnOrderedListFormatting();
+            const callback = UmContentEditorCore.paragraphUnOrderedListFormatting();
             atob(callback.content).split("-")[formatStatusIndex].should.equal('true');
         });
     });

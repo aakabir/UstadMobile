@@ -5,14 +5,14 @@ chai.should();
 describe('Text Direction', function() {
     describe('#LeftToRight', function() {
         it('Text direction changed from LTR', function() {
-            const callback = umContentEditor.textDirectionLeftToRight();
+            const callback = UmContentEditorCore.textDirectionLeftToRight();
             atob(callback.content).split("-")[formatStatusIndex].should.equal('true');
         });
     });
 
     describe('#RightToLeft', function() {
         it('Text direction changed from RTL', function() {
-            const callback = umContentEditor.textDirectionRightToLeft();
+            const callback = UmContentEditorCore.textDirectionRightToLeft();
             atob(callback.content).split("-")[formatStatusIndex].should.equal('true');
         });
     });

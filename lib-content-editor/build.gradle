@@ -32,9 +32,6 @@ jar {
     exclude("com/ustadmobile/core/db/*_Factory.class")
 }
 
-//Prepare all UmEditor resources on lib-content-editor module
-compileJava.dependsOn(":lib-content-editor:copyResourcesToAndroidAssets")
-
 task sourceJar(type: Jar) {
     from sourceSets.main.allJava
 
@@ -397,6 +394,8 @@ task convertAppConfigToPropertiesXml {
     }
 }
 
+
+
 /*
  * Added to overcome limitation on Android studio as per:
  *  http://tools.android.com/knownissues#TOC-JUnit-tests-missing-resources-in-classpath-when-run-from-Studio
@@ -408,6 +407,107 @@ task copyTestResources(type: Copy) {
     into "${buildDir}/classes/test"
 }
 processTestResources.dependsOn copyTestResources
+
+/*Task which copies all umEditor resources from lib-content-editor directory to android assets*/
+task copyUmEditorResources(type: Copy){
+    def umEditorAssetsPath = "${rootDir}/app-android/src/main/assets/http/umEditor"
+    def rootTemplatePath = "${rootDir}/lib-content-editor/templates/"
+    File umEditorDir = new File(umEditorAssetsPath)
+    if(!umEditorDir.exists()){
+        umEditorDir.mkdir()
+    }
+
+    from "${rootDir}/lib-content-editor"
+    into umEditorAssetsPath
+
+    doLast {
+        delete umEditorAssetsPath + "/test"
+        delete rootTemplatePath + "umEditorBlankDoc.zip"
+        delete umEditorAssetsPath + "/templates/index.html"
+    }
+
+}
+compileJava.dependsOn(copyUmEditorResources)
+
+
+
+/* Task which creates blankDocument to be used as blank document template*/
+task createUmEditorBlankDocumentArchive(type: Zip) {
+
+    def templatePath = "${rootDir}/lib-content-editor/templates"
+
+    from templatePath + "/umEditorBlankDoc"
+    include '*'
+    include '*/*'
+    archiveName 'umEditorBlankDoc.zip'
+    destinationDir(file(templatePath))
+
+    doLast {
+       delete templatePath + "/umEditorBlankDoc"
+    }
+}
+copyUmEditorResources.dependsOn(createUmEditorBlankDocumentArchive)
+
+
+/*Task which creates all directories necessary for preparing a blank document template*/
+task prepareUmEditorDirectories << {
+
+    def rawProjectPath = "${rootDir}/lib-content-editor"
+    def templatePath = rawProjectPath + "/templates/"
+    def blankDocPath = templatePath + "umEditorBlankDoc/"
+    def blankDocCssPath = blankDocPath +"css/"
+    def blankDocJsPath = blankDocPath +"js/"
+    def blankDocMediaPath = blankDocPath +"media/"
+
+
+    File blankDocRootDir = new File(blankDocPath)
+    File blankDocJsDir = new File(blankDocJsPath)
+    File blankDocCssDir = new File(blankDocCssPath)
+    File blankDocMediaDir = new File(blankDocMediaPath)
+
+
+    if(!blankDocRootDir.exists()){
+        blankDocRootDir.mkdir()
+    }
+
+    if(!blankDocCssDir.exists()){
+        blankDocCssDir.mkdir()
+    }
+    if(!blankDocMediaDir.exists()){
+        blankDocMediaDir.mkdir()
+        new File("$blankDocMediaDir/.media-hide.info").text = "media-dir"
+    }
+    if(!blankDocJsDir.exists()){
+        blankDocJsDir.mkdir()
+    }
+
+
+    //copy index.html
+    copy {
+        from templatePath+"index.html"
+        into blankDocPath
+    }
+
+
+    //copy all css
+    copy {
+        from rawProjectPath+"/css/bootstrap.min.css", rawProjectPath+"/css/UmEditorCore.css"
+        into blankDocCssPath
+    }
+
+    //copy all js
+    copy {
+        from rawProjectPath+"/js/bootstrap.min.js", rawProjectPath+"/js/jquery3.3.1.min.js", rawProjectPath+"/js/UmContentEditorCore.js", rawProjectPath+"/js/UmQuestionWidget.js"
+        into blankDocJsPath
+    }
+
+    copy{
+        from rawProjectPath+"/icons"
+        into blankDocPath+"icons"
+    }
+}
+createUmEditorBlankDocumentArchive.dependsOn(prepareUmEditorDirectories)
+
 
 
 publishing {

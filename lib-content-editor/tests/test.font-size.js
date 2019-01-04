@@ -6,7 +6,7 @@ describe('Font Size', function() {
     describe('#Font Size', function() {
         it('Text font size changed', function() {
             const fontSize = "40";
-            const callback = umContentEditor.setFontSize(fontSize);
+            const callback = UmContentEditorCore.setFontSize(fontSize);
             atob(callback.content).split("-")[fontSizeStatusIndex].should.equal(fontSize+"pt");
         });
     });
