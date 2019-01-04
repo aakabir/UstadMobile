@@ -38,11 +38,11 @@ Make sure you install chrome before running any tests using mocha-chrome.
 ```
 * Initialize the editor by calling this method and pass TRUE if you need default tinymce toolbar to be shown..
 ```javascript
-  umContentEditor.initEditor(true);
+  UmContentEditorCore.initEditor(true);
 ```
 
 #### As android support lib (android)
-See how we used it to implement our editor on dev-content-editor branch, use ContentEditorActivity for the flow logic.
+See how we used it to implement our editor on dev-content-editor branch, use <a href="/app-android/src/main/java/com/ustadmobile/port/android/view/ContentEditorActivity.java">ContentEditorActivity.java</a> to understand the logical flow
 
 ## Running the tests
 
@@ -52,7 +52,7 @@ Locate <a href='test/content-formatting-tests.html'>content-formatting-tests.htm
 and <a href='test/content-template-tests.html'>content-template-tests.html</a> 
 under test directory and run as html files.
 
-* <b>Run with mocha-chrome</b><br/>
+* <b>Run with mocha-chrome - Terminal </b><br/>
 Navigate to test directory and run the following command on your terminal<br/>
 ```
  mocha-chrome content-formatting-test.html --timeout 3000
