@@ -65,7 +65,7 @@ public class UmEditorFileHelperTest {
         CountDownLatch mLatch = new CountDownLatch(1);
         AtomicReference<String> resultRef = new AtomicReference<>();
 
-        umEditorFileHelper.createFile(new UmCallback<String>() {
+        umEditorFileHelper.createFile(1L,new UmCallback<String>() {
             @Override
             public void onSuccess(String result) {
                 resultRef.set(result);
@@ -96,7 +96,7 @@ public class UmEditorFileHelperTest {
 
         CountDownLatch mLatch = new CountDownLatch(1);
 
-        umEditorFileHelper.createFile(new UmCallback<String>() {
+        umEditorFileHelper.createFile(1L,new UmCallback<String>() {
             @Override
             public void onSuccess(String result) {
                 umEditorFileHelper.mountFile(result, new UmCallback<Void>() {
@@ -147,7 +147,7 @@ public class UmEditorFileHelperTest {
         AtomicReference<Boolean> copyResultRef = new AtomicReference<>();
 
         //create new file
-        umEditorFileHelper.createFile(new UmCallback<String>() {
+        umEditorFileHelper.createFile(1L, new UmCallback<String>() {
             @Override
             public void onSuccess(String result) {
                 //mount newly created file
@@ -217,7 +217,7 @@ public class UmEditorFileHelperTest {
         AtomicReference<Boolean> copyResultRef = new AtomicReference<>();
 
         //create new file
-        umEditorFileHelper.createFile(new UmCallback<String>() {
+        umEditorFileHelper.createFile(1L, new UmCallback<String>() {
             @Override
             public void onSuccess(String result) {
                 //mount newly created file
@@ -287,7 +287,7 @@ public class UmEditorFileHelperTest {
         AtomicReference<Boolean> updateResultRef = new AtomicReference<>();
 
         //create new file
-        umEditorFileHelper.createFile(new UmCallback<String>() {
+        umEditorFileHelper.createFile(1L,new UmCallback<String>() {
             @Override
             public void onSuccess(String result) {
                 //mount newly created file

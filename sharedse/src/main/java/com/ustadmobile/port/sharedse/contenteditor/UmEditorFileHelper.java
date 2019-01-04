@@ -289,16 +289,20 @@ public class UmEditorFileHelper implements UmEditorFileHelperCore {
     @Override
     public void removeUnUsedResources(UmCallback<Integer> callback) {
         new Thread(() -> {
-            int unUsedFileCounter = 0;
-            if(mediaDestinationDir != null){
-                File [] allResources = mediaDestinationDir.listFiles();
-                for(File resource:allResources){
-                    if(!isResourceInUse(resource.getName()) && !resource.getName().equals(tempFile)){
-                        if(resource.delete()) unUsedFileCounter++;
+            try {
+                int unUsedFileCounter = 0;
+                if(mediaDestinationDir != null){
+                    File [] allResources = mediaDestinationDir.listFiles();
+                    for(File resource:allResources){
+                        if(!isResourceInUse(resource.getName()) && !resource.getName().equals(tempFile)){
+                            if(resource.delete()) unUsedFileCounter++;
+                        }
                     }
                 }
+                callback.onSuccess(unUsedFileCounter);
+            }catch (NullPointerException e){
+                e.printStackTrace();
             }
-            callback.onSuccess(unUsedFileCounter);
         }).start();
     }
 
