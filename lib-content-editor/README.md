@@ -6,14 +6,18 @@ TinyMCE based content editor with the ability to use custom html content templat
 You can use this repo as stand-alone project out of Ustadmobile app (use on web apps),   
 with Ustadmobile app this repo will be used as support lib since editor controls are implemented on native android.   
   
-### Setup mocha-chrome  
-This is a Mocha plugin which will be used to run all repo tests. Mocha-chrome requires Node v8.0.0 or higher, to install   
-Node follow instructions on  
- their official site. After installing node to your local machine install mocha-chrome  
+### Setup
+All plugins that will be used for testing requires Node v8.0.0 or higher. Node installation guide can be found on their official website.
+#### mocha-chrome <br/>
+Plugin which will be used to run all our tests
 ```  
- $ npm install mocha-chrome --save-dev
+ npm install -g mocha-chrome --save-dev
 ```  
- 
+#### Istanbul <br/>
+Plugin which will be used for our test coverage reports
+```  
+ npm install -g nyc
+```  
 ### Prerequisites  
 Make sure you install chrome before running any tests using mocha-chrome.  
   
@@ -34,7 +38,8 @@ Make sure you install chrome before running any tests using mocha-chrome.
 
 * Set listeners when the page is loaded  
 ```javascript  
- window.onload = function() {  UmQuestionWidget.handleWidgetListeners();  
+ window.onload = function() {  
+    UmQuestionWidget.handleWidgetListeners();  
  };
 ```  
 * Initialize the editor by calling this method and pass TRUE if you need default tinymce toolbar to be shown..  
@@ -47,24 +52,35 @@ See how we used it to implement our editor on dev-content-editor branch, use Con
   
 ## Running the tests  
   
-You can quickly run tests on web browser or using mocha-chrome.  
-* **Run on web browser**
-Locate content-formatting-tests.html  and content-template-tests.html under test directory and run as html files.  
+You can quickly run tests on web browser or using mocha-chrome.<br/><br/>
+<b> Run on web browser</b> <br/>
+Locate content-formatting-tests.html and content-template-tests.html under tests directory and run as html files.  
   
-*  **Run with mocha-chrome - Terminal**  
-Navigate to test directory and run the following command on your terminal
+<b> Run with mocha-chrome - Terminal</b><br/>
+Navigate to test directory and run the following command on your terminal<br/><br/>
+<i>Without Coverage</i><br/>
+
 ```  
- mocha-chrome content-formatting-test.html --timeout 3000
-```   
-and   
+mocha-chrome content-formatting-tests.html --timeout 6000
+
+mocha-chrome content-template-tests.html --timeout 6000
+```    
+<i>With Coverage report</i><br/>
 ```  
- mocha-chrome content-template-test.html --timeout 5000
-```  
-  
-*  **Run with gradle**
+nyc --reporter=html --reporter=text mocha-chrome content-formatting-tests.html --timeout 6000
+
+
+nyc --reporter=html --reporter=text mocha-chrome content-template-tests.html --timeout 6000
+``` 
+<br/>
+
+<b> Run with gradle</b>
+
 ``` 
  ./gradlew :lib-content-editor:test
+ 
+ ./gradlew :lib-content-editor:testWithCoverage
 ```  
   
 ## Adding custom template  
-You may easily create your own html content template and add it to the template directory,   with its functionality implemented on both  UmContentEditorCore.js and  UmQuestionWidget.js located on umeditor lib.
+You may easily create your own html content template and add it to the template directory,   with its functionality implemented on both  UmContentEditorCore.js and  UmQuestionWidget.js located on src directory.
