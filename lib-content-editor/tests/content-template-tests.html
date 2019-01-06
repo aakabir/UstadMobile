@@ -1,0 +1,68 @@
+<!--
+Test using mocha-chrome use
+ mocha-chrome content-template-tests.html --timeout 6000
+
+with coverage
+ nyc --reporter=html --reporter=text mocha-chrome content-template-tests.html --timeout 6000
+-->
+<html lang="en">
+<head>
+    <meta charset="utf-8">
+    <title>Text and Paragraph Formatting Tests</title>
+    <link href="../lib/mocha/css/mocha-style.css" rel="stylesheet" />
+    <script src="../lib/tinymce/js/tinymce.min.js"></script>
+    <script>
+        /*default tinymce configuration*/
+        const inlineConfig = {
+            selector: '#umEditor',
+            menubar: false,
+            inline: true,
+            plugins: ['directionality','lists'
+            ],
+            toolbar:false,
+            valid_styles: {
+                '*': 'font-size,font-family,color,text-decoration,text-align'
+            },
+            setup: function (editor) {
+                editor.on('init', function () {
+                    editor.focus();
+                    editor.execCommand('mceInsertContent', false, "<span>Test started</span>",{format: 'raw'});
+                });
+            }
+        };
+        tinymce.init(inlineConfig);
+
+    </script>
+</head>
+<body>
+
+    <!--Container to show test results-->
+    <div id="mocha"></div>
+
+    <div class="container-fluid default-margin-top">
+        <div id="umEditor"></div>
+    </div>
+
+    <script src="../lib/jquery/jquery3.3.1.min.js" type="text/javascript"></script>
+    <!-- Editor event invocation-->
+    <script src="../src/js/UmQuestionWidget.js"></script>
+    <script src="../src/js/UmContentEditorCore.js"></script>
+    <!--Assertion library-->
+    <script src="../lib/chai/js/chai.js"></script>
+    <!--Testing framework-->
+    <script src="../lib/mocha/js/mocha.js"></script>
+    <!--Setting up mocha testing framework-->
+    <script>mocha.setup('bdd')</script>
+    <!--All test cases for test ustadEditor-->
+    <script src="test.content-templates.js"></script>
+    <script>
+
+        //run all test
+        setTimeout(() =>{
+            mocha.checkLeaks();
+            mocha.run();
+        },900);
+
+    </script>
+</body>
+</html>
