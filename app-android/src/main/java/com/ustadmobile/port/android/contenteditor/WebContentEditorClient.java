@@ -38,6 +38,8 @@ public class WebContentEditorClient extends WebViewClient {
 
     private Context context;
 
+    private String localUrl;
+
     private String [] resourceTag = new String[]{
             "plugin",
             "skin",
@@ -52,6 +54,7 @@ public class WebContentEditorClient extends WebViewClient {
      */
     public WebContentEditorClient(Context context,String localUrl){
         this.context = context;
+        this.localUrl = localUrl;
     }
 
     @Override
@@ -68,7 +71,7 @@ public class WebContentEditorClient extends WebViewClient {
                             "/"+ EDITOR_BASE_DIR_NAME +"/"+getResourcePath(resourceUri));
                 }else{
                     resourcePath = UMFileUtil.joinPaths("http",
-                            "/"+ EDITOR_BASE_DIR_NAME +"/js/"+new File(resourceUri).getName());
+                            "/"+ EDITOR_BASE_DIR_NAME +getRealResourcePath(resourceUri));
                 }
 
                 inputStream = context.getAssets().open(resourcePath);
@@ -92,6 +95,10 @@ public class WebContentEditorClient extends WebViewClient {
         String[] url = new String[newParts.size()];
         url = newParts.toArray(url);
         return UMFileUtil.joinPaths(url);
+    }
+
+    private String getRealResourcePath(String resourcePath){
+        return resourcePath.split(EDITOR_BASE_DIR_NAME)[1];
     }
 
     /**
