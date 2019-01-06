@@ -88,7 +88,7 @@ public class TocItemView extends LinearLayout implements View.OnClickListener {
     /**
      * Set whether or not the node is expanded. This will only change the expand/collapse icon.
      *
-     * @param expanded True to show that this item has been expanded (show up arrow), false otherwise
+     * @param expanded True to showWithListener that this item has been expanded (showWithListener up arrow), false otherwise
      *                 (down arrow)
      */
     public void setExpanded(boolean expanded) {
@@ -104,7 +104,7 @@ public class TocItemView extends LinearLayout implements View.OnClickListener {
     /**
      * Set whether or not expand/collapse arrows should be shown on this view
      *
-     * @param expandable true to show expand/collapse arrows, false otherwise
+     * @param expandable true to showWithListener expand/collapse arrows, false otherwise
      */
     public void setExpandable(boolean expandable) {
         mDropDownImageView.setVisibility(expandable ? View.VISIBLE : View.INVISIBLE);

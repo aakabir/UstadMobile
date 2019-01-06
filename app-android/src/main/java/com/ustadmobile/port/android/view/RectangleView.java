@@ -12,7 +12,7 @@ import com.ustadmobile.port.sharedse.omr.AttendanceSheetImage;
 import com.ustadmobile.port.sharedse.omr.OMRRecognizer;
 
 /**
- * This view is to be used as a view to show above the camera preview to guide the user to place
+ * This view is to be used as a view to showWithListener above the camera preview to guide the user to place
  * the sheet in the correct area.
  *
  * Because the aspect ratio of the preview frames from the camera often does not exactly match the

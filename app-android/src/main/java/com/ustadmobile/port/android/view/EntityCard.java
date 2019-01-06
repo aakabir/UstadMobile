@@ -12,7 +12,7 @@ import com.toughra.ustadmobile.R;
 import com.ustadmobile.core.model.ListableEntity;
 
 /**
- * EntityCard : Generic Reusable Card to show an entity with an icon, status, title and detail text
+ * EntityCard : Generic Reusable Card to showWithListener an entity with an icon, status, title and detail text
  */
 
 public class EntityCard extends CardView {

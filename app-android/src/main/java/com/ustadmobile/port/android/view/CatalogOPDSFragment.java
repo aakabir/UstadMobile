@@ -81,7 +81,7 @@ import static com.ustadmobile.core.controller.BaseCatalogPresenter.ARG_URL;
 
 
 /**
- * An Android Fragment that implements the CatalogView to show an OPDS Catalog
+ * An Android Fragment that implements the CatalogView to showWithListener an OPDS Catalog
  *
  * Use newInstance to create a new Fragment and use the FragmentManager in the normal way
  *
@@ -154,7 +154,7 @@ public class CatalogOPDSFragment extends UstadBaseFragment implements View.OnCli
         void filterOptionsUpdated(CatalogOPDSFragment catalogFragment);
 
         /**
-         * Notifies the hosting activity to show/hide the floating action button for adding a feed.
+         * Notifies the hosting activity to showWithListener/hide the floating action button for adding a feed.
          * The activity should call isAddOptionAvaialble to see if the floating action button
          * should be shown.
          *

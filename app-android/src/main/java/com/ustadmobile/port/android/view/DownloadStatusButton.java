@@ -13,7 +13,7 @@ import com.toughra.ustadmobile.R;
 
 /**
  * A button that shows the download status of an item. It consists of an icon (a download icon or
- * offline pin, depending on the status), and a determinate circular progress widget to show download
+ * offline pin, depending on the status), and a determinate circular progress widget to showWithListener download
  * progress.
  */
 public class DownloadStatusButton extends RelativeLayout {

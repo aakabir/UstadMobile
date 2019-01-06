@@ -271,3 +271,6 @@ app-gwt/*
 #umEditor files
 /lib-content-editor/templates/umEditorBlankDoc.zip
 
+#coverage report
+/lib-content-editor/coverage/
+/lib-content-editor/.nyc_output/

@@ -285,7 +285,7 @@ public class BasePointActivity extends UstadBaseActivity implements BasePointVie
         Fragment fromFragment = catalogFragment;
         boolean sameFrag = selectedFragment.equals(fromFragment);
         if(catalogFragment.equals(mPagerAdapter.getItem(mTabLayout.getSelectedTabPosition()))) {
-            //this is an update to the currently selected tab - show it.
+            //this is an update to the currently selected tab - showWithListener it.
             ((OpdsFilterBar)findViewById(R.id.activity_basepoint_filterbar)).setFilterOptions(
                     catalogFragment.getFilterOptions());
         }

@@ -30,7 +30,7 @@ import java.io.IOException;
 import java.io.InputStream;
 
 /**
- * A simple Fragment that uses a WebView to show one part of a piece of content. This fragment MUST
+ * A simple Fragment that uses a WebView to showWithListener one part of a piece of content. This fragment MUST
  * be attached to ContainerActivity in order to work. When the fragment is restored from a saved
  * state the internal server URL may have changed since hwen it was created. It therefor relies on
  * attaching to the activity to get these values.
@@ -227,7 +227,7 @@ public class ContainerPageFragment extends Fragment {
      */
     public void showPagePosition(int index, int numPages) {
         //Toast t = Toast.makeText(getTargetContext(), index + "/" + numPages, Toast.LENGTH_SHORT);
-        //t.show();
+        //t.showWithListener();
     }
 
     // TODO: Rename method, update argument and hook method into UI event

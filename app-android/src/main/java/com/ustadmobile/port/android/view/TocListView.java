@@ -10,7 +10,7 @@ import java.util.HashMap;
 import java.util.List;
 
 /**
- * Table of Contents (ToC) list view component. This is used to show a hierarchical table of
+ * Table of Contents (ToC) list view component. This is used to showWithListener a hierarchical table of
  * contents where the user can expand or collapse items. It supports an unlimited number of levels.
  * An expand/collapse arrow appears to the end of the text. If the user taps on the arrow, the
  * group is expanded and the onItemClick method is not called. If the user taps on the view for the

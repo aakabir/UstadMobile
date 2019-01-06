@@ -12,8 +12,7 @@ import android.support.test.runner.AndroidJUnit4;
 
 import com.toughra.ustadmobile.R;
 import com.ustadmobile.core.view.ContentEditorView;
-import com.ustadmobile.port.android.contenteditor.ContentFormat;
-import com.ustadmobile.port.android.contenteditor.ContentFormattingHelper;
+import com.ustadmobile.port.android.contenteditor.UmFormat;
 
 import org.junit.Before;
 import org.junit.Rule;
@@ -129,9 +128,9 @@ public class ContentEditorActivityTest {
         Thread.sleep(TimeUnit.SECONDS.toMillis(1));
 
         //Get formatting type reference
-        ContentFormat boldFormat =
+        UmFormat boldFormat =
                 ContentFormattingHelper.getInstance().getFormatByCommand(TEXT_FORMAT_TYPE_BOLD);
-        ContentFormat italicFormat =
+        UmFormat italicFormat =
                 ContentFormattingHelper.getInstance().getFormatByCommand(TEXT_FORMAT_TYPE_ITALIC);
 
 

@@ -168,7 +168,7 @@ public class RegistrationDialogFragment extends UstadDialogFragment
         if (options.length > 0) {
             final ArrayAdapter<String> adapterT = new ArrayAdapter<>(getActivity(),
                     android.R.layout.select_dialog_singlechoice, options);
-            // show all suggestions
+            // showWithListener all suggestions
             if (!autoTextField.getText().toString().equals(""))
                 adapterT.getFilter().filter(null);
             autoTextField.showDropDown();
@@ -287,7 +287,7 @@ public class RegistrationDialogFragment extends UstadDialogFragment
                         if (options.length > 0) {
                             final ArrayAdapter<String> adapterT = new ArrayAdapter<>(getActivity(),
                                     android.R.layout.select_dialog_singlechoice, options);
-                            // show all suggestions
+                            // showWithListener all suggestions
                             if (!autoTextField.getText().toString().equals(""))
                                 adapterT.getFilter().filter(null);
                             autoTextField.showDropDown();

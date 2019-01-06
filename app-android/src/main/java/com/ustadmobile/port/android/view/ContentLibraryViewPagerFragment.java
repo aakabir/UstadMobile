@@ -72,9 +72,9 @@ public class ContentLibraryViewPagerFragment extends UstadBaseFragment {
             Bundle bundle = new Bundle();
             bundle.putLong(ARG_CONTENT_ENTRY_UID, 1);
             switch (position) {
-                case 0: // Fragment # 0 - This will show FirstFragment
+                case 0: // Fragment # 0 - This will showWithListener FirstFragment
                     return ContentEntryListFragment.newInstance(bundle);
-                case 1: // Fragment # 0 - This will show FirstFragment different title
+                case 1: // Fragment # 0 - This will showWithListener FirstFragment different title
                     return ContentEntryListFragment.newInstance(bundle);
                 default:
                     return null;

@@ -223,8 +223,8 @@ public class ContainerActivity extends UstadBaseActivity implements ContainerPag
     }
 
     /**
-     * Override the onCreateOptionsMenu : In Container mode we don't show the standard app menu
-     * options like logout, about etc.  We show only a close button in the top right to make things
+     * Override the onCreateOptionsMenu : In Container mode we don't showWithListener the standard app menu
+     * options like logout, about etc.  We showWithListener only a close button in the top right to make things
      * simple
      *
      * @param menu

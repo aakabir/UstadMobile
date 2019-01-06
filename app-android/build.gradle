@@ -60,7 +60,7 @@ task startTestSlaveServer(type: Exec) {
         //Get the wifi direct mac address
         def macAddrStdOut = new ByteArrayOutputStream()
         exec {
-            commandLine "$adb", "-s", (String) project.ext.buildConfigProperties['test.remote_slave_server_serial'], "shell", "ip", "addr", "show"
+            commandLine "$adb", "-s", (String) project.ext.buildConfigProperties['test.remote_slave_server_serial'], "shell", "ip", "addr", "showWithListener"
             standardOutput = macAddrStdOut
         }
 

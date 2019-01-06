@@ -74,7 +74,7 @@ public class SplashScreenActivity extends AppCompatActivity implements DialogInt
         if(!hasRequiredPermissions){
             if(ActivityCompat.shouldShowRequestPermissionRationale(this, Manifest.permission.WRITE_EXTERNAL_STORAGE)
                     && !rationalesShown) {
-                //show an alert
+                //showWithListener an alert
                 AlertDialog.Builder builder = new AlertDialog.Builder(this);
                 builder.setTitle("File permissions required").setMessage("This app requires file permissions on the SD card to download and save content");
                 builder.setPositiveButton("OK", this);

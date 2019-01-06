@@ -85,7 +85,7 @@ public class RemoteTestSlaveServerActivity extends UstadBaseActivity implements 
                 serverHttpd.start();
                 Toast.makeText(this, "Test slave server started", Toast.LENGTH_LONG).show();
             }catch(IOException e) {
-                //show a pop
+                //showWithListener a pop
                 AlertDialog.Builder builder=new AlertDialog.Builder(this);
                 builder.setTitle("NanoHTTPD Server");
                 builder.setMessage("NanoHTTPD server failed to start");
