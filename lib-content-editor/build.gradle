@@ -18,13 +18,13 @@ apply plugin: 'css'
 
 def rootPath = "${rootDir}/lib-content-editor/"
 def rootTemplatePath = rootPath + "templates/"
-def umEditorDirPath = rootPath + "lib/umeditor/"
 def umEditorAssetsPath = "${rootDir}/app-android/src/main/assets/http/umEditor"
 
 def umJsDynamicTasks = []
 def umCssDynamicTasks = []
 def umJsTaskIndex = 1
 def umCssTaskIndex = 1
+def testTimeout = 6000;
 
 /*Task which copies all umEditor resources from lib-content-editor directory to android assets*/
 task copyResourcesToAndroidAssets << {
@@ -38,9 +38,10 @@ task copyResourcesToAndroidAssets << {
     copy { from rootPath + rangy into umEditorAssetsPath +"/"+ rangy }
     copy { from rootPath + icons into umEditorAssetsPath +"/"+icons }
 
-    delete rootPath + "/lib/umeditor/dist"
+    delete rootPath + "dist"
     delete rootTemplatePath + "umEditorBlankDoc.zip"
     delete umEditorAssetsPath + templates + "/index.html"
+    delete umEditorAssetsPath + templates + "/umEditorBlankDoc"
 
 }
 
@@ -70,9 +71,9 @@ task prepareUmEditorDirectories << {
     def blankDocMediaPath = blankDocPath +"media/"
 
     copy { from rootTemplatePath+"index.html" into blankDocPath }
-    copy { from rootPath+"/lib/bootstrap/css/bootstrap.min.css", umEditorDirPath+"dist/css/UmEditorCore.min.css" into blankDocCssPath }
+    copy { from rootPath+"/lib/bootstrap/css/bootstrap.min.css", rootPath+"dist/css/UmEditorCore.min.css" into blankDocCssPath }
     copy { from rootPath+"/lib/bootstrap/js/bootstrap.min.js", rootPath+"/lib/jquery/jquery3.3.1.min.js",
-            umEditorDirPath+"dist/js/UmContentEditorCore.min.js", umEditorDirPath+"dist/js/UmQuestionWidget.min.js" into blankDocJsPath }
+            rootPath+"dist/js/UmContentEditorCore.min.js", rootPath+"dist/js/UmQuestionWidget.min.js" into blankDocJsPath }
     copy{ from rootPath+"/icons" into blankDocPath+"icons" }
 
     File mediaDir = new File(blankDocMediaPath)
@@ -83,12 +84,12 @@ createUmEditorBlankDocumentArchive.dependsOn(prepareUmEditorDirectories)
 
 
 /* Task to minify UmEditor javascript file*/
-new File(umEditorDirPath+"src/js").eachFile { def file ->
+new File(rootPath+"src/js").eachFile { def file ->
     def dynamicTaskName = "taskJsMinify${umJsTaskIndex}"
 
     task "${dynamicTaskName}"(type: MinifyJsTask) {
         source = file.absolutePath
-        dest = rootPath + "lib/umeditor/dist/js/${file.name.replaceFirst(~/\.[^\.]+$/, '')}.min.js"
+        dest = rootPath + "dist/js/${file.name.replaceFirst(~/\.[^\.]+$/, '')}.min.js"
         closure {
             warningLevel = 'QUIET'
             compilerOptions.languageIn = 'ECMASCRIPT6'
@@ -102,12 +103,12 @@ task minifyUmEditorJs(dependsOn: umJsDynamicTasks) << {}
 
 
 /* Task to minify UmEditor css files*/
-new File(umEditorDirPath +"src/css").eachFile { def file ->
+new File(rootPath +"src/css").eachFile { def file ->
     def dynamicTaskName = "taskCssMinify${umCssTaskIndex}"
 
     task "${dynamicTaskName}"(type: MinifyCssTask) {
         source = file.absolutePath
-        dest = rootPath + "lib/umeditor/dist/css/${file.name.replaceFirst(~/\.[^\.]+$/, '')}.min.css"
+        dest = rootPath + "dist/css/${file.name.replaceFirst(~/\.[^\.]+$/, '')}.min.css"
     }
     umCssDynamicTasks << dynamicTaskName
     umCssTaskIndex++
@@ -119,14 +120,29 @@ prepareUmEditorDirectories.dependsOn(minifyUmEditorCss,minifyUmEditorJs)
 /* Execute content template tests */
 task runContentTemplatesTest(type: Exec){
     def testFilePath = rootPath + "tests/content-template-tests.html"
-    commandLine 'mocha-chrome', testFilePath, '--timeout 3000'
+    commandLine 'mocha-chrome', testFilePath, '--timeout ',testTimeout
+}
+
+/* Execute content template tests with coverage*/
+task runContentTemplatesTestWithCoverage(type: Exec){
+    def testFilePath = rootPath + "tests/content-template-tests.html"
+    commandLine 'nyc','--reporter=html','--reporter=text','mocha-chrome', testFilePath, '--timeout ',testTimeout
 }
 
 /* Execute content formatting tests */
 task runContentFomattingTests (type: Exec){
     def testFilePath = rootPath + "tests/content-formatting-tests.html"
-    commandLine 'mocha-chrome', testFilePath, '--timeout 3000'
+    commandLine 'mocha-chrome', testFilePath, '--timeout ',testTimeout
+}
+
+/* Execute content formatting tests with coverage*/
+task runContentFomattingTestsWithCoverage(type: Exec){
+    def testFilePath = rootPath + "tests/content-formatting-tests.html"
+    commandLine 'nyc','--reporter=html','--reporter=text','mocha-chrome', testFilePath, '--timeout ',testTimeout
 }
 
 /* Run all UmEditor Javascript tests */
 task test(dependsOn: [runContentFomattingTests, runContentTemplatesTest]) << {}
+
+/* Run all UmEditor Javascript tests */
+task testWithCoverage(dependsOn: [runContentFomattingTestsWithCoverage, runContentTemplatesTestWithCoverage]) << {}
