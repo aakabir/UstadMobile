@@ -1302,8 +1302,7 @@ public class ContentEditorActivity extends UstadBaseActivity implements ContentE
 
     @Override
     public void loadIndexFile() {
-        umEditorWebView.setWebViewClient(new WebContentEditorClient(
-                this,umEditorFileHelper.getBaseResourceRequestUrl()));
+        umEditorWebView.setWebViewClient(new WebContentEditorClient(this));
         args.put(ContentEditorView.EDITOR_PREVIEW_PATH, UMFileUtil.joinPaths(
                 umEditorFileHelper.getMountedTempDirRequestUrl(),INDEX_FILE));
         String urlToLoad = UMFileUtil.joinPaths(umEditorFileHelper.getMountedTempDirRequestUrl(),

@@ -38,8 +38,6 @@ public class WebContentEditorClient extends WebViewClient {
 
     private Context context;
 
-    private String localUrl;
-
     private String [] resourceTag = new String[]{
             "plugin",
             "skin",
@@ -50,11 +48,9 @@ public class WebContentEditorClient extends WebViewClient {
 
     /**
      * @param context application context
-     * @param localUrl local base url
      */
-    public WebContentEditorClient(Context context,String localUrl){
+    public WebContentEditorClient(Context context){
         this.context = context;
-        this.localUrl = localUrl;
     }
 
     @Override
