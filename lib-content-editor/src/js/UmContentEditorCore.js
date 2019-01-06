@@ -55,21 +55,25 @@ UmContentEditorCore.sectionType = {
 
 /**
  * Check if a toolbar button is active or not
- * @param buttonIdentifier Command identifier as found in documentation
+ * @param commandIdentifier Command identifier as found in documentation
  * {@link https://www.tiny.cloud/docs/advanced/editor-command-identifiers/}
  * @returns {boolean} TRUE if is active otherwise FALSE
  */
-UmContentEditorCore.prototype.isControlActivated = (buttonIdentifier) => {
-    return tinyMCE.activeEditor.queryCommandState(buttonIdentifier);
+UmContentEditorCore.prototype.checkCommandState = (commandIdentifier) => {
+    return tinyMCE.activeEditor.queryCommandState(commandIdentifier);
 };
+
 
 /**
  * Check if the control was executed at least once.
- * @param controlCommand
+ * @param commandIdentifier Command identifier as found in documentation
+ * {@link https://www.tiny.cloud/docs/advanced/editor-command-identifiers/}
+ * @returns {boolean} TRUE if is active otherwise FALSE
  */
-UmContentEditorCore.prototype.isControlActivated = (controlCommand) => {
-    return tinyMCE.activeEditor.queryCommandValue(controlCommand) != null;
+UmContentEditorCore.prototype.checkCommandValue = (commandIdentifier) => {
+    return tinyMCE.activeEditor.queryCommandValue(commandIdentifier) != null;
 };
+
 
 /**
  * Change editor font size
@@ -79,7 +83,7 @@ UmContentEditorCore.prototype.isControlActivated = (controlCommand) => {
 UmContentEditorCore.setFontSize = (fontSize) => {
     UmContentEditorCore.executeCommand("FontSize",""+fontSize+"pt");
     const activeFont = tinyMCE.activeEditor.queryCommandValue("FontSize");
-    const isActive = UmContentEditorCore.prototype.isControlActivated("FontSize");
+    const isActive = UmContentEditorCore.prototype.checkCommandState("FontSize");
     return {action:'activeControl',content:btoa("FontSize-"+isActive+"-"+activeFont)};
 };
 
@@ -89,7 +93,7 @@ UmContentEditorCore.setFontSize = (fontSize) => {
  */
 UmContentEditorCore.editorActionUndo = () => {
     UmContentEditorCore.executeCommand("Undo",null);
-    UmContentEditorCore.prototype.isControlActivated("Undo");
+    UmContentEditorCore.prototype.checkCommandState("Undo");
 };
 
 
@@ -99,7 +103,7 @@ UmContentEditorCore.editorActionUndo = () => {
  */
 UmContentEditorCore.editorActionRedo = () => {
     UmContentEditorCore.executeCommand("Redo",null);
-    UmContentEditorCore.prototype.isControlActivated("Redo");
+    UmContentEditorCore.prototype.checkCommandState("Redo");
 };
 
 /**
@@ -128,7 +132,7 @@ UmContentEditorCore.textDirectionRightToLeft = () => {
  */
 UmContentEditorCore.paragraphUnOrderedListFormatting = () => {
     UmContentEditorCore.executeCommand("InsertUnorderedList",null);
-    const isActive = UmContentEditorCore.prototype.isControlActivated("InsertUnorderedList");
+    const isActive = UmContentEditorCore.prototype.checkCommandState("InsertUnorderedList");
     return {action:'activeControl',content:btoa("InsertUnorderedList-"+isActive)};
 };
 
@@ -138,7 +142,7 @@ UmContentEditorCore.paragraphUnOrderedListFormatting = () => {
  */
 UmContentEditorCore.paragraphOrderedListFormatting = () => {
     UmContentEditorCore.executeCommand("InsertOrderedList",null);
-    const isActive = UmContentEditorCore.prototype.isControlActivated("InsertOrderedList");
+    const isActive = UmContentEditorCore.prototype.checkCommandState("InsertOrderedList");
     return {action:'activeControl',content:btoa("InsertOrderedList-"+isActive)};
 };
 
@@ -148,7 +152,7 @@ UmContentEditorCore.paragraphOrderedListFormatting = () => {
  */
 UmContentEditorCore.paragraphLeftJustification = () => {
     UmContentEditorCore.executeCommand("JustifyLeft",null);
-    const isActive = UmContentEditorCore.prototype.isControlActivated("JustifyLeft");
+    const isActive = UmContentEditorCore.prototype.checkCommandValue("JustifyLeft");
     return {action:'activeControl',content:btoa("JustifyLeft-"+isActive)};
 };
 
@@ -158,7 +162,7 @@ UmContentEditorCore.paragraphLeftJustification = () => {
  */
 UmContentEditorCore.paragraphRightJustification = () => {
     UmContentEditorCore.executeCommand("JustifyRight",null);
-    const isActive = UmContentEditorCore.prototype.isControlActivated("JustifyRight");
+    const isActive = UmContentEditorCore.prototype.checkCommandValue("JustifyRight");
     return {action:'activeControl',content:btoa("JustifyRight-"+isActive)};
 };
 
@@ -168,7 +172,7 @@ UmContentEditorCore.paragraphRightJustification = () => {
  */
 UmContentEditorCore.paragraphFullJustification = () => {
     UmContentEditorCore.executeCommand("JustifyFull",null);
-    const isActive = UmContentEditorCore.prototype.isControlActivated("JustifyFull");
+    const isActive = UmContentEditorCore.prototype.checkCommandValue("JustifyFull");
     return {action:'activeControl',content:btoa("JustifyFull-"+isActive)};
 };
 
@@ -178,7 +182,7 @@ UmContentEditorCore.paragraphFullJustification = () => {
  */
 UmContentEditorCore.paragraphCenterJustification = () => {
     UmContentEditorCore.executeCommand("JustifyCenter",null);
-    const isActive = UmContentEditorCore.prototype.isControlActivated("JustifyCenter");
+    const isActive = UmContentEditorCore.prototype.checkCommandValue("JustifyCenter");
     return {action:'activeControl',content:btoa("JustifyCenter-"+isActive)};
 };
 
@@ -188,7 +192,7 @@ UmContentEditorCore.paragraphCenterJustification = () => {
  */
 UmContentEditorCore.paragraphOutDent = () => {
     UmContentEditorCore.executeCommand("Outdent",null);
-    const isActive = UmContentEditorCore.prototype.isControlActivated("Outdent");
+    const isActive = UmContentEditorCore.prototype.checkCommandValue("Outdent");
     return {action:'activeControl',content:btoa("Outdent-"+isActive)};
 };
 
@@ -198,7 +202,7 @@ UmContentEditorCore.paragraphOutDent = () => {
  */
 UmContentEditorCore.paragraphIndent = () => {
     UmContentEditorCore.executeCommand("Indent",null);
-    const isActive = UmContentEditorCore.prototype.isControlActivated("Indent");
+    const isActive = UmContentEditorCore.prototype.checkCommandValue("Indent");
     return {action:'activeControl',content:btoa("Indent-"+isActive)};
 };
 
@@ -208,7 +212,7 @@ UmContentEditorCore.paragraphIndent = () => {
  */
 UmContentEditorCore.textFormattingBold = () => {
     UmContentEditorCore.executeCommand("Bold",null);
-    const isActive = UmContentEditorCore.prototype.isControlActivated("Bold");
+    const isActive = UmContentEditorCore.prototype.checkCommandState("Bold");
     return {action:'activeControl',content:btoa("Bold-"+isActive)};
 };
 
@@ -218,7 +222,7 @@ UmContentEditorCore.textFormattingBold = () => {
  */
 UmContentEditorCore.textFormattingItalic = () => {
     UmContentEditorCore.executeCommand("Italic",null);
-    const isActive = UmContentEditorCore.prototype.isControlActivated("Italic");
+    const isActive = UmContentEditorCore.prototype.checkCommandState("Italic");
     return {action:'activeControl',content:btoa("Italic-"+isActive)};
 };
 
@@ -228,7 +232,7 @@ UmContentEditorCore.textFormattingItalic = () => {
  */
 UmContentEditorCore.textFormattingUnderline = () => {
     UmContentEditorCore.executeCommand("Underline",null);
-    const isActive = UmContentEditorCore.prototype.isControlActivated("Underline");
+    const isActive = UmContentEditorCore.prototype.checkCommandState("Underline");
     return {action:'activeControl',content:btoa("Underline-"+isActive)};
 };
 
@@ -238,7 +242,7 @@ UmContentEditorCore.textFormattingUnderline = () => {
  */
 UmContentEditorCore.textFormattingStrikeThrough = () => {
     UmContentEditorCore.executeCommand("Strikethrough",null);
-    const isActive = UmContentEditorCore.prototype.isControlActivated("Strikethrough");
+    const isActive = UmContentEditorCore.prototype.checkCommandState("Strikethrough");
     return {action:'activeControl',content:btoa("Strikethrough-"+isActive)};
 };
 
@@ -248,7 +252,7 @@ UmContentEditorCore.textFormattingStrikeThrough = () => {
  */
 UmContentEditorCore.textFormattingSuperScript = () => {
     UmContentEditorCore.executeCommand("Superscript",null);
-    const isActive = UmContentEditorCore.prototype.isControlActivated("Superscript");
+    const isActive = UmContentEditorCore.prototype.checkCommandState("Superscript");
     return {action:'activeControl',content:btoa("Superscript-"+isActive)};
 };
 
@@ -258,7 +262,7 @@ UmContentEditorCore.textFormattingSuperScript = () => {
  */
 UmContentEditorCore.textFormattingSubScript = () => {
     UmContentEditorCore.executeCommand("Subscript",null);
-    const isActive = UmContentEditorCore.prototype.isControlActivated("Subscript");
+    const isActive = UmContentEditorCore.prototype.checkCommandState("Subscript");
     return {action:'activeControl',content:btoa("Subscript-"+isActive)};
 };
 
@@ -268,7 +272,7 @@ UmContentEditorCore.textFormattingSubScript = () => {
  * @returns {{action: string, content: string}} callback object
  */
 UmContentEditorCore.checkCurrentActiveControls = (commandValue) => {
-    const isActive = UmContentEditorCore.prototype.isControlActivated(commandValue);
+    const isActive = UmContentEditorCore.prototype.checkCommandState(commandValue);
     return {action:'activeControl',content:btoa(commandValue+"-"+isActive)};
 };
 
@@ -293,7 +297,7 @@ UmContentEditorCore.insertFillInTheBlanksQuestionTemplate =  () =>  {
  */
 UmContentEditorCore.prototype.requestFocus =  () =>  {
     UmContentEditorCore.executeCommand("mceFocus",null);
-    return UmContentEditorCore.prototype.isControlActivated("mceFocus");
+    return UmContentEditorCore.prototype.checkCommandState("mceFocus");
 };
 
 /**
@@ -384,7 +388,7 @@ UmContentEditorCore.prototype.checkActivatedControls = () => {
           }else if(commandString ==="mceDirectionRTL"){
               status = UmContentEditorCore.prototype.getNodeDirectionality() === "rtl";
           }else{
-              status = UmContentEditorCore.prototype.isControlActivated(commandString);
+              status = UmContentEditorCore.prototype.checkCommandState(commandString);
           }
           commandState.command = commandString;
           commandState.status = status === null ? false : status;
@@ -753,9 +757,7 @@ UmContentEditorCore.initEditor = (showToolbar = false) => {
                 const deleteKeys = e.key === "Backspace" || e.key === "Delete";
                 const enterKey = e.key === "Enter";
 
-                if(this.selectedContentLength === 0 || !deleteKeys){
-                    console.log("checkEvent","proceed");
-                }else{
+                if(this.selectedContentLength === 0 || !deleteKeys){}else{
                     const currentCursorPositionElement = tinymce.activeEditor.selection;
                     const activeNode = currentCursorPositionElement.getNode();
                     const isLabel = $(activeNode).hasClass("um-labels");
@@ -890,7 +892,3 @@ UmContentEditorCore.initEditor = (showToolbar = false) => {
 UmContentEditorCore.getContent = ()=>{
     return tinymce.activeEditor.getContent();
 };
-
-
-
-
