@@ -10,11 +10,11 @@ import android.widget.FrameLayout;
 import android.widget.ImageView;
 
 import com.toughra.ustadmobile.R;
+import com.ustadmobile.port.android.view.ContentEditorActivity;
 
 import java.util.List;
 
-import static com.ustadmobile.port.android.contenteditor.ContentFormattingHelper.ACTIONS_TOOLBAR_INDEX;
-import static com.ustadmobile.port.android.contenteditor.ContentFormattingHelper.isTobeHighlighted;
+import static com.ustadmobile.port.android.view.ContentEditorActivity.UmFormatHelper.ACTIONS_TOOLBAR_INDEX;
 
 /**
  * Customized toolbar view which handles quick action menus on the editor.
@@ -24,7 +24,7 @@ import static com.ustadmobile.port.android.contenteditor.ContentFormattingHelper
  *     Use {@link UmEditorActionView#inflateMenu(int)} to inflate all your menus to be shown
  *     as quick action menus.
  *
- *     Use {@link UmEditorActionView#setOnQuickActionMenuItemClicked(OnQuickActionMenuItemClicked)}
+ *     Use {@link UmEditorActionView#setQuickActionMenuItemClickListener(OnQuickActionMenuItemClicked)}
  *     to set listener which listens for quick action menu clicks.
  *
  *     Use {@link UmEditorActionView#updateMenu()} to send updated state of the
@@ -40,7 +40,9 @@ public class UmEditorActionView extends Toolbar {
 
     private boolean isQuickAction = false;
 
-    private List<ContentFormat> formatList;
+    private List<UmFormat> formatList;
+
+    private ContentEditorActivity.UmFormatHelper umFormatHelper;
 
     /**
      * Constructor to be used for Java instantiation.
@@ -56,7 +58,8 @@ public class UmEditorActionView extends Toolbar {
      * @param attrs attribute sets
      * @param defStyleAttr style sets
      */
-    public UmEditorActionView(Context context, @Nullable AttributeSet attrs, int defStyleAttr) {
+    public UmEditorActionView(Context context, @Nullable AttributeSet attrs,
+                              int defStyleAttr) {
         super(context, attrs, defStyleAttr);
     }
 
@@ -69,12 +72,20 @@ public class UmEditorActionView extends Toolbar {
         super(context, attrs);
     }
 
+    /**
+     * Set formatting helper
+     * @param umFormatHelper format helper instance
+     */
+    public void setUmFormatHelper(ContentEditorActivity.UmFormatHelper umFormatHelper){
+        this.umFormatHelper = umFormatHelper;
+    }
+
 
     /**
      * Set quick action menu item click listener
      * @param clickListener Listener to be set
      */
-    public void setOnQuickActionMenuItemClicked(OnQuickActionMenuItemClicked clickListener){
+    public void setQuickActionMenuItemClickListener(OnQuickActionMenuItemClicked clickListener){
         this.onQuickActionMenuItemClicked = clickListener;
     }
 
@@ -85,9 +96,8 @@ public class UmEditorActionView extends Toolbar {
      */
     public void inflateMenu(int resId, boolean isQuickAction){
         this.isQuickAction = isQuickAction;
-        ContentFormattingHelper formattingHelper = ContentFormattingHelper.getInstance();
-        formatList = isQuickAction ? formattingHelper.getQuickActions() :
-                formattingHelper.getFormatListByType(ACTIONS_TOOLBAR_INDEX);
+        formatList = isQuickAction ? umFormatHelper.getQuickActions() :
+                umFormatHelper.getFormatListByType(ACTIONS_TOOLBAR_INDEX);
         inflateMenu(resId);
     }
 
@@ -95,7 +105,7 @@ public class UmEditorActionView extends Toolbar {
     public void inflateMenu(int resId) {
         super.inflateMenu(resId);
 
-        for(ContentFormat format: formatList){
+        for(UmFormat format: formatList){
             MenuItem menuItem = getMenu().getItem(formatList.indexOf(format));
             FrameLayout rootView = (FrameLayout) menuItem.getActionView();
             ImageView formatIcon = rootView.findViewById(R.id.format_icon);
@@ -116,14 +126,14 @@ public class UmEditorActionView extends Toolbar {
      * Update the MenuItem corresponding to the content format.
      */
     public void updateMenu(){
-        for(ContentFormat contentFormat: formatList){
-            MenuItem menuItem = findById(contentFormat.getFormatId());
+        for(UmFormat umFormat : formatList){
+            MenuItem menuItem = findById(umFormat.getFormatId());
             if(menuItem != null){
                 FrameLayout rootView = (FrameLayout) menuItem.getActionView();
                 ImageView formatIcon = rootView.findViewById(R.id.format_icon);
                 FrameLayout formatHolder = rootView.findViewById(R.id.icon_holder);
-                changeState(formatIcon,formatHolder,contentFormat.isActive() &&
-                        isTobeHighlighted(contentFormat.getFormatCommand()));
+                changeState(formatIcon,formatHolder, umFormat.isActive() &&
+                        umFormatHelper.isTobeHighlighted(umFormat.getFormatCommand()));
             }
         }
     }
@@ -132,7 +142,7 @@ public class UmEditorActionView extends Toolbar {
      * Update specific menu item
      * @param formatMenu Newly update Menu item to be set
      */
-    public void updateMenu(ContentFormat formatMenu){
+    public void updateMenu(UmFormat formatMenu){
         MenuItem menuItem = findById(formatMenu.getFormatId());
         if(menuItem != null){
             FrameLayout rootView = (FrameLayout) menuItem.getActionView();
@@ -140,7 +150,7 @@ public class UmEditorActionView extends Toolbar {
             FrameLayout formatHolder = rootView.findViewById(R.id.icon_holder);
             formatIcon.setImageResource(formatMenu.getFormatIcon());
             changeState(formatIcon,formatHolder,formatMenu.isActive() &&
-                    isTobeHighlighted(formatMenu.getFormatCommand()));
+                    umFormatHelper.isTobeHighlighted(formatMenu.getFormatCommand()));
         }
     }
 
@@ -159,8 +169,8 @@ public class UmEditorActionView extends Toolbar {
                 }
             }
         }else {
-            for(ContentFormat contentFormat: formatList){
-                MenuItem menuItem = findById(contentFormat.getFormatId());
+            for(UmFormat umFormat : formatList){
+                MenuItem menuItem = findById(umFormat.getFormatId());
                 if(menuItem != null){
                     menuItem.setVisible(isVisible);
                 }

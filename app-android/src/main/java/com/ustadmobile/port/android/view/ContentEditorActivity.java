@@ -8,6 +8,7 @@ import android.content.ClipboardManager;
 import android.content.Context;
 import android.content.Intent;
 import android.content.pm.PackageManager;
+import android.content.res.Resources;
 import android.content.res.TypedArray;
 import android.graphics.Bitmap;
 import android.graphics.Color;
@@ -35,6 +36,7 @@ import android.support.v4.widget.DrawerLayout;
 import android.support.v7.widget.GridLayoutManager;
 import android.support.v7.widget.RecyclerView;
 import android.util.DisplayMetrics;
+import android.util.TypedValue;
 import android.view.Display;
 import android.view.LayoutInflater;
 import android.view.Menu;
@@ -57,13 +59,14 @@ import com.ustadmobile.core.util.UMFileUtil;
 import com.ustadmobile.core.view.ContentEditorView;
 import com.ustadmobile.core.view.ContentPreviewView;
 import com.ustadmobile.lib.util.Base64Coder;
-import com.ustadmobile.port.android.contenteditor.ContentFormat;
-import com.ustadmobile.port.android.contenteditor.ContentFormattingHelper;
+import com.ustadmobile.port.android.contenteditor.UmFormatStateChangeListener;
+import com.ustadmobile.port.android.contenteditor.UmFormat;
 import com.ustadmobile.port.android.contenteditor.EditorAnimatedViewSwitcher;
 import com.ustadmobile.port.android.contenteditor.UmAndroidUriUtil;
 import com.ustadmobile.port.android.contenteditor.UmEditorActionView;
 import com.ustadmobile.port.android.contenteditor.UmEditorPopUpView;
 import com.ustadmobile.port.android.contenteditor.UmEditorWebView;
+import com.ustadmobile.port.android.contenteditor.UmGridSpacingItemDecoration;
 import com.ustadmobile.port.android.contenteditor.WebContentEditorChrome;
 import com.ustadmobile.port.android.contenteditor.WebContentEditorClient;
 import com.ustadmobile.port.android.contenteditor.WebContentEditorInterface;
@@ -83,23 +86,22 @@ import java.util.ArrayList;
 import java.util.Hashtable;
 import java.util.List;
 import java.util.Objects;
+import java.util.concurrent.CopyOnWriteArrayList;
 
 import id.zelory.compressor.Compressor;
 
 import static com.ustadmobile.core.contenteditor.UmEditorFileHelperCore.INDEX_FILE;
-import static com.ustadmobile.port.android.contenteditor.ContentFormattingHelper.ACTIONS_TOOLBAR_INDEX;
-import static com.ustadmobile.port.android.contenteditor.ContentFormattingHelper.getFormatByCommand;
-import static com.ustadmobile.port.android.contenteditor.ContentFormattingHelper.isTobeHighlighted;
 import static com.ustadmobile.port.android.contenteditor.EditorAnimatedViewSwitcher.ANIMATED_CONTENT_OPTION_PANEL;
 import static com.ustadmobile.port.android.contenteditor.EditorAnimatedViewSwitcher.ANIMATED_SOFT_KEYBOARD_PANEL;
 import static com.ustadmobile.port.android.contenteditor.EditorAnimatedViewSwitcher.MAX_SOFT_KEYBOARD_DELAY;
 import static com.ustadmobile.port.android.contenteditor.WebContentEditorClient.executeJsFunction;
+import static com.ustadmobile.port.android.view.ContentEditorActivity.UmFormatHelper.ACTIONS_TOOLBAR_INDEX;
 import static com.ustadmobile.port.sharedse.contenteditor.UmEditorFileHelper.EDITOR_BASE_DIR_NAME;
 import static com.ustadmobile.port.sharedse.contenteditor.UmEditorFileHelper.MEDIA_DIRECTORY;
 
 public class ContentEditorActivity extends UstadBaseActivity implements ContentEditorView,
         WebContentEditorChrome.JsLoadingCallback, UmEditorActionView.OnQuickActionMenuItemClicked,
-        ContentFormattingHelper.StateChangeDispatcher ,UmEditorFileHelper.ZipFileTaskProgressListener,
+        UmFormatStateChangeListener,UmEditorFileHelper.ZipFileTaskProgressListener,
         EditorAnimatedViewSwitcher.OnAnimatedViewsClosedListener {
 
     private static ContentEditorPresenter presenter;
@@ -144,6 +146,8 @@ public class ContentEditorActivity extends UstadBaseActivity implements ContentE
 
     private File fileFromCamera;
 
+    private static  int displayWidth = 0;
+
     private ProgressBar progressDialog;
 
     public static final int CAMERA_IMAGE_CAPTURE_REQUEST = 900;
@@ -154,9 +158,9 @@ public class ContentEditorActivity extends UstadBaseActivity implements ContentE
 
     private View blankDocumentContainer;
 
-    private ContentFormattingHelper formattingHelper;
+    private UmFormatHelper umFormatHelper;
 
-    private static final String EDITOR_METHOD_PREFIX = "umContentEditor.";
+    private static final String EDITOR_METHOD_PREFIX = "UmContentEditorCore.";
 
     private class CommandStatus{
 
@@ -181,6 +185,346 @@ public class ContentEditorActivity extends UstadBaseActivity implements ContentE
         }
     }
 
+    public class UmFormatHelper {
+
+        /**
+         * Flag to indicate all text formats
+         */
+        private static final int FORMATTING_TEXT_INDEX = 0;
+
+        /**
+         * Flag to indicate all paragraph formats
+         */
+        private static final int FORMATTING_PARAGRAPH_INDEX = 1;
+
+        /**
+         * Flag to indicate all font formats
+         */
+        private static final int FORMATTING_FONT_INDEX = 2;
+
+        /**
+         * Flag to indicate all toolbar action formats
+         */
+        public static final int ACTIONS_TOOLBAR_INDEX = 3;
+
+        /**
+         * Flag to indicate all language directionality formats
+         */
+        private static final int LANGUAGE_DIRECTIONALITY = 4;
+
+        private List<UmFormat> formatList;
+
+        private List<UmFormat> quickActionList;
+
+        private List<UmFormatStateChangeListener> dispatcherList = new CopyOnWriteArrayList<>();
+
+        UmFormatHelper(){
+            formatList = prepareFormattingList();
+            quickActionList = prepareQuickActions();
+        }
+
+        private List<UmFormat> prepareFormattingList(){
+            List<UmFormat> mText = new ArrayList<>();
+            List<UmFormat> mDirection = new ArrayList<>();
+            List<UmFormat> mParagraph = new ArrayList<>();
+            List<UmFormat> mToolbar = new ArrayList<>();
+
+            List<UmFormat> mFont = new ArrayList<>();
+
+            mText.add(new UmFormat(R.drawable.ic_format_bold_black_24dp, TEXT_FORMAT_TYPE_BOLD,
+                    false,FORMATTING_TEXT_INDEX, R.id.content_action_bold));
+            mText.add(new UmFormat(R.drawable.ic_format_italic_black_24dp, TEXT_FORMAT_TYPE_ITALIC,
+                    false,FORMATTING_TEXT_INDEX,R.id.content_action_italic));
+            mText.add(new UmFormat(R.drawable.ic_format_underlined_black_24dp,
+                    TEXT_FORMAT_TYPE_UNDERLINE,false,FORMATTING_TEXT_INDEX,
+                    R.id.content_action_underline));
+            mText.add(new UmFormat(R.drawable.ic_format_strikethrough_black_24dp,
+                    TEXT_FORMAT_TYPE_STRIKE,false,FORMATTING_TEXT_INDEX,
+                    R.id.content_action_strike_through));
+            mText.add(new UmFormat(R.drawable.ic_number_superscript,
+                    TEXT_FORMAT_TYPE_SUP,false,FORMATTING_TEXT_INDEX));
+            mText.add(new UmFormat(R.drawable.ic_number_subscript,
+                    TEXT_FORMAT_TYPE_SUB,false,FORMATTING_TEXT_INDEX));
+            mText.add(new UmFormat(R.drawable.ic_format_size_black_24dp,
+                    TEXT_FORMAT_TYPE_FONT,false,FORMATTING_TEXT_INDEX));
+
+            mParagraph.add(new UmFormat(R.drawable.ic_format_align_justify_black_24dp,
+                    PARAGRAPH_FORMAT_ALIGN_JUSTIFY, false,FORMATTING_PARAGRAPH_INDEX));
+            mParagraph.add(new UmFormat(R.drawable.ic_format_align_right_black_24dp,
+                    PARAGRAPH_FORMAT_ALIGN_RIGHT,false,FORMATTING_PARAGRAPH_INDEX));
+            mParagraph.add(new UmFormat(R.drawable.ic_format_align_center_black_24dp,
+                    PARAGRAPH_FORMAT_ALIGN_CENTER,false,FORMATTING_PARAGRAPH_INDEX));
+            mParagraph.add(new UmFormat(R.drawable.ic_format_align_left_black_24dp,
+                    PARAGRAPH_FORMAT_ALIGN_LEFT,false,FORMATTING_PARAGRAPH_INDEX));
+            mParagraph.add(new UmFormat(R.drawable.ic_format_list_numbered_black_24dp,
+                    PARAGRAPH_FORMAT_LIST_ORDERED,false,FORMATTING_PARAGRAPH_INDEX,
+                    R.id.content_action_ordered_list));
+            mParagraph.add(new UmFormat(R.drawable.ic_format_list_bulleted_black_24dp,
+                    PARAGRAPH_FORMAT_LIST_UNORDERED,false,FORMATTING_PARAGRAPH_INDEX,
+                    R.id.content_action_uordered_list));
+            mParagraph.add(new UmFormat(R.drawable.ic_format_indent_increase_black_24dp,
+                    PARAGRAPH_FORMAT_INDENT_INCREASE,false,FORMATTING_PARAGRAPH_INDEX,
+                    R.id.content_action_indent));
+            mParagraph.add(new UmFormat(R.drawable.ic_format_indent_decrease_black_24dp,
+                    PARAGRAPH_FORMAT_INDENT_DECREASE,false,FORMATTING_PARAGRAPH_INDEX,
+                    R.id.content_action_outdent));
+
+            mDirection.add(new UmFormat(R.drawable.ic_format_textdirection_l_to_r_white_24dp,
+                    ACTION_TEXT_DIRECTION_LTR,true,LANGUAGE_DIRECTIONALITY,
+                    R.id.direction_rightToLeft, R.string.content_direction_rtl));
+            mDirection.add(new UmFormat(R.drawable.ic_format_textdirection_r_to_l_white_24dp,
+                    ACTION_TEXT_DIRECTION_RTL,false,LANGUAGE_DIRECTIONALITY,
+                    R.id.direction_leftToRight,R.string.content_direction_ltr));
+
+            mFont.add(new UmFormat(0, TEXT_FORMAT_TYPE_FONT,false,
+                    FORMATTING_FONT_INDEX, 8,R.string.content_font_8));
+            mFont.add(new UmFormat(0, TEXT_FORMAT_TYPE_FONT,false,
+                    FORMATTING_FONT_INDEX, 10,R.string.content_font_10));
+            mFont.add(new UmFormat(0, TEXT_FORMAT_TYPE_FONT,false,
+                    FORMATTING_FONT_INDEX, 12,R.string.content_font_12));
+            mFont.add(new UmFormat(0, TEXT_FORMAT_TYPE_FONT,false,
+                    FORMATTING_FONT_INDEX, 14,R.string.content_font_14));
+            mFont.add(new UmFormat(0, TEXT_FORMAT_TYPE_FONT,false,
+                    FORMATTING_FONT_INDEX, 18, R.string.content_font_18));
+            mFont.add(new UmFormat(0, TEXT_FORMAT_TYPE_FONT,false,
+                    FORMATTING_FONT_INDEX, 24,R.string.content_font_24));
+            mFont.add(new UmFormat(0, TEXT_FORMAT_TYPE_FONT,false,
+                    FORMATTING_FONT_INDEX, 36,R.string.content_font_36));
+
+
+            mToolbar.add(new UmFormat(R.drawable.ic_undo_white_24dp,
+                    ACTION_UNDO,false,ACTIONS_TOOLBAR_INDEX,R.id.content_action_undo));
+            mToolbar.add(new UmFormat(R.drawable.ic_redo_white_24dp,
+                    ACTION_REDO,false,ACTIONS_TOOLBAR_INDEX,R.id.content_action_redo));
+            mToolbar.add(new UmFormat(R.drawable.ic_text_format_white_24dp,
+                    "",false,ACTIONS_TOOLBAR_INDEX,R.id.content_action_format));
+            mToolbar.add(new UmFormat(R.drawable.fab_add,
+                    "",false,ACTIONS_TOOLBAR_INDEX,R.id.content_action_insert));
+            mToolbar.add(new UmFormat(R.drawable.ic_document_preview,
+                    "",false,ACTIONS_TOOLBAR_INDEX,R.id.content_action_preview));
+            mToolbar.add(new UmFormat(R.drawable.ic_format_textdirection_l_to_r_white_24dp,
+                    ACTION_TEXT_DIRECTION_LTR,false,ACTIONS_TOOLBAR_INDEX,
+                    R.id.content_action_direction));
+            mToolbar.add(new UmFormat(R.drawable.ic_menu_white_24dp,
+                    "",false,ACTIONS_TOOLBAR_INDEX,R.id.content_action_pages));
+
+            List<UmFormat> allFormats = new ArrayList<>();
+            allFormats.addAll(mText);
+            allFormats.addAll(mParagraph);
+            allFormats.addAll(mDirection);
+            allFormats.addAll(mToolbar);
+            allFormats.addAll(mFont);
+            return allFormats;
+        }
+
+        private List<UmFormat> prepareQuickActions(){
+            List<UmFormat> quickActions = new ArrayList<>();
+            try{
+                quickActions.add(getFormatByCommand(TEXT_FORMAT_TYPE_BOLD));
+                quickActions.add(getFormatByCommand(TEXT_FORMAT_TYPE_ITALIC));
+                quickActions.add(getFormatByCommand(TEXT_FORMAT_TYPE_UNDERLINE));
+                quickActions.add(getFormatByCommand(TEXT_FORMAT_TYPE_STRIKE));
+                quickActions.add(getFormatByCommand(PARAGRAPH_FORMAT_LIST_ORDERED));
+                quickActions.add(getFormatByCommand(PARAGRAPH_FORMAT_LIST_UNORDERED));
+                quickActions.add(getFormatByCommand(PARAGRAPH_FORMAT_INDENT_INCREASE));
+                quickActions.add(getFormatByCommand(PARAGRAPH_FORMAT_INDENT_DECREASE));
+            }catch (NullPointerException e){
+                e.printStackTrace();
+            }
+            return quickActions;
+        }
+
+
+        /**
+         * Construct quick action menu items
+         * @return list of all quick action menus
+         */
+        public List<UmFormat> getQuickActions(){
+            return quickActionList;
+        }
+
+
+        /**
+         * Get list of all formats by type
+         * @param formatType type to be found
+         * @return found list of all formats of
+         */
+        public List<UmFormat> getFormatListByType(int formatType) {
+            List<UmFormat> formats = new ArrayList<>();
+            for(UmFormat format: formatList){
+                if(format.getFormatType() == formatType){
+                    formats.add(format);
+                }
+            }
+            return formats;
+        }
+
+        /**
+         * Get list of all formats by type
+         * @param formatId id to be found
+         * @return found list of all formats of
+         */
+        public UmFormat getFormatById(int formatId, int formatType) {
+            UmFormat umFormat = null;
+            for(UmFormat format: getFormatListByType(formatType)){
+                if(format.getFormatId() == formatId){
+                    umFormat = format;
+                    break;
+                }
+            }
+            return umFormat;
+        }
+
+        /**
+         * Get content format by formatting tag
+         * @param command formatting command to be found
+         * @return found content format
+         */
+        public UmFormat getFormatByCommand(String command){
+            UmFormat umFormat = null;
+            for(UmFormat format: formatList){
+                if(format.getFormatCommand().equals(command)){
+                    umFormat = format;
+                    break;
+                }
+            }
+            return umFormat;
+        }
+
+        /**
+         * Update content format status
+         * @param umFormat updated content format
+         */
+        public void updateFormat(UmFormat umFormat) {
+            for(UmFormat format: formatList){
+                if(format.getFormatCommand().equals(umFormat.getFormatCommand())){
+                    int formatIndex = formatList.indexOf(format);
+                    formatList.get(formatIndex).setActive(umFormat.isActive());
+                    break;
+                }
+            }
+            dispatchStateChangeUpdate(umFormat);
+        }
+
+
+        /**
+         * Get list of all directionality formatting
+         * @param activeFormat Directionality format to be activated
+         * @return List of all formats
+         */
+        public  List<UmFormat> getLanguageDirectionalityList(UmFormat activeFormat){
+            List<UmFormat> directionality = getFormatListByType(LANGUAGE_DIRECTIONALITY);
+            for(UmFormat format: directionality){
+                if(activeFormat != null){
+                    directionality.get(directionality.indexOf(format))
+                            .setActive(format.getFormatId() == activeFormat.getFormatId());
+
+                }
+            }
+            return directionality;
+        }
+
+        /**
+         * Get all font format list
+         * @param activeFormat Font format to be activated
+         * @return List of all fonts
+         */
+        public  List<UmFormat> getFontList(UmFormat activeFormat){
+            List<UmFormat> fontList = getFormatListByType(FORMATTING_FONT_INDEX);
+            for(UmFormat format: fontList){
+                if(activeFormat != null){
+                    fontList.get(fontList.indexOf(format))
+                            .setActive(format.getFormatId() == activeFormat.getFormatId());
+                }
+            }
+            return fontList;
+        }
+
+        /**
+         * Prevent all justification to be active at the same time, only one type at a time.
+         * @param command current active justification command.
+         */
+        public void updateOtherJustification(String command){
+            String mTag = "Justify";
+            List<UmFormat> paragraphFormatList = getFormatListByType(FORMATTING_PARAGRAPH_INDEX);
+            for(UmFormat format: paragraphFormatList){
+                if(format.getFormatCommand().contains(mTag) && command.contains(mTag)
+                        && !format.getFormatCommand().equals(command)){
+                    int index = paragraphFormatList.indexOf(format);
+                    format.setActive(false);
+                    formatList.set(index, format);
+                }
+            }
+        }
+
+        /**
+         * Prevent all list types to active at the same time, only one at a time.
+         * @param command current active list type command.
+         */
+        public void updateOtherListOrder(String command){
+            String mTag = "List";
+            List<UmFormat> listOrdersTypes = listOrderFormats();
+            for(UmFormat format: listOrdersTypes){
+                if(format.getFormatCommand().contains(mTag) && command.contains(mTag)
+                        && !format.getFormatCommand().equals(command)){
+                    int index = listOrdersTypes.indexOf(format);
+                    format.setActive(false);
+                    formatList.set(index, format);
+                }
+            }
+        }
+
+        private List<UmFormat> listOrderFormats(){
+            List<UmFormat> listOrders = new ArrayList<>();
+            for(UmFormat format: formatList){
+                if(format.getFormatCommand().contains("List")){
+                    listOrders.add(format);
+                }
+            }
+            return listOrders;
+        }
+
+        public void setStateChangeListener(UmFormatStateChangeListener stateDispatcher){
+            if(dispatcherList != null){
+                dispatcherList.add(stateDispatcher);
+            }
+        }
+
+        /**
+         * Dispatch update to both content formatting panels and quick actions.
+         * @param format updated format to be dispatched
+         */
+        private void dispatchStateChangeUpdate(UmFormat format){
+            for(UmFormatStateChangeListener dispatcher: dispatcherList){
+                dispatcher.onStateChanged(format);
+            }
+        }
+
+        /**
+         * Delete all listeners from the list on activity destroy
+         */
+        public void destroy(){
+            if(dispatcherList != null && dispatcherList.size()>0){
+                dispatcherList.clear();
+            }
+        }
+
+
+        /**
+         * Check if the format is valid for highlight or not, for those format which
+         * deals with increment like indentation they are not fit for active state
+         * @param command format command to be checked for validity
+         * @return True if valid otherwise False.
+         */
+        public boolean isTobeHighlighted(String command){
+            return !command.equals(TEXT_FORMAT_TYPE_FONT)
+                    && !command.equals(PARAGRAPH_FORMAT_INDENT_DECREASE)
+                    && !command.equals(PARAGRAPH_FORMAT_INDENT_INCREASE);
+        }
+
+
+    }
+
 
     /**
      * Content formatting adapter which handles formatting sections
@@ -198,7 +542,9 @@ public class ContentEditorActivity extends UstadBaseActivity implements ContentE
 
         @Override
         public Fragment getItem(int position) {
-            return new FormattingFragment().newInstance(formattingHelper,position);
+            FormattingFragment fragment = new FormattingFragment().newInstance(position);
+            fragment.setUmFormatHelper(umFormatHelper);
+            return fragment;
         }
 
         @Override
@@ -217,22 +563,21 @@ public class ContentEditorActivity extends UstadBaseActivity implements ContentE
     /**
      * Fragment to handle formatting type (Text formatting & Paragraph formatting)
      */
-    public static class FormattingFragment extends Fragment
-            implements ContentFormattingHelper.StateChangeDispatcher {
+    public static class FormattingFragment extends Fragment implements UmFormatStateChangeListener {
 
         private FormatsAdapter adapter;
 
         private int formattingType;
 
-        private ContentFormattingHelper formattingHelper;
+        private UmFormatHelper umFormatHelper;
 
 
         class FormatsAdapter extends RecyclerView.Adapter<FormatsAdapter.FormatViewHolder>{
 
-            private List<ContentFormat> contentFormats = new ArrayList<>();
+            private List<UmFormat> umFormats = new ArrayList<>();
 
-            void setContentFormats(List<ContentFormat> contentFormats) {
-                this.contentFormats = contentFormats;
+            void setUmFormats(List<UmFormat> umFormats) {
+                this.umFormats = umFormats;
                 notifyDataSetChanged();
             }
 
@@ -246,32 +591,32 @@ public class ContentEditorActivity extends UstadBaseActivity implements ContentE
 
             @Override
             public void onBindViewHolder(@NonNull FormatViewHolder holder, int position) {
-                ContentFormat format = contentFormats.get(position);
+                UmFormat format = umFormats.get(position);
                 ImageView mIcon = holder.itemView.findViewById(R.id.format_icon);
                 RelativeLayout mLayout = holder.itemView.findViewById(R.id.format_holder);
                 mIcon.setImageResource(format.getFormatIcon());
                 changeState(mIcon,mLayout,format.isActive());
-                if(!isTobeHighlighted(format.getFormatCommand())){
+                if(!umFormatHelper.isTobeHighlighted(format.getFormatCommand())){
                     changeState(mIcon,mLayout,false);
                 }
                 mLayout.setOnClickListener(v -> {
                     if(!format.getFormatCommand().equals(TEXT_FORMAT_TYPE_FONT)){
                         changeState(mIcon,mLayout,true);
-                        formattingHelper.updateOtherJustification(format.getFormatCommand());
-                        formattingHelper.updateOtherListOrder(format.getFormatCommand());
+                        umFormatHelper.updateOtherJustification(format.getFormatCommand());
+                        umFormatHelper.updateOtherListOrder(format.getFormatCommand());
                         presenter.handleFormatTypeClicked(format.getFormatCommand(),null);
                         notifyDataSetChanged();
                     }else{
 
                         UmEditorPopUpView  popUpView =
                                 new UmEditorPopUpView(getActivity(), holder.itemView)
-                                        .setMenuList(formattingHelper.getFontList(null))
+                                        .setMenuList(umFormatHelper.getFontList(null))
                                         .showIcons(false)
-                                        .setWidthDimen(UmEditorPopUpView.UmPopUpDim.DIMEN_MIN_WIDTH);
-                        popUpView.show(false, menu -> {
+                                        .setWidthDimen(displayWidth,false);
+                        popUpView.showWithListener(menu -> {
                             presenter.handleFormatTypeClicked(menu.getFormatCommand(),
                                     String.valueOf(menu.getFormatId()));
-                            popUpView.setMenuList(formattingHelper.getFontList(menu));
+                            popUpView.setMenuList(umFormatHelper.getFontList(menu));
                         });
                     }
                 });
@@ -290,7 +635,7 @@ public class ContentEditorActivity extends UstadBaseActivity implements ContentE
 
             @Override
             public int getItemCount() {
-                return contentFormats != null ? contentFormats.size():0;
+                return umFormats != null ? umFormats.size():0;
             }
 
             class FormatViewHolder extends RecyclerView.ViewHolder{
@@ -304,11 +649,13 @@ public class ContentEditorActivity extends UstadBaseActivity implements ContentE
         /**
          * Create new instance of a content formatting fragment
          */
-        public FormattingFragment newInstance(ContentFormattingHelper formattingHelper,
-                                              int formatType) {
+        public FormattingFragment newInstance(int formatType) {
             this.formattingType = formatType;
-            this.formattingHelper = formattingHelper;
             return this;
+        }
+
+        public void setUmFormatHelper(UmFormatHelper umFormatHelper){
+            this.umFormatHelper = umFormatHelper;
         }
 
         @Override
@@ -318,10 +665,13 @@ public class ContentEditorActivity extends UstadBaseActivity implements ContentE
                     container, false);
             RecyclerView mRecyclerView = rootView.findViewById(R.id.formats_list);
             adapter = new FormatsAdapter();
-            formattingHelper.setStateDispatcher(this);
-            adapter.setContentFormats(formattingHelper.getFormatListByType(formattingType));
+            umFormatHelper.setStateChangeListener(this);
+            adapter.setUmFormats(umFormatHelper.getFormatListByType(formattingType));
+            int itemWidth = 60;
             GridLayoutManager mLayoutManager = new GridLayoutManager(getContext(),
-                    getSpanCount(100));
+                    getSpanCount(itemWidth));
+            mRecyclerView.addItemDecoration(new UmGridSpacingItemDecoration(getSpanCount(itemWidth)
+                    ,dpToPx(10), true));
             mRecyclerView.setLayoutManager(mLayoutManager);
             mRecyclerView.setAdapter(adapter);
             return  rootView;
@@ -329,7 +679,7 @@ public class ContentEditorActivity extends UstadBaseActivity implements ContentE
         }
 
         @Override
-        public void onStateChanged(ContentFormat format) {
+        public void onStateChanged(UmFormat format) {
             if(adapter != null){
                 adapter.notifyDataSetChanged();
             }
@@ -348,6 +698,16 @@ public class ContentEditorActivity extends UstadBaseActivity implements ContentE
             float density = getActivity().getResources().getDisplayMetrics().density;
             float dpWidth = outMetrics.widthPixels / density;
             return Math.round(dpWidth/width);
+        }
+
+        public int dpToPx(int dp) {
+            try{
+                Resources r = getActivity().getResources();
+                return Math.round(TypedValue.applyDimension(TypedValue.COMPLEX_UNIT_DIP,
+                        dp, r.getDisplayMetrics()));
+            }catch (NullPointerException e){
+                return dp;
+            }
         }
 
     }
@@ -384,11 +744,12 @@ public class ContentEditorActivity extends UstadBaseActivity implements ContentE
         umBottomToolbarHolder = findViewById(R.id.um_appbar_bottom);
         umEditorActionView = findViewById(R.id.um_toolbar_bottom);
 
-        formattingHelper = ContentFormattingHelper.getInstance();
-        formattingHelper.setStateDispatcher(this);
+        umFormatHelper = new UmFormatHelper();
+        umFormatHelper.setStateChangeListener(this);
         umEditorWebView.setBackgroundColor(Color.TRANSPARENT);
 
 
+        displayWidth = getDisplayWidth();
         viewSwitcher = EditorAnimatedViewSwitcher.getInstance()
                         .with(this,this)
                         .setViews(rootView, umEditorWebView,contentOptionsBottomSheetBehavior,
@@ -403,9 +764,10 @@ public class ContentEditorActivity extends UstadBaseActivity implements ContentE
             handleBackNavigationIcon();
 
             //Set action menus above the keyboard when opened
+            toolbar.setUmFormatHelper(umFormatHelper);
             toolbar.inflateMenu(R.menu.menu_content_editor_top_actions,false);
-            toolbar.setOnQuickActionMenuItemClicked(this);
-            toolbar.setMenuVisible(true);
+            toolbar.setQuickActionMenuItemClickListener(this);
+            toolbar.setMenuVisible(false);
             toolbar.setNavigationOnClickListener(v -> {
                 if(fileNotFound){
                     finish();
@@ -413,9 +775,9 @@ public class ContentEditorActivity extends UstadBaseActivity implements ContentE
                     viewSwitcher.closeActivity();
                 }
             });
-
+            umEditorActionView.setUmFormatHelper(umFormatHelper);
             umEditorActionView.inflateMenu(R.menu.menu_content_editor_quick_actions,true);
-            umEditorActionView.setOnQuickActionMenuItemClicked(this);
+            umEditorActionView.setQuickActionMenuItemClickListener(this);
         }
 
         handleClipBoardContentChanges();
@@ -518,7 +880,7 @@ public class ContentEditorActivity extends UstadBaseActivity implements ContentE
 
 
     @Override
-    public void onStateChanged(ContentFormat format) {
+    public void onStateChanged(UmFormat format) {
         if(format.getFormatId() != 0){
             umEditorActionView.updateMenu();
         }
@@ -607,10 +969,10 @@ public class ContentEditorActivity extends UstadBaseActivity implements ContentE
                 Gson gson = new Gson();
                 CommandStatus [] statuses = gson.fromJson(content,CommandStatus[].class);
                 for(CommandStatus status: statuses){
-                    ContentFormat format =getFormatByCommand(status.getCommand());
+                    UmFormat format = umFormatHelper.getFormatByCommand(status.getCommand());
                     if(format != null){
                         format.setActive(status.isActive());
-                        formattingHelper.updateFormat(format);
+                        umFormatHelper.updateFormat(format);
                     }
                 }
 
@@ -657,10 +1019,13 @@ public class ContentEditorActivity extends UstadBaseActivity implements ContentE
 
     @Override
     public void onDestroy() {
-        super.onDestroy();
-        if(formattingHelper != null){
-            formattingHelper.destroy();
+        if(umFormatHelper != null){
+            umFormatHelper.destroy();
         }
+        if(viewSwitcher != null){
+            viewSwitcher.closeActivity();
+        }
+        super.onDestroy();
     }
 
     @Override
@@ -728,7 +1093,7 @@ public class ContentEditorActivity extends UstadBaseActivity implements ContentE
 
     @Override
     public void onQuickActionClicked(String command) {
-        ContentFormat format = getFormatByCommand(command);
+        UmFormat format = umFormatHelper.getFormatByCommand(command);
         if(format != null){
             presenter.handleFormatTypeClicked(format.getFormatCommand(),null);
         }
@@ -763,11 +1128,12 @@ public class ContentEditorActivity extends UstadBaseActivity implements ContentE
 
             View menuItemView = findViewById(R.id.content_action_direction);
             UmEditorPopUpView  popUpView = new UmEditorPopUpView(this, menuItemView)
-                    .setMenuList(formattingHelper.getLanguageDirectionalityList(null));
-            popUpView.show(true,format -> {
+                    .setMenuList(umFormatHelper.getLanguageDirectionalityList(null))
+                    .setWidthDimen(displayWidth,true);
+            popUpView.showWithListener(format -> {
                 presenter.handleFormatTypeClicked(format.getFormatCommand(),null);
-                popUpView.setMenuList(formattingHelper.getLanguageDirectionalityList(format));
-                ContentFormat toolBarAction = formattingHelper.getFormatById(itemId,ACTIONS_TOOLBAR_INDEX);
+                popUpView.setMenuList(umFormatHelper.getLanguageDirectionalityList(format));
+                UmFormat toolBarAction = umFormatHelper.getFormatById(itemId,ACTIONS_TOOLBAR_INDEX);
                 if(toolBarAction != null){
                     toolBarAction.setFormatIcon(format.getFormatIcon());
                     toolbar.updateMenu(toolBarAction);
@@ -972,7 +1338,7 @@ public class ContentEditorActivity extends UstadBaseActivity implements ContentE
     }
 
     /**
-     * Check if the document is empty, this helps to show the empty document placeholder view
+     * Check if the document is empty, this helps to showWithListener the empty document placeholder view
      * @return True if the document is empty otherwise false.
      */
     private boolean isDocumentEmpty(){
@@ -1036,6 +1402,14 @@ public class ContentEditorActivity extends UstadBaseActivity implements ContentE
         builder.setNegativeButton(impl.getString(MessageID.content_media_video,this),
                 (dialog, which) -> startCameraIntent(false));
         builder.show();
+    }
+
+    private int getDisplayWidth(){
+        Display display = this.getWindowManager().getDefaultDisplay();
+        DisplayMetrics outMetrics = new DisplayMetrics();
+        display.getMetrics(outMetrics);
+        float density = getResources().getDisplayMetrics().density;
+        return Math.round(outMetrics.widthPixels / density);
     }
 
 

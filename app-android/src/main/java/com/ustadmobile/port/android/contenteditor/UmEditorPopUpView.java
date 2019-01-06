@@ -70,7 +70,7 @@ public class UmEditorPopUpView {
          * Invoked when an item is clicked
          * @param format selected format
          */
-        void onMenuClicked(ContentFormat format);
+        void onMenuClicked(UmFormat format);
     }
 
 
@@ -111,7 +111,7 @@ public class UmEditorPopUpView {
      * @param menuList Lust of all items to be set on popup view
      * @return UmEditorPopUpView instance
      */
-    public UmEditorPopUpView setMenuList(List<ContentFormat> menuList){
+    public UmEditorPopUpView setMenuList(List<UmFormat> menuList){
         popUpAdapter.setMenuList(menuList);
         return this;
     }
@@ -159,13 +159,13 @@ public class UmEditorPopUpView {
 
     private class PopUpAdapter extends RecyclerView.Adapter<PopUpItemViewHolder>{
 
-        private List<ContentFormat> menuList;
+        private List<UmFormat> menuList;
 
-        PopUpAdapter (List<ContentFormat> menuList){
+        PopUpAdapter (List<UmFormat> menuList){
             this.menuList = menuList;
         }
 
-        void setMenuList(List<ContentFormat> menuList){
+        void setMenuList(List<UmFormat> menuList){
             this.menuList = menuList;
             notifyDataSetChanged();
         }
@@ -190,7 +190,7 @@ public class UmEditorPopUpView {
 
         @Override
         public void onBindViewHolder(@NonNull PopUpItemViewHolder holder, int position) {
-            ContentFormat format = menuList.get(position);
+            UmFormat format = menuList.get(position);
             holder.menuIcon.setVisibility(visible ? View.VISIBLE:View.GONE);
             holder.menuIcon.setImageResource(format.getFormatIcon());
             holder.meuTitle.setText(format.getFormatTitle());
