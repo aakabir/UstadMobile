@@ -6,7 +6,7 @@ package com.ustadmobile.port.android.contenteditor;
  *
  * @author kileha3
  */
-public class ContentFormat {
+public class UmFormat {
 
     private int formatIcon;
 
@@ -27,7 +27,7 @@ public class ContentFormat {
      * @param active Flag to indicate if the format is active or not
      * @param formatType Flag which shows which type of the formatting is.
      */
-    ContentFormat(int formatIcon, String formatCommand, boolean active, int formatType) {
+    public UmFormat(int formatIcon, String formatCommand, boolean active, int formatType) {
         this.formatIcon = formatIcon;
         this.formatCommand = formatCommand;
         this.active = active;
@@ -42,8 +42,8 @@ public class ContentFormat {
      * @param formatType Flag which shows which type of the formatting is.
      * @param formatId formatting id.
      */
-    ContentFormat(int formatIcon, String formatCommand, boolean active,
-                  int formatType, int formatId) {
+    public UmFormat(int formatIcon, String formatCommand, boolean active,
+                    int formatType, int formatId) {
         this.formatIcon = formatIcon;
         this.formatCommand = formatCommand;
         this.active = active;
@@ -51,8 +51,8 @@ public class ContentFormat {
         this.formatId = formatId;
     }
 
-    ContentFormat(int formatIcon, String formatCommand, boolean active,
-                  int formatType, int formatId, int formatTitle) {
+    public UmFormat(int formatIcon, String formatCommand, boolean active,
+                    int formatType, int formatId, int formatTitle) {
         this.formatIcon = formatIcon;
         this.formatCommand = formatCommand;
         this.active = active;
