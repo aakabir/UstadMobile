@@ -21,7 +21,13 @@ Make sure you install chrome before running any tests using mocha-chrome.
 * Create html file i.e index.html and import all necessary libraries.    
     
 ``` html 
-<link rel="stylesheet" href="lib/bootstrap/css/bootstrap.min.css"> <link rel="stylesheet" href="lib/umeditor/src/css/UmEditorCore.css"> <script src="lib/umeditor/src/js/UmQuestionWidget.js" type="text/javascript"></script> <script src="lib/jquery/jquery3.3.1.min.js" type="text/javascript"></script> <script src="lib/rangy/js/rangy-core.js" type="text/javascript"></script> <script src="lib/tinymce/js/tinymce.min.js" type="text/javascript"></script> <script src="lib/umeditor/src/js/UmContentEditorCore.js" type="text/javascript"></script> 
+<link rel="stylesheet" href="lib/bootstrap/css/bootstrap.min.css">
+<link rel="stylesheet" href="lib/umeditor/src/css/UmEditorCore.css"> 
+<script src="lib/umeditor/src/js/UmQuestionWidget.js" type="text/javascript"></script>
+<script src="lib/jquery/jquery3.3.1.min.js" type="text/javascript"></script> 
+<script src="lib/rangy/js/rangy-core.js" type="text/javascript"></script>
+<script src="lib/tinymce/js/tinymce.min.js" type="text/javascript"></script> 
+<script src="lib/umeditor/src/js/UmContentEditorCore.js" type="text/javascript"></script> 
 ```
 
 * Set listeners when the page is loaded    
