@@ -16,7 +16,6 @@ import com.ustadmobile.core.controller.ContentPreviewPresenter;
 import com.ustadmobile.core.generated.locale.MessageID;
 import com.ustadmobile.core.impl.UstadMobileSystemImpl;
 import com.ustadmobile.core.view.ContentPreviewView;
-import com.ustadmobile.port.android.contenteditor.UmEditorNestedScrollView;
 import com.ustadmobile.port.android.contenteditor.WebContentEditorChrome;
 import com.ustadmobile.port.android.contenteditor.WebContentEditorClient;
 import com.ustadmobile.port.android.util.UMAndroidUtil;
