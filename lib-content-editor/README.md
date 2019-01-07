@@ -1,7 +1,8 @@
   
 # Ustadmobile Content Editor (UmContentEditor)    
  TinyMCE based content editor with the ability to use custom html content templates.  Right now we support two question based template which are multiple choice and fill in the blanks.    
-## Getting Started You can use this repo as stand-alone project out of Ustadmobile app (use on web apps),     
+## Getting Started 
+You can use this repo as stand-alone project out of Ustadmobile app (use on web apps),     
 with Ustadmobile app this repo will be used as support lib since editor controls are implemented on native android.     
     
 ### Setup  
