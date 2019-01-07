@@ -138,6 +138,12 @@ task runKeyboardKeydownTests (type: Exec){
     commandLine 'mocha-chrome', testFilePath, '--timeout ',testTimeout
 }
 
+/* Execute focus change event on protected elements */
+task runFocusChangeEventTest (type: Exec){
+    def testFilePath = rootPath + "tests/content-next-focus.html"
+    commandLine 'mocha-chrome', testFilePath, '--timeout ',testTimeout
+}
+
 
 /* Run all UmEditor Javascript tests */
-task test(dependsOn: [runContentFomattingTests, runContentTemplatesTest, runKeyboardKeydownTests]) << {}
+task test(dependsOn: [runContentFomattingTests, runContentTemplatesTest, runKeyboardKeydownTests, runFocusChangeEventTest]) << {}
