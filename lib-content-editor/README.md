@@ -46,7 +46,7 @@ UmContentEditorCore.initEditor(true);
  See how we used it to implement our editor on dev-content-editor branch, use ContentEditorActivity.java to understand the logical flow    
     
 ## Running the tests    
- You can quickly run tests on web browser or using mocha-chrome.<br/><br/>  
+ You can quickly run tests on web browser, using mocha-chrome or using gradle.<br/><br/>  
 <b> Run on web browser</b> <br/>  
 Run the following files located under tests directory on your browser  
   
