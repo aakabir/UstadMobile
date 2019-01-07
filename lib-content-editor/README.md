@@ -14,7 +14,9 @@ Plugin which will be used to run all our tests
 ```
 
 ### Prerequisites 
-Make sure you install chrome before running any tests using mocha-chrome.    
+* Make sure you install chrome before running any tests using mocha-chrome.  
+* For language locale (content-language-locale-tests.html) and focus change event (content-next-focus.html) test make sure you are under localhost since they depend on ajax to 
+load required information i.e template and locale files.  
     
 ### Using the repo 
 #### As stand-alone lib (on web apps) * Clone this repo to your local machine, locate umeditor directory under libraries.     
@@ -58,16 +60,21 @@ Run the following files located under tests directory on your browser
 3. content-key-down.html
   
 4. content-language-locale-tests.html
+
+5. content-next-focus.html
   
 ```   
   <b> Run with mocha-chrome - Terminal</b><br/>  
 Navigate to test directory and run the following command on your terminal<br/><br/>  
   
-``` mocha-chrome content-formatting-tests.html --timeout 6000  
+``` 
+mocha-chrome content-formatting-tests.html --timeout 6000  
   
 mocha-chrome content-template-tests.html --timeout 6000  
   
 mocha-chrome content-key-down.html --timeout 6000  
+
+mocha-chrome content-next-focus.html --timeout 6000  
 ``` 
 <br/>  
   
