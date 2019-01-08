@@ -346,8 +346,8 @@ UmContentEditorCore.prototype.getNodeDirectionality = () => {
 
 
 /**
- * Get current position of the cursor placed on editable content.
- * @returns {number} position at character based index
+ * Get current position of the cursor placed on editable element relative to the content.
+ * @returns {number} position of the cursor on character based index
  */
 UmContentEditorCore.prototype.getCursorPositionRelativeToTheEditableElementContent = ()  =>  {
     try{
@@ -375,7 +375,7 @@ UmContentEditorCore.prototype.getCursorPositionRelativeToTheEditableElementConte
 };
 
 /**
- * Check tinymce controls state.
+ * Check tinymce toolbar menu controls state.
  */
 UmContentEditorCore.prototype.checkActivatedControls = () => {
     const commandStatus = [];
@@ -429,7 +429,7 @@ UmContentEditorCore.prototype.insertQuestionTemplate = (questionTypeIndex,isTest
 /**
  * Inserting question template to the editor for testing purpose
  */
-UmContentEditorCore.insertTestQuestionTemplate = ()=>{
+UmContentEditorCore.insertTestQuestionTemplate = () =>{
     UmContentEditorCore.prototype.insertQuestionTemplate(indexFillTheBlanksQuestionType,true);
 };
 
@@ -444,10 +444,10 @@ UmContentEditorCore.prototype.getLastExtraContentWidget = () => {
 };
 
 /**
- * Get last editable element in the editor
+ * Get last non protected and focusable element in the editor
  * @returns content widget element
  */
-UmContentEditorCore.prototype.getLastEditableElement = () =>{
+UmContentEditorCore.prototype.getLastNonProtectedFucasableElement = () =>{
     const editor = $("#umEditor");
     const pageBreaks = editor.find('.pg-break');
     if(pageBreaks.length === 0){
@@ -459,9 +459,9 @@ UmContentEditorCore.prototype.getLastEditableElement = () =>{
 
 
 /**
- * Insert media content in the template.
- * @param source media source path.
- * @param mimeType media mimetype.
+ * Insert media content in the editor.
+ * @param source file source path relative to the tinymce editor.
+ * @param mimeType file mimetype.
  */
 UmContentEditorCore.insertMediaContent = (source, mimeType) => {
     let mediaContent = null;
@@ -490,7 +490,7 @@ UmContentEditorCore.insertMediaContent = (source, mimeType) => {
  * Tinymce command to insert content in the editor
  * @param content content to be inserted in the editor.
  */
-UmContentEditorCore.insertContentRaw = (content) =>{
+UmContentEditorCore.insertContentRaw = (content) => {
     tinymce.activeEditor.execCommand('mceInsertContent', false, content);
 };
 
@@ -510,10 +510,10 @@ UmContentEditorCore.prototype.insertQuestionNodeContent = (questionNode,isFromCl
         const extraContent = $(activeNode).closest("div div.extra-content");
         $(extraContent).after(UmQuestionWidget.PAGE_BREAK);
     }
-    UmContentEditorCore.prototype.setCursorToANode(UmContentEditorCore.prototype.getLastEditableElement());
+    UmContentEditorCore.prototype.setCursorToAnyNonProtectedFucusableElement(UmContentEditorCore.prototype.getLastNonProtectedFucasableElement());
     UmContentEditorCore.insertContentRaw(questionNode);
-    UmContentEditorCore.prototype.scrollToElement(UmContentEditorCore.prototype.getLastEditableElement());
-    UmContentEditorCore.prototype.setCursorToANode(UmContentEditorCore.prototype.getLastExtraContentWidget());
+    UmContentEditorCore.prototype.scrollToElement(UmContentEditorCore.prototype.getLastNonProtectedFucasableElement());
+    UmContentEditorCore.prototype.setCursorToAnyNonProtectedFucusableElement(UmContentEditorCore.prototype.getLastExtraContentWidget());
     tinymce.activeEditor.dom.remove(tinymce.activeEditor.dom.select('p.pg-break'));
 };
 
@@ -569,7 +569,7 @@ UmContentEditorCore.setFocusToNextUnprotectedFocusableElement = (eventTargetElem
                     } else {
                         elementToFocus = questionElement.get(3);
                     }
-                    UmContentEditorCore.prototype.setCursorToANode(elementToFocus);
+                    UmContentEditorCore.prototype.setCursorToAnyNonProtectedFucusableElement(elementToFocus);
                     UmContentEditorCore.prototype.scrollToElement(elementToFocus);
                 }, 200);
             } else if ($(eventTargetElement).hasClass("img-delete") || $(eventTargetElement).hasClass("question") || $(eventTargetElement).hasClass("input-group")) {
@@ -582,7 +582,7 @@ UmContentEditorCore.setFocusToNextUnprotectedFocusableElement = (eventTargetElem
                 }
             }
             if (elementToFocus && !$(elementToFocus).hasClass("question")) {
-                UmContentEditorCore.prototype.setCursorToANode(elementToFocus);
+                UmContentEditorCore.prototype.setCursorToAnyNonProtectedFucusableElement(elementToFocus);
             }
         }
     }catch (e) {
@@ -593,10 +593,10 @@ UmContentEditorCore.setFocusToNextUnprotectedFocusableElement = (eventTargetElem
 };
 
 /**
- * Set cursor to the root editable element.
- * @param rootElement root target element.
+ * Set cursor to the last non protected and focusable element in the editor.
+ * @param rootElement editor root element.
  */
-UmContentEditorCore.prototype.setCursorPositionAtRootElementEnd = (rootElement) =>{
+UmContentEditorCore.prototype.setCursorPositionToTheLastNonProtectedElement = (rootElement) =>{
     if(rootElement == null){
         rootElement = document.getElementById("umEditor");
     }
@@ -616,8 +616,8 @@ UmContentEditorCore.prototype.setCursorPositionAtRootElementEnd = (rootElement) 
 
 
 /**
- * Scroll to the targeted element in the editor.
- * @param element target element
+ * Scroll page to the targeted element in the editor.
+ * @param element target element to scroll to
  */
 UmContentEditorCore.prototype.scrollToElement = (element) => {
     if (!!element && element.scrollIntoView) {
@@ -627,9 +627,9 @@ UmContentEditorCore.prototype.scrollToElement = (element) => {
 
 /**
  * Set cursor to a specific editor node
- * @param element target editor node.
+ * @param element target element cursor to be set on.
  */
-UmContentEditorCore.prototype.setCursorToANode = (element) => {
+UmContentEditorCore.prototype.setCursorToAnyNonProtectedFucusableElement = (element) => {
    try{
        element = element === null ? $("#umEditor").children().get(0):element;
        const range = document.createRange();
@@ -640,26 +640,26 @@ UmContentEditorCore.prototype.setCursorToANode = (element) => {
        sel.addRange(range);
        element.focus();
    }catch (e) {
-       console.log("setCursorToANode",e)
+       console.log("setCursorToAnyNonProtectedFucusableElement",e)
    }
 };
 
 
 UmContentEditorCore.prototype.setCursor = (element = null,isRoot) =>{
     if(isRoot){
-        UmContentEditorCore.prototype.setCursorPositionAtRootElementEnd(element);
+        UmContentEditorCore.prototype.setCursorPositionToTheLastNonProtectedElement(element);
     }else{
-        UmContentEditorCore.prototype.setCursorToANode(element);
+        UmContentEditorCore.prototype.setCursorToAnyNonProtectedFucusableElement(element);
     }
 };
 
 
 /**
- * Prevent keyboard key and stop propagation
- * @param event keybord event
+ * Prevent key event from taking effect and stop event propagation
+ * @param event keybord event (keydown)
  * @returns {boolean} false - so this value can be returned to the return value for an event handler
  */
-UmContentEditorCore.prototype.allowKeyboardKey = (event) =>{
+UmContentEditorCore.prototype.allowKeyboardKey = (event) => {
     try{
         event.preventDefault();
         event.stopImmediatePropagation();
@@ -748,7 +748,7 @@ UmContentEditorCore.checkProtectedElements = (activeNode,selectedContentLength,c
  * @param umConfig editor configuration object
  * {locale:'en', path:'',toolbar:false}
  * locale => Default UMEditor language locale
- * path => Absolute path resolver (For test)
+ * path => relative path resolver (For test)
  * toolbar => Flag to show and hide default tinymce toolbar
  */
 UmContentEditorCore.initEditor = (umConfig) => {
@@ -872,18 +872,23 @@ UmContentEditorCore.initEditor = (umConfig) => {
     tinymce.init(configs).then(() => {
 
         rangy.init();
+
+        //request forcus to the editor
         UmContentEditorCore.prototype.requestFocus();
+
+        //enable editing mode
         UmQuestionWidget.setEditingMode(true);
 
+        //Check if is a document edit or creating new document
         if($(".question").length > 0){
-            UmContentEditorCore.prototype.setCursorPositionAtRootElementEnd();
+            UmContentEditorCore.prototype.setCursorPositionToTheLastNonProtectedElement();
         }else{
             const editorWrapper = $("#umEditor");
             if(UmQuestionWidget.removeSpaces($(editorWrapper.children().get(0)).text()).length === 0){
                 $(editorWrapper.children().get(0)).remove();
             }
             editorWrapper.append(UmQuestionWidget.EXTRA_CONTENT_WIDGET);
-            UmContentEditorCore.prototype.setCursorToANode(editorWrapper.children().get(0))
+            UmContentEditorCore.prototype.setCursorToAnyNonProtectedFucusableElement(editorWrapper.children().get(0))
         }
         tinymce.activeEditor.dom.remove(tinymce.activeEditor.dom.select('p.pg-break'));
         try{
@@ -919,7 +924,7 @@ UmContentEditorCore.initEditor = (umConfig) => {
             contentChangeObserver.observe(document.querySelector('#umEditor'),contentWatcherFilters);
 
 
-            //add observer to watch controls change
+            //add observer to watch controls state changes
             const menuWatcherFilter = {
                 attributes : true,
                 attributeFilter : ['style']
@@ -934,14 +939,6 @@ UmContentEditorCore.initEditor = (umConfig) => {
         }
     });
 
-};
-
-/**
- * Get content from tinymce editor
- * @returns string content
- */
-UmContentEditorCore.getContent = ()=>{
-    return tinymce.activeEditor.getContent();
 };
 
 
