@@ -1,4 +1,4 @@
-package com.ustadmobile.port.android.contenteditor;
+package com.ustadmobile.port.android.umeditor;
 
 /**
  * Class which represents the content formatting object, this handles the

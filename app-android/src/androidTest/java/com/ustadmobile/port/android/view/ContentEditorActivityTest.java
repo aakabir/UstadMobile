@@ -12,7 +12,7 @@ import android.support.test.runner.AndroidJUnit4;
 
 import com.toughra.ustadmobile.R;
 import com.ustadmobile.core.view.ContentEditorView;
-import com.ustadmobile.port.android.contenteditor.UmFormat;
+import com.ustadmobile.port.android.umeditor.UmFormat;
 
 import org.junit.Before;
 import org.junit.Rule;

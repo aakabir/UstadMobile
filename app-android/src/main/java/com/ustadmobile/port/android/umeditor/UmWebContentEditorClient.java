@@ -1,4 +1,4 @@
-package com.ustadmobile.port.android.contenteditor;
+package com.ustadmobile.port.android.umeditor;
 
 import android.content.Context;
 import android.webkit.WebResourceRequest;
@@ -8,7 +8,6 @@ import android.webkit.WebViewClient;
 
 import com.ustadmobile.core.util.UMFileUtil;
 
-import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
 import java.util.ArrayList;
@@ -24,17 +23,17 @@ import static com.ustadmobile.port.sharedse.contenteditor.UmEditorFileHelper.EDI
  *
  * <b>Note: Operation Flow</b>
  *
- *  Use {@link WebContentEditorClient#shouldInterceptRequest } to intercept
+ *  Use {@link UmWebContentEditorClient#shouldInterceptRequest } to intercept
  *  requested resources via HTTP.
  *
- *  Use {@link WebContentEditorClient#executeJsFunction} to execute Javascript
+ *  Use {@link UmWebContentEditorClient#executeJsFunction} to execute Javascript
  *  function from native android and wait for the callback if execution
  *  log a message or return value
  *
  * @author kileha3
  *
  */
-public class WebContentEditorClient extends WebViewClient {
+public class UmWebContentEditorClient extends WebViewClient {
 
     private Context context;
 
@@ -49,7 +48,7 @@ public class WebContentEditorClient extends WebViewClient {
     /**
      * @param context application context
      */
-    public WebContentEditorClient(Context context){
+    public UmWebContentEditorClient(Context context){
         this.context = context;
     }
 
@@ -131,7 +130,7 @@ public class WebContentEditorClient extends WebViewClient {
      * @param params params to be passed to the function
      */
     public static void executeJsFunction(WebView mWeb, String function,
-                                         WebContentEditorChrome.JsLoadingCallback callback, String ...params){
+                                         UmWebContentEditorChromeClient.JsLoadingCallback callback, String ...params){
         StringBuilder mBuilder = new StringBuilder();
         mBuilder.append("javascript:try{");
         mBuilder.append(function);

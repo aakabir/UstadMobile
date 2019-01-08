@@ -1,4 +1,4 @@
-package com.ustadmobile.port.android.contenteditor;
+package com.ustadmobile.port.android.umeditor;
 
 /**
  * Class which represents response received from Javascript method
@@ -7,7 +7,7 @@ package com.ustadmobile.port.android.contenteditor;
  * @author kileha3
  */
 
-public class WebJsResponse {
+public class UmWebJsResponse {
 
     private String action;
 

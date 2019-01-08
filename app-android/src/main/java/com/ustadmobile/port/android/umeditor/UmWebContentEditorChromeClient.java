@@ -1,4 +1,4 @@
-package com.ustadmobile.port.android.contenteditor;
+package com.ustadmobile.port.android.umeditor;
 
 import android.webkit.ConsoleMessage;
 import android.webkit.WebChromeClient;
@@ -14,7 +14,7 @@ import com.ustadmobile.core.impl.UstadMobileSystemImpl;
  * @author kileha3
  *
  */
-public class WebContentEditorChrome  extends WebChromeClient {
+public class UmWebContentEditorChromeClient extends WebChromeClient {
 
     private JsLoadingCallback callback;
 
@@ -22,7 +22,7 @@ public class WebContentEditorChrome  extends WebChromeClient {
      * Constructor which is used when creating an instance of this class.
      * @param callback Callback to handle all page loads
      */
-    public WebContentEditorChrome (JsLoadingCallback callback){
+    public UmWebContentEditorChromeClient(JsLoadingCallback callback){
         this.callback = callback;
     }
     @Override

@@ -16,12 +16,12 @@ import com.ustadmobile.core.controller.ContentPreviewPresenter;
 import com.ustadmobile.core.generated.locale.MessageID;
 import com.ustadmobile.core.impl.UstadMobileSystemImpl;
 import com.ustadmobile.core.view.ContentPreviewView;
-import com.ustadmobile.port.android.contenteditor.WebContentEditorChrome;
-import com.ustadmobile.port.android.contenteditor.WebContentEditorClient;
+import com.ustadmobile.port.android.umeditor.UmWebContentEditorChromeClient;
+import com.ustadmobile.port.android.umeditor.UmWebContentEditorClient;
 import com.ustadmobile.port.android.util.UMAndroidUtil;
 
 public class ContentEditorPreviewActivity extends UstadBaseActivity
-        implements ContentPreviewView, WebContentEditorChrome.JsLoadingCallback {
+        implements ContentPreviewView, UmWebContentEditorChromeClient.JsLoadingCallback {
 
     private WebView contentPreview;
 
@@ -84,8 +84,8 @@ public class ContentEditorPreviewActivity extends UstadBaseActivity
 
     @Override
     public void startPreviewing(String baseRequestUri, String indexFile) {
-        contentPreview.setWebViewClient(new WebContentEditorClient(this));
-        contentPreview.setWebChromeClient(new WebContentEditorChrome(this));
+        contentPreview.setWebViewClient(new UmWebContentEditorClient(this));
+        contentPreview.setWebChromeClient(new UmWebContentEditorChromeClient(this));
         progressDialog.setVisibility(View.VISIBLE);
         contentPreview.loadUrl(indexFile);
     }

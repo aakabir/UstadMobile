@@ -1,4 +1,4 @@
-package com.ustadmobile.port.android.contenteditor;
+package com.ustadmobile.port.android.umeditor;
 import android.content.ContentResolver;
 import android.content.ContentUris;
 import android.content.Context;

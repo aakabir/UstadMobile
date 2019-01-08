@@ -1,4 +1,4 @@
-package com.ustadmobile.port.android.contenteditor;
+package com.ustadmobile.port.android.umeditor;
 
 import android.annotation.SuppressLint;
 import android.app.Activity;
@@ -16,7 +16,6 @@ import android.webkit.WebView;
 
 import java.util.Objects;
 import java.util.concurrent.TimeUnit;
-import java.util.logging.Handler;
 
 /**
  * Class which handles all animated view switching, we have BottomSheets and keyboard
@@ -24,29 +23,29 @@ import java.util.logging.Handler;
  *
  * <b>Operational Flow:</b>
  * <p>
- *     Use {@link EditorAnimatedViewSwitcher#with(Activity, OnAnimatedViewsClosedListener)}
+ *     Use {@link UmEditorAnimatedViewSwitcher#with(Activity, OnAnimatedViewsClosedListener)}
  *     to set content editor activity instance and listener for listening all animation
  *     closing event,.
  *
- *     Use {@link EditorAnimatedViewSwitcher#setViews)} to set all animated views and root view
+ *     Use {@link UmEditorAnimatedViewSwitcher#setViews)} to set all animated views and root view
  *     which will be used to listen for the keyboard events.
  *
- *     Use {@link EditorAnimatedViewSwitcher#animateView(String)} to send request to open a certain
+ *     Use {@link UmEditorAnimatedViewSwitcher#animateView(String)} to send request to open a certain
  *     animated view depending on the view key passed into it.
  *
- *     Use {@link EditorAnimatedViewSwitcher#closeAnimatedView(String)} to send request to close a
+ *     Use {@link UmEditorAnimatedViewSwitcher#closeAnimatedView(String)} to send request to close a
  *     certain animated view depending on the view key passed into it.
  *
- *     Use {@link EditorAnimatedViewSwitcher#closeActivity()} to handle activity closing task
+ *     Use {@link UmEditorAnimatedViewSwitcher#closeActivity()} to handle activity closing task
  *     which will close all the activity views before shutting down.
  * </p>
  *
  * @author kileha3
  */
-public class EditorAnimatedViewSwitcher {
+public class UmEditorAnimatedViewSwitcher {
 
     @SuppressLint("StaticFieldLeak")
-    private static EditorAnimatedViewSwitcher viewSwitcher;
+    private static UmEditorAnimatedViewSwitcher viewSwitcher;
 
     private BottomSheetBehavior formattingBottomSheetBehavior;
 
@@ -121,12 +120,12 @@ public class EditorAnimatedViewSwitcher {
             };
 
     /**
-     * Get EditorAnimatedViewSwitcher singleton instance.
-     * @return EditorAnimatedViewSwitcher instance
+     * Get UmEditorAnimatedViewSwitcher singleton instance.
+     * @return UmEditorAnimatedViewSwitcher instance
      */
-    public static  EditorAnimatedViewSwitcher getInstance(){
+    public static UmEditorAnimatedViewSwitcher getInstance(){
         if(viewSwitcher == null){
-            viewSwitcher = new EditorAnimatedViewSwitcher();
+            viewSwitcher = new UmEditorAnimatedViewSwitcher();
         }
         return viewSwitcher;
     }
@@ -135,10 +134,10 @@ public class EditorAnimatedViewSwitcher {
      * Set activity instance to be used and listener to listen when all animated views are closed.
      * @param activity Activity under watcher
      * @param listener Listener to be set for listening animated view closing events.
-     * @return EditorAnimatedViewSwitcher instance.
+     * @return UmEditorAnimatedViewSwitcher instance.
      */
-    public EditorAnimatedViewSwitcher with(Activity activity,
-                                           OnAnimatedViewsClosedListener listener){
+    public UmEditorAnimatedViewSwitcher with(Activity activity,
+                                             OnAnimatedViewsClosedListener listener){
         this.activity = activity;
         this.closedListener = listener;
         return this;
@@ -152,13 +151,13 @@ public class EditorAnimatedViewSwitcher {
      * @param formatSheet Formats types bottom sheet view
      * @param mediaSheet Media sources bottom sheet view
      * @param drawerLayout Drawer layout view
-     * @return EditorAnimatedViewSwitcher instance.
+     * @return UmEditorAnimatedViewSwitcher instance.
      */
-    public EditorAnimatedViewSwitcher setViews(View rootView, WebView editorView,
-                                               BottomSheetBehavior insertContentSheet,
-                                               BottomSheetBehavior formatSheet,
-                                               BottomSheetBehavior mediaSheet,
-                                               DrawerLayout drawerLayout){
+    public UmEditorAnimatedViewSwitcher setViews(View rootView, WebView editorView,
+                                                 BottomSheetBehavior insertContentSheet,
+                                                 BottomSheetBehavior formatSheet,
+                                                 BottomSheetBehavior mediaSheet,
+                                                 DrawerLayout drawerLayout){
         this.contentOptionsBottomSheetBehavior = insertContentSheet;
         this.formattingBottomSheetBehavior = formatSheet;
         this.mediaSourceBottomSheetBehavior = mediaSheet;

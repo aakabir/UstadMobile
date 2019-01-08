@@ -1,4 +1,4 @@
-package com.ustadmobile.port.android.contenteditor;
+package com.ustadmobile.port.android.umeditor;
 
 import android.content.Context;
 import android.support.v4.view.MotionEventCompat;

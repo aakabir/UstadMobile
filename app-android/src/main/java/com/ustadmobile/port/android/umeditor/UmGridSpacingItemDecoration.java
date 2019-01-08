@@ -1,4 +1,4 @@
-package com.ustadmobile.port.android.contenteditor;
+package com.ustadmobile.port.android.umeditor;
 
 import android.graphics.Rect;
 import android.support.v7.widget.RecyclerView;

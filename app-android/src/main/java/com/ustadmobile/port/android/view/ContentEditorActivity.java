@@ -59,18 +59,18 @@ import com.ustadmobile.core.util.UMFileUtil;
 import com.ustadmobile.core.view.ContentEditorView;
 import com.ustadmobile.core.view.ContentPreviewView;
 import com.ustadmobile.lib.util.Base64Coder;
-import com.ustadmobile.port.android.contenteditor.UmFormatStateChangeListener;
-import com.ustadmobile.port.android.contenteditor.UmFormat;
-import com.ustadmobile.port.android.contenteditor.EditorAnimatedViewSwitcher;
-import com.ustadmobile.port.android.contenteditor.UmAndroidUriUtil;
-import com.ustadmobile.port.android.contenteditor.UmEditorActionView;
-import com.ustadmobile.port.android.contenteditor.UmEditorPopUpView;
-import com.ustadmobile.port.android.contenteditor.UmEditorWebView;
-import com.ustadmobile.port.android.contenteditor.UmGridSpacingItemDecoration;
-import com.ustadmobile.port.android.contenteditor.WebContentEditorChrome;
-import com.ustadmobile.port.android.contenteditor.WebContentEditorClient;
-import com.ustadmobile.port.android.contenteditor.WebContentEditorInterface;
-import com.ustadmobile.port.android.contenteditor.WebJsResponse;
+import com.ustadmobile.port.android.umeditor.UmEditorAnimatedViewSwitcher;
+import com.ustadmobile.port.android.umeditor.UmAndroidUriUtil;
+import com.ustadmobile.port.android.umeditor.UmEditorActionView;
+import com.ustadmobile.port.android.umeditor.UmEditorPopUpView;
+import com.ustadmobile.port.android.umeditor.UmEditorWebView;
+import com.ustadmobile.port.android.umeditor.UmFormat;
+import com.ustadmobile.port.android.umeditor.UmFormatStateChangeListener;
+import com.ustadmobile.port.android.umeditor.UmGridSpacingItemDecoration;
+import com.ustadmobile.port.android.umeditor.UmWebContentEditorChromeClient;
+import com.ustadmobile.port.android.umeditor.UmWebContentEditorClient;
+import com.ustadmobile.port.android.umeditor.UmWebContentEditorInterface;
+import com.ustadmobile.port.android.umeditor.UmWebJsResponse;
 import com.ustadmobile.port.android.impl.http.AndroidAssetsHandler;
 import com.ustadmobile.port.android.util.UMAndroidUtil;
 import com.ustadmobile.port.sharedse.contenteditor.UmEditorFileHelper;
@@ -91,24 +91,23 @@ import java.util.concurrent.CopyOnWriteArrayList;
 import id.zelory.compressor.Compressor;
 
 import static com.ustadmobile.core.contenteditor.UmEditorFileHelperCore.INDEX_FILE;
-import static com.ustadmobile.port.android.contenteditor.EditorAnimatedViewSwitcher.ANIMATED_CONTENT_OPTION_PANEL;
-import static com.ustadmobile.port.android.contenteditor.EditorAnimatedViewSwitcher.ANIMATED_SOFT_KEYBOARD_PANEL;
-import static com.ustadmobile.port.android.contenteditor.EditorAnimatedViewSwitcher.MAX_SOFT_KEYBOARD_DELAY;
-import static com.ustadmobile.port.android.contenteditor.WebContentEditorClient.executeJsFunction;
-import static com.ustadmobile.port.android.view.ContentEditorActivity.UmFormatHelper.ACTIONS_TOOLBAR_INDEX;
+import static com.ustadmobile.port.android.umeditor.UmEditorAnimatedViewSwitcher.ANIMATED_CONTENT_OPTION_PANEL;
+import static com.ustadmobile.port.android.umeditor.UmEditorAnimatedViewSwitcher.ANIMATED_SOFT_KEYBOARD_PANEL;
+import static com.ustadmobile.port.android.umeditor.UmEditorAnimatedViewSwitcher.MAX_SOFT_KEYBOARD_DELAY;
+import static com.ustadmobile.port.android.umeditor.UmWebContentEditorClient.executeJsFunction;
 import static com.ustadmobile.port.sharedse.contenteditor.UmEditorFileHelper.EDITOR_BASE_DIR_NAME;
 import static com.ustadmobile.port.sharedse.contenteditor.UmEditorFileHelper.MEDIA_DIRECTORY;
 
 public class ContentEditorActivity extends UstadBaseActivity implements ContentEditorView,
-        WebContentEditorChrome.JsLoadingCallback, UmEditorActionView.OnQuickActionMenuItemClicked,
+        UmWebContentEditorChromeClient.JsLoadingCallback, UmEditorActionView.OnQuickActionMenuItemClicked,
         UmFormatStateChangeListener,UmEditorFileHelper.ZipFileTaskProgressListener,
-        EditorAnimatedViewSwitcher.OnAnimatedViewsClosedListener {
+        UmEditorAnimatedViewSwitcher.OnAnimatedViewsClosedListener {
 
     private static ContentEditorPresenter presenter;
 
     private UmEditorFileHelper umEditorFileHelper;
 
-    private EditorAnimatedViewSwitcher viewSwitcher;
+    private UmEditorAnimatedViewSwitcher viewSwitcher;
 
     private BottomSheetBehavior mediaSourceBottomSheetBehavior;
 
@@ -162,10 +161,14 @@ public class ContentEditorActivity extends UstadBaseActivity implements ContentE
 
     private static final String EDITOR_METHOD_PREFIX = "UmContentEditorCore.";
 
-    private class CommandStatus{
-
+    /**
+     * Class which represent a format control state
+     */
+    private class UmFormatState {
+        //Format Command
         private String command;
 
+        //Format command state (Activated / Deactivate)
         private boolean status;
 
         public String getCommand() {
@@ -185,6 +188,10 @@ public class ContentEditorActivity extends UstadBaseActivity implements ContentE
         }
     }
 
+
+    /**
+     * Class which handles all formatting from preparing and updating them when necessary.
+     */
     public class UmFormatHelper {
 
         /**
@@ -220,9 +227,13 @@ public class ContentEditorActivity extends UstadBaseActivity implements ContentE
 
         UmFormatHelper(){
             formatList = prepareFormattingList();
-            quickActionList = prepareQuickActions();
+            quickActionList = prepareQuickActionFormats();
         }
 
+        /**
+         * Prepare all UmEditor format
+         * @return list of all formats.
+         */
         private List<UmFormat> prepareFormattingList(){
             List<UmFormat> mText = new ArrayList<>();
             List<UmFormat> mDirection = new ArrayList<>();
@@ -317,7 +328,7 @@ public class ContentEditorActivity extends UstadBaseActivity implements ContentE
             return allFormats;
         }
 
-        private List<UmFormat> prepareQuickActions(){
+        private List<UmFormat> prepareQuickActionFormats(){
             List<UmFormat> quickActions = new ArrayList<>();
             try{
                 quickActions.add(getFormatByCommand(TEXT_FORMAT_TYPE_BOLD));
@@ -360,13 +371,13 @@ public class ContentEditorActivity extends UstadBaseActivity implements ContentE
         }
 
         /**
-         * Get list of all formats by type
-         * @param formatId id to be found
-         * @return found list of all formats of
+         * Get toolbar UmFormat from the list by its ID and type, some
+         * @param formatId Format unique id
+         * @return UmFormat found
          */
-        public UmFormat getFormatById(int formatId, int formatType) {
+        UmFormat getFormatById(int formatId) {
             UmFormat umFormat = null;
-            for(UmFormat format: getFormatListByType(formatType)){
+            for(UmFormat format: getFormatListByType(ACTIONS_TOOLBAR_INDEX)){
                 if(format.getFormatId() == formatId){
                     umFormat = format;
                     break;
@@ -376,11 +387,11 @@ public class ContentEditorActivity extends UstadBaseActivity implements ContentE
         }
 
         /**
-         * Get content format by formatting tag
+         * Get UmFormat by its command
          * @param command formatting command to be found
          * @return found content format
          */
-        public UmFormat getFormatByCommand(String command){
+        UmFormat getFormatByCommand(String command){
             UmFormat umFormat = null;
             for(UmFormat format: formatList){
                 if(format.getFormatCommand().equals(command)){
@@ -395,7 +406,7 @@ public class ContentEditorActivity extends UstadBaseActivity implements ContentE
          * Update content format status
          * @param umFormat updated content format
          */
-        public void updateFormat(UmFormat umFormat) {
+        void updateFormat(UmFormat umFormat) {
             for(UmFormat format: formatList){
                 if(format.getFormatCommand().equals(umFormat.getFormatCommand())){
                     int formatIndex = formatList.indexOf(format);
@@ -412,7 +423,7 @@ public class ContentEditorActivity extends UstadBaseActivity implements ContentE
          * @param activeFormat Directionality format to be activated
          * @return List of all formats
          */
-        public  List<UmFormat> getLanguageDirectionalityList(UmFormat activeFormat){
+        List<UmFormat> getLanguageDirectionalityList(UmFormat activeFormat){
             List<UmFormat> directionality = getFormatListByType(LANGUAGE_DIRECTIONALITY);
             for(UmFormat format: directionality){
                 if(activeFormat != null){
@@ -429,7 +440,7 @@ public class ContentEditorActivity extends UstadBaseActivity implements ContentE
          * @param activeFormat Font format to be activated
          * @return List of all fonts
          */
-        public  List<UmFormat> getFontList(UmFormat activeFormat){
+        List<UmFormat> getFontList(UmFormat activeFormat){
             List<UmFormat> fontList = getFormatListByType(FORMATTING_FONT_INDEX);
             for(UmFormat format: fontList){
                 if(activeFormat != null){
@@ -444,7 +455,7 @@ public class ContentEditorActivity extends UstadBaseActivity implements ContentE
          * Prevent all justification to be active at the same time, only one type at a time.
          * @param command current active justification command.
          */
-        public void updateOtherJustification(String command){
+        void updateOtherJustificationFormatState(String command){
             String mTag = "Justify";
             List<UmFormat> paragraphFormatList = getFormatListByType(FORMATTING_PARAGRAPH_INDEX);
             for(UmFormat format: paragraphFormatList){
@@ -461,7 +472,7 @@ public class ContentEditorActivity extends UstadBaseActivity implements ContentE
          * Prevent all list types to active at the same time, only one at a time.
          * @param command current active list type command.
          */
-        public void updateOtherListOrder(String command){
+        void updateOtherListFormatState(String command){
             String mTag = "List";
             List<UmFormat> listOrdersTypes = listOrderFormats();
             for(UmFormat format: listOrdersTypes){
@@ -484,7 +495,7 @@ public class ContentEditorActivity extends UstadBaseActivity implements ContentE
             return listOrders;
         }
 
-        public void setStateChangeListener(UmFormatStateChangeListener stateDispatcher){
+        void setStateChangeListener(UmFormatStateChangeListener stateDispatcher){
             if(dispatcherList != null){
                 dispatcherList.add(stateDispatcher);
             }
@@ -521,8 +532,6 @@ public class ContentEditorActivity extends UstadBaseActivity implements ContentE
                     && !command.equals(PARAGRAPH_FORMAT_INDENT_DECREASE)
                     && !command.equals(PARAGRAPH_FORMAT_INDENT_INCREASE);
         }
-
-
     }
 
 
@@ -561,7 +570,7 @@ public class ContentEditorActivity extends UstadBaseActivity implements ContentE
 
 
     /**
-     * Fragment to handle formatting type (Text formatting & Paragraph formatting)
+     * Fragment to handle bottom formatting type  UI (Text formatting & Paragraph formatting)
      */
     public static class FormattingFragment extends Fragment implements UmFormatStateChangeListener {
 
@@ -602,8 +611,8 @@ public class ContentEditorActivity extends UstadBaseActivity implements ContentE
                 mLayout.setOnClickListener(v -> {
                     if(!format.getFormatCommand().equals(TEXT_FORMAT_TYPE_FONT)){
                         changeState(mIcon,mLayout,true);
-                        umFormatHelper.updateOtherJustification(format.getFormatCommand());
-                        umFormatHelper.updateOtherListOrder(format.getFormatCommand());
+                        umFormatHelper.updateOtherJustificationFormatState(format.getFormatCommand());
+                        umFormatHelper.updateOtherListFormatState(format.getFormatCommand());
                         presenter.handleFormatTypeClicked(format.getFormatCommand(),null);
                         notifyDataSetChanged();
                     }else{
@@ -689,10 +698,10 @@ public class ContentEditorActivity extends UstadBaseActivity implements ContentE
         /**
          * Automatically gets number of rows to be displayed as per screen size
          * @param width Width of a single item
-         * @return number of columns
+         * @return number of columns which will fit the screen
          */
-        public int getSpanCount(@NonNull Integer width){
-            Display display = getActivity().getWindowManager().getDefaultDisplay();
+        int getSpanCount(@NonNull Integer width){
+            Display display = Objects.requireNonNull(getActivity()).getWindowManager().getDefaultDisplay();
             DisplayMetrics outMetrics = new DisplayMetrics();
             display.getMetrics(outMetrics);
             float density = getActivity().getResources().getDisplayMetrics().density;
@@ -700,9 +709,14 @@ public class ContentEditorActivity extends UstadBaseActivity implements ContentE
             return Math.round(dpWidth/width);
         }
 
-        public int dpToPx(int dp) {
+        /**
+         * Convert density pixel dimension to pixel
+         * @param dp dimension in density pixels
+         * @return Pixel dimension equivalent to the density pixels.
+         */
+        int dpToPx(int dp) {
             try{
-                Resources r = getActivity().getResources();
+                Resources r = Objects.requireNonNull(getActivity()).getResources();
                 return Math.round(TypedValue.applyDimension(TypedValue.COMPLEX_UNIT_DIP,
                         dp, r.getDisplayMetrics()));
             }catch (NullPointerException e){
@@ -750,7 +764,7 @@ public class ContentEditorActivity extends UstadBaseActivity implements ContentE
 
 
         displayWidth = getDisplayWidth();
-        viewSwitcher = EditorAnimatedViewSwitcher.getInstance()
+        viewSwitcher = UmEditorAnimatedViewSwitcher.getInstance()
                         .with(this,this)
                         .setViews(rootView, umEditorWebView,contentOptionsBottomSheetBehavior,
                                 formattingBottomSheetBehavior, mediaSourceBottomSheetBehavior,
@@ -798,14 +812,14 @@ public class ContentEditorActivity extends UstadBaseActivity implements ContentE
 
 
         findViewById(R.id.action_close_tab_formats).setOnClickListener(v ->
-            viewSwitcher.closeAnimatedView(EditorAnimatedViewSwitcher.ANIMATED_FORMATTING_PANEL));
+            viewSwitcher.closeAnimatedView(UmEditorAnimatedViewSwitcher.ANIMATED_FORMATTING_PANEL));
         findViewById(R.id.action_close_tab_multimedia_options).setOnClickListener(v ->
-            viewSwitcher.closeAnimatedView(EditorAnimatedViewSwitcher.ANIMATED_MEDIA_TYPE_PANEL));
+            viewSwitcher.closeAnimatedView(UmEditorAnimatedViewSwitcher.ANIMATED_MEDIA_TYPE_PANEL));
         findViewById(R.id.action_close_tab_content_options).setOnClickListener(v ->
             viewSwitcher.closeAnimatedView(ANIMATED_CONTENT_OPTION_PANEL));
 
         mFromDevice.setOnClickListener(v -> {
-            viewSwitcher.closeAnimatedView(EditorAnimatedViewSwitcher.ANIMATED_MEDIA_TYPE_PANEL);
+            viewSwitcher.closeAnimatedView(UmEditorAnimatedViewSwitcher.ANIMATED_MEDIA_TYPE_PANEL);
             startFileBrowser();
         });
 
@@ -820,7 +834,7 @@ public class ContentEditorActivity extends UstadBaseActivity implements ContentE
         });
 
         mFromCamera.setOnClickListener(v -> {
-            viewSwitcher.closeAnimatedView(EditorAnimatedViewSwitcher.ANIMATED_MEDIA_TYPE_PANEL);
+            viewSwitcher.closeAnimatedView(UmEditorAnimatedViewSwitcher.ANIMATED_MEDIA_TYPE_PANEL);
             if (ContextCompat.checkSelfPermission(getApplicationContext(),
                     Manifest.permission.CAMERA) != PackageManager.PERMISSION_GRANTED) {
                 ActivityCompat.requestPermissions(ContentEditorActivity.this,
@@ -834,7 +848,7 @@ public class ContentEditorActivity extends UstadBaseActivity implements ContentE
 
         mInsertMultimedia.setOnClickListener(v ->{
             isMultimediaFilePicker = true;
-            viewSwitcher.animateView(EditorAnimatedViewSwitcher.ANIMATED_MEDIA_TYPE_PANEL);
+            viewSwitcher.animateView(UmEditorAnimatedViewSwitcher.ANIMATED_MEDIA_TYPE_PANEL);
         });
 
         mInsertMultipleChoice.setOnClickListener(v ->{
@@ -863,9 +877,9 @@ public class ContentEditorActivity extends UstadBaseActivity implements ContentE
         webSettings.setJavaScriptEnabled(true);
         webSettings.setAllowFileAccess(true);
         webSettings.setRenderPriority(WebSettings.RenderPriority.HIGH);
-        umEditorWebView.setWebChromeClient(new WebContentEditorChrome(this));
+        umEditorWebView.setWebChromeClient(new UmWebContentEditorChromeClient(this));
         umEditorWebView.addJavascriptInterface(
-                new WebContentEditorInterface(this,this),"UmContentEditor");
+                new UmWebContentEditorInterface(this,this),"UmContentEditor");
         umEditorWebView.setLayerType(View.LAYER_TYPE_HARDWARE, null);
         presenter.handleContentEntryFileStatus();
 
@@ -889,7 +903,7 @@ public class ContentEditorActivity extends UstadBaseActivity implements ContentE
     @Override
     public void onCallbackReceived(String value) {
         if(value.contains("action")){
-            WebJsResponse callback = new Gson().fromJson(value,WebJsResponse.class);
+            UmWebJsResponse callback = new Gson().fromJson(value,UmWebJsResponse.class);
             processJsCallLogValues(callback);
         }
     }
@@ -930,7 +944,7 @@ public class ContentEditorActivity extends UstadBaseActivity implements ContentE
      * Process values returned from JS calls
      * @param callback object returned
      */
-    private void processJsCallLogValues(WebJsResponse callback){
+    private void processJsCallLogValues(UmWebJsResponse callback){
 
         String content = Base64Coder.decodeString(callback.getContent());
 
@@ -967,8 +981,8 @@ public class ContentEditorActivity extends UstadBaseActivity implements ContentE
             //Callback received upon completion of all controls status check
             case ACTION_CONTROLS_ACTIVATED:
                 Gson gson = new Gson();
-                CommandStatus [] statuses = gson.fromJson(content,CommandStatus[].class);
-                for(CommandStatus status: statuses){
+                UmFormatState[] statuses = gson.fromJson(content,UmFormatState[].class);
+                for(UmFormatState status: statuses){
                     UmFormat format = umFormatHelper.getFormatByCommand(status.getCommand());
                     if(format != null){
                         format.setActive(status.isActive());
@@ -1107,7 +1121,7 @@ public class ContentEditorActivity extends UstadBaseActivity implements ContentE
 
         }else if(itemId == R.id.content_action_format){
 
-            viewSwitcher.animateView(EditorAnimatedViewSwitcher.ANIMATED_FORMATTING_PANEL);
+            viewSwitcher.animateView(UmEditorAnimatedViewSwitcher.ANIMATED_FORMATTING_PANEL);
 
         }else if(itemId == R.id.content_action_preview){
             openPreview = true;
@@ -1133,7 +1147,7 @@ public class ContentEditorActivity extends UstadBaseActivity implements ContentE
             popUpView.showWithListener(format -> {
                 presenter.handleFormatTypeClicked(format.getFormatCommand(),null);
                 popUpView.setMenuList(umFormatHelper.getLanguageDirectionalityList(format));
-                UmFormat toolBarAction = umFormatHelper.getFormatById(itemId,ACTIONS_TOOLBAR_INDEX);
+                UmFormat toolBarAction = umFormatHelper.getFormatById(itemId);
                 if(toolBarAction != null){
                     toolBarAction.setFormatIcon(format.getFormatIcon());
                     toolbar.updateMenu(toolBarAction);
@@ -1143,12 +1157,243 @@ public class ContentEditorActivity extends UstadBaseActivity implements ContentE
         }
     }
 
-
     /**
      * Show /Hide quick action menus on top of the keyboard
      */
     private void handleQuickActions(){
         umBottomToolbarHolder.setVisibility(isEditorInitialized ? View.VISIBLE:View.GONE);
+    }
+
+
+    /**
+     * Show or hide the blank document placeholder view
+     */
+    private void handleBlankDocumentView(){
+        handleWebViewMargin();
+        blankDocumentContainer.setVisibility(isDocumentEmpty() ? View.VISIBLE:View.GONE);
+    }
+
+    /**
+     * Get base index.html file reference
+     * @return Index.html file location
+     */
+    private Document getIndexDocument(){
+        try {
+            File indexFile = new File(umEditorFileHelper.getDestinationDirPath(),INDEX_FILE);
+            return  Jsoup.parse(UMFileUtil.readTextFile(indexFile.getAbsolutePath()));
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+        return  null;
+    }
+
+    /**
+     * Check if the document is empty, this helps to showWithListener the empty document placeholder view
+     * @return True if the document is empty otherwise false.
+     */
+    private boolean isDocumentEmpty(){
+        Document indexFile = getIndexDocument();
+        Elements innerContent = indexFile.select("#"+EDITOR_BASE_DIR_NAME);
+        return innerContent.html().length() <= 0;
+    }
+
+
+    /**
+     * Open device default file explorer for user to pick file
+     */
+    private void startFileBrowser(){
+        String[] mimeTypes = {"image/*","video/*","audio/*"};
+        Intent intent = new Intent(Intent.ACTION_GET_CONTENT);
+        intent.addCategory(Intent.CATEGORY_OPENABLE);
+
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.KITKAT) {
+            intent.setType("*/*");
+            intent.putExtra(Intent.EXTRA_MIME_TYPES, mimeTypes);
+        } else {
+            StringBuilder mimeTypesStr = new StringBuilder();
+            for (String mimeType : mimeTypes) {
+                mimeTypesStr.append(mimeType).append("|");
+            }
+            intent.setType(mimeTypesStr.substring(0,mimeTypesStr.length() - 1));
+        }
+        startActivityForResult(Intent.createChooser(intent,
+                UstadMobileSystemImpl.getInstance().getString(
+                        MessageID.content_choose_file,this)), FILE_BROWSING_REQUEST);
+    }
+
+    /**
+     * Open camera ans start acquire media content
+     * @param isImage True if media is of image type otherwise video.
+     */
+    private void startCameraIntent(boolean isImage){
+        String imageId = String.valueOf(System.currentTimeMillis());
+        Intent cameraIntent = new Intent(isImage ?
+                android.provider.MediaStore.ACTION_IMAGE_CAPTURE:MediaStore.ACTION_VIDEO_CAPTURE);
+        cameraIntent.putExtra(MediaStore.EXTRA_VIDEO_QUALITY,1);
+        File dir = Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_DCIM);
+        fileFromCamera = new File(dir,imageId+ (isImage ? "_image.png":"_video.mp4"));
+        cameraMedia = FileProvider.getUriForFile(this,
+                getPackageName()+".fileprovider", fileFromCamera);
+        cameraIntent.putExtra(MediaStore.EXTRA_OUTPUT,cameraMedia);
+        startActivityForResult(cameraIntent, CAMERA_IMAGE_CAPTURE_REQUEST);
+
+    }
+
+    /**
+     * Handle choice between video and image from the camera.
+     */
+    private void showMediaTypeDialog(){
+        UstadMobileSystemImpl impl = UstadMobileSystemImpl.getInstance();
+        AlertDialog.Builder builder = new AlertDialog.Builder(this);
+        builder.setTitle(impl.getString(MessageID.content_media_title,this));
+        builder.setMessage(impl.getString(MessageID.content_media_message,this));
+        builder.setPositiveButton(impl.getString(MessageID.content_media_photo,this),
+                (dialog, which) -> startCameraIntent(true));
+        builder.setNegativeButton(impl.getString(MessageID.content_media_video,this),
+                (dialog, which) -> startCameraIntent(false));
+        builder.show();
+    }
+
+    private int getDisplayWidth(){
+        Display display = this.getWindowManager().getDefaultDisplay();
+        DisplayMetrics outMetrics = new DisplayMetrics();
+        display.getMetrics(outMetrics);
+        float density = getResources().getDisplayMetrics().density;
+        return Math.round(outMetrics.widthPixels / density);
+    }
+
+
+    /**
+     * Change toolbar navigation icon based on editor state
+     */
+    private void handleBackNavigationIcon(){
+        toolbar.setNavigationIcon(isEditorInitialized ?
+                R.drawable.ic_done_white_24dp: R.drawable.ic_arrow_back_white_24dp);
+    }
+
+    /**
+     * Handle clipboard action completion
+     */
+    private void handleClipBoardContentChanges(){
+        ClipboardManager clipboard =
+                (ClipboardManager) this.getSystemService(Context.CLIPBOARD_SERVICE);
+        assert clipboard != null;
+        clipboard.addPrimaryClipChangedListener(() ->
+                viewSwitcher.closeAnimatedView(UmEditorAnimatedViewSwitcher.ANIMATED_FORMATTING_PANEL));
+    }
+
+
+    /**
+     * Set bottom margin dynamically to the WebView to make sure it starts on top of the quick
+     * action menus when editing mode is ON
+     */
+    private void handleWebViewMargin(){
+        TypedArray attrs = getTheme().obtainStyledAttributes(
+                new int[] { android.R.attr.actionBarSize });
+        int actionBarSize = (int) attrs.getDimension(0, 0);
+        attrs.recycle();
+        float marginBottomValue = isEditorInitialized ?  (actionBarSize+8):0;
+        ViewGroup.MarginLayoutParams params = (ViewGroup.MarginLayoutParams)
+                findViewById(R.id.umEditorHolder).getLayoutParams();
+        params.bottomMargin = (int) marginBottomValue;
+
+    }
+
+    /**
+     * Inject tinymce to the currently loaded page
+     */
+    private void initializeEditor(){
+        executeJsFunction(umEditorWebView, EDITOR_METHOD_PREFIX+"initEditor",
+                ContentEditorActivity.this, (String[]) null);
+    }
+
+    /**
+     * Process editor state after handling all the unused files and zip file update
+     */
+    private void postProcessEditor(){
+        runOnUiThread(() -> {
+            if(openPreview){
+                openPreview = false;
+                isActivityActive = false;
+                args.put(ContentEditorView.EDITOR_REQUEST_URI,
+                        umEditorFileHelper.getBaseResourceRequestUrl());
+                UstadMobileSystemImpl.getInstance().go(ContentPreviewView.VIEW_NAME,
+                        args,getApplicationContext());
+            }else{
+                if(isEditorInitialized){
+                    isEditorInitialized = false;
+                    isEditorPreview = true;
+                    handleBackNavigationIcon();
+                    invalidateOptionsMenu();
+                    handleQuickActions();
+                    viewSwitcher.closeAnimatedView(ANIMATED_SOFT_KEYBOARD_PANEL);
+                    startEditing.setVisibility(View.VISIBLE);
+                    loadIndexFile();
+                }else{
+                    if(deleteTempDir(new File(umEditorFileHelper.getDestinationDirPath()))){
+                        finish();
+                    }
+                }
+            }
+        });
+    }
+
+    /**
+     * Insert media file to the editor
+     * @param uri Uri of the file to be inserted
+     * @param fromCamera Flag to indicate if the file was created from the camera
+     * @throws IOException Exception thrown when something is wrong
+     */
+    private void insertMedia(Uri uri, boolean fromCamera) throws IOException {
+        progressDialog.setVisibility(View.VISIBLE);
+        String mimeType = UmAndroidUriUtil.getMimeType(this,uri);
+        File sourceFile;
+        File compressedFile;
+        if(fromCamera){
+            sourceFile = fileFromCamera;
+        }else{
+            sourceFile = new File(Objects.requireNonNull(UmAndroidUriUtil.getPath(this, uri)));
+        }
+        if(mimeType.contains("image")){
+            compressedFile = new Compressor(this)
+                    .setQuality(75)
+                    .setCompressFormat(Bitmap.CompressFormat.WEBP)
+                    .compressToFile(sourceFile);
+        }else{
+            compressedFile = sourceFile;
+        }
+
+        File destination = new File(umEditorFileHelper.getDestinationMediaDirPath(),
+                compressedFile.getName().replaceAll("\\s+","_"));
+        UMFileUtil.copyFile(new FileInputStream(compressedFile),destination);
+        String source = MEDIA_DIRECTORY + destination.getName();
+        progressDialog.setVisibility(View.GONE);
+        executeJsFunction(umEditorWebView, EDITOR_METHOD_PREFIX+"insertMediaContent",
+                this, source,mimeType);
+    }
+
+    /**
+     * Delete temporary direction in which zip was mounted
+     * @param dir File directory.
+     * @return true if the directory was deleted successfully otherwise false
+     */
+    private boolean deleteTempDir(File dir) {
+        File[] files = dir.listFiles();
+        boolean success = true;
+        if (files != null) {
+            for (File file : files) {
+                if (file.isDirectory()) {
+                    success &= deleteTempDir(file);
+                }
+                if (!file.delete()) {
+                    success = false;
+                }
+            }
+        }
+        if(dir.exists()){
+            success = dir.delete();
+        }
+        return success;
     }
 
 
@@ -1302,7 +1547,7 @@ public class ContentEditorActivity extends UstadBaseActivity implements ContentE
 
     @Override
     public void loadIndexFile() {
-        umEditorWebView.setWebViewClient(new WebContentEditorClient(this));
+        umEditorWebView.setWebViewClient(new UmWebContentEditorClient(this));
         args.put(ContentEditorView.EDITOR_PREVIEW_PATH, UMFileUtil.joinPaths(
                 umEditorFileHelper.getMountedTempDirRequestUrl(),INDEX_FILE));
         String urlToLoad = UMFileUtil.joinPaths(umEditorFileHelper.getMountedTempDirRequestUrl(),
@@ -1313,232 +1558,6 @@ public class ContentEditorActivity extends UstadBaseActivity implements ContentE
         handleBlankDocumentView();
     }
 
-
-    /**
-     * Show or hide the blank document placeholder view
-     */
-    private void handleBlankDocumentView(){
-        handleWebViewMargin();
-        blankDocumentContainer.setVisibility(isDocumentEmpty() ? View.VISIBLE:View.GONE);
-    }
-
-    /**
-     * Get base index.html file reference
-     * @return Index.html file location
-     */
-    private Document getIndexDocument(){
-        try {
-            File indexFile = new File(umEditorFileHelper.getDestinationDirPath(),INDEX_FILE);
-            return  Jsoup.parse(UMFileUtil.readTextFile(indexFile.getAbsolutePath()));
-        } catch (IOException e) {
-            e.printStackTrace();
-        }
-        return  null;
-    }
-
-    /**
-     * Check if the document is empty, this helps to showWithListener the empty document placeholder view
-     * @return True if the document is empty otherwise false.
-     */
-    private boolean isDocumentEmpty(){
-        Document indexFile = getIndexDocument();
-        Elements innerContent = indexFile.select("#"+EDITOR_BASE_DIR_NAME);
-        return innerContent.html().length() <= 0;
-    }
-
-
-    /**
-     * Open device default file explorer for user to pick file
-     */
-    private void startFileBrowser(){
-        String[] mimeTypes = {"image/*","video/*","audio/*"};
-        Intent intent = new Intent(Intent.ACTION_GET_CONTENT);
-        intent.addCategory(Intent.CATEGORY_OPENABLE);
-
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.KITKAT) {
-            intent.setType("*/*");
-            intent.putExtra(Intent.EXTRA_MIME_TYPES, mimeTypes);
-        } else {
-            StringBuilder mimeTypesStr = new StringBuilder();
-            for (String mimeType : mimeTypes) {
-                mimeTypesStr.append(mimeType).append("|");
-            }
-            intent.setType(mimeTypesStr.substring(0,mimeTypesStr.length() - 1));
-        }
-        startActivityForResult(Intent.createChooser(intent,
-                UstadMobileSystemImpl.getInstance().getString(
-                        MessageID.content_choose_file,this)), FILE_BROWSING_REQUEST);
-    }
-
-    /**
-     * Open camera ans start acquire media content
-     * @param isImage True if media is of image type otherwise video.
-     */
-    private void startCameraIntent(boolean isImage){
-        String imageId = String.valueOf(System.currentTimeMillis());
-        Intent cameraIntent = new Intent(isImage ?
-                android.provider.MediaStore.ACTION_IMAGE_CAPTURE:MediaStore.ACTION_VIDEO_CAPTURE);
-        cameraIntent.putExtra(MediaStore.EXTRA_VIDEO_QUALITY,1);
-        File dir = Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_DCIM);
-        fileFromCamera = new File(dir,imageId+ (isImage ? "_image.png":"_video.mp4"));
-        cameraMedia = FileProvider.getUriForFile(this,
-                getPackageName()+".fileprovider", fileFromCamera);
-        cameraIntent.putExtra(MediaStore.EXTRA_OUTPUT,cameraMedia);
-        startActivityForResult(cameraIntent, CAMERA_IMAGE_CAPTURE_REQUEST);
-
-    }
-
-    /**
-     * Handle choice between video and image from the camera.
-     */
-    private void showMediaTypeDialog(){
-        UstadMobileSystemImpl impl = UstadMobileSystemImpl.getInstance();
-        AlertDialog.Builder builder = new AlertDialog.Builder(this);
-        builder.setTitle(impl.getString(MessageID.content_media_title,this));
-        builder.setMessage(impl.getString(MessageID.content_media_message,this));
-        builder.setPositiveButton(impl.getString(MessageID.content_media_photo,this),
-                (dialog, which) -> startCameraIntent(true));
-        builder.setNegativeButton(impl.getString(MessageID.content_media_video,this),
-                (dialog, which) -> startCameraIntent(false));
-        builder.show();
-    }
-
-    private int getDisplayWidth(){
-        Display display = this.getWindowManager().getDefaultDisplay();
-        DisplayMetrics outMetrics = new DisplayMetrics();
-        display.getMetrics(outMetrics);
-        float density = getResources().getDisplayMetrics().density;
-        return Math.round(outMetrics.widthPixels / density);
-    }
-
-
-    /**
-     * Change toolbar navigation icon based on editor state
-     */
-    private void handleBackNavigationIcon(){
-        toolbar.setNavigationIcon(isEditorInitialized ?
-                R.drawable.ic_done_white_24dp: R.drawable.ic_arrow_back_white_24dp);
-    }
-
-    /**
-     * Handle clipboard action completion
-     */
-    private void handleClipBoardContentChanges(){
-        ClipboardManager clipboard =
-                (ClipboardManager) this.getSystemService(Context.CLIPBOARD_SERVICE);
-        assert clipboard != null;
-        clipboard.addPrimaryClipChangedListener(() ->
-        viewSwitcher.closeAnimatedView(EditorAnimatedViewSwitcher.ANIMATED_FORMATTING_PANEL));
-    }
-
-
-    /**
-     * Set bottom margin dynamically to the WebView to make sure when editing mode is ON,
-     * WebView goes above quick actions toolbar.
-     */
-    private void handleWebViewMargin(){
-        TypedArray attrs = getTheme().obtainStyledAttributes(
-                new int[] { android.R.attr.actionBarSize });
-        int actionBarSize = (int) attrs.getDimension(0, 0);
-        attrs.recycle();
-        float marginBottomValue = isEditorInitialized ?  (actionBarSize+8):0;
-        ViewGroup.MarginLayoutParams params = (ViewGroup.MarginLayoutParams)
-                findViewById(R.id.umEditorHolder).getLayoutParams();
-        params.bottomMargin = (int) marginBottomValue;
-
-    }
-
-    /**
-     * Inject tinymce to the currently loaded page
-     */
-    private void initializeEditor(){
-        executeJsFunction(umEditorWebView, EDITOR_METHOD_PREFIX+"initEditor",
-                ContentEditorActivity.this, (String[]) null);
-    }
-
-    /**
-     * Process editor state after handling all the unused files and zip file update
-     */
-    private void postProcessEditor(){
-        runOnUiThread(() -> {
-            if(openPreview){
-                openPreview = false;
-                isActivityActive = false;
-                args.put(ContentEditorView.EDITOR_REQUEST_URI,
-                        umEditorFileHelper.getBaseResourceRequestUrl());
-                UstadMobileSystemImpl.getInstance().go(ContentPreviewView.VIEW_NAME,
-                        args,getApplicationContext());
-            }else{
-                if(isEditorInitialized){
-                    isEditorInitialized = false;
-                    isEditorPreview = true;
-                    handleBackNavigationIcon();
-                    invalidateOptionsMenu();
-                    handleQuickActions();
-                    viewSwitcher.closeAnimatedView(ANIMATED_SOFT_KEYBOARD_PANEL);
-                    startEditing.setVisibility(View.VISIBLE);
-                    loadIndexFile();
-                }else{
-                    if(deleteTempDir(new File(umEditorFileHelper.getDestinationDirPath()))){
-                        finish();
-                    }
-                }
-            }
-        });
-    }
-
-    /**
-     * Insert media file to the editor
-     * @param uri Uri of the file to be inserted
-     * @param fromCamera Flag to indicate if the file was created from the camera
-     * @throws IOException Exception thrown when something is wrong
-     */
-    private void insertMedia(Uri uri, boolean fromCamera) throws IOException {
-        progressDialog.setVisibility(View.VISIBLE);
-        String mimeType = UmAndroidUriUtil.getMimeType(this,uri);
-        File sourceFile;
-        File compressedFile;
-        if(fromCamera){
-            sourceFile = fileFromCamera;
-        }else{
-            sourceFile = new File(Objects.requireNonNull(UmAndroidUriUtil.getPath(this, uri)));
-        }
-        if(mimeType.contains("image")){
-            compressedFile = new Compressor(this)
-                    .setQuality(75)
-                    .setCompressFormat(Bitmap.CompressFormat.WEBP)
-                    .compressToFile(sourceFile);
-        }else{
-            compressedFile = sourceFile;
-        }
-
-        File destination = new File(umEditorFileHelper.getDestinationMediaDirPath(),
-                compressedFile.getName().replaceAll("\\s+","_"));
-        UMFileUtil.copyFile(new FileInputStream(compressedFile),destination);
-        String source = MEDIA_DIRECTORY + destination.getName();
-        progressDialog.setVisibility(View.GONE);
-        executeJsFunction(umEditorWebView, EDITOR_METHOD_PREFIX+"insertMediaContent",
-                this, source,mimeType);
-    }
-
-    private boolean deleteTempDir(File dir) {
-        File[] files = dir.listFiles();
-        boolean success = true;
-        if (files != null) {
-            for (File file : files) {
-                if (file.isDirectory()) {
-                    success &= deleteTempDir(file);
-                }
-                if (!file.delete()) {
-                    success = false;
-                }
-            }
-        }
-        if(dir.exists()){
-            success = dir.delete();
-        }
-        return success;
-    }
 
 
     @VisibleForTesting

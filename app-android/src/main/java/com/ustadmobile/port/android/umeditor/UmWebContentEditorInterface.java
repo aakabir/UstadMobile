@@ -1,4 +1,4 @@
-package com.ustadmobile.port.android.contenteditor;
+package com.ustadmobile.port.android.umeditor;
 
 import android.app.Activity;
 import android.webkit.JavascriptInterface;
@@ -17,15 +17,15 @@ import android.webkit.JavascriptInterface;
  * @author kileha3
  *
  */
-public class WebContentEditorInterface {
+public class UmWebContentEditorInterface {
 
-    private WebContentEditorChrome.JsLoadingCallback callback;
+    private UmWebContentEditorChromeClient.JsLoadingCallback callback;
 
     private Activity activity;
 
     /** Instantiate the interface and set the context */
-    public WebContentEditorInterface(Activity activity,
-                                     WebContentEditorChrome.JsLoadingCallback callback) {
+    public UmWebContentEditorInterface(Activity activity,
+                                       UmWebContentEditorChromeClient.JsLoadingCallback callback) {
         this.callback = callback;
         this.activity = activity;
     }

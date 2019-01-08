@@ -22,7 +22,7 @@
             android:layout_width="match_parent"
             android:layout_height="match_parent">
             <!-- Main content -->
-            <com.ustadmobile.port.android.contenteditor.UmEditorWebView
+            <com.ustadmobile.port.android.umeditor.UmEditorWebView
                 android:id="@+id/editor_content"
                 android:layout_marginTop="?actionBarSize"
                 android:layout_width="match_parent"
@@ -132,7 +132,7 @@
             android:layout_width="match_parent"
             android:layout_gravity="bottom"
             android:layout_height="wrap_content">
-            <com.ustadmobile.port.android.contenteditor.UmEditorActionView
+            <com.ustadmobile.port.android.umeditor.UmEditorActionView
                 android:layout_marginRight="14dp"
                 android:id="@+id/um_toolbar_bottom"
                 app:contentInsetLeft="0dp"
