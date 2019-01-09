@@ -409,13 +409,13 @@ UmContentEditorCore.prototype.checkActivatedControls = () => {
 /**
  * Prepare and Insert question template on the editor
  * @param questionTypeIndex index of the question type in the list.
- * @param isTestRequest Flag to indicate if the request came from test execution
+ * @param isTest Flag to indicate if executed from test environment
  */
-UmContentEditorCore.prototype.insertQuestionTemplate = (questionTypeIndex,isTestRequest = false) => {
+UmContentEditorCore.prototype.insertQuestionTemplate = (questionTypeIndex,isTest = false) => {
     const questionTemplateList = ['template-qn-multiple-choice.html','template-qn-fill-the-blanks.html'];
     const nextQuestionId = UmQuestionWidget.QUESTION_ID_TAG+UmQuestionWidget.getNextUniqueId();
     const nextChoiceId = UmQuestionWidget.CHOICE_ID_TAG+UmQuestionWidget.getNextUniqueId();
-    const templateUrl = (isTestRequest ? "/umEditor/":"")+ questionTemplatesDir+questionTemplateList[questionTypeIndex];
+    const templateUrl = (isTest ? "/"+window.location.pathname.split("/")[1]+"/":"")+ questionTemplatesDir+questionTemplateList[questionTypeIndex];
     $.ajax({url: templateUrl, success: (templateHtmlContent) => {
             let questionNode = $(templateHtmlContent).attr("id",nextQuestionId);
             $(questionNode).find(".question-choice").attr("id",nextChoiceId);
@@ -524,73 +524,81 @@ UmContentEditorCore.prototype.insertQuestionNodeContent = (questionNode,isFromCl
  *
  * Since the entire body will be editable, there is no easy way to move cursor to the next focusable element
  * (all elements are focusable).Instead we have to tell the cursor where to go.
+ * @returns next focusable element (For testing purpose since we can't emit keyboard events);
  */
 UmContentEditorCore.setFocusToNextUnprotectedFocusableElement = (eventTargetElement) => {
-    let elementToFocus = null;
-    try {
-        if ($(eventTargetElement).is("label") || $(eventTargetElement).is("button") || $(eventTargetElement).hasClass("close")
-            || $(eventTargetElement).hasClass("question") || $(eventTargetElement).hasClass("question-retry-option")
-            || $(eventTargetElement).is("img") || $(eventTargetElement).hasClass("question-retry-holder")
-            || $(eventTargetElement).hasClass("input-group") || $(eventTargetElement).hasClass("question-action-holder")) {
-
-            const labelText = $(eventTargetElement).text();
-            const questionRoot = $(eventTargetElement).closest("div .question");
-            const questionElement = $(questionRoot).children();
-            const questionType = $(questionRoot).attr("data-um-widget");
-            if (labelText === UmQuestionWidget.PLACEHOLDERS_LABELS.labelForQuestionBodyText
-                || $(eventTargetElement).hasClass("question-action-holder")) {
-                elementToFocus = questionElement.get(3);
-            } else if (labelText === UmQuestionWidget.PLACEHOLDERS_LABELS.labelForFillTheBlanksPromptInput ||
-                labelText === UmQuestionWidget.PLACEHOLDERS_LABELS.labelForFillTheBlanksAnswerBodyText) {
-                elementToFocus = $(questionElement.get(5)).children().get(1);
-            } else if (labelText === UmQuestionWidget.PLACEHOLDERS_LABELS.labelForQuestionRightFeedbackText) {
-                elementToFocus = $(questionElement.get(5)).children().get(3);
-            } else if (labelText === UmQuestionWidget.PLACEHOLDERS_LABELS.labelForQuestionWrongFeedbackText) {
-                elementToFocus = $(questionElement.get(5)).children().get(5);
-            } else if (labelText === UmQuestionWidget.PLACEHOLDERS_LABELS.labelForQuestionRetryOption) {
-                if (questionType === UmQuestionWidget.WIDGET_NAME_MULTICHOICE) {
-                    elementToFocus = $(questionElement.get(questionElement.length - 4)).children().get(3);
-                } else {
-                    elementToFocus = $(questionElement.get(questionElement.length - 3)).children().get(5);
-                }
-            } else if (labelText === UmQuestionWidget.PLACEHOLDERS_LABELS.labelForCheckAnswerInputPromptBtn) {
-                elementToFocus = $(questionElement.get(5)).children().get(2);
-            } else if (labelText === UmQuestionWidget.PLACEHOLDERS_LABELS.labelForChoiceBodyText) {
-                elementToFocus = $(eventTargetElement).next().get(0);
-            } else if (labelText === UmQuestionWidget.PLACEHOLDERS_LABELS.labelForFeedbackBodyText) {
-                elementToFocus = $(eventTargetElement).next().get(0);
-            } else if (labelText === UmQuestionWidget.PLACEHOLDERS_LABELS.labelForRightAnswerOption) {
-                elementToFocus = $(eventTargetElement).prev().get(0);
-            } else if ($(eventTargetElement).hasClass("add-choice") || $(eventTargetElement).hasClass("img-delete-inner")) {
-                setTimeout(function () {
-                    const questionChoices = $(questionRoot).find(".question-choice");
-                    if (questionChoices && questionChoices.length > 0) {
-                        elementToFocus = $(questionChoices.get(questionChoices.length - 1)).children().get(3);
-                    } else {
-                        elementToFocus = questionElement.get(3);
-                    }
-                    UmContentEditorCore.prototype.setCursorToAnyNonProtectedFucusableElement(elementToFocus);
-                    UmContentEditorCore.prototype.scrollToElement(elementToFocus);
-                }, 200);
-            } else if ($(eventTargetElement).hasClass("img-delete") || $(eventTargetElement).hasClass("question") || $(eventTargetElement).hasClass("input-group")) {
-                elementToFocus = $(questionElement.get(3)).children().get(0);
-            } else if ($(eventTargetElement).hasClass("question-retry-option") || $(eventTargetElement).hasClass("question-retry-holder")) {
-                if (questionType === UmQuestionWidget.WIDGET_NAME_MULTICHOICE) {
-                    elementToFocus = $(questionElement).children().get(6);
-                } else {
-                    elementToFocus = $(questionElement.get(5)).children().get(8);
-                }
-            }
-            if (elementToFocus && !$(elementToFocus).hasClass("question")) {
-                UmContentEditorCore.prototype.setCursorToAnyNonProtectedFucusableElement(elementToFocus);
-            }
-        }
-    }catch (e) {
-        console.log(e);
+    const nextElementFocusSelector = "p:not(.immutable-content)";
+    //check if event came from question action holder.
+    eventTargetElement = $(eventTargetElement).is(".question-action-holder") ?
+     $(eventTargetElement).next():eventTargetElement;
+    let nextFocusableElement = UmContentEditorCore.prototype.getNextElementMatchingSelector(eventTargetElement,nextElementFocusSelector);
+    //If walking didn't find a node matching selector, start traversing
+    if(!nextFocusableElement){
+        nextFocusableElement = UmContentEditorCore.prototype.getPrevElementMatchingSelector(eventTargetElement,nextElementFocusSelector);
     }
 
-    return $(elementToFocus).children().get(0);
+    UmContentEditorCore.prototype.setCursorToAnyNonProtectedFucusableElement(nextFocusableElement);
+    return nextFocusableElement;
 };
+
+/**
+ * Walk dom tree to find the next focusable element
+ * @param currentNode Event targeted node
+ * @param selector css selector which satisfies next focusable element 
+ */
+UmContentEditorCore.prototype.getNextElementMatchingSelector = (currentNode,selector) => {
+  if($(currentNode).is(selector)){
+      return currentNode;
+  }else{
+      if($(currentNode).children().length > 0){
+        $(currentNode).children().each(function(index,childNode){
+            currentNode = childNode;
+            if($(currentNode).is("select")){
+                currentNode = null;
+                return false;
+            }
+            currentNode = UmContentEditorCore.prototype.getNextElementMatchingSelector(currentNode,selector);
+            return !$(currentNode).is(selector);
+        });
+      }else {
+          currentNode = $(currentNode).next();
+          currentNode = UmContentEditorCore.prototype.getNextElementMatchingSelector(currentNode,selector);
+      }
+  }
+  return currentNode;
+};
+
+/**
+ * Traverse through to find the next focusable element
+ * @param currentNode Event targeted node
+ * @param selector css selector which satisfies next focusable element 
+ */
+UmContentEditorCore.prototype.getPrevElementMatchingSelector = (currentNode,selector) => {
+    const targetNode = currentNode;
+    currentNode = $(targetNode).prev();
+    const prevElementSelector = ":not(.question-feedback-container), :not(.question-choice-answer)";
+    if($(currentNode).is(selector)){
+        return currentNode;
+    }else{
+        if($(currentNode).children().length > 0 && $(currentNode).is(prevElementSelector)){
+            $(currentNode).children().each(function(index,childNode){
+                currentNode = childNode;
+                const foundNode = UmContentEditorCore.prototype.getNextElementMatchingSelector(currentNode,selector);
+                if(!foundNode){
+                    currentNode = UmContentEditorCore.prototype.getPrevElementMatchingSelector(currentNode,selector,true);
+                }
+                return !$(currentNode).is(selector);
+            });
+        }else {
+            currentNode = currentNode.length > 0 ? $(currentNode).prev():$(targetNode).closest("div").prev();
+            currentNode = UmContentEditorCore.prototype.getPrevElementMatchingSelector(currentNode,selector);
+        }
+    }
+    return $(currentNode).is(".question-choice-feedback-wrong") ? $($(currentNode).children()).first().get(0):currentNode;
+  };
+
+
+
 
 /**
  * Set cursor to the last non protected and focusable element in the editor.
@@ -669,15 +677,6 @@ UmContentEditorCore.prototype.allowKeyboardKey = (event) => {
     return false;
 };
 
-/**
- * Set default language locale on UmEditor
- */
-UmContentEditorCore.prototype.setLanguageLocale = (locale,isTest) => {
-    const localeFileUrl = (isTest ? "/umEditor/":"")+ languageLocaleDir+"locale."+locale+".json";
-    $.ajax({url: localeFileUrl, success: (localeFileContent) => {
-        UmQuestionWidget.PLACEHOLDERS_LABELS = JSON.parse(localeFileContent);
-    },error:() => {UmContentEditorCore.prototype.setLanguageLocale("en",isTest);}});
-};
 
 /**
  * Check if the current action is worth taking place
@@ -690,7 +689,7 @@ UmContentEditorCore.prototype.setLanguageLocale = (locale,isTest) => {
  * @returns {boolean} True is the action should take place otherwise false.
  */
 UmContentEditorCore.checkProtectedElements = (activeNode,selectedContentLength,currentSelectionIsProtected,deleteKeys, e) => {
-    UmContentEditorCore.setFocusToNextUnprotectedFocusableElement(activeNode);
+    //UmContentEditorCore.setFocusToNextUnprotectedFocusableElement(activeNode);
     if(selectedContentLength > 0 || deleteKeys){
         const isLabel = $(activeNode).hasClass("um-labels");
         const isDeleteQuestionBtn = $(activeNode).hasClass("close");
@@ -725,7 +724,7 @@ UmContentEditorCore.checkProtectedElements = (activeNode,selectedContentLength,c
             isChoiceSelector || isInputGroup || (preventEditorDiv && deleteKeys))||
             currentSelectionIsProtected || isProtectedElement || isLabel || isDiv;
 
-        UmContentEditorCore.setFocusToNextUnprotectedFocusableElement(activeNode);
+        //UmContentEditorCore.setFocusToNextUnprotectedFocusableElement(activeNode);
         const hasQuestions = $("#umEditor").find(".question").length > 0;
         const isBelowQuestion = $($($(activeNode).parent()).prev()).hasClass("question");
         const isNotBelowQuestion = $($($(activeNode).parent()).prev()).hasClass("extra-content");
@@ -743,6 +742,12 @@ UmContentEditorCore.checkProtectedElements = (activeNode,selectedContentLength,c
 };
 
 
+UmContentEditorCore.preventDefaultAndStopPropagation = (activeNode, isDeleteKey) =>  {
+    const doNotRemoveSelector = ".dont-remove, .dont-remove p:first-of-type, .immutable-content, " +
+        ".question + .extra-content, .question + .extra-content p:first-of-type";
+};
+
+
 /**
  * Initialize tinymce editor to the document element
  * @param umConfig editor configuration object
@@ -752,7 +757,7 @@ UmContentEditorCore.checkProtectedElements = (activeNode,selectedContentLength,c
  * toolbar => Flag to show and hide default tinymce toolbar
  */
 UmContentEditorCore.initEditor = (umConfig) => {
-    UmContentEditorCore.prototype.setLanguageLocale(umConfig && umConfig.locale ? umConfig.locale:"en"
+    UmQuestionWidget.loadPlaceholders(umConfig && umConfig.locale ? umConfig.locale:"en"
         ,umConfig && umConfig.test ? umConfig.test:false);
     let showToolbar = umConfig && umConfig.toolbar ? umConfig.toolbar:false;
     const configs = {
@@ -796,7 +801,8 @@ UmContentEditorCore.initEditor = (umConfig) => {
              * @type {[type]}
              */
 
-            ed.on('SelectionChange', () => {
+            ed.on('SelectionChange', (e) => {
+                UmContentEditorCore.setFocusToNextUnprotectedFocusableElement(tinymce.activeEditor.selection.getNode());
                 try{
                     const sel = rangy.getSelection();
                     const range = sel.rangeCount ? sel.getRangeAt(0) : null;
@@ -858,8 +864,9 @@ UmContentEditorCore.initEditor = (umConfig) => {
              * @type {[type]}
              */
             ed.on('keydown', (e) => {
-                UmContentEditorCore.checkProtectedElements(tinymce.activeEditor.selection.getNode(),
-                this.selectedContentLength,this.currentSelectionIsProtected,e.key === "Backspace" || e.key === "Delete",e);
+                /* UmContentEditorCore.checkProtectedElements(tinymce.activeEditor.selection.getNode(),
+                this.selectedContentLength,this.currentSelectionIsProtected,e.key === "Backspace" || e.key === "Delete",e); */
+                UmContentEditorCore.preventDefaultAndStopPropagation(tinymce.activeEditor.selection.getNode(),e.key === "Backspace" || e.key === "Delete");
 
             });
         }
