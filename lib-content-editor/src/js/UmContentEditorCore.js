@@ -375,7 +375,7 @@ UmContentEditorCore.prototype.getCursorPositionRelativeToTheEditableElementConte
     }catch (e) {
         console.log("getCursorPositionRelativeToTheEditableElementContent:",e);
     }
-    return -1;
+    return 0;
 };
 
 /**
@@ -419,7 +419,7 @@ UmContentEditorCore.prototype.insertQuestionTemplate = (questionTypeIndex,isTest
     const questionTemplateList = ['template-qn-multiple-choice.html','template-qn-fill-the-blanks.html'];
     const nextQuestionId = UmQuestionWidget.QUESTION_ID_TAG+UmQuestionWidget.getNextUniqueId();
     const nextChoiceId = UmQuestionWidget.CHOICE_ID_TAG+UmQuestionWidget.getNextUniqueId();
-    const templateUrl = (isTest ? "/"+window.location.pathname.split("/")[1]+"/":"")+ questionTemplatesDir+questionTemplateList[questionTypeIndex];
+    const templateUrl = (isTest ? "/":"")+ questionTemplatesDir+questionTemplateList[questionTypeIndex];
     $.ajax({url: templateUrl, success: (templateHtmlContent) => {
             let questionNode = $(templateHtmlContent).attr("id",nextQuestionId);
             $(questionNode).find(".question-choice").attr("id",nextChoiceId);
@@ -672,7 +672,6 @@ UmContentEditorCore.prototype.setCursor = (element = null,isRoot) =>{
 
 /**
  * Check if the current action is worth taking place
- * @param currentSelectionIsProtected is current selected protected
  * @param currentNode current selected node
  * @param isDeleteKey true if the key is either delete or backspace, false otherwise
  * @param selectedContentLength length of the selected content. Used only to determine if the length is non-zero.
@@ -685,11 +684,13 @@ UmContentEditorCore.checkProtectedElements = (currentNode,isDeleteKey,selectedCo
         ".question + .extra-content, .question + .extra-content p:first-of-type";
     const cursorPositionIndex = UmContentEditorCore.prototype.getCursorPositionRelativeToTheEditableElementContent();
     const preventSelection = selectedContentLength > 0 && $(currentNode).find(doNotRemoveSelector).length > 0;
-    if((isDeleteKey && $(currentNode).is(doNotRemoveSelector) && cursorPositionIndex === 0) || preventSelection){
+    const matchesSelector = $(currentNode).is(doNotRemoveSelector);
+    console.log("active",matchesSelector+" "+cursorPositionIndex)
+    if((isDeleteKey && matchesSelector && cursorPositionIndex === 0) || preventSelection){
         eventOcurredAfterSelectionProtectionCheck = preventSelection;
-        return !UmContentEditorCore.prototype.preventDefaultAndStopPropagation(event);
+        return UmContentEditorCore.prototype.preventDefaultAndStopPropagation(event);
     }
-    return false;
+    return true;
 };
 
 
@@ -701,7 +702,7 @@ UmContentEditorCore.prototype.preventDefaultAndStopPropagation = (event) =>  {
     }catch(e){
         console.log("preventDefaultAndStopPropagation",e);
     }
-    return true;
+    return false;
 };
 
 
@@ -726,8 +727,9 @@ UmContentEditorCore.initEditor = (umConfig) => {
         force_br_newlines : false,
         force_p_newlines : true,
         forced_root_block : '',
-        plugins: ['directionality','lists'],
+        plugins: ['directionality','lists','fontawesome'],
         toolbar: showToolbar,
+        extended_valid_elements: "span[*],i[*]",
         content_css: [
             '//fonts.googleapis.com/css?family=Lato:300,300i,400,400i',
             '//www.tinymce.com/css/codepen.min.css'],
@@ -827,7 +829,7 @@ UmContentEditorCore.initEditor = (umConfig) => {
     };
 
     if(showToolbar){
-        configs.toolbar = ['undo redo | bold italic underline strikethrough superscript subscript | alignleft aligncenter alignright alignjustify | bullist numlist outdent indent | fontsizeselect'];
+        configs.toolbar = ['fontawesome','undo redo | bold italic underline strikethrough superscript subscript | alignleft aligncenter alignright alignjustify | bullist numlist outdent indent | fontsizeselect'];
     }
 
     tinymce.init(configs).then(() => {
@@ -900,6 +902,13 @@ UmContentEditorCore.initEditor = (umConfig) => {
     });
 
 };
+
+/**
+ * Get content editor content (For testing)
+ */
+UmContentEditorCore.getContent = () => {
+    return tinymce.activeEditor.getContent();
+}
 
 
 
