@@ -49,7 +49,10 @@ UmContentEditorCore.initEditor(true);
     
 ## Running the tests    
  You can quickly run tests on web browser, using mocha-chrome or using gradle.<br/><br/>  
-<b> Run on web browser</b> <br/>  
+<b> Note:</b> <br/>
+This lib is fully tested using Google Chrome, in case of misbehaving on other web browsers kindly rise an issue.
+
+<b> Run on web browser</b> <br/>
 Run the following files located under tests directory on your browser  
   
 ```  
@@ -57,7 +60,7 @@ Run the following files located under tests directory on your browser
   
 2. content-template-tests.html  
   
-3. content-key-down.html
+3. content-protection.html
   
 4. content-language-locale-tests.html
 
@@ -72,7 +75,7 @@ mocha-chrome content-formatting-tests.html --timeout 6000
   
 mocha-chrome content-template-tests.html --timeout 6000  
   
-mocha-chrome content-key-down.html --timeout 6000  
+mocha-chrome content-protection.html--timeout 6000
 
 mocha-chrome content-next-focus.html --timeout 6000  
 ``` 
@@ -82,6 +85,10 @@ mocha-chrome content-next-focus.html --timeout 6000
   
 ```   
  ./gradlew :lib-content-editor:test  
-```    
- ## Adding custom template
-  You may easily create your own html content template and add it to the template directory,   with its functionality implemented on both  UmContentEditorCore.js and  UmQuestionWidget.js located on src directory.
+```
+## Playground
+You can use index.html as your playground during development or just to check if things work, or to test how the lib works from native point of view.
+This playground file will give you the core functionality of the lib like inserting question templates and multimedia content, getting selected content and changing language directionality.
+
+## Adding custom template
+ You may easily create your own html content template and add it to the template directory,   with its functionality implemented on both  UmContentEditorCore.js and  UmQuestionWidget.js located on src directory.
