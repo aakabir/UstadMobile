@@ -63,8 +63,7 @@ UmQuestionWidget.setEditingMode = (isEditingMode) => {
  * Set default placeholders based on selected locale
  */
 UmQuestionWidget.loadPlaceholders = (locale, isTest) => {
-    const localeFileUrl = (isTest ? "/"+window.location.pathname.split("/")[1]+"/":"")
-        + languageLocaleDir+"locale."+locale+".json";
+    const localeFileUrl = (isTest ? "/":"") + languageLocaleDir+"locale."+locale+".json";
     $.ajax({url: localeFileUrl, success: (localeFileContent) => {
             UmQuestionWidget.placeholders = localeFileContent;
         },error:() => {
@@ -308,11 +307,11 @@ UmQuestionWidget.handleWidgetListeners = () => {
             }
         }else if($(event.target).hasClass("add-choice")){
             UmMultiChoiceQuestionWidget.prototype.addChoice(event);
-        }else if($(event.target).hasClass("img-delete")){
+        }else if($(event.target).hasClass("action-delete")){
             UmQuestionWidget.prototype.onQuestionDeletion(event);
-        }else if($(event.target).hasClass("img-delete-inner")){
+        }else if($(event.target).hasClass("action-delete-inner")){
             UmQuestionWidget.prototype.onQuestionChoiceDeletion(event);
-        }else if($(event.target).hasClass("img-cut")){
+        }else if($(event.target).hasClass("action-cut")){
             UmQuestionWidget.prototype.onQuestionCut(event);
         }else if($(event.target).hasClass("question-choice")
             || $(event.target).hasClass("question-choice-body")
@@ -344,7 +343,7 @@ UmQuestionWidget.handleWidgetListeners = () => {
 UmMultiChoiceQuestionWidget.prototype.addChoice = function(event){
     const choiceUiHolder = "<div id='"+UmQuestionWidget.getNextUniqueId()+"' class=\"question-choice col-sm-12 col-md-12 col-lg-12 default-theme no-padding\" data-um-correct=\"false\" data-um-preview=\"support\" id='"
         +UmQuestionWidget.CHOICE_ID_TAG+UmQuestionWidget.getNextUniqueId()+"'>" +
-       "<img class=\"question-action action-inner img-delete-inner float-right show-element\" src=\"icons/delete-black.png\">" +
+       "<span class=\"float-right show-element\"><i class=\"fa fa-trash action-delete-inner\">&nbsp;</i></span>" +
         "<label class=\"um-labels\">"+UmQuestionWidget.placeholders.labelForChoiceBodyText+"</label><br>" +
        "<div class=\"question-choice-body\">"+UmQuestionWidget.placeholders.placeholderForTheChoiceText+"</div>" +
         "<label class=\"um-labels\">"+UmQuestionWidget.placeholders.labelForFeedbackBodyText+"</label><br>" +
