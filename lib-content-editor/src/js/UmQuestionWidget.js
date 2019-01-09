@@ -10,15 +10,11 @@ let UmQuestionWidget = function(element) {
 };
 
 
+
 UmQuestionWidget.PAGE_BREAK = '<p style="page-break-before: always" class="pg-break">';
+
 UmQuestionWidget.EXTRA_CONTENT_WIDGET = '<div data-um-widget="content" class="um-row col-sm-12 col-md-12 col-lg-12 default-margin-top extra-content"><p></p></div>' +
     UmQuestionWidget.PAGE_BREAK;
-
-
-/**
- * Language locale constant placeholders
- * */
-UmQuestionWidget.PLACEHOLDERS_LABELS = {};
 
 UmQuestionWidget.QUESTION_ID_TAG = "question-";
 
@@ -39,6 +35,8 @@ UmQuestionWidget.WIDGET_NAME_FILL_BLANKS = "fill-the-blanks";
 UmQuestionWidget.WIDGET_NAME_OTHER_CONTENT = "content";
 
 UmQuestionWidget.CLIPBOARD_CONTENT = null;
+
+UmQuestionWidget.placeholders = {};
 
 let UmFillTheBlanksQuestionWidget = function(element){UmQuestionWidget.apply(this, arguments);};
 
@@ -62,16 +60,26 @@ UmQuestionWidget.setEditingMode = (isEditingMode) => {
 };
 
 /**
- * Set default language locale placeholders
- *
+ * Set default placeholders based on selected locale
  */
-UmQuestionWidget.setLanguageLocalePlaceHolders = (locale,isTest) => {
-    locale = locale ? locale:"en";
-    isTest = isTest ? isTest:false;
-    const localeFileUrl = (isTest ? "/umEditor/":"")+ languageLocaleDir+"locale."+locale+".json";
+UmQuestionWidget.loadPlaceholders = (locale, isTest) => {
+    const localeFileUrl = (isTest ? "/"+window.location.pathname.split("/")[1]+"/":"")
+        + languageLocaleDir+"locale."+locale+".json";
     $.ajax({url: localeFileUrl, success: (localeFileContent) => {
-        UmQuestionWidget.PLACEHOLDERS_LABELS = JSON.parse(localeFileContent);
+            UmQuestionWidget.placeholders = localeFileContent;
+        },error:() => {
+            if(locale !== "en"){
+                UmQuestionWidget.loadPlaceholders("en",isTest);
+            }
     }});
+};
+
+/**
+ * Get placeholders based from selected language locale.
+ * @returns placeholder object
+ */
+UmQuestionWidget.getPlaceholders = () => {
+    return UmQuestionWidget.placeholders;
 };
 
 
@@ -118,9 +126,9 @@ UmQuestionWidget.saveContentEditor = (content) => {
  */
 UmQuestionWidget.isLabelText = (selectedText) => {
     let isLabel = false;
-    for (let label in UmQuestionWidget.PLACEHOLDERS_LABELS) {
-        if (UmQuestionWidget.PLACEHOLDERS_LABELS.hasOwnProperty(label)) {
-            isLabel = UmQuestionWidget.removeSpaces(UmQuestionWidget.PLACEHOLDERS_LABELS[label].toLocaleLowerCase())
+    for (let placeholder in UmQuestionWidget.placeholders) {
+        if (UmQuestionWidget.placeholders.hasOwnProperty(placeholder)) {
+            isLabel = UmQuestionWidget.removeSpaces(UmQuestionWidget.placeholders[placeholder].toLocaleLowerCase())
                 === UmQuestionWidget.removeSpaces(selectedText).toLocaleLowerCase();
             if(isLabel){
                 break;
@@ -174,24 +182,23 @@ UmQuestionWidget.handleWidgetNode =  (editorNode) => {
 UmQuestionWidget.prototype.startEditing = function() {
     $(this.element).find("label").remove();
     $(this.element).find(".question-action-holder").removeClass("hide-element").addClass("show-element");
-    $(this.element).find(".question-body").removeClass("default-margin-bottom").before("<label class='um-labels' style='z-index: 3;'>"+UmQuestionWidget.PLACEHOLDERS_LABELS.labelForQuestionBodyText+"</label><br/>");
-    $(this.element).find(".question-retry-btn").html("<button class='btn btn-dark black float-right qn-retry' data-um-preview='support'>"+UmQuestionWidget.PLACEHOLDERS_LABELS.labelForTryAgainOptionBtn+"</button>");
+    $(this.element).find(".question-body").removeClass("default-margin-bottom").before("<label class='um-labels' style='z-index: 3;'>"+UmQuestionWidget.placeholders.labelForQuestionBodyText+"</label><br/>");
+    $(this.element).find(".question-retry-btn").html("<button class='btn btn-dark black float-right qn-retry' data-um-preview='support'>"+UmQuestionWidget.placeholders.labelForTryAgainOptionBtn+"</button>");
     $(this.element).find(".question").removeClass("default-padding").addClass("default-padding-top default-padding-bottom");
     $(this.element).find('.question-action-holder').removeClass("hide-element").addClass("show-element");
     $(this.element).find('.action-inner').removeClass("hide-element").addClass("show-element");
     $(this.element).find('.question-answer').removeClass("show-element").addClass("hide-element");
     const choiceOrAnswerLabel = $(this.element).attr("data-um-widget") === UmQuestionWidget.WIDGET_NAME_MULTICHOICE ?
-        UmQuestionWidget.PLACEHOLDERS_LABELS.placeholderForTheChoiceText:UmQuestionWidget.PLACEHOLDERS_LABELS.placeholderForTheAnswerText;
-    console.log("choice",choiceOrAnswerLabel);
+        UmQuestionWidget.placeholders.placeholderForTheChoiceText:UmQuestionWidget.placeholders.placeholderForTheAnswerText;
 
     if(UmQuestionWidget.isNewQuestion){
-        $(this.element).find(".question-body").html("<p>"+UmQuestionWidget.PLACEHOLDERS_LABELS.placeholderForTheQuestionText+"</p>");
+        $(this.element).find(".question-body").html("<p>"+UmQuestionWidget.placeholders.placeholderForTheQuestionText+"</p>");
         $(this.element).find(".question-choice-body").html("<p>"+choiceOrAnswerLabel+"</p>");
-        $(this.element).find(".question-choice-feedback").html("<p>"+UmQuestionWidget.PLACEHOLDERS_LABELS.placeholderForTheChoiceFeedback+"</p>");
-        $(this.element).find(".question-choice-feedback-correct").html("<p>"+UmQuestionWidget.PLACEHOLDERS_LABELS.placeholderForTheRightChoiceFeedback+"</p>");
-        $(this.element).find(".question-choice-feedback-wrong").html("<p>"+UmQuestionWidget.PLACEHOLDERS_LABELS.placeholderForTheWrongChoiceFeedback+"</p>");
-        $(this.element).find(".fill-the-blanks-check").text(UmQuestionWidget.PLACEHOLDERS_LABELS.labelForCheckAnswerInputPromptBtn);
-        $(this.element).find(".fill-the-blanks-input").attr("placeholder",UmQuestionWidget.PLACEHOLDERS_LABELS.placeholderForTheBlanksInput);
+        $(this.element).find(".question-choice-feedback").html("<p>"+UmQuestionWidget.placeholders.placeholderForTheChoiceFeedback+"</p>");
+        $(this.element).find(".question-choice-feedback-correct").html("<p>"+UmQuestionWidget.placeholders.placeholderForTheRightChoiceFeedback+"</p>");
+        $(this.element).find(".question-choice-feedback-wrong").html("<p>"+UmQuestionWidget.placeholders.placeholderForTheWrongChoiceFeedback+"</p>");
+        $(this.element).find(".fill-the-blanks-check").text(UmQuestionWidget.placeholders.labelForCheckAnswerInputPromptBtn);
+        $(this.element).find(".fill-the-blanks-input").attr("placeholder",UmQuestionWidget.placeholders.placeholderForTheBlanksInput);
     }else{
         $(this.element).find(".question-choice").removeClass("question-choice-pointer selected-choice alert alert-secondary").addClass("default-margin-top");
         $(this.element).find('[data-um-preview="main"]').removeClass("preview-main default-margin-top");
@@ -212,19 +219,23 @@ UmQuestionWidget.prototype.startEditing = function() {
 
     $(this.element).find(".question-retry-option").html("" +
         "<select class='question-retry-option-select'>" +
-        "  <option value=\"true\">"+UmQuestionWidget.PLACEHOLDERS_LABELS.labelForTrueOptionText+"</option>" +
-        "  <option value=\"false\" selected=\"selected\">"+UmQuestionWidget.PLACEHOLDERS_LABELS.labelFalseOptionText+"</option>" +
+        "  <option value=\"true\">"+UmQuestionWidget.placeholders.labelForTrueOptionText+"</option>" +
+        "  <option value=\"false\" selected=\"selected\">"+UmQuestionWidget.placeholders.labelFalseOptionText+"</option>" +
         "</select>");
     $(this.element).find(".question-choice-answer").html("" +
         "<select class='question-choice-answer-select'>" +
-        "  <option value=\"true\">"+UmQuestionWidget.PLACEHOLDERS_LABELS.labelForTrueOptionText+"</option>" +
-        "  <option value=\"false\" selected=\"selected\">"+UmQuestionWidget.PLACEHOLDERS_LABELS.labelFalseOptionText+"</option>" +
+        "  <option value=\"true\">"+UmQuestionWidget.placeholders.labelForTrueOptionText+"</option>" +
+        "  <option value=\"false\" selected=\"selected\">"+UmQuestionWidget.placeholders.labelFalseOptionText+"</option>" +
         "</select>");
 
     $(this.element).find(".question-retry-option")
-        .before("<label class='um-labels no-left-padding'>"+UmQuestionWidget.PLACEHOLDERS_LABELS.labelForQuestionRetryOption+"</label><br/>");
+        .before("<label class='um-labels no-left-padding'>"+UmQuestionWidget.placeholders.labelForQuestionRetryOption+"</label><br/>");
     return this.element;
 };
+
+UmQuestionWidget.handleImmutableContent = () => {
+    $(document).find(".um-labels,button").addClass("immutable-content");
+}
 
 /**
  * Switch on editing mode to the other widget
@@ -241,13 +252,13 @@ UmOtherContentWidget.prototype.startEditing = function() {
 UmMultiChoiceQuestionWidget.prototype.startEditing = function(){
     UmQuestionWidget.prototype.startEditing.apply(this, arguments);
     $(this.element).find(".question-add-choice").removeClass("hide-element").addClass("show-element")
-        .html("<button class='btn btn-primary float-right add-choice default-margin-top'>" +UmQuestionWidget.PLACEHOLDERS_LABELS.labelForAddChoiceBtn+"</button>");
+        .html("<button class='btn btn-primary float-right add-choice default-margin-top'>" +UmQuestionWidget.placeholders.labelForAddChoiceBtn+"</button>");
     $(this.element).find(".question-choice-body").before("<label class='um-labels'>"
-        +UmQuestionWidget.PLACEHOLDERS_LABELS.labelForChoiceBodyText+"</label>");
+        +UmQuestionWidget.placeholders.labelForChoiceBodyText+"</label>");
     $(this.element).find(".question-choice-feedback").before("<label class='um-labels'>"
-        +UmQuestionWidget.PLACEHOLDERS_LABELS.labelForFeedbackBodyText+"</label>");
+        +UmQuestionWidget.placeholders.labelForFeedbackBodyText+"</label>");
     $(this.element).find(".question-choice-answer").before("<label class='um-labels'>"
-        +UmQuestionWidget.PLACEHOLDERS_LABELS.labelForRightAnswerOption+"</label>");
+        +UmQuestionWidget.placeholders.labelForRightAnswerOption+"</label>");
     const choices = $(this.element).find(".question-choice");
     for(let choice in choices){
         if(!choices.hasOwnProperty(choice))
@@ -269,13 +280,13 @@ UmFillTheBlanksQuestionWidget.prototype.startEditing = function(){
     UmQuestionWidget.prototype.startEditing.apply(this, arguments);
     $(this.element).find(".fill-blanks").removeClass("hide-element").addClass("show-element");
     $(this.element).find(".question-choice-body").before("<label class='um-labels'>"
-        +UmQuestionWidget.PLACEHOLDERS_LABELS.labelForFillTheBlanksAnswerBodyText+"</label>");
+        +UmQuestionWidget.placeholders.labelForFillTheBlanksAnswerBodyText+"</label>");
     $(this.element).find(".input-group").before("<label class='um-labels '>"
-        +UmQuestionWidget.PLACEHOLDERS_LABELS.labelForFillTheBlanksPromptInput+"</label>");
+        +UmQuestionWidget.placeholders.labelForFillTheBlanksPromptInput+"</label>");
     $(this.element).find(".question-choice-feedback-correct").before("<label class='um-labels'>"
-        +UmQuestionWidget.PLACEHOLDERS_LABELS.labelForQuestionRightFeedbackText+"</label>");
+        +UmQuestionWidget.placeholders.labelForQuestionRightFeedbackText+"</label>");
     $(this.element).find(".question-choice-feedback-wrong").before("<label class='um-labels'>"
-        +UmQuestionWidget.PLACEHOLDERS_LABELS.labelForQuestionWrongFeedbackText+"</label>");
+        +UmQuestionWidget.placeholders.labelForQuestionWrongFeedbackText+"</label>");
     return this.element;
 };
 /*Widget start editing ends*/
@@ -334,15 +345,15 @@ UmMultiChoiceQuestionWidget.prototype.addChoice = function(event){
     const choiceUiHolder = "<div id='"+UmQuestionWidget.getNextUniqueId()+"' class=\"question-choice col-sm-12 col-md-12 col-lg-12 default-theme no-padding\" data-um-correct=\"false\" data-um-preview=\"support\" id='"
         +UmQuestionWidget.CHOICE_ID_TAG+UmQuestionWidget.getNextUniqueId()+"'>" +
        "<img class=\"question-action action-inner img-delete-inner float-right show-element\" src=\"icons/delete-black.png\">" +
-        "<label class=\"um-labels\">"+UmQuestionWidget.PLACEHOLDERS_LABELS.labelForChoiceBodyText+"</label><br>" +
-       "<div class=\"question-choice-body\">"+UmQuestionWidget.PLACEHOLDERS_LABELS.placeholderForTheChoiceText+"</div>" +
-        "<label class=\"um-labels\">"+UmQuestionWidget.PLACEHOLDERS_LABELS.labelForFeedbackBodyText+"</label><br>" +
+        "<label class=\"um-labels\">"+UmQuestionWidget.placeholders.labelForChoiceBodyText+"</label><br>" +
+       "<div class=\"question-choice-body\">"+UmQuestionWidget.placeholders.placeholderForTheChoiceText+"</div>" +
+        "<label class=\"um-labels\">"+UmQuestionWidget.placeholders.labelForFeedbackBodyText+"</label><br>" +
         "<div class=\"question-choice-feedback\" data-um-edit-only=\"true\">" +
-        UmQuestionWidget.PLACEHOLDERS_LABELS.placeholderForTheChoiceFeedback+"</div>" +
-        "<label class=\"um-labels\">"+UmQuestionWidget.PLACEHOLDERS_LABELS.labelForRightAnswerOption+"</label><br>" +
+        UmQuestionWidget.placeholders.placeholderForTheChoiceFeedback+"</div>" +
+        "<label class=\"um-labels\">"+UmQuestionWidget.placeholders.labelForRightAnswerOption+"</label><br>" +
         "<div class=\"question-choice-answer select-option col-sm-12 show-element col-lg-12\">" +
-        "<select class='question-choice-answer-select'><option value=\"true\">"+UmQuestionWidget.PLACEHOLDERS_LABELS.labelForTrueOptionText+"</option>" +
-        "<option selected=\"selected\" value=\"false\">"+UmQuestionWidget.PLACEHOLDERS_LABELS.labelFalseOptionText+"</option>" +
+        "<select class='question-choice-answer-select'><option value=\"true\">"+UmQuestionWidget.placeholders.labelForTrueOptionText+"</option>" +
+        "<option selected=\"selected\" value=\"false\">"+UmQuestionWidget.placeholders.labelFalseOptionText+"</option>" +
         "</select></div></div>";
     let questionElement = $($(event.target).closest("div .question")).children();
     questionElement = $(questionElement.get(questionElement.length - 4));
@@ -415,7 +426,7 @@ UmFillTheBlanksQuestionWidget.prototype.onQuestionAnswerChecked = (event) =>{
 
     const isCorrectChoice = defaultAnswerText === userAnswerText;
     const message = userAnswerText.length > 0 ?
-        (isCorrectChoice ? correctChoiceText: wrongChoiceText):UmQuestionWidget.PLACEHOLDERS_LABELS.warningOnSubmitEmptyField;
+        (isCorrectChoice ? correctChoiceText: wrongChoiceText):UmQuestionWidget.placeholders.warningOnSubmitEmptyField;
     $(feedbackContainer).find(".question-feedback-container-text").html(message);
     $(feedbackContainer).removeClass("hide-element show-element alert-success alert-danger alert-warning alert-info");
     $(feedbackContainer).addClass(userAnswerText.length > 0 ? (isCorrectChoice ? "alert-success":"alert-danger")
@@ -502,3 +513,4 @@ UmQuestionWidget.prototype.onQuestionCut = event => {
 };
 
 /*Widget event handling ends*/
+

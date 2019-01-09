@@ -7,6 +7,10 @@
  */
 let UmContentEditorCore = function() {};
 
+ /* Tracker to track if the key event was allowed even after passing the condition to be prevented. 
+    This occurs only on content selection, instead it will be handled on keyup event */
+let eventOcurredAfterSelectionProtectionCheck = false;
+
 /**
  * Template location path
  * @type {string} path
@@ -528,16 +532,21 @@ UmContentEditorCore.prototype.insertQuestionNodeContent = (questionNode,isFromCl
  */
 UmContentEditorCore.setFocusToNextUnprotectedFocusableElement = (eventTargetElement) => {
     const nextElementFocusSelector = "p:not(.immutable-content)";
-    //check if event came from question action holder.
-    eventTargetElement = $(eventTargetElement).is(".question-action-holder") ?
-     $(eventTargetElement).next():eventTargetElement;
-    let nextFocusableElement = UmContentEditorCore.prototype.getNextElementMatchingSelector(eventTargetElement,nextElementFocusSelector);
-    //If walking didn't find a node matching selector, start traversing
-    if(!nextFocusableElement){
-        nextFocusableElement = UmContentEditorCore.prototype.getPrevElementMatchingSelector(eventTargetElement,nextElementFocusSelector);
+    let questionActionHolderSelector = ".question-action-holder";
+    const labelSelector = ".immutable-content";
+    let nextFocusableElement = null;
+    if(!eventOcurredAfterSelectionProtectionCheck && ($(eventTargetElement).is(labelSelector) || $(eventTargetElement).is(questionActionHolderSelector))){
+        //check if event came from question action holder.
+        eventTargetElement = $(eventTargetElement).is(questionActionHolderSelector) ? $(eventTargetElement).next():eventTargetElement;
+        
+        nextFocusableElement = UmContentEditorCore.prototype.getNextElementMatchingSelector(eventTargetElement,nextElementFocusSelector);
+        //If walking didn't find a node matching selector, start traversing
+        if(!nextFocusableElement){
+            nextFocusableElement = UmContentEditorCore.prototype.getPrevElementMatchingSelector(eventTargetElement,nextElementFocusSelector);
+        }
+        UmContentEditorCore.prototype.setCursorToAnyNonProtectedFucusableElement(nextFocusableElement);
+        return nextFocusableElement;
     }
-
-    UmContentEditorCore.prototype.setCursorToAnyNonProtectedFucusableElement(nextFocusableElement);
     return nextFocusableElement;
 };
 
@@ -661,90 +670,38 @@ UmContentEditorCore.prototype.setCursor = (element = null,isRoot) =>{
     }
 };
 
-
 /**
- * Prevent key event from taking effect and stop event propagation
- * @param event keybord event (keydown)
- * @returns {boolean} false - so this value can be returned to the return value for an event handler
+ * Check if the current action is worth taking place
+ * @param currentSelectionIsProtected is current selected protected
+ * @param currentNode current selected node
+ * @param isDeleteKey true if the key is either delete or backspace, false otherwise
+ * @param selectedContentLength length of the selected content. Used only to determine if the length is non-zero.
+ *                              If length is 0, the check only continues if the key is delete or backspace.
+ * @param event keydown event
+ * @returns {boolean} True is the action should take place otherwise false.
  */
-UmContentEditorCore.prototype.allowKeyboardKey = (event) => {
-    try{
-        event.preventDefault();
-        event.stopImmediatePropagation();
-    }catch (e) {
-        console.log("allowKeyboardKey",e);
+UmContentEditorCore.checkProtectedElements = (currentNode,isDeleteKey,selectedContentLength, event) => {
+    const doNotRemoveSelector = ".dont-remove, .dont-remove p:first-of-type, .immutable-content, " +
+        ".question + .extra-content, .question + .extra-content p:first-of-type";
+    const cursorPositionIndex = UmContentEditorCore.prototype.getCursorPositionRelativeToTheEditableElementContent();
+    const preventSelection = selectedContentLength > 0 && $(currentNode).find(doNotRemoveSelector).length > 0;
+    if((isDeleteKey && $(currentNode).is(doNotRemoveSelector) && cursorPositionIndex === 0) || preventSelection){
+        eventOcurredAfterSelectionProtectionCheck = preventSelection;
+        return !UmContentEditorCore.prototype.preventDefaultAndStopPropagation(event);
     }
     return false;
 };
 
 
-/**
- * Check if the current action is worth taking place
- * @param currentSelectionIsProtected is current selected protected
- * @param activeNode current selected node
- * @param selectedContentLength length of the selected content. Used only to determine if the length is non-zero.
- *                              If length is 0, the check only continues if the key is delete or backspace.
- * @param deleteKeys true if the key is either delete or backspace, false otherwise
- * @param e keydown event
- * @returns {boolean} True is the action should take place otherwise false.
- */
-UmContentEditorCore.checkProtectedElements = (activeNode,selectedContentLength,currentSelectionIsProtected,deleteKeys, e) => {
-    //UmContentEditorCore.setFocusToNextUnprotectedFocusableElement(activeNode);
-    if(selectedContentLength > 0 || deleteKeys){
-        const isLabel = $(activeNode).hasClass("um-labels");
-        const isDeleteQuestionBtn = $(activeNode).hasClass("close");
-        const isCloseSpan = $(activeNode).is("span");
-        const isButtonLabels = $(activeNode).is("button");
-        const isParagraph = $(activeNode).is("p");
-        const isDiv = $(activeNode).is("div");
-        const isChoiceSelector = $(activeNode).hasClass("question-retry-option");
-        const isInputGroup = $(activeNode).hasClass("input-group");
-        const preventEditorDiv = $(activeNode).attr("id") === "umEditor";
-        const innerTextContentLength = UmQuestionWidget.removeSpaces($(activeNode).text()).length;
-        const innerHtmlContentLength = UmQuestionWidget.removeSpaces($(activeNode).html()).length;
-
-        const preventLabelsDeletion = deleteKeys && isLabel;
-
-        if(isParagraph){
-            const divWrapper = $(activeNode).closest("div");
-            if(divWrapper){
-                const divParagraphs = $(divWrapper).children();
-                currentSelectionIsProtected = divParagraphs.length === 1 && deleteKeys && ((innerHtmlContentLength > 0 || innerTextContentLength > 0)
-                    && UmContentEditorCore.prototype.getCursorPositionRelativeToTheEditableElementContent() === 0)
-            }else{
-                currentSelectionIsProtected = false;
-            }
-        }
-
-        if((currentSelectionIsProtected && this.selectedContentLength > 0) || isLabel){
-            wasContentSelected = true;
-        }
-
-        const disableKeys = this.selectedContentLength === 0 && (isDeleteQuestionBtn || isCloseSpan || isButtonLabels || preventLabelsDeletion ||
-            isChoiceSelector || isInputGroup || (preventEditorDiv && deleteKeys))||
-            currentSelectionIsProtected || isProtectedElement || isLabel || isDiv;
-
-        //UmContentEditorCore.setFocusToNextUnprotectedFocusableElement(activeNode);
-        const hasQuestions = $("#umEditor").find(".question").length > 0;
-        const isBelowQuestion = $($($(activeNode).parent()).prev()).hasClass("question");
-        const isNotBelowQuestion = $($($(activeNode).parent()).prev()).hasClass("extra-content");
-
-        if(disableKeys &&  hasQuestions){
-            return (isNotBelowQuestion || $(activeNode).hasClass("mce-content-body")
-                || (isParagraph && isNotBelowQuestion) ? true : UmContentEditorCore.prototype.allowKeyboardKey(e));
-        }else{
-            return (isBelowQuestion && deleteKeys && innerTextContentLength === 0 || disableKeys ? UmContentEditorCore.prototype.allowKeyboardKey(e) : true);
-        }
-    }else{
-
-        return true;
+UmContentEditorCore.prototype.preventDefaultAndStopPropagation = (event) =>  {
+    try{
+        event.preventDefault();
+        event.stopImmediatePropagation();
+        return false;
+    }catch(e){
+        console.log("preventDefaultAndStopPropagation",e);
     }
-};
-
-
-UmContentEditorCore.preventDefaultAndStopPropagation = (activeNode, isDeleteKey) =>  {
-    const doNotRemoveSelector = ".dont-remove, .dont-remove p:first-of-type, .immutable-content, " +
-        ".question + .extra-content, .question + .extra-content p:first-of-type";
+    return true;
 };
 
 
@@ -802,7 +759,8 @@ UmContentEditorCore.initEditor = (umConfig) => {
              */
 
             ed.on('SelectionChange', (e) => {
-                UmContentEditorCore.setFocusToNextUnprotectedFocusableElement(tinymce.activeEditor.selection.getNode());
+                const currentNode = tinymce.activeEditor.selection.getNode();
+                UmContentEditorCore.setFocusToNextUnprotectedFocusableElement(currentNode);
                 try{
                     const sel = rangy.getSelection();
                     const range = sel.rangeCount ? sel.getRangeAt(0) : null;
@@ -810,9 +768,7 @@ UmContentEditorCore.initEditor = (umConfig) => {
                     if (range) {
                         selectedContent = range.toHtml();
                     }
-                    this.selectedContentLength = selectedContent.length;
-                    this.currentSelectionIsProtected = UmQuestionWidget.isLabelText(selectedContent) || (selectedContent.includes("<div")
-                        || selectedContent.includes("<label"));
+                    this.selectedContent = selectedContent;
                 }catch (e) {
                     console.log(e);
                 }
@@ -852,8 +808,8 @@ UmContentEditorCore.initEditor = (umConfig) => {
              * @type {[type]}
              */
             ed.on('keyup', () => {
-                if(wasContentSelected){
-                    wasContentSelected = false;
+                if(eventOcurredAfterSelectionProtectionCheck){
+                    eventOcurredAfterSelectionProtectionCheck = false;
                     UmContentEditorCore.editorActionUndo();
                 }
             });
@@ -864,10 +820,8 @@ UmContentEditorCore.initEditor = (umConfig) => {
              * @type {[type]}
              */
             ed.on('keydown', (e) => {
-                /* UmContentEditorCore.checkProtectedElements(tinymce.activeEditor.selection.getNode(),
-                this.selectedContentLength,this.currentSelectionIsProtected,e.key === "Backspace" || e.key === "Delete",e); */
-                UmContentEditorCore.preventDefaultAndStopPropagation(tinymce.activeEditor.selection.getNode(),e.key === "Backspace" || e.key === "Delete");
-
+                const currentNode = this.selectedContent.length > 0 ? $("<div />").append($(this.selectedContent).clone()).get(0):tinymce.activeEditor.selection.getNode(); 
+                UmContentEditorCore.checkProtectedElements(currentNode,e.key === "Backspace" || e.key === "Delete",this.selectedContent.length,e);
             });
         }
     };
@@ -919,6 +873,7 @@ UmContentEditorCore.initEditor = (umConfig) => {
                     editorContainer.append(UmQuestionWidget.EXTRA_CONTENT_WIDGET);
                     UmContentEditorCore.prototype.setCursor(null,false);
                 }
+                UmQuestionWidget.handleImmutableContent();
                 setTimeout(() => {UmContentEditorCore.prototype.checkActivatedControls()},300);
                 const previewContent = JSON.stringify({action:'onSaveContent',
                     content:UmQuestionWidget.saveContentEditor(btoa(tinyMCE.activeEditor.getContent()))});
@@ -929,8 +884,6 @@ UmContentEditorCore.initEditor = (umConfig) => {
                 }
             });
             contentChangeObserver.observe(document.querySelector('#umEditor'),contentWatcherFilters);
-
-
             //add observer to watch controls state changes
             const menuWatcherFilter = {
                 attributes : true,
