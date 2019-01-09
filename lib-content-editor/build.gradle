@@ -76,7 +76,6 @@ task prepareUmEditorDirectories << {
     copy { from rootPath+"/lib/bootstrap/css/bootstrap.min.css", rootPath+"dist/css/UmEditorCore.min.css" into blankDocCssPath }
     copy { from rootPath+"/lib/bootstrap/js/bootstrap.min.js", rootPath+"/lib/jquery/jquery3.3.1.min.js",
             rootPath+"dist/js/UmContentEditorCore.min.js", rootPath+"dist/js/UmQuestionWidget.min.js" into blankDocJsPath }
-    copy{ from rootPath+"/icons" into blankDocPath+"icons" }
 
     File mediaDir = new File(blankDocMediaPath)
     mediaDir.mkdir()
@@ -134,16 +133,10 @@ task runContentFomattingTests (type: Exec){
 
 /* Execute keyboard keydown logic tests */
 task runKeyboardKeydownTests (type: Exec){
-    def testFilePath = rootPath + "tests/content-key-down.html"
-    commandLine 'mocha-chrome', testFilePath, '--timeout ',testTimeout
-}
-
-/* Execute focus change event on protected elements */
-task runFocusChangeEventTest (type: Exec){
-    def testFilePath = rootPath + "tests/content-next-focus.html"
+    def testFilePath = rootPath + "tests/content-protection.html"
     commandLine 'mocha-chrome', testFilePath, '--timeout ',testTimeout
 }
 
 
 /* Run all UmEditor Javascript tests */
-task test(dependsOn: [runContentFomattingTests, runContentTemplatesTest, runKeyboardKeydownTests, runFocusChangeEventTest]) << {}
+task test(dependsOn: [runContentFomattingTests, runContentTemplatesTest, runKeyboardKeydownTests]) << {}
