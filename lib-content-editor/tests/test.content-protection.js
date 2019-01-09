@@ -9,32 +9,32 @@ describe('#Protected content', function() {
 
     describe('givenActiveEditor_whenProtectedElementIsSelectedAndDeleteKeyIsPressed_thenShouldNotBeDeleted', function() {
         it('Content deletion not allowed', function() {
-            const content = "<label class='um-labels'>Sample label</label>";
-            const isKeyAllowed = UmContentEditorCore.checkProtectedElements(content,content.length,true,false,{});
+            const currentNode = "<label class='um-labels immutable-content'>Sample label</label>";
+            const isKeyAllowed = UmContentEditorCore.checkProtectedElements(currentNode,true,currentNode.length,{});
             isKeyAllowed.should.equal(false);
         });
     });
 
     describe('givenActiveEditor_whenProtectedElementIsSelectedAndAnyKeyIsPressed_thenShouldNotBeDeleted', function() {
         it('Content deletion not allowed', function() {
-            const content = "<label class='um-labels'>Sample label</label>";
-            const isKeyAllowed = UmContentEditorCore.checkProtectedElements(content,content.length,true,false,{});
+            const currentNode = "<label class='um-labels immutable-content'>Sample label</label>";
+            const isKeyAllowed = UmContentEditorCore.checkProtectedElements(currentNode,true,currentNode.length,{},0);
             isKeyAllowed.should.equal(false);
         });
     });
 
     describe('givenActiveEditor_whenNotProtectedElementIsSelectedAndDeleteKeyIsPressed_thenShouldBeDeleted', function() {
         it('Content deletion allowed', function() {
-            const content = "<p>Sample label</p>";
-            const isKeyAllowed = UmContentEditorCore.checkProtectedElements(content,content.length,true,false,{});
+            const currentNode = "<p>Sample label</p>";
+            const isKeyAllowed = UmContentEditorCore.checkProtectedElements(currentNode,true,currentNode.length,{});
             isKeyAllowed.should.equal(true);
         });
     });
 
     describe('givenActiveEditor_whenNoElementContentIsSelectedAndDeleteKeyIsPressed_thenShouldBeDeleted', function() {
         it('Content deletion allowed', function() {
-            const content = "<p>Sample label</p>";
-            const isKeyAllowed = UmContentEditorCore.checkProtectedElements(content,0,false,false,{});
+            const currentNode = "<p>Sample label</p>";
+            const isKeyAllowed = UmContentEditorCore.checkProtectedElements(currentNode,false,0,{});
             isKeyAllowed.should.equal(true);
         });
     });
