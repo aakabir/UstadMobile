@@ -183,23 +183,6 @@ button.qn-retry{
     margin-right: -20px !important;
 }
 
-.question-action{
-    width: 16px;
-    cursor: pointer;
-    margin: 0 0 0 20px;
-    height: 16px;
-}
-.question-action.action-inner{
-    width: 16px;
-    cursor: pointer;
-    margin: 16px 0 !important;
-    height: 16px;
-}
-
-.question-action-holder{
-    padding: 8px;
-}
-
 audio::-internal-media-controls-download-button {
     display:none;
 }
@@ -210,6 +193,17 @@ audio::-webkit-media-controls-enclosure {
 
 audio::-webkit-media-controls-panel {
     width: calc(100% + 30px); /* Adjust as needed */
+}
+
+span{
+    color: black;
+    padding: 2px;
+    cursor: pointer;
+    margin-left: 20px;
+}
+
+.action-delete-inner{
+    margin-top: 16px !important;
 }
 
 
