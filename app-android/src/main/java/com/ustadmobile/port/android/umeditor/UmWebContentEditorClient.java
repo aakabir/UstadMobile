@@ -43,7 +43,8 @@ public class UmWebContentEditorClient extends WebViewClient {
             "theme",
             "font",
             "templates",
-            "locale"
+            "locale",
+            "font-awesome"
     };
 
     /**
@@ -58,6 +59,9 @@ public class UmWebContentEditorClient extends WebViewClient {
         InputStream inputStream;
         String resourceUri = request.getUrl().toString();
         String mimeType = UmAndroidUriUtil.getMimeType(context,request.getUrl());
+        if(mimeType == null && resourceUri.endsWith(".json")){
+            mimeType = "application/json";
+        }
 
         if(isInnerResource(resourceUri) || isUmEditorResource(resourceUri)){
             try{

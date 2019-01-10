@@ -29,7 +29,7 @@ def testTimeout = 6000;
 /*Task which copies all umEditor resources from lib-content-editor directory to android assets*/
 task copyResourcesToAndroidAssets << {
     def tinyMce = "lib/tinymce"
-    def icons = "icons"
+    def fonts = "lib/font-awesome"
     def rangy =  "lib/rangy"
     def locale = "locale"
     def templates = "/templates"
@@ -37,7 +37,7 @@ task copyResourcesToAndroidAssets << {
     copy { from rootTemplatePath into umEditorAssetsPath + templates }
     copy { from rootPath + tinyMce into umEditorAssetsPath +"/"+ tinyMce }
     copy { from rootPath + rangy into umEditorAssetsPath +"/"+ rangy }
-    copy { from rootPath + icons into umEditorAssetsPath +"/"+icons }
+    copy { from rootPath + fonts into umEditorAssetsPath +"/"+fonts }
     copy { from rootPath + locale into umEditorAssetsPath +"/"+locale }
 
     delete rootPath + "dist"

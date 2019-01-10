@@ -121,7 +121,7 @@ UmContentEditorCore.editorActionRedo = () => {
  */
 UmContentEditorCore.textDirectionLeftToRight = () => {
     UmContentEditorCore.executeCommand('mceDirectionLTR');
-    const isActive =UmContentEditorCore.prototype.getNodeDirectionality() === "ltr";
+    const isActive = UmContentEditorCore.prototype.getNodeDirectionality() === "ltr";
     return {action:'activeControl',content:btoa("mceDirectionLTR-"+isActive)};
 };
 
@@ -531,7 +531,7 @@ UmContentEditorCore.prototype.insertQuestionNodeContent = (questionNode,isFromCl
  * @returns next focusable element (For testing purpose since we can't emit keyboard events);
  */
 UmContentEditorCore.setFocusToNextUnprotectedFocusableElement = (eventTargetElement) => {
-    const nextElementFocusSelector = "p:not(.immutable-content)";
+    let nextElementFocusSelector = "p:not(.immutable-content)";
     let questionActionHolderSelector = ".question-action-holder";
     const labelSelector = ".immutable-content";
     let nextFocusableElement = null;
@@ -545,7 +545,18 @@ UmContentEditorCore.setFocusToNextUnprotectedFocusableElement = (eventTargetElem
             nextFocusableElement = UmContentEditorCore.prototype.getPrevElementMatchingSelector(eventTargetElement,nextElementFocusSelector);
         }
         UmContentEditorCore.prototype.setCursorToAnyNonProtectedFucusableElement(nextFocusableElement);
+        UmContentEditorCore.prototype.scrollToElement(nextFocusableElement);
         return nextFocusableElement;
+    }else if($(eventTargetElement).is("button")){
+        setTimeout(function () {
+            nextElementFocusSelector = ".question-choice-body p:first-of-type";
+            eventTargetElement = $($(eventTargetElement).closest("div div.question")).find(".question-choice").last();
+            nextFocusableElement = $(eventTargetElement).find(nextElementFocusSelector).get(0);
+            UmContentEditorCore.prototype.setCursorToAnyNonProtectedFucusableElement(nextFocusableElement);
+            UmContentEditorCore.prototype.scrollToElement(nextFocusableElement);
+            return nextFocusableElement;
+        },400);
+
     }
     return nextFocusableElement;
 };
@@ -685,7 +696,6 @@ UmContentEditorCore.checkProtectedElements = (currentNode,isDeleteKey,selectedCo
     const cursorPositionIndex = UmContentEditorCore.prototype.getCursorPositionRelativeToTheEditableElementContent();
     const preventSelection = selectedContentLength > 0 && $(currentNode).find(doNotRemoveSelector).length > 0;
     const matchesSelector = $(currentNode).is(doNotRemoveSelector);
-    console.log("active",matchesSelector+" "+cursorPositionIndex)
     if((isDeleteKey && matchesSelector && cursorPositionIndex === 0) || preventSelection){
         eventOcurredAfterSelectionProtectionCheck = preventSelection;
         return UmContentEditorCore.prototype.preventDefaultAndStopPropagation(event);
@@ -727,7 +737,7 @@ UmContentEditorCore.initEditor = (umConfig) => {
         force_br_newlines : false,
         force_p_newlines : true,
         forced_root_block : '',
-        plugins: ['directionality','lists','fontawesome'],
+        plugins: ['directionality','lists'],
         toolbar: showToolbar,
         extended_valid_elements: "span[*],i[*]",
         content_css: [
@@ -796,11 +806,6 @@ UmContentEditorCore.initEditor = (umConfig) => {
              */
             ed.on('click', e => {
                 UmContentEditorCore.prototype.checkActivatedControls();
-                const selection = ed.selection;
-                const activeNode = selection.getNode();
-                this.currentSelectionIsProtected = $(activeNode).hasClass("um-labels") || $(activeNode).is("button")
-                    || $(activeNode).hasClass("pg-break")
-                    || $(activeNode).hasClass("question-retry-option");
                 UmContentEditorCore.prototype.getNodeDirectionality();
                 UmContentEditorCore.setFocusToNextUnprotectedFocusableElement(e.target);
             });
@@ -824,17 +829,22 @@ UmContentEditorCore.initEditor = (umConfig) => {
             ed.on('keydown', (e) => {
                 const currentNode = this.selectedContent.length > 0 ? $("<div />").append($(this.selectedContent).clone()).get(0):tinymce.activeEditor.selection.getNode(); 
                 UmContentEditorCore.checkProtectedElements(currentNode,e.key === "Backspace" || e.key === "Delete",this.selectedContent.length,e);
+                UmContentEditorCore.setFocusToNextUnprotectedFocusableElement(e.target);
             });
         }
     };
 
     if(showToolbar){
-        configs.toolbar = ['fontawesome','undo redo | bold italic underline strikethrough superscript subscript | alignleft aligncenter alignright alignjustify | bullist numlist outdent indent | fontsizeselect'];
+        configs.toolbar = ['undo redo | bold italic underline strikethrough superscript subscript | alignleft aligncenter alignright alignjustify | bullist numlist outdent indent | fontsizeselect'];
     }
 
     tinymce.init(configs).then(() => {
 
         rangy.init();
+        const editorWrapper = $("#umEditor");
+
+        //set default directionality
+        $(editorWrapper).attr("dir",UmQuestionWidget._locale.directionality);
 
         //request forcus to the editor
         UmContentEditorCore.prototype.requestFocus();
@@ -846,7 +856,6 @@ UmContentEditorCore.initEditor = (umConfig) => {
         if($(".question").length > 0){
             UmContentEditorCore.prototype.setCursorPositionToTheLastNonProtectedElement();
         }else{
-            const editorWrapper = $("#umEditor");
             if(UmQuestionWidget.removeSpaces($(editorWrapper.children().get(0)).text()).length === 0){
                 $(editorWrapper.children().get(0)).remove();
             }
@@ -908,7 +917,7 @@ UmContentEditorCore.initEditor = (umConfig) => {
  */
 UmContentEditorCore.getContent = () => {
     return tinymce.activeEditor.getContent();
-}
+};
 
 
 

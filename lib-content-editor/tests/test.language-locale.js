@@ -8,9 +8,9 @@ describe('#Language locale', function() {
         this.timeout(2000);
     });
     describe('givenActiveEditor_whenDefaultLanguageLocaleIsSet_thenAllPlaceholdersShouldBeSetInThatLanguage', function() {
-        UmContentEditorCore.initEditor({locale:'swa',test:true});
+        UmContentEditorCore.initEditor({locale:'sw',test:true});
         it('Swahili placeholders was set', function() {
-            "Ndio".should.equal(UmQuestionWidget.getPlaceholders().labelForTrueOptionText);
+            "Ndio".should.equal(UmQuestionWidget._locale.placeholders.labelForTrueOptionText);
         });
     });
 
