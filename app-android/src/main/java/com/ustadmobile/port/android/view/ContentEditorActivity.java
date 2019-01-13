@@ -282,10 +282,10 @@ public class ContentEditorActivity extends UstadBaseActivity implements ContentE
 
             mDirection.add(new UmFormat(R.drawable.ic_format_textdirection_l_to_r_white_24dp,
                     ACTION_TEXT_DIRECTION_LTR,true,LANGUAGE_DIRECTIONALITY,
-                    R.id.direction_rightToLeft, R.string.content_direction_rtl));
+                    R.id.direction_leftToRight, R.string.content_direction_ltr));
             mDirection.add(new UmFormat(R.drawable.ic_format_textdirection_r_to_l_white_24dp,
                     ACTION_TEXT_DIRECTION_RTL,false,LANGUAGE_DIRECTIONALITY,
-                    R.id.direction_leftToRight,R.string.content_direction_ltr));
+                    R.id.direction_rightToLeft,R.string.content_direction_rtl));
 
             mFont.add(new UmFormat(0, TEXT_FORMAT_TYPE_FONT,false,
                     FORMATTING_FONT_INDEX, 8,R.string.content_font_8));
@@ -1077,10 +1077,10 @@ public class ContentEditorActivity extends UstadBaseActivity implements ContentE
                         @Override
                         public void onSuccess(Boolean result) {
                             if(result){
-                                if(!openPreview || !isMultimediaFilePicker){
+                                if((!openPreview || !isMultimediaFilePicker) && isEditorInitialized){
                                     postProcessEditor();
                                 }else{
-                                    if(isActivityActive){
+                                    if(isActivityActive && isEditorInitialized){
                                         handleUpdateFile();
                                     }
                                 }
