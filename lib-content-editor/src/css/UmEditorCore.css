@@ -60,6 +60,11 @@ p {
     line-height: 1.4em;
 }
 
+.add-choice{
+    color:white !important;
+    padding: 8px 10px 8px 10px !important;
+}
+
 .select-option{
     border: 1px solid #ccc;
     margin-left: 16px;
@@ -150,7 +155,7 @@ select,button :focus :active{
 }
 
 .um-media{
-    margin: 10px 0 10px 0 !important;
+    margin: 10px !important;
     background: transparent !important;
     max-width:100%;
     height:auto;
@@ -195,8 +200,8 @@ audio::-webkit-media-controls-panel {
     width: calc(100% + 30px); /* Adjust as needed */
 }
 
-span{
-    color: black;
+.float-right{
+    color: #212121 !important;
     padding: 2px;
     cursor: pointer;
     margin-left: 20px;
@@ -204,6 +209,10 @@ span{
 
 .action-delete-inner{
     margin-top: 16px !important;
+}
+
+video {
+    object-fit: cover;
 }
 
 

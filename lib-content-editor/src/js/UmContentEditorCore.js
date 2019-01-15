@@ -27,7 +27,11 @@ let performedUndoAction = false;
  */
 let editorStateTracker = [];
 
-let selectionRange;
+const moveCursorToFirstExtraWidget = 1;
+
+const moveCursorToQuestionBody = 2;
+
+const moveCursorToExtraWidgetBelowQuestion = 3;
 
 /**
  * Tag which used to save previous state of the editor on localStorage.
@@ -812,19 +816,13 @@ UmContentEditorCore.prototype.handleProtectedElementsOnSoftKeyboard = (mutations
         if(allowUndo){
             let selector = ".dont-remove, .immutable-content, div[class^='question'], div[class*='question'], #umEditor";
             if($(record.target).is(selector) && !isQuestionWidgetInsert){
-                const activeElement = UmContentEditorCore.getEditorPreviousState().activeElement;
-                $("#umEditor").html(UmContentEditorCore.getEditorPreviousState().content);
+                const editorPrevState = UmContentEditorCore.getEditorPreviousState();
+                console.log("state",editorPrevState);
+                $("#umEditor").html(editorPrevState.content);
                 performedUndoAction = true;
                 setTimeout(() => {
                     performedUndoAction = false;
-                    rangy.restoreSelection(activeElement, true);
-                    
-                
-                    window.setTimeout(function() {
-                        if (this.savedSelActiveElement && typeof this.savedSelActiveElement.focus != "undefined") {
-                            this.savedSelActiveElement.focus();
-                        }
-                    }, 1);
+                    UmContentEditorCore.prototype.handleCursorPositionAfterUndo(editorPrevState);
                 }, longerEventTimeout);
             }
         }
@@ -835,10 +833,7 @@ UmContentEditorCore.prototype.handleProtectedElementsOnSoftKeyboard = (mutations
  * Get previous editor state before last change.
  */
 UmContentEditorCore.getEditorPreviousState = ()=> {
-    return {
-        activeElement: editorStateTracker[previousEditorStateIndex].activeElement,
-        content:localStorage.getItem(editorContentStateKey)
-    };
+    return JSON.parse(localStorage.getItem(editorContentStateKey));
 };
 
 /**
@@ -846,17 +841,53 @@ UmContentEditorCore.getEditorPreviousState = ()=> {
  */
 UmContentEditorCore.prototype.saveEditorState = () =>{
     const editorState = tinymce.activeEditor.getContent();
-    const activeElement = tinymce.activeEditor.selection.getNode();
-    editorStateTracker.push({activeElement:selectionRange,content:editorState});
+    const activeParentNode = $(tinymce.activeEditor.selection.getNode()).parent();
+    const isBelowQuestion = $($(activeParentNode).prev()).is(".question");
+    const question = $(activeParentNode).closest("div.question");
+    const isInsideQuestion = question.length === 1;
+    const isInsideExtraWidget = $(activeParentNode).is(".extra-content");
+    const activeElementPosition =  isInsideExtraWidget ?
+     (isBelowQuestion ? moveCursorToExtraWidgetBelowQuestion:moveCursorToFirstExtraWidget):
+     (isInsideQuestion ? moveCursorToQuestionBody:0);
+    const editorStateToSave = {
+        elementPosition:activeElementPosition,
+        elementId: isInsideQuestion ? $(question).attr("id"):"",
+        content:editorState}
+    editorStateTracker.push(editorStateToSave);
     const discardToIndex  = editorStateTracker.length - 2;
     editorStateTracker.forEach((element,index) => {
         if(index <= discardToIndex){
             editorStateTracker.splice(index,1);
         }
     });
+    localStorage.setItem(editorContentStateKey,JSON.stringify(editorStateTracker[previousEditorStateIndex]));
+};
 
-    localStorage.setItem(editorContentStateKey,editorStateTracker[previousEditorStateIndex].content);
+UmContentEditorCore.prototype.handleCursorPositionAfterUndo = (prevState)=>{
+    let elementToFocus = null;
+    const editor = $("#umEditor");
+    switch(prevState.elementPosition){
+        case moveCursorToExtraWidgetBelowQuestion:
+            elementToFocus = prevState.elementId ? $(editor.find("#"+prevState.elementId)).next().get(0)
+            :$($($(editor).children()).first().children()).first().get(0);
+        break;
+        case moveCursorToFirstExtraWidget:
+            elementToFocus = $($($(editor).children()).first().children()).first().get(0);
+        break;
+        case moveCursorToQuestionBody:
+            elementToFocus = $($(editor.find("#"+prevState.elementId)).find(".question-body").children()).first().get(0);
+        break;
+        case 0:
+            UmContentEditorCore.prototype.setCursorPositionToTheLastNonProtectedElement();
+        break;
+    }
+    if(prevState.elementPosition !== 0){
+        UmContentEditorCore.prototype.setCursorToAnyNonProtectedFucusableElement(elementToFocus);
+        UmContentEditorCore.prototype.scrollToElement(elementToFocus);
+    }
+    console.log("state",elementToFocus);
 }
+
 
 
 /**
@@ -921,14 +952,10 @@ UmContentEditorCore.initEditor = (umConfig) => {
                     const sel = rangy.getSelection();
                     const range = sel.rangeCount ? sel.getRangeAt(0) : null;
                     let selectedContent = "";
-                    if (range) {
-                        rangy.saveRange(range);
-                        selectionRange = rangy.saveSelection();
-                        
+                    if (range) {        
                         selectedContent = range.toHtml();
                     }
                     this.selectedContent = selectedContent;
-                    console.log("selection",range);
                 }catch (e) {
                     console.log(e);
                 }
@@ -993,6 +1020,7 @@ UmContentEditorCore.initEditor = (umConfig) => {
 
         rangy.init();
         const editorContainer = $("#umEditor");
+        
         //save editor state at start
         UmContentEditorCore.prototype.saveEditorState();
 
