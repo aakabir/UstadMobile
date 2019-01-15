@@ -18,6 +18,48 @@ let eventOcurredAfterSelectionProtectionCheck = false;
 const questionTemplatesDir = "templates/";
 
 /**
+ * Check if undo action has been performed from editorStateTracker
+ */
+let performedUndoAction = false;
+
+/**
+ * Tracks state of the editor
+ */
+let editorStateTracker = [];
+
+let selectionRange;
+
+/**
+ * Tag which used to save previous state of the editor on localStorage.
+ */
+const editorContentStateKey = "editor-content-state";
+
+/**
+ * Index which is used to get previous state of the editor
+ */
+const previousEditorStateIndex = 0;
+
+/**
+ * Allow mutation to affect the editor, we will only undo if the actions aren't delete/cut.
+ */
+let isDeleteOrCutAction = false;
+
+/**
+ * Longer time used by editor to change values. i.e Longer operation like observer callbacks
+ */
+const longerEventTimeout = 500;
+
+/**
+ * Shorter time used by editor to change values. i.e Cursor movement.
+ */
+const shorterEventTimeout = 100;
+
+/**
+ * Average time used by editor to change values, i.e delete/cut events and cursor movement.
+ */
+const averageEventTimeout = 300;
+
+/**
  * Language locate path
  */
 const languageLocaleDir = "locale/";
@@ -45,6 +87,11 @@ let wasContentSelected = false;
  * @type {boolean} True if
  */
 let isProtectedElement = false;
+
+/**
+ * Tracks mutation if came from question insertion.
+ */
+let isQuestionWidgetInsert = false;
 
 
 /**
@@ -101,6 +148,7 @@ UmContentEditorCore.setFontSize = (fontSize) => {
  * @returns {{action: string, content: string}} callback object
  */
 UmContentEditorCore.editorActionUndo = () => {
+    performedUndoAction = true;
     UmContentEditorCore.executeCommand("Undo",null);
     UmContentEditorCore.prototype.checkCommandState("Undo");
 };
@@ -285,6 +333,18 @@ UmContentEditorCore.checkCurrentActiveControls = (commandValue) => {
     return {action:'activeControl',content:btoa(commandValue+"-"+isActive)};
 };
 
+UmContentEditorCore.base64Encode = (content) => {
+    return btoa(encodeURIComponent(content).replace(/%([0-9A-F]{2})/g, function(match, p1) {
+        return String.fromCharCode(parseInt(p1, 16));
+    }));
+};
+
+UmContentEditorCore.base64Decode = (content) =>{
+    return decodeURIComponent(Array.prototype.map.call(atob(content), function(c) {
+        return '%' + ('00' + c.charCodeAt(0).toString(16)).slice(-2);
+    }).join(''));
+};
+
 
 /**
  * Insert multiple choice question template to the editor
@@ -416,6 +476,7 @@ UmContentEditorCore.prototype.checkActivatedControls = () => {
  * @param isTest Flag to indicate if executed from test environment
  */
 UmContentEditorCore.prototype.insertQuestionTemplate = (questionTypeIndex,isTest = false) => {
+    isQuestionWidgetInsert = true;
     const questionTemplateList = ['template-qn-multiple-choice.html','template-qn-fill-the-blanks.html'];
     const nextQuestionId = UmQuestionWidget.QUESTION_ID_TAG+UmQuestionWidget.getNextUniqueId();
     const nextChoiceId = UmQuestionWidget.CHOICE_ID_TAG+UmQuestionWidget.getNextUniqueId();
@@ -427,6 +488,9 @@ UmContentEditorCore.prototype.insertQuestionTemplate = (questionTypeIndex,isTest
             questionNode = $("<div>").append(questionNode).append(UmQuestionWidget.EXTRA_CONTENT_WIDGET);
             questionNode = $(questionNode).html();
             UmContentEditorCore.prototype.insertQuestionNodeContent(questionNode);
+            setTimeout(() => {
+                isQuestionWidgetInsert = false;
+            }, shorterEventTimeout);
         }});
 };
 
@@ -547,15 +611,17 @@ UmContentEditorCore.setFocusToNextUnprotectedFocusableElement = (eventTargetElem
         UmContentEditorCore.prototype.setCursorToAnyNonProtectedFucusableElement(nextFocusableElement);
         UmContentEditorCore.prototype.scrollToElement(nextFocusableElement);
         return nextFocusableElement;
-    }else if($(eventTargetElement).is("button")){
+    }else if($(eventTargetElement).is(".add-choice,.action-delete-inner")){
+        const isDeletion = $(eventTargetElement).is(".action-delete-inner");
+        eventTargetElement =  isDeletion ? $($(eventTargetElement).closest("span")).closest("div div.question"): eventTargetElement;
         setTimeout(function () {
-            nextElementFocusSelector = ".question-choice-body p:first-of-type";
-            eventTargetElement = $($(eventTargetElement).closest("div div.question")).find(".question-choice").last();
+            nextElementFocusSelector = (isDeletion ? ".question-body":".question-choice-body") + " p:first-of-type";
+            eventTargetElement = isDeletion ? eventTargetElement: $($(eventTargetElement).closest("div div.question")).find(".question-choice").last();
             nextFocusableElement = $(eventTargetElement).find(nextElementFocusSelector).get(0);
             UmContentEditorCore.prototype.setCursorToAnyNonProtectedFucusableElement(nextFocusableElement);
             UmContentEditorCore.prototype.scrollToElement(nextFocusableElement);
             return nextFocusableElement;
-        },400);
+        },isDeletion ? 0:averageEventTimeout);
 
     }
     return nextFocusableElement;
@@ -567,24 +633,36 @@ UmContentEditorCore.setFocusToNextUnprotectedFocusableElement = (eventTargetElem
  * @param selector css selector which satisfies next focusable element 
  */
 UmContentEditorCore.prototype.getNextElementMatchingSelector = (currentNode,selector) => {
-  if($(currentNode).is(selector)){
-      return currentNode;
-  }else{
-      if($(currentNode).children().length > 0){
-        $(currentNode).children().each(function(index,childNode){
-            currentNode = childNode;
-            if($(currentNode).is("select")){
-                currentNode = null;
-                return false;
-            }
-            currentNode = UmContentEditorCore.prototype.getNextElementMatchingSelector(currentNode,selector);
-            return !$(currentNode).is(selector);
-        });
-      }else {
+  try{
+    if($(currentNode).is(selector)){
+        return currentNode;
+    }else{
+        if($(currentNode).children().length > 0){
+          $(currentNode).children().each(function(index,childNode){
+              currentNode = childNode;
+              if($(currentNode).is("select")){
+                  currentNode = null;
+                  return false;
+              }
+              if(currentNode){
+                  currentNode = UmContentEditorCore.prototype.getNextElementMatchingSelector(currentNode,selector);
+              }
+              return !$(currentNode).is(selector) || currentNode === null;
+          });
+        }else {
           currentNode = $(currentNode).next();
           currentNode = UmContentEditorCore.prototype.getNextElementMatchingSelector(currentNode,selector);
-      }
+          if(currentNode === null){
+              return currentNode;
+          }
+        }
+    }
+
+  }catch(e){
+    currentNode = null;
+    console.log("getNextElementMatchingSelector",e);
   }
+
   return currentNode;
 };
 
@@ -594,18 +672,20 @@ UmContentEditorCore.prototype.getNextElementMatchingSelector = (currentNode,sele
  * @param selector css selector which satisfies next focusable element 
  */
 UmContentEditorCore.prototype.getPrevElementMatchingSelector = (currentNode,selector) => {
+   try{
     const targetNode = currentNode;
     currentNode = $(targetNode).prev();
     const prevElementSelector = ":not(.question-feedback-container), :not(.question-choice-answer)";
     if($(currentNode).is(selector)){
         return currentNode;
     }else{
-        if($(currentNode).children().length > 0 && $(currentNode).is(prevElementSelector)){
-            $(currentNode).children().each(function(index,childNode){
+        const parentNode = currentNode;
+        if($(parentNode).children().length > 0 && $(parentNode).is(prevElementSelector)){
+            $(parentNode).children().each(function(index,childNode){
                 currentNode = childNode;
                 const foundNode = UmContentEditorCore.prototype.getNextElementMatchingSelector(currentNode,selector);
                 if(!foundNode){
-                    currentNode = UmContentEditorCore.prototype.getPrevElementMatchingSelector(currentNode,selector,true);
+                    currentNode = UmContentEditorCore.prototype.getPrevElementMatchingSelector(parentNode,selector,true);
                 }
                 return !$(currentNode).is(selector);
             });
@@ -614,11 +694,12 @@ UmContentEditorCore.prototype.getPrevElementMatchingSelector = (currentNode,sele
             currentNode = UmContentEditorCore.prototype.getPrevElementMatchingSelector(currentNode,selector);
         }
     }
-    return $(currentNode).is(".question-choice-feedback-wrong") ? $($(currentNode).children()).first().get(0):currentNode;
+    currentNode = $(currentNode).is(".question-choice-feedback-wrong") ? $($(currentNode).children()).first().get(0):currentNode;
+   }catch(err){
+       currentNode = null;
+   }
+   return currentNode;
   };
-
-
-
 
 /**
  * Set cursor to the last non protected and focusable element in the editor.
@@ -703,7 +784,9 @@ UmContentEditorCore.checkProtectedElements = (currentNode,isDeleteKey,selectedCo
     return true;
 };
 
-
+/**
+ * Prevent key event and stop event propagation
+*/
 UmContentEditorCore.prototype.preventDefaultAndStopPropagation = (event) =>  {
     try{
         event.preventDefault();
@@ -714,6 +797,66 @@ UmContentEditorCore.prototype.preventDefaultAndStopPropagation = (event) =>  {
     }
     return false;
 };
+
+
+
+/**  
+ * Prevent protected element from being deleted, this applies only to soft keyboard.
+ * @param mutations mutation records from the mutation observer. 
+ */
+UmContentEditorCore.prototype.handleProtectedElementsOnSoftKeyboard = (mutations) => {
+     //handle node addition, change class from second paragraph
+     $(mutations).each((index,record) =>{
+        const allowUndo = (record.type === "childList" && record.removedNodes.length > 0 
+        && !isQuestionWidgetInsert && !performedUndoAction) && !isDeleteOrCutAction;
+        if(allowUndo){
+            let selector = ".dont-remove, .immutable-content, div[class^='question'], div[class*='question'], #umEditor";
+            if($(record.target).is(selector) && !isQuestionWidgetInsert){
+                const activeElement = UmContentEditorCore.getEditorPreviousState().activeElement;
+                $("#umEditor").html(UmContentEditorCore.getEditorPreviousState().content);
+                performedUndoAction = true;
+                setTimeout(() => {
+                    performedUndoAction = false;
+                    rangy.restoreSelection(activeElement, true);
+                    
+                
+                    window.setTimeout(function() {
+                        if (this.savedSelActiveElement && typeof this.savedSelActiveElement.focus != "undefined") {
+                            this.savedSelActiveElement.focus();
+                        }
+                    }, 1);
+                }, longerEventTimeout);
+            }
+        }
+    });
+};
+
+/** 
+ * Get previous editor state before last change.
+ */
+UmContentEditorCore.getEditorPreviousState = ()=> {
+    return {
+        activeElement: editorStateTracker[previousEditorStateIndex].activeElement,
+        content:localStorage.getItem(editorContentStateKey)
+    };
+};
+
+/**
+ * Save editor state and keep tracking previous state of the editor.
+ */
+UmContentEditorCore.prototype.saveEditorState = () =>{
+    const editorState = tinymce.activeEditor.getContent();
+    const activeElement = tinymce.activeEditor.selection.getNode();
+    editorStateTracker.push({activeElement:selectionRange,content:editorState});
+    const discardToIndex  = editorStateTracker.length - 2;
+    editorStateTracker.forEach((element,index) => {
+        if(index <= discardToIndex){
+            editorStateTracker.splice(index,1);
+        }
+    });
+
+    localStorage.setItem(editorContentStateKey,editorStateTracker[previousEditorStateIndex].content);
+}
 
 
 /**
@@ -728,6 +871,7 @@ UmContentEditorCore.initEditor = (umConfig) => {
     UmQuestionWidget.loadPlaceholders(umConfig && umConfig.locale ? umConfig.locale:"en"
         ,umConfig && umConfig.test ? umConfig.test:false);
     let showToolbar = umConfig && umConfig.toolbar ? umConfig.toolbar:false;
+    const isSoftKeyboard = umConfig && umConfig.softKeyboard ? umConfig.softKeyboard:false;
     const configs = {
         selector: '#umEditor',
         height: $(window).height(),
@@ -778,9 +922,13 @@ UmContentEditorCore.initEditor = (umConfig) => {
                     const range = sel.rangeCount ? sel.getRangeAt(0) : null;
                     let selectedContent = "";
                     if (range) {
+                        rangy.saveRange(range);
+                        selectionRange = rangy.saveSelection();
+                        
                         selectedContent = range.toHtml();
                     }
                     this.selectedContent = selectedContent;
+                    console.log("selection",range);
                 }catch (e) {
                     console.log(e);
                 }
@@ -815,6 +963,7 @@ UmContentEditorCore.initEditor = (umConfig) => {
              * @type {[type]}
              */
             ed.on('keyup', () => {
+                console.log("keyup")
                 if(eventOcurredAfterSelectionProtectionCheck){
                     eventOcurredAfterSelectionProtectionCheck = false;
                     UmContentEditorCore.editorActionUndo();
@@ -827,9 +976,11 @@ UmContentEditorCore.initEditor = (umConfig) => {
              * @type {[type]}
              */
             ed.on('keydown', (e) => {
-                const currentNode = this.selectedContent.length > 0 ? $("<div />").append($(this.selectedContent).clone()).get(0):tinymce.activeEditor.selection.getNode(); 
-                UmContentEditorCore.checkProtectedElements(currentNode,e.key === "Backspace" || e.key === "Delete",this.selectedContent.length,e);
-                UmContentEditorCore.setFocusToNextUnprotectedFocusableElement(e.target);
+                if(!isSoftKeyboard){
+                    const currentNode = this.selectedContent.length > 0 ? $("<div />").append($(this.selectedContent).clone()).get(0):tinymce.activeEditor.selection.getNode(); 
+                    UmContentEditorCore.checkProtectedElements(currentNode,e.key === "Backspace" || e.key === "Delete",this.selectedContent.length,e);
+                    UmContentEditorCore.setFocusToNextUnprotectedFocusableElement(e.target);
+                }
             });
         }
     };
@@ -841,10 +992,12 @@ UmContentEditorCore.initEditor = (umConfig) => {
     tinymce.init(configs).then(() => {
 
         rangy.init();
-        const editorWrapper = $("#umEditor");
+        const editorContainer = $("#umEditor");
+        //save editor state at start
+        UmContentEditorCore.prototype.saveEditorState();
 
         //set default directionality
-        $(editorWrapper).attr("dir",UmQuestionWidget._locale.directionality);
+        $(editorContainer).attr("dir",UmQuestionWidget._locale.directionality);
 
         //request forcus to the editor
         UmContentEditorCore.prototype.requestFocus();
@@ -856,11 +1009,11 @@ UmContentEditorCore.initEditor = (umConfig) => {
         if($(".question").length > 0){
             UmContentEditorCore.prototype.setCursorPositionToTheLastNonProtectedElement();
         }else{
-            if(UmQuestionWidget.removeSpaces($(editorWrapper.children().get(0)).text()).length === 0){
-                $(editorWrapper.children().get(0)).remove();
+            if(UmQuestionWidget.removeSpaces($(editorContainer.children().get(0)).text()).length === 0){
+                $(editorContainer.children().get(0)).remove();
             }
-            editorWrapper.append(UmQuestionWidget.EXTRA_CONTENT_WIDGET);
-            UmContentEditorCore.prototype.setCursorToAnyNonProtectedFucusableElement(editorWrapper.children().get(0))
+            editorContainer.append(UmQuestionWidget.EXTRA_CONTENT_WIDGET);
+            UmContentEditorCore.prototype.setCursorToAnyNonProtectedFucusableElement(editorContainer.children().get(0))
         }
         tinymce.activeEditor.dom.remove(tinymce.activeEditor.dom.select('p.pg-break'));
         try{
@@ -870,29 +1023,44 @@ UmContentEditorCore.initEditor = (umConfig) => {
         }
 
         try{
+
             //add observer to watch content changes
             let contentWatcherFilters = {
                 attributes: true, characterData: true, childList: true, subtree: true,
                 attributeOldValue: true, characterDataOldValue: true
             };
 
-            const contentChangeObserver = new MutationObserver(function() {
-                const editorContainer = $("#umEditor");
+            const contentChangeObserver = new MutationObserver(function(mutations) {
                 const textHolder = editorContainer.find(".extra-content");
                 if(textHolder.length === 0){
                     editorContainer.find("p").remove();
                     editorContainer.append(UmQuestionWidget.EXTRA_CONTENT_WIDGET);
                     UmContentEditorCore.prototype.setCursor(null,false);
                 }
+
+               if(isSoftKeyboard){
+                   UmContentEditorCore.prototype.handleProtectedElementsOnSoftKeyboard(mutations);
+                }
+
+                //save editor state
+                UmContentEditorCore.prototype.saveEditorState();
+
+                //add immutable class to all labels
                 UmQuestionWidget.handleImmutableContent();
-                setTimeout(() => {UmContentEditorCore.prototype.checkActivatedControls()},300);
-                const previewContent = JSON.stringify({action:'onSaveContent',
-                    content:UmQuestionWidget.saveContentEditor(btoa(tinyMCE.activeEditor.getContent()))});
+                
+                //Check editor controls state
+                setTimeout(() => {UmContentEditorCore.prototype.checkActivatedControls()},averageEventTimeout);
+                const previewContent = JSON.stringify({
+                    action:'onSaveContent',
+                    content:UmQuestionWidget.saveContentEditor(tinyMCE.activeEditor.getContent())
+                });
+
                 try{
                     UmContentEditor.onSaveContent(previewContent);
                 }catch (e) {
                     console.log("onContentChanged:",e);
                 }
+
             });
             contentChangeObserver.observe(document.querySelector('#umEditor'),contentWatcherFilters);
             //add observer to watch controls state changes
@@ -901,7 +1069,7 @@ UmContentEditorCore.initEditor = (umConfig) => {
                 attributeFilter : ['style']
             };
             const menuStateChangeObserver = new MutationObserver(function() {
-                setTimeout(() => {UmContentEditorCore.prototype.checkActivatedControls()},300);
+                setTimeout(() => {UmContentEditorCore.prototype.checkActivatedControls()},averageEventTimeout);
             });
             menuStateChangeObserver.observe(document.querySelector('.mce-panel'),menuWatcherFilter);
 
