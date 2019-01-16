@@ -293,6 +293,7 @@ public class UmEditorFileHelper implements UmEditorFileHelperCore {
                 int unUsedFileCounter = 0;
                 if(mediaDestinationDir != null){
                     File [] allResources = mediaDestinationDir.listFiles();
+                    assert allResources != null;
                     for(File resource:allResources){
                         if(!isResourceInUse(resource.getName()) && !resource.getName().equals(tempFile)){
                             if(resource.delete()) unUsedFileCounter++;
@@ -306,28 +307,21 @@ public class UmEditorFileHelper implements UmEditorFileHelperCore {
         }).start();
     }
 
-
+    //Loop through the page and check if resources is in use.
     private boolean isResourceInUse(String resourceName){
-        try{
-            //Get all media which are in use from the editor
-            Elements resourceInUse = new Elements();
+        try {
             Document index = Jsoup.parse(UMFileUtil.readTextFile(
-                    new File(destinationTempDir,INDEX_FILE).getAbsolutePath()));
-            Element previewContainer = index.select("#"+EDITOR_BASE_DIR_NAME).first();
-            if(previewContainer.select("img[src]").size() > 0){
-                resourceInUse.addAll(previewContainer.select("img[src]"));
-            }
-            if(previewContainer.select("source[src]").size() > 0){
-                resourceInUse.addAll(previewContainer.select("source[src]"));
-            }
+                    new File(destinationTempDir, INDEX_FILE).getAbsolutePath()));
+            Element previewContainer = index.select("#" + EDITOR_BASE_DIR_NAME).first();
+            Elements sources = previewContainer.select("img[src],source[src]");
 
-            for(Element resource: resourceInUse){
-                if(resource.toString().contains(resourceName)){
+            for (Element source : sources) {
+                String srcUrl = source.attr("src");
+                if (srcUrl.endsWith(resourceName)) {
                     return true;
                 }
             }
-
-        } catch (NullPointerException | IOException e){
+        }catch (IOException e) {
             e.printStackTrace();
         }
 
