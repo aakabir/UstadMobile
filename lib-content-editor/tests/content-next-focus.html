@@ -17,7 +17,8 @@
         const TEST_CASE_TIMEOUT = 2000;
 
         window.onload = () => {
-            UmContentEditorCore.initEditor({locale:"en",test:true});
+            UmContentEditorCore.setDefaultLanguage("en",true);
+            UmContentEditorCore.initEditor();
             setTimeout(() => {
                 UmContentEditorCore.insertTestQuestionTemplate();
                 UmContentEditorCore.requestFocus();
