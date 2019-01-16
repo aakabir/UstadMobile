@@ -9,32 +9,43 @@ let UmQuestionWidget = function(element) {
     this.element =  $.parseHTML(element);
 };
 
-
+/** Default page break element to be used when new node is added */
 UmQuestionWidget.PAGE_BREAK = '<p style="page-break-before: always" class="pg-break">';
 
+/** Content widget which hold all non question content in the editor */
 UmQuestionWidget.EXTRA_CONTENT_WIDGET = '<div data-um-widget="content" class="um-row col-sm-12 col-md-12 col-lg-12 default-margin-top extra-content"><p></p></div>' +
     UmQuestionWidget.PAGE_BREAK;
+/** Question id prefix */
+UmQuestionWidget.QUESTION_ID_TAG = "id-question-";
 
-UmQuestionWidget.QUESTION_ID_TAG = "question-";
+/** Other editor node id prefix */
+UmQuestionWidget.ELEMENT_ID_TAG = "id-";
 
-UmQuestionWidget.CHOICE_ID_TAG = "choice-";
-
+/** Map to store widget type when editing */
 UmQuestionWidget._widgets = {};
 
+/** Object to store locale details */
 UmQuestionWidget._locale = {};
 
+/** Object to store widget listeners reference */
 UmQuestionWidget._widgetListeners = {};
 
+/** Flag which indicate if the question is new or existing one */
 UmQuestionWidget.isNewQuestion = false;
 
+/** Flag which indicate editor mode */
 UmQuestionWidget.isEditingMode = false;
 
+/** Flag which used to identify widget type multi choice question */
 UmQuestionWidget.WIDGET_NAME_MULTICHOICE = "multi-choice";
 
+/** Flag which used to identify widget type fill in the blanks question */
 UmQuestionWidget.WIDGET_NAME_FILL_BLANKS = "fill-the-blanks";
 
+/** Flag which used to identify all non question content widget */
 UmQuestionWidget.WIDGET_NAME_OTHER_CONTENT = "content";
 
+/** Holds clipboard value after cut action */
 UmQuestionWidget.CLIPBOARD_CONTENT = null;
 
 let UmFillTheBlanksQuestionWidget = function(element){UmQuestionWidget.apply(this, arguments);};
@@ -49,15 +60,21 @@ UmFillTheBlanksQuestionWidget.prototype = Object.create(UmQuestionWidget.prototy
 
 UmOtherContentWidget.prototype = Object.create(UmQuestionWidget.prototype);
 
-
+/** Set question status
+ * @param isNewQuestion TRUE if new question is inserted otherwise it exists.
+ */
 UmQuestionWidget.setQuestionStatus = (isNewQuestion) =>{
     UmQuestionWidget.isNewQuestion = isNewQuestion;
 };
 
+/** Set editor mode 
+ * @param isEditingMode TRUE if the editor is activated otherwise editor is not activated.
+*/
 UmQuestionWidget.setEditingMode = (isEditingMode) => {
     UmQuestionWidget.isEditingMode = isEditingMode;
 };
 
+/** Check empty objects */
 UmQuestionWidget.prototype.isEmpty = (obj) =>{
     for(let key in obj) {
         if(obj.hasOwnProperty(key))
@@ -161,8 +178,8 @@ UmQuestionWidget.isLabelText = (selectedText) => {
  * @param idLength
  * @returns {string}
  */
-UmQuestionWidget.getNextUniqueId = (idLength = 8) => {
-    const chars = '0123456789abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ';
+UmQuestionWidget.getNextUniqueId = (idLength = 16) => {
+    const chars = '0123456789abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ-_';
     let questionId = '';
     for (let i = idLength; i > 0; --i) questionId += chars[Math.floor(Math.random() * chars.length)];
     return questionId;
@@ -192,7 +209,6 @@ UmQuestionWidget.handleWidgetNode =  (editorNode) => {
 };
 
 
-/*Widget start editing starts*/
 /**
  * Switch on editing mode to the question widget
  * @returns question widget with controls
@@ -221,9 +237,15 @@ UmQuestionWidget.prototype.startEditing = function() {
 
     $(this.element).find(".question-retry-option")
         .before("<label class='um-labels no-left-padding'>"+UmQuestionWidget._locale.placeholders.labelForQuestionRetryOption+"</label><br/>");
+    $(this.element).find('div[class^="question"], .extra-content').each((index,element)=>{
+        if(!$(element).attr("id")){
+            $(element).attr("id",UmQuestionWidget.ELEMENT_ID_TAG+UmQuestionWidget.getNextUniqueId())
+        }
+    });
     return this.element;
 };
 
+/**Handle new question node */
 UmQuestionWidget.prototype.handleNewQuestionNode = (element)=>{
     const choiceOrAnswerLabel = $(element).attr("data-um-widget") === UmQuestionWidget.WIDGET_NAME_MULTICHOICE ?
         UmQuestionWidget._locale.placeholders.placeholderForTheChoiceText:UmQuestionWidget._locale.placeholders.placeholderForTheAnswerText;
@@ -237,6 +259,7 @@ UmQuestionWidget.prototype.handleNewQuestionNode = (element)=>{
     $(element).find(".fill-the-blanks-input").attr("placeholder",UmQuestionWidget._locale.placeholders.placeholderForTheBlanksInput);
 };
 
+/** Handle existing question node */
 UmQuestionWidget.prototype.handleExistingQuestionNode = (element) => {
     $(element).find(".question-choice").removeClass("question-choice-pointer selected-choice alert alert-secondary").addClass("default-margin-top");
     $(element).find('[data-um-preview="main"]').removeClass("preview-main default-margin-top");
@@ -255,6 +278,7 @@ UmQuestionWidget.prototype.handleExistingQuestionNode = (element) => {
     $(element).find(".question-choice-feedback").addClass("show-element").removeClass("hide-element");
 };
 
+/**Handle question choices */
 UmQuestionWidget.prototype.handleQuestionChoice = (element) => {
     $(element).find(".question-add-choice").removeClass("hide-element").addClass("show-element")
         .html("<button class='float-right add-choice default-margin-top extra-btn'>" +UmQuestionWidget._locale.placeholders.labelForAddChoiceBtn+"</button>");
@@ -269,8 +293,10 @@ UmQuestionWidget.prototype.handleQuestionChoice = (element) => {
         "  <option value=\"true\">"+UmQuestionWidget._locale.placeholders.labelForTrueOptionText+"</option>" +
         "  <option value=\"false\" selected=\"selected\">"+UmQuestionWidget._locale.placeholders.labelFalseOptionText+"</option>" +
         "</select>");
+
 };
 
+/** Handle immutable nodes - labels */
 UmQuestionWidget.handleImmutableContent = () => {
     $(document).find(".um-labels").addClass("immutable-content");
 };
@@ -290,15 +316,6 @@ UmOtherContentWidget.prototype.startEditing = function() {
 UmMultiChoiceQuestionWidget.prototype.startEditing = function(){
     UmQuestionWidget.prototype.startEditing.apply(this, arguments);
     UmQuestionWidget.prototype.handleQuestionChoice(this.element);
-    const choices = $(this.element).find(".question-choice");
-    for(let choice in choices){
-        if(!choices.hasOwnProperty(choice))
-            continue;
-        if($(choices[choice]).hasClass("question-choice")){
-            $(choices[choice]).attr("id",UmQuestionWidget.CHOICE_ID_TAG+ UmQuestionWidget.getNextUniqueId());
-        }
-
-    }
     $(this.element).find("label").css("z-index","1");
     return this.element;
 };
@@ -320,10 +337,7 @@ UmFillTheBlanksQuestionWidget.prototype.startEditing = function(){
         +UmQuestionWidget._locale.placeholders.labelForQuestionWrongFeedbackText+"</label>");
     return this.element;
 };
-/*Widget start editing ends*/
 
-
-/*Widget events listeners starts*/
 /**
  * Handle all document editing and previewing events
  */
@@ -364,10 +378,7 @@ UmQuestionWidget.handleWidgetListeners = () => {
 
     });
 };
-/*Widget events listeners ends*/
 
-
-/*Widget event handling starts*/
 /**
  * Action invoked when choice is added to the multiple choice question
  * @param event choice addition event object
@@ -376,7 +387,7 @@ UmQuestionWidget.handleWidgetListeners = () => {
 UmMultiChoiceQuestionWidget.prototype.addChoice = function(event,isTest = false){
     const choiceTemplateUrl = (isTest ? "/":"") + questionTemplatesDir+"template-qn-choice.html";
     $.ajax({url: choiceTemplateUrl, success: (choice) => {
-        choice = $(choice).attr("id",UmQuestionWidget.CHOICE_ID_TAG+UmQuestionWidget.getNextUniqueId());
+        choice = $(choice).attr("id",UmQuestionWidget.ELEMENT_ID_TAG+UmQuestionWidget.getNextUniqueId());
         UmQuestionWidget.prototype.handleNewQuestionNode(choice);
         UmQuestionWidget.prototype.handleQuestionChoice(choice);
         let questionElement = $($(event.target).closest("div .question")).children();
@@ -386,8 +397,6 @@ UmMultiChoiceQuestionWidget.prototype.addChoice = function(event,isTest = false)
     }});
 
 };
-
-
 
 
 /**
@@ -453,12 +462,10 @@ UmFillTheBlanksQuestionWidget.prototype.onQuestionAnswerChecked = (event) =>{
     defaultAnswerText = UmQuestionWidget.removeSpaces(defaultAnswerText);
 
     const isCorrectChoice = defaultAnswerText === userAnswerText;
-    const message = userAnswerText.length > 0 ?
-        (isCorrectChoice ? correctChoiceText: wrongChoiceText):UmQuestionWidget._locale.placeholders.warningOnSubmitEmptyField;
+    const message = isCorrectChoice ? correctChoiceText: wrongChoiceText;
     $(feedbackContainer).find(".question-feedback-container-text").html(message);
     $(feedbackContainer).removeClass("hide-element show-element alert-success alert-danger alert-warning alert-info");
-    $(feedbackContainer).addClass(userAnswerText.length > 0 ? (isCorrectChoice ? "alert-success":"alert-danger")
-        :"alert-info"+ " show-element");
+    $(feedbackContainer).addClass((isCorrectChoice ? "alert-success":"alert-danger") + " show-element");
     const canBeRetried = questionElement.attr("data-um-retry")==='true';
     if((!isCorrectChoice && canBeRetried) || userAnswerText.length <= 0){
         $(questionElement).find(".question-retry-btn").removeClass("hide-element").addClass("show-element");
@@ -551,6 +558,4 @@ UmQuestionWidget.prototype.onQuestionCut = event => {
         console.log("onContentCut:",e);
     }
 };
-
-/*Widget event handling ends*/
 

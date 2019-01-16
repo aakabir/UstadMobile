@@ -18,20 +18,25 @@ let eventOcurredAfterSelectionProtectionCheck = false;
 const questionTemplatesDir = "templates/";
 
 /**
- * Check if undo action has been performed from editorStateTracker
+ * Check if rollback action ocurred
  */
-let performedUndoAction = false;
+let rollbackActionPerformed = false;
 
 /**
  * Tracks state of the editor
  */
-let editorStateTracker = [];
+let currentActiveElementTracker = [];
 
-const moveCursorToFirstExtraWidget = 1;
+/**
+ * Stores element to focus after rollback action.
+ */
+let elementToFocusAfterRollbackAction = {};
 
-const moveCursorToQuestionBody = 2;
+/**
+ * Acceptable state before rolling back check
+ */
+let acceptedEditorStateBeforeChange = null;
 
-const moveCursorToExtraWidgetBelowQuestion = 3;
 
 /**
  * Flag to indicate keyboard type used
@@ -113,10 +118,6 @@ UmContentEditorCore.formattingCommandList = [
     'JustifyFull','InsertUnorderedList','InsertOrderedList','mceDirectionLTR','mceDirectionRTL','FontSize'
 ];
 
-UmContentEditorCore.sectionType = {
-  sectionBody:1,
-  sectionFeedback:2
-};
 
 /**
  * Check if a toolbar button is active or not
@@ -157,7 +158,7 @@ UmContentEditorCore.setFontSize = (fontSize) => {
  * @returns {{action: string, content: string}} callback object
  */
 UmContentEditorCore.editorActionUndo = () => {
-    performedUndoAction = true;
+    rollbackActionPerformed = true;
     UmContentEditorCore.executeCommand("Undo",null);
     UmContentEditorCore.prototype.checkCommandState("Undo");
 };
@@ -673,12 +674,10 @@ UmContentEditorCore.prototype.getNextElementMatchingSelector = (currentNode,sele
           }
         }
     }
-
   }catch(e){
     currentNode = null;
     console.log("getNextElementMatchingSelector",e);
   }
-
   return currentNode;
 };
 
@@ -769,7 +768,11 @@ UmContentEditorCore.prototype.setCursorToAnyNonProtectedFucusableElement = (elem
    }
 };
 
-
+/** 
+ * Set cursor to specific element in the editor
+ * @param element target element to focus
+ * @param isRoot flag to indicate if target is root element.
+  */
 UmContentEditorCore.prototype.setCursor = (element = null,isRoot) =>{
     if(isRoot){
         UmContentEditorCore.prototype.setCursorPositionToTheLastNonProtectedElement(element);
@@ -801,7 +804,7 @@ UmContentEditorCore.checkProtectedElements = (currentNode,isDeleteKey,selectedCo
 };
 
 /**
- * Prevent key event and stop event propagation
+ * Prevent key event and stop event propagation (Physical keyboard key events handling)
 */
 UmContentEditorCore.prototype.preventDefaultAndStopPropagation = (event) =>  {
     try{
@@ -820,97 +823,61 @@ UmContentEditorCore.prototype.preventDefaultAndStopPropagation = (event) =>  {
  * Prevent protected element from being deleted, this applies only to soft keyboard.
  * @param mutations mutation records from the mutation observer. 
  */
-UmContentEditorCore.prototype.handleProtectedElementsOnSoftKeyboard = (mutations) => {
+UmContentEditorCore.prototype.rollbackChangesAfterMutation = (mutations) => {
+    let rollbackChanges = false;
      if(isSoftKeyboard){
-         //handle node addition, change class from second paragraph
-     $(mutations).each((index,record) =>{
-        const allowUndo = (record.type === "childList" && record.removedNodes.length > 0 
-        && !isQuestionWidgetInsert && !performedUndoAction) && !isDeleteOrCutAction;
-        if(allowUndo){
-            let selector = ".dont-remove, .immutable-content, div[class^='question'], div[class*='question'], #umEditor";
-            if($(record.target).is(selector) && !isQuestionWidgetInsert){
-                const editorPrevState = UmContentEditorCore.getEditorPreviousState();
-                console.log("state",editorPrevState);
-                $("#umEditor").html(editorPrevState.content);
-                performedUndoAction = true;
-                setTimeout(() => {
-                    performedUndoAction = false;
-                    UmContentEditorCore.prototype.handleCursorPositionAfterUndo(editorPrevState);
-                }, longerEventTimeout);
+        $(mutations).each((index,record) =>{
+            const isValidElementToCheck = (record.type === "childList" && record.removedNodes.length > 0 && !isQuestionWidgetInsert && !rollbackActionPerformed) 
+            && !isDeleteOrCutAction;
+            if(isValidElementToCheck){
+                let selector = ".dont-remove, .immutable-content, div[class^='question'], #umEditor, .question";
+                console.log("roll matches",$(record.target).is(selector),record.target);
+                if($(record.target).is(selector)){
+                    rollbackChanges = true;
+                    return false;
+                }
             }
-        }
-    });
+        });
      }
-};
-
-/** 
- * Get previous editor state before last change.
- */
-UmContentEditorCore.getEditorPreviousState = ()=> {
-    return editorStateTracker[previousEditorStateIndex];
+     return rollbackChanges;
 };
 
 /**
- * Save editor state and keep tracking previous state of the editor.
+ * Save editor state and keep tracking of previous acceptable state of the editor.
  */
-UmContentEditorCore.prototype.saveEditorState = () =>{
-    const editorState = tinymce.activeEditor.getContent();
-    const activeParentNode = $(tinymce.activeEditor.selection.getNode()).parent();
-    const isBelowQuestion = $($(activeParentNode).prev()).is(".question");
-    const question = $(activeParentNode).closest("div.question");
-    const isInsideQuestion = question.length === 1;
-    const isInsideExtraWidget = $(activeParentNode).is(".extra-content");
-    const activeElementPosition =  isInsideExtraWidget ?
-     (isBelowQuestion ? moveCursorToExtraWidgetBelowQuestion:moveCursorToFirstExtraWidget):
-     (isInsideQuestion ? moveCursorToQuestionBody:0);
-    const editorStateToSave = {
-        elementPosition:activeElementPosition,
-        elementId: isInsideQuestion ? $(question).attr("id"):"",
-        content:editorState};
-    editorStateTracker.push(editorStateToSave);
-    const discardToIndex  = editorStateTracker.length - 2;
-    editorStateTracker.forEach((element,index) => {
-        if(index <= discardToIndex){
-            editorStateTracker.splice(index,1);
+UmContentEditorCore.prototype.saveEditorState = () => {
+    acceptedEditorStateBeforeChange = tinymce.activeEditor.getContent();
+    const activeIndex = 0;
+    //track element to be focused
+    if(!rollbackActionPerformed){
+        currentActiveElementTracker.push($(tinymce.activeEditor.selection.getNode()).parent());
+        const lastIndexToTrack  = currentActiveElementTracker.length - 3;
+        currentActiveElementTracker.forEach((element,index) => {
+            if(index <= lastIndexToTrack){
+                currentActiveElementTracker.splice(index,1);
+            }
+        });
+        elementToFocusAfterRollbackAction = {
+            element: currentActiveElementTracker[activeIndex],
+            parent: $(currentActiveElementTracker[activeIndex]).parent()
         }
-    });
+    }
 };
 
-UmContentEditorCore.prototype.handleCursorPositionAfterUndo = (prevState)=>{
-    let elementToFocus = null;
-    const editor = $("#umEditor");
-    switch(prevState.elementPosition){
-        case moveCursorToExtraWidgetBelowQuestion:
-            elementToFocus = prevState.elementId ? $(editor.find("#"+prevState.elementId)).next().get(0)
-            :$($($(editor).children()).first().children()).first().get(0);
-        break;
-        case moveCursorToFirstExtraWidget:
-            elementToFocus = $($($(editor).children()).first().children()).first().get(0);
-        break;
-        case moveCursorToQuestionBody:
-            elementToFocus = $($(editor.find("#"+prevState.elementId)).find(".question-body").children()).first().get(0);
-        break;
-        case 0:
-            UmContentEditorCore.prototype.setCursorPositionToTheLastNonProtectedElement();
-        break;
-    }
-    if(prevState.elementPosition !== 0){
-        UmContentEditorCore.prototype.setCursorToAnyNonProtectedFucusableElement(elementToFocus);
-        UmContentEditorCore.prototype.scrollToElement(elementToFocus);
-    }
-    console.log("state",elementToFocus);
-}
-
+/**
+ * Set default locale to the editor
+ * @param locale language locale to be set
+ * @param isTest Flag to indicate if the pages are running under test invironment
+ *               If so, resource path will be changes.
+  */
 UmContentEditorCore.setDefaultLanguage = (locale, isTest = false)=>{
     UmQuestionWidget.loadPlaceholders(locale,isTest);
 }
 
-
-
 /**
  * Initialize tinymce editor to the document element
- * @param locale => Default UMEditor language locale
- * @param showToolbar => Flag to show and hide default tinymce toolbar
+ * @param locale Default UMEditor language locale
+ * @param showToolbar Flag to show and hide default tinymce toolbar
  */
 UmContentEditorCore.initEditor = (locale = "en", showToolbar = false) => {
     UmQuestionWidget.loadPlaceholders (locale);
@@ -926,9 +893,6 @@ UmContentEditorCore.initEditor = (locale = "en", showToolbar = false) => {
         plugins: ['directionality','lists'],
         toolbar: showToolbar,
         extended_valid_elements: "span[*],i[*]",
-        content_css: [
-            '//fonts.googleapis.com/css?family=Lato:300,300i,400,400i',
-            '//www.tinymce.com/css/codepen.min.css'],
         setup: (ed) => {
             ed.on('preInit', () => {
                 //selection status tracker.
@@ -1001,7 +965,6 @@ UmContentEditorCore.initEditor = (locale = "en", showToolbar = false) => {
              * @type {[type]}
              */
             ed.on('keyup', () => {
-                console.log("keyup")
                 if(eventOcurredAfterSelectionProtectionCheck){
                     eventOcurredAfterSelectionProtectionCheck = false;
                     UmContentEditorCore.editorActionUndo();
@@ -1024,6 +987,7 @@ UmContentEditorCore.initEditor = (locale = "en", showToolbar = false) => {
         }
     };
 
+    //set toolbar menus if will be shown
     if(showToolbar){
         configs.toolbar = ['undo redo | bold italic underline strikethrough superscript subscript | alignleft aligncenter alignright alignjustify | bullist numlist outdent indent | fontsizeselect'];
     }
@@ -1039,7 +1003,7 @@ UmContentEditorCore.initEditor = (locale = "en", showToolbar = false) => {
         //set default directionality
         $(editorContainer).attr("dir",UmQuestionWidget._locale.directionality);
 
-        //request forcus to the editor
+        //request focus to the editor
         UmContentEditorCore.prototype.requestFocus();
 
         //enable editing mode
@@ -1052,7 +1016,9 @@ UmContentEditorCore.initEditor = (locale = "en", showToolbar = false) => {
             if(UmQuestionWidget.removeSpaces($(editorContainer.children().get(0)).text()).length === 0){
                 $(editorContainer.children().get(0)).remove();
             }
-            editorContainer.append(UmQuestionWidget.EXTRA_CONTENT_WIDGET);
+            const extra_widget = $(UmQuestionWidget.EXTRA_CONTENT_WIDGET).attr("id",
+            UmQuestionWidget.ELEMENT_ID_TAG+UmQuestionWidget.getNextUniqueId())
+            editorContainer.append(extra_widget);
             UmContentEditorCore.prototype.setCursorToAnyNonProtectedFucusableElement(editorContainer.children().get(0))
         }
         tinymce.activeEditor.dom.remove(tinymce.activeEditor.dom.select('p.pg-break'));
@@ -1078,10 +1044,28 @@ UmContentEditorCore.initEditor = (locale = "en", showToolbar = false) => {
                     UmContentEditorCore.prototype.setCursor(null,false);
                 }
 
-                UmContentEditorCore.prototype.handleProtectedElementsOnSoftKeyboard(mutations);
+                //check if change made is allowed or not, if not roll back to the last allowed change.
+                if(UmContentEditorCore.prototype.rollbackChangesAfterMutation(mutations)){
+                    rollbackActionPerformed = true;
+                    editorContainer.html(acceptedEditorStateBeforeChange);
+                    setTimeout(() => {
+                        rollbackActionPerformed = false;
+                        const classSelector = $(elementToFocusAfterRollbackAction.element).attr("class").split(/\s+/)[0];
+                        const elementToFocus = editorContainer.find("."+classSelector);
+                        //Find an element to focus after rolling back the changes
+                        elementToFocus.each((index,element) => {
+                            if($(elementToFocusAfterRollbackAction.parent).attr("id") === $($(element).parent().get(0)).attr("id")){
+                                UmContentEditorCore.prototype.setCursorToAnyNonProtectedFucusableElement(element);
+                                UmContentEditorCore.prototype.scrollToElement(element);
+                            }
+                        
+                        });
+                    }, longerEventTimeout);
+                }else{
+                    //Save editor state
+                    UmContentEditorCore.prototype.saveEditorState();
+                }
 
-                //save editor state
-                UmContentEditorCore.prototype.saveEditorState();
 
                 //add immutable class to all labels
                 UmQuestionWidget.handleImmutableContent();
@@ -1101,6 +1085,8 @@ UmContentEditorCore.initEditor = (locale = "en", showToolbar = false) => {
 
             });
             contentChangeObserver.observe(document.querySelector('#umEditor'),contentWatcherFilters);
+            
+            
             //add observer to watch controls state changes
             const menuWatcherFilter = {
                 attributes : true,

@@ -274,3 +274,6 @@ app-gwt/*
 #coverage report
 /lib-content-editor/coverage/
 /lib-content-editor/.nyc_output/
+/lib-content-editor/.vscode/
+/lib-content-editor/.idea/
+/lib-content-editor/.history/
