@@ -8,6 +8,7 @@ import android.content.ClipboardManager;
 import android.content.Context;
 import android.content.Intent;
 import android.content.pm.PackageManager;
+import android.content.res.Configuration;
 import android.content.res.Resources;
 import android.content.res.TypedArray;
 import android.graphics.Bitmap;
@@ -38,11 +39,13 @@ import android.support.v7.widget.RecyclerView;
 import android.util.DisplayMetrics;
 import android.util.TypedValue;
 import android.view.Display;
+import android.view.KeyEvent;
 import android.view.LayoutInflater;
 import android.view.Menu;
 import android.view.View;
 import android.view.ViewGroup;
 import android.webkit.WebSettings;
+import android.webkit.WebView;
 import android.widget.ImageView;
 import android.widget.ProgressBar;
 import android.widget.RelativeLayout;
@@ -63,7 +66,6 @@ import com.ustadmobile.port.android.umeditor.UmEditorAnimatedViewSwitcher;
 import com.ustadmobile.port.android.umeditor.UmAndroidUriUtil;
 import com.ustadmobile.port.android.umeditor.UmEditorActionView;
 import com.ustadmobile.port.android.umeditor.UmEditorPopUpView;
-import com.ustadmobile.port.android.umeditor.UmEditorWebView;
 import com.ustadmobile.port.android.umeditor.UmFormat;
 import com.ustadmobile.port.android.umeditor.UmFormatStateChangeListener;
 import com.ustadmobile.port.android.umeditor.UmGridSpacingItemDecoration;
@@ -82,6 +84,8 @@ import org.jsoup.select.Elements;
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.IOException;
+import java.io.UnsupportedEncodingException;
+import java.net.URLDecoder;
 import java.util.ArrayList;
 import java.util.Hashtable;
 import java.util.List;
@@ -117,7 +121,7 @@ public class ContentEditorActivity extends UstadBaseActivity implements ContentE
 
     private UmEditorActionView umEditorActionView;
 
-    private UmEditorWebView umEditorWebView;
+    private WebView umEditorWebView;
 
     private DrawerLayout mContentPageDrawer;
 
@@ -316,7 +320,7 @@ public class ContentEditorActivity extends UstadBaseActivity implements ContentE
             mToolbar.add(new UmFormat(R.drawable.ic_format_textdirection_l_to_r_white_24dp,
                     ACTION_TEXT_DIRECTION_LTR,false,ACTIONS_TOOLBAR_INDEX,
                     R.id.content_action_direction));
-            mToolbar.add(new UmFormat(R.drawable.ic_menu_white_24dp,
+            mToolbar.add(new UmFormat(R.drawable.ic_pages_white_24dp,
                     "",false,ACTIONS_TOOLBAR_INDEX,R.id.content_action_pages));
 
             List<UmFormat> allFormats = new ArrayList<>();
@@ -726,7 +730,7 @@ public class ContentEditorActivity extends UstadBaseActivity implements ContentE
 
     }
 
-    @SuppressLint({"SetJavaScriptEnabled"})
+    @SuppressLint({"SetJavaScriptEnabled", "ClickableViewAccessibility"})
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
@@ -769,6 +773,7 @@ public class ContentEditorActivity extends UstadBaseActivity implements ContentE
                         .setViews(rootView, umEditorWebView,contentOptionsBottomSheetBehavior,
                                 formattingBottomSheetBehavior, mediaSourceBottomSheetBehavior,
                                 mContentPageDrawer);
+        viewSwitcher.closeAnimatedView(ANIMATED_SOFT_KEYBOARD_PANEL);
 
         ViewPager mViewPager = findViewById(R.id.content_types_viewpager);
         TabLayout mTabLayout = findViewById(R.id.content_types_tabs);
@@ -793,6 +798,8 @@ public class ContentEditorActivity extends UstadBaseActivity implements ContentE
             umEditorActionView.inflateMenu(R.menu.menu_content_editor_quick_actions,true);
             umEditorActionView.setQuickActionMenuItemClickListener(this);
         }
+
+
 
         handleClipBoardContentChanges();
 
@@ -846,6 +853,8 @@ public class ContentEditorActivity extends UstadBaseActivity implements ContentE
 
 
 
+
+
         mInsertMultimedia.setOnClickListener(v ->{
             isMultimediaFilePicker = true;
             viewSwitcher.animateView(UmEditorAnimatedViewSwitcher.ANIMATED_MEDIA_TYPE_PANEL);
@@ -885,6 +894,7 @@ public class ContentEditorActivity extends UstadBaseActivity implements ContentE
 
     }
 
+
     @Override
     public boolean onCreateOptionsMenu(Menu menu) {
         super.onCreateOptionsMenu(menu);
@@ -909,6 +919,7 @@ public class ContentEditorActivity extends UstadBaseActivity implements ContentE
     }
 
 
+
     @Override
     public void onFocusRequested() { }
 
@@ -929,7 +940,11 @@ public class ContentEditorActivity extends UstadBaseActivity implements ContentE
 
     @Override
     public void onTaskCompleted() {
-        runOnUiThread(() -> progressDialog.setVisibility(View.GONE));
+        runOnUiThread(() -> {
+            setDefaultLanguage();
+            progressDialog.setVisibility(View.GONE);
+        });
+
     }
 
     @Override
@@ -959,6 +974,7 @@ public class ContentEditorActivity extends UstadBaseActivity implements ContentE
                     umEditorWebView.postDelayed(() ->
                             viewSwitcher.animateView(ANIMATED_SOFT_KEYBOARD_PANEL),
                             MAX_SOFT_KEYBOARD_DELAY);
+                   umEditorWebView.dispatchKeyEvent(new KeyEvent(KeyEvent.KEYCODE_C, KeyEvent.KEYCODE_BACK));
                 }
                 handleBackNavigationIcon();
                 startEditing.setVisibility(View.GONE);
@@ -968,14 +984,18 @@ public class ContentEditorActivity extends UstadBaseActivity implements ContentE
                 handleQuickActions();
                 break;
             case ACTION_SAVE_CONTENT:
-                Document indexFile = getIndexDocument();
-                Elements contentContainer = indexFile.select("#"+EDITOR_BASE_DIR_NAME);
-                contentContainer.first().html(content);
-
-                UstadMobileSystemImpl.l(UMLog.DEBUG,700, content);
-                //Update index.html file
-                UMFileUtil.writeToFile(new File(umEditorFileHelper.getDestinationDirPath(),
-                        INDEX_FILE),indexFile.html());
+                try{
+                    Document indexFile = getIndexDocument();
+                    Elements contentContainer = indexFile.select("#"+EDITOR_BASE_DIR_NAME);
+                    contentContainer.first().html(content);
+                    String utf8Content = URLDecoder.decode(content,"UTF-8");
+                    UstadMobileSystemImpl.l(UMLog.DEBUG,700, utf8Content);
+                    //Update index.html file
+                    UMFileUtil.writeToFile(new File(umEditorFileHelper.getDestinationDirPath(),
+                            INDEX_FILE),indexFile.html());
+                } catch (UnsupportedEncodingException e) {
+                    e.printStackTrace();
+                }
                 break;
 
             //Callback received upon completion of all controls status check
@@ -992,13 +1012,20 @@ public class ContentEditorActivity extends UstadBaseActivity implements ContentE
 
                 break;
             case ACTION_CONTENT_CUT:
-                ClipboardManager clipboard = (ClipboardManager) getSystemService(Context.CLIPBOARD_SERVICE);
-                ClipData clip = ClipData.newPlainText(EDITOR_BASE_DIR_NAME, content);
-                assert clipboard != null;
-                clipboard.setPrimaryClip(clip);
+                try{
+                    String utf8Content = URLDecoder.decode(content,"UTF-8");
+                    ClipboardManager clipboard = (ClipboardManager) getSystemService(Context.CLIPBOARD_SERVICE);
+                    ClipData clip = ClipData.newPlainText(EDITOR_BASE_DIR_NAME, utf8Content);
+                    assert clipboard != null;
+                    clipboard.setPrimaryClip(clip);
+                } catch (UnsupportedEncodingException e) {
+                    e.printStackTrace();
+                }
                 break;
         }
     }
+
+
 
     @Override
     public void onRequestPermissionsResult(int requestCode, @NonNull String permissions[], @NonNull int[] grantResults) {
@@ -1139,7 +1166,6 @@ public class ContentEditorActivity extends UstadBaseActivity implements ContentE
             presenter.handleFormatTypeClicked(ACTION_REDO,null);
 
         }else if(itemId == R.id.content_action_direction){
-
             View menuItemView = findViewById(R.id.content_action_direction);
             UmEditorPopUpView  popUpView = new UmEditorPopUpView(this, menuItemView)
                     .setMenuList(umFormatHelper.getLanguageDirectionalityList(null))
@@ -1304,7 +1330,7 @@ public class ContentEditorActivity extends UstadBaseActivity implements ContentE
      */
     private void initializeEditor(){
         executeJsFunction(umEditorWebView, EDITOR_METHOD_PREFIX+"initEditor",
-                ContentEditorActivity.this, (String[]) null);
+                ContentEditorActivity.this);
     }
 
     /**
@@ -1326,6 +1352,7 @@ public class ContentEditorActivity extends UstadBaseActivity implements ContentE
                     handleBackNavigationIcon();
                     invalidateOptionsMenu();
                     handleQuickActions();
+                    toolbar.setMenuVisible(false);
                     viewSwitcher.closeAnimatedView(ANIMATED_SOFT_KEYBOARD_PANEL);
                     startEditing.setVisibility(View.VISIBLE);
                     loadIndexFile();
@@ -1364,12 +1391,13 @@ public class ContentEditorActivity extends UstadBaseActivity implements ContentE
         }
 
         File destination = new File(umEditorFileHelper.getDestinationMediaDirPath(),
-                compressedFile.getName().replaceAll("\\s+","_"));
-        UMFileUtil.copyFile(new FileInputStream(compressedFile),destination);
-        String source = MEDIA_DIRECTORY + destination.getName();
-        progressDialog.setVisibility(View.GONE);
-        executeJsFunction(umEditorWebView, EDITOR_METHOD_PREFIX+"insertMediaContent",
-                this, source,mimeType);
+                compressedFile.getName().replaceAll("\\s+","_").replace("-","_"));
+        if(UMFileUtil.copyFile(new FileInputStream(compressedFile),destination)){
+            String source = MEDIA_DIRECTORY + destination.getName();
+            progressDialog.setVisibility(View.GONE);
+            executeJsFunction(umEditorWebView, EDITOR_METHOD_PREFIX+"insertMediaContent",
+                    this, source,mimeType);
+        }
     }
 
     /**
@@ -1542,6 +1570,11 @@ public class ContentEditorActivity extends UstadBaseActivity implements ContentE
     @Override
     public void selectAllContent() {
         executeJsFunction(umEditorWebView, EDITOR_METHOD_PREFIX+"selectAll",this);
+    }
+
+
+    public void setDefaultLanguage() {
+        executeJsFunction(umEditorWebView, EDITOR_METHOD_PREFIX+"setDefaultLanguage",this,"en","false");
     }
 
 
