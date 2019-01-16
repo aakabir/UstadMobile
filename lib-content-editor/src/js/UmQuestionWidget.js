@@ -58,11 +58,20 @@ UmQuestionWidget.setEditingMode = (isEditingMode) => {
     UmQuestionWidget.isEditingMode = isEditingMode;
 };
 
+UmQuestionWidget.prototype.isEmpty = (obj) =>{
+    for(let key in obj) {
+        if(obj.hasOwnProperty(key))
+            return false;
+    }
+    return true;
+}
+
 /**
  * Set default placeholders based on selected locale
  */
-UmQuestionWidget.loadPlaceholders = (locale, isTest) => {
-    const localeFileUrl = (isTest ? "/":"") + languageLocaleDir+"locale."+locale+".json";
+UmQuestionWidget.loadPlaceholders = (locale, isTest = false) => {
+    if(UmQuestionWidget.prototype.isEmpty(UmQuestionWidget._locale)){
+        const localeFileUrl = (isTest ? "/":"") + languageLocaleDir+"locale."+locale+".json";
     $.ajax({url: localeFileUrl, success: (localeFileContent) => {
             UmQuestionWidget._locale = localeFileContent;
         },error:() => {
@@ -70,6 +79,7 @@ UmQuestionWidget.loadPlaceholders = (locale, isTest) => {
                 UmQuestionWidget.loadPlaceholders("en",isTest);
             }
     }});
+    }
 };
 
 
@@ -105,7 +115,7 @@ UmQuestionWidget.saveContentEditor = (content) => {
     //remove all empty extra content widget on preview
     $(editorContent).find(".extra-content").each((index,widget) => {
         if(UmQuestionWidget.prototype.isExtraContentEmpty(widget)){
-            $(widget).remove();
+            $(widget).removeClass("show-element").addClass("hide-element");
         }
     });
     editorContent = $('<div/>').html(editorContent).contents().html();
@@ -191,15 +201,16 @@ UmQuestionWidget.prototype.startEditing = function() {
     $(this.element).find("label").remove();
     $(this.element).find(".question-action-holder").removeClass("hide-element").addClass("show-element");
     $(this.element).find(".question-body").removeClass("default-margin-bottom").before("<label class='um-labels' style='z-index: 3;'>"+UmQuestionWidget._locale.placeholders.labelForQuestionBodyText+"</label><br/>");
-    $(this.element).find(".question-retry-btn").html("<button class='btn btn-dark black float-right qn-retry' data-um-preview='support'>"+UmQuestionWidget._locale.placeholders.labelForTryAgainOptionBtn+"</button>");
+    $(this.element).find(".question-retry-btn").html("<button class='float-right qn-retry extra-btn' data-um-preview='support'>"+UmQuestionWidget._locale.placeholders.labelForTryAgainOptionBtn+"</button>");
     $(this.element).find(".question").removeClass("default-padding").addClass("default-padding-top default-padding-bottom");
     $(this.element).find('.question-action-holder').removeClass("hide-element").addClass("show-element");
     $(this.element).find('.action-inner').removeClass("hide-element").addClass("show-element");
     $(this.element).find('.question-answer').removeClass("show-element").addClass("hide-element");
-   if(UmQuestionWidget.isNewQuestion){
-        UmQuestionWidget.prototype.handleNewQuestionNode(this.element);
-    }else{
-        UmQuestionWidget.prototype.handleExistingQuestionNode(this.element);
+    $(this.element).find(".extra-content").removeClass("hide-element").addClass("show-element");
+    if(UmQuestionWidget.isNewQuestion){
+            UmQuestionWidget.prototype.handleNewQuestionNode(this.element);
+        }else{
+            UmQuestionWidget.prototype.handleExistingQuestionNode(this.element);
     }
 
     $(this.element).find(".question-retry-option").html("" +
@@ -246,7 +257,7 @@ UmQuestionWidget.prototype.handleExistingQuestionNode = (element) => {
 
 UmQuestionWidget.prototype.handleQuestionChoice = (element) => {
     $(element).find(".question-add-choice").removeClass("hide-element").addClass("show-element")
-        .html("<button class='btn btn-primary float-right add-choice default-margin-top btn-blue-theme'>" +UmQuestionWidget._locale.placeholders.labelForAddChoiceBtn+"</button>");
+        .html("<button class='float-right add-choice default-margin-top extra-btn'>" +UmQuestionWidget._locale.placeholders.labelForAddChoiceBtn+"</button>");
     $(element).find(".question-choice-body").before("<label class='um-labels'>"
         +UmQuestionWidget._locale.placeholders.labelForChoiceBodyText+"</label>");
     $(element).find(".question-choice-feedback").before("<label class='um-labels'>"

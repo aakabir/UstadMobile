@@ -34,6 +34,11 @@ const moveCursorToQuestionBody = 2;
 const moveCursorToExtraWidgetBelowQuestion = 3;
 
 /**
+ * Flag to indicate keyboard type used
+ */
+let isSoftKeyboard = true;
+
+/**
  * Tag which used to save previous state of the editor on localStorage.
  */
 const editorContentStateKey = "editor-content-state";
@@ -538,22 +543,29 @@ UmContentEditorCore.prototype.getLastNonProtectedFucasableElement = () =>{
 UmContentEditorCore.insertMediaContent = (source, mimeType) => {
     let mediaContent = null;
     if(mimeType.includes("image")){
-        mediaContent = '<img src="'+source+'" class="um-media img-fluid">';
+        mediaContent = "<div align=\"center\" class=\"embed-responsive embed-responsive-16by9\">" +
+            "<img src=\""+source+"\" class=\"embed-responsive-item\">" +
+            "</div>";
     }else if(mimeType.includes("audio")){
-        mediaContent = '<audio controls controlsList="nodownload" class="um-media"><source src="'+source+'" type="'+mimeType+'"></audio>';
+        mediaContent = '<audio controls controlsList="nodownload" class="media-audio"><source src="'+source+'" type="'+mimeType+'"></audio>';
+
     }else{
-        mediaContent = '<video controls controlsList="nodownload" class="um-media"><source src="'+source+'" type="'+mimeType+'"></video>'
+       mediaContent = "<div align=\"center\" class=\"embed-responsive embed-responsive-16by9\">" +
+            "    <video controls controlsList=\"nodownload\" preload=\"meta\" class=\"embed-responsive-item\">" +
+            "        <source src=\""+source+"\" type=\""+mimeType+"\">" +
+            "    </video>" +
+            "</div>";
     }
-    mediaContent = mediaContent + '<p></p>';
-    const currentElement = $(tinymce.activeEditor.selection.getNode());
+    mediaContent = mediaContent + "<p><br/></p>";
+    let currentElement = $(tinymce.activeEditor.selection.getNode());
     if(currentElement.is("p")){
         $(currentElement).after(mediaContent);
     }else{
         UmContentEditorCore.insertContentRaw(mediaContent)
     }
 
-    const parentChildren = $(currentElement.parent()).children();
-    UmContentEditorCore.prototype.setCursor(parentChildren.get(parentChildren.length - 1),false);
+    const parentChildren = $($(currentElement.parent()).children()).last().get(0);
+    UmContentEditorCore.prototype.setCursor(parentChildren,false);
 
 };
 
@@ -776,7 +788,7 @@ UmContentEditorCore.prototype.setCursor = (element = null,isRoot) =>{
  * @returns {boolean} True is the action should take place otherwise false.
  */
 UmContentEditorCore.checkProtectedElements = (currentNode,isDeleteKey,selectedContentLength, event) => {
-    const doNotRemoveSelector = ".dont-remove, .dont-remove p:first-of-type, .immutable-content, " +
+    const doNotRemoveSelector = ":not(.embed-responsive),.dont-remove, .dont-remove p:first-of-type, .immutable-content, " +
         ".question + .extra-content, .question + .extra-content p:first-of-type";
     const cursorPositionIndex = UmContentEditorCore.prototype.getCursorPositionRelativeToTheEditableElementContent();
     const preventSelection = selectedContentLength > 0 && $(currentNode).find(doNotRemoveSelector).length > 0;
@@ -809,7 +821,8 @@ UmContentEditorCore.prototype.preventDefaultAndStopPropagation = (event) =>  {
  * @param mutations mutation records from the mutation observer. 
  */
 UmContentEditorCore.prototype.handleProtectedElementsOnSoftKeyboard = (mutations) => {
-     //handle node addition, change class from second paragraph
+     if(isSoftKeyboard){
+         //handle node addition, change class from second paragraph
      $(mutations).each((index,record) =>{
         const allowUndo = (record.type === "childList" && record.removedNodes.length > 0 
         && !isQuestionWidgetInsert && !performedUndoAction) && !isDeleteOrCutAction;
@@ -827,13 +840,14 @@ UmContentEditorCore.prototype.handleProtectedElementsOnSoftKeyboard = (mutations
             }
         }
     });
+     }
 };
 
 /** 
  * Get previous editor state before last change.
  */
 UmContentEditorCore.getEditorPreviousState = ()=> {
-    return JSON.parse(localStorage.getItem(editorContentStateKey));
+    return editorStateTracker[previousEditorStateIndex];
 };
 
 /**
@@ -852,7 +866,7 @@ UmContentEditorCore.prototype.saveEditorState = () =>{
     const editorStateToSave = {
         elementPosition:activeElementPosition,
         elementId: isInsideQuestion ? $(question).attr("id"):"",
-        content:editorState}
+        content:editorState};
     editorStateTracker.push(editorStateToSave);
     const discardToIndex  = editorStateTracker.length - 2;
     editorStateTracker.forEach((element,index) => {
@@ -860,7 +874,6 @@ UmContentEditorCore.prototype.saveEditorState = () =>{
             editorStateTracker.splice(index,1);
         }
     });
-    localStorage.setItem(editorContentStateKey,JSON.stringify(editorStateTracker[previousEditorStateIndex]));
 };
 
 UmContentEditorCore.prototype.handleCursorPositionAfterUndo = (prevState)=>{
@@ -888,21 +901,19 @@ UmContentEditorCore.prototype.handleCursorPositionAfterUndo = (prevState)=>{
     console.log("state",elementToFocus);
 }
 
+UmContentEditorCore.setDefaultLanguage = (locale, isTest = false)=>{
+    UmQuestionWidget.loadPlaceholders(locale,isTest);
+}
+
 
 
 /**
  * Initialize tinymce editor to the document element
- * @param umConfig editor configuration object
- * {locale:'en', path:'',toolbar:false}
- * locale => Default UMEditor language locale
- * path => relative path resolver (For test)
- * toolbar => Flag to show and hide default tinymce toolbar
+ * @param locale => Default UMEditor language locale
+ * @param showToolbar => Flag to show and hide default tinymce toolbar
  */
-UmContentEditorCore.initEditor = (umConfig) => {
-    UmQuestionWidget.loadPlaceholders(umConfig && umConfig.locale ? umConfig.locale:"en"
-        ,umConfig && umConfig.test ? umConfig.test:false);
-    let showToolbar = umConfig && umConfig.toolbar ? umConfig.toolbar:false;
-    const isSoftKeyboard = umConfig && umConfig.softKeyboard ? umConfig.softKeyboard:false;
+UmContentEditorCore.initEditor = (locale = "en", showToolbar = false) => {
+    UmQuestionWidget.loadPlaceholders (locale);
     const configs = {
         selector: '#umEditor',
         height: $(window).height(),
@@ -1003,6 +1014,7 @@ UmContentEditorCore.initEditor = (umConfig) => {
              * @type {[type]}
              */
             ed.on('keydown', (e) => {
+                isSoftKeyboard =  e.key === "Unidentified";
                 if(!isSoftKeyboard){
                     const currentNode = this.selectedContent.length > 0 ? $("<div />").append($(this.selectedContent).clone()).get(0):tinymce.activeEditor.selection.getNode(); 
                     UmContentEditorCore.checkProtectedElements(currentNode,e.key === "Backspace" || e.key === "Delete",this.selectedContent.length,e);
@@ -1066,9 +1078,7 @@ UmContentEditorCore.initEditor = (umConfig) => {
                     UmContentEditorCore.prototype.setCursor(null,false);
                 }
 
-               if(isSoftKeyboard){
-                   UmContentEditorCore.prototype.handleProtectedElementsOnSoftKeyboard(mutations);
-                }
+                UmContentEditorCore.prototype.handleProtectedElementsOnSoftKeyboard(mutations);
 
                 //save editor state
                 UmContentEditorCore.prototype.saveEditorState();
