@@ -51,7 +51,7 @@
 
     <item
         android:visible="false"
-        app:showAsAction="ifRoom"
+        app:showAsAction="always"
         android:id="@+id/content_action_pages"
         android:title="Pages"
         app:actionLayout="@layout/item_content_formatting_top_view"
