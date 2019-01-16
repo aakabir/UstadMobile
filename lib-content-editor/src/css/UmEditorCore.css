@@ -151,11 +151,11 @@ select,button :focus :active{
 .media-audio{
     max-height: 53px !important;
     margin: 10px 0 10px 0 !important;
-    width: 100%;
+    max-width: 100%;
 }
 
-.um-media{
-    margin: 10px !important;
+img{
+    margin: 10px 0 !important;
     background: transparent !important;
     max-width:100%;
     height:auto;
@@ -182,11 +182,24 @@ select,button :focus :active{
     padding: 8px;
     display:-ms-flexbox;display:flex;-ms-flex-wrap:wrap;flex-wrap:wrap;
 }
+button{
+    box-shadow: 0px 2px 4px rgba(0, 0, 0, .3);
+}
 
 button.qn-retry{
-    color: white !important;
-    margin-right: -20px !important;
+    margin-right: -25px !important;
 }
+
+button.extra-btn {
+    color: white!important;
+    background: #1565c0;
+    border-radius: 3px;
+    padding: 8px;
+    margin-top: -1px;
+    border:0 solid #1565c0;
+    cursor: pointer
+}
+
 
 audio::-internal-media-controls-download-button {
     display:none;

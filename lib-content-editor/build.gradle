@@ -24,12 +24,12 @@ def umJsDynamicTasks = []
 def umCssDynamicTasks = []
 def umJsTaskIndex = 1
 def umCssTaskIndex = 1
-def testTimeout = 6000;
+def testTimeout = 6000
 
 /*Task which copies all umEditor resources from lib-content-editor directory to android assets*/
 task copyResourcesToAndroidAssets << {
     def tinyMce = "lib/tinymce"
-    def fonts = "lib/font-awesome"
+    def fonts = "lib/material-icon"
     def rangy =  "lib/rangy"
     def locale = "locale"
     def templates = "/templates"
