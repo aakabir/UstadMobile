@@ -18,27 +18,6 @@ let eventOcurredAfterSelectionProtectionCheck = false;
 const questionTemplatesDir = "templates/";
 
 /**
- * Check if rollback action ocurred
- */
-let rollbackActionPerformed = false;
-
-/**
- * Tracks state of the editor
- */
-let currentActiveElementTracker = [];
-
-/**
- * Stores element to focus after rollback action.
- */
-let elementToFocusAfterRollbackAction = {};
-
-/**
- * Acceptable state before rolling back check
- */
-let acceptedEditorStateBeforeChange = null;
-
-
-/**
  * Flag to indicate keyboard type used
  */
 let isSoftKeyboard = true;
@@ -47,6 +26,7 @@ let isSoftKeyboard = true;
  * Tag which used to save previous state of the editor on localStorage.
  */
 const editorContentStateKey = "editor-content-state";
+
 
 /**
  * Index which is used to get previous state of the editor
@@ -106,6 +86,7 @@ let isProtectedElement = false;
  * Tracks mutation if came from question insertion.
  */
 let isQuestionWidgetInsert = false;
+
 
 
 /**
@@ -782,7 +763,7 @@ UmContentEditorCore.prototype.setCursor = (element = null,isRoot) =>{
 };
 
 /**
- * Check if the current action is worth taking place
+ * Check if the current action is worth taking place (Physical Keyboard)
  * @param currentNode current selected node
  * @param isDeleteKey true if the key is either delete or backspace, false otherwise
  * @param selectedContentLength length of the selected content. Used only to determine if the length is non-zero.
@@ -791,16 +772,42 @@ UmContentEditorCore.prototype.setCursor = (element = null,isRoot) =>{
  * @returns {boolean} True is the action should take place otherwise false.
  */
 UmContentEditorCore.checkProtectedElements = (currentNode,isDeleteKey,selectedContentLength, event) => {
-    const doNotRemoveSelector = ":not(.embed-responsive),.dont-remove, .dont-remove p:first-of-type, .immutable-content, " +
-        ".question + .extra-content, .question + .extra-content p:first-of-type";
-    const cursorPositionIndex = UmContentEditorCore.prototype.getCursorPositionRelativeToTheEditableElementContent();
-    const preventSelection = selectedContentLength > 0 && $(currentNode).find(doNotRemoveSelector).length > 0;
-    const matchesSelector = $(currentNode).is(doNotRemoveSelector);
-    if((isDeleteKey && matchesSelector && cursorPositionIndex === 0) || preventSelection){
+    if(UmContentEditorCore.prototype.isElementProtected(currentNode,selectedContentLength,isDeleteKey,false)){
         eventOcurredAfterSelectionProtectionCheck = preventSelection;
         return UmContentEditorCore.prototype.preventDefaultAndStopPropagation(event);
     }
     return true;
+};
+
+/**
+ * Check if the current element is protected or not base of real key event or soft keyboard events 
+ * @param currentNode current selected node
+ * @param isDeleteKey true if the key is either delete or backspace, false otherwise
+ * @param selectedContentLength length of the selected content. Used only to determine if the length is non-zero.
+ *                              If length is 0, the check only continues if the key is delete or backspace.
+ * @param isCallback flag to indicate if the task is for callback or not.
+ * */
+UmContentEditorCore.prototype.isElementProtected = (currentNode = null,selectedContentLength = null, isDeleteKey = false, isCallback = true)=>{
+    const doNotRemoveSelector = ":not(.embed-responsive),.dont-remove, .dont-remove p:first-of-type, .immutable-content, " +
+    ".question + .extra-content, .question + .extra-content p:first-of-type";
+
+    if(currentNode === null){currentNode = tinymce.activeEditor.getNode();}
+    if(selectedContentLength === null){selectedContentLength = this.selectNodeContents.length;}
+    const cursorPositionIndex = UmContentEditorCore.prototype.getCursorPositionRelativeToTheEditableElementContent();
+    const preventSelection = selectedContentLength > 0 && $(currentNode).find(doNotRemoveSelector).length > 0;
+    const matchesSelector = $(currentNode).is(doNotRemoveSelector);
+    return isCallback ? (preventSelection || (cursorPositionIndex === 0 && matchesSelector)) : 
+    ((isDeleteKey && matchesSelector && cursorPositionIndex === 0) || preventSelection);
+}
+
+/** Callback to be sent to the native side to help blocking delete/backspace key */
+UmContentEditorCore.prototype.onProtectedElementCheck = () => {
+    const allowDeletion = UmContentEditorCore.prototype.isElementProtected();
+    try{
+        UmContentEditor.onProtectedElementCheck(JSON.stringify({action:'onProtectedElementCheck',content:btoa(allowDeletion)}));
+    }catch (e) {
+        console.log("onContentChanged:",e);
+    }
 };
 
 /**
@@ -818,61 +825,15 @@ UmContentEditorCore.prototype.preventDefaultAndStopPropagation = (event) =>  {
 };
 
 
-
-/**  
- * Prevent protected element from being deleted, this applies only to soft keyboard.
- * @param mutations mutation records from the mutation observer. 
- */
-UmContentEditorCore.prototype.rollbackChangesAfterMutation = (mutations) => {
-    let rollbackChanges = false;
-     if(isSoftKeyboard){
-        $(mutations).each((index,record) =>{
-            const isValidElementToCheck = (record.type === "childList" && record.removedNodes.length > 0 && !isQuestionWidgetInsert && !rollbackActionPerformed) 
-            && !isDeleteOrCutAction;
-            if(isValidElementToCheck){
-                let selector = ".dont-remove, .immutable-content, div[class^='question'], #umEditor, .question";
-                console.log("roll matches",$(record.target).is(selector),record.target);
-                if($(record.target).is(selector)){
-                    rollbackChanges = true;
-                    return false;
-                }
-            }
-        });
-     }
-     return rollbackChanges;
-};
-
-/**
- * Save editor state and keep tracking of previous acceptable state of the editor.
- */
-UmContentEditorCore.prototype.saveEditorState = () => {
-    acceptedEditorStateBeforeChange = tinymce.activeEditor.getContent();
-    const activeIndex = 0;
-    //track element to be focused
-    if(!rollbackActionPerformed){
-        currentActiveElementTracker.push($(tinymce.activeEditor.selection.getNode()).parent());
-        const lastIndexToTrack  = currentActiveElementTracker.length - 3;
-        currentActiveElementTracker.forEach((element,index) => {
-            if(index <= lastIndexToTrack){
-                currentActiveElementTracker.splice(index,1);
-            }
-        });
-        elementToFocusAfterRollbackAction = {
-            element: currentActiveElementTracker[activeIndex],
-            parent: $(currentActiveElementTracker[activeIndex]).parent()
-        }
-    }
-};
-
 /**
  * Set default locale to the editor
  * @param locale language locale to be set
- * @param isTest Flag to indicate if the pages are running under test invironment
+ * @param isTest Flag to indicate if the pages are running under test environment
  *               If so, resource path will be changes.
   */
 UmContentEditorCore.setDefaultLanguage = (locale, isTest = false)=>{
     UmQuestionWidget.loadPlaceholders(locale,isTest);
-}
+};
 
 /**
  * Initialize tinymce editor to the document element
@@ -922,7 +883,6 @@ UmContentEditorCore.initEditor = (locale = "en", showToolbar = false) => {
 
             ed.on('SelectionChange', (e) => {
                 const currentNode = tinymce.activeEditor.selection.getNode();
-                UmContentEditorCore.setFocusToNextUnprotectedFocusableElement(currentNode);
                 try{
                     const sel = rangy.getSelection();
                     const range = sel.rangeCount ? sel.getRangeAt(0) : null;
@@ -931,9 +891,12 @@ UmContentEditorCore.initEditor = (locale = "en", showToolbar = false) => {
                         selectedContent = range.toHtml();
                     }
                     this.selectedContent = selectedContent;
+                    UmContentEditorCore.prototype.onProtectedElementCheck(currentNode,this.selectedContent.length);
                 }catch (e) {
                     console.log(e);
                 }
+
+                UmContentEditorCore.setFocusToNextUnprotectedFocusableElement(currentNode);
             });
 
             ed.on('Paste', e => {
@@ -970,6 +933,9 @@ UmContentEditorCore.initEditor = (locale = "en", showToolbar = false) => {
                     UmContentEditorCore.editorActionUndo();
                 }
             });
+            ed.on('beforeinput', (e) => {
+                console.log(e);
+            });
 
 
             /**
@@ -978,10 +944,12 @@ UmContentEditorCore.initEditor = (locale = "en", showToolbar = false) => {
              */
             ed.on('keydown', (e) => {
                 isSoftKeyboard =  e.key === "Unidentified";
+                const currentNode = this.selectedContent.length > 0 ? $("<div/>").append($(this.selectedContent).clone()).get(0):tinymce.activeEditor.selection.getNode();
                 if(!isSoftKeyboard){
-                    const currentNode = this.selectedContent.length > 0 ? $("<div />").append($(this.selectedContent).clone()).get(0):tinymce.activeEditor.selection.getNode(); 
-                    UmContentEditorCore.checkProtectedElements(currentNode,e.key === "Backspace" || e.key === "Delete",this.selectedContent.length,e);
-                    UmContentEditorCore.setFocusToNextUnprotectedFocusableElement(e.target);
+                     UmContentEditorCore.checkProtectedElements(currentNode,e.key === "Backspace" || e.key === "Delete",this.selectedContent.length,e);
+                     UmContentEditorCore.setFocusToNextUnprotectedFocusableElement(e.target);
+                }else{
+                    UmContentEditorCore.prototype.onProtectedElementCheck(currentNode,this.selectedContent.length);
                 }
             });
         }
@@ -1042,28 +1010,6 @@ UmContentEditorCore.initEditor = (locale = "en", showToolbar = false) => {
                     editorContainer.find("p").remove();
                     editorContainer.append(UmQuestionWidget.EXTRA_CONTENT_WIDGET);
                     UmContentEditorCore.prototype.setCursor(null,false);
-                }
-
-                //check if change made is allowed or not, if not roll back to the last allowed change.
-                if(UmContentEditorCore.prototype.rollbackChangesAfterMutation(mutations)){
-                    rollbackActionPerformed = true;
-                    editorContainer.html(acceptedEditorStateBeforeChange);
-                    setTimeout(() => {
-                        rollbackActionPerformed = false;
-                        const classSelector = $(elementToFocusAfterRollbackAction.element).attr("class").split(/\s+/)[0];
-                        const elementToFocus = editorContainer.find("."+classSelector);
-                        //Find an element to focus after rolling back the changes
-                        elementToFocus.each((index,element) => {
-                            if($(elementToFocusAfterRollbackAction.parent).attr("id") === $($(element).parent().get(0)).attr("id")){
-                                UmContentEditorCore.prototype.setCursorToAnyNonProtectedFucusableElement(element);
-                                UmContentEditorCore.prototype.scrollToElement(element);
-                            }
-                        
-                        });
-                    }, longerEventTimeout);
-                }else{
-                    //Save editor state
-                    UmContentEditorCore.prototype.saveEditorState();
                 }
 
 
