@@ -7,6 +7,7 @@ import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
 
+import java.io.File;
 import java.io.IOException;
 
 /**
@@ -41,7 +42,7 @@ public class TestXapiPackageTypePlugin {
     @After
     public void removeFile() {
         if(xapiFilePath != null)
-            UstadMobileSystemImpl.getInstance().removeFile(xapiFilePath);
+            new File(xapiFilePath).delete();
     }
 
 }

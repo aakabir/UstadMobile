@@ -134,10 +134,6 @@ public class UstadMobileSystemImplTest extends UstadMobileSystemImplSE {
         return null;
     }
 
-    @Override
-    public Hashtable getSystemInfo() {
-        return null;
-    }
 
     @Override
     public int[] getFileDownloadStatus(String downloadID, Object context) {

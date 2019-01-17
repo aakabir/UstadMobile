@@ -1,11 +1,14 @@
 package com.ustadmobile.lib.annotationprocessor.core;
 
 import com.squareup.javapoet.TypeName;
+import com.ustadmobile.lib.database.annotation.UmDao;
 import com.ustadmobile.lib.database.annotation.UmDatabase;
 import com.ustadmobile.lib.database.annotation.UmPrimaryKey;
 import com.ustadmobile.lib.database.annotation.UmSyncLocalChangeSeqNum;
 import com.ustadmobile.lib.database.annotation.UmSyncMasterChangeSeqNum;
+import com.ustadmobile.lib.db.sync.dao.BaseDao;
 
+import java.io.InputStream;
 import java.lang.annotation.Annotation;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -203,6 +206,27 @@ public class DbProcessorUtils {
     }
 
     /**
+     * Determine if the given method would be a form data upload when being processed on the server
+     *
+     * @param method method to check
+     * @param processingEnv processing environment
+     * @return true if the parameters contain an inputstream, false otherwise
+     */
+    public static boolean isFormDataUpload(ExecutableElement method,
+                                            ProcessingEnvironment processingEnv) {
+        TypeMirror inputTypeEl = processingEnv.getElementUtils().getTypeElement(
+                InputStream.class.getName()).asType();
+
+        for(VariableElement param : method.getParameters()) {
+            if(param.asType().equals(inputTypeEl))
+                return true;
+        }
+
+        return false;
+    }
+
+
+    /**
      * Given a database class TypeElement and the DAO TypeElement, find the method on the
      * database class that will return the desired DAO.
      *
@@ -352,6 +376,8 @@ public class DbProcessorUtils {
                                             ProcessingEnvironment processingEnv) {
         if(typeMirror.getKind().isPrimitive()) {
             return processingEnv.getTypeUtils().boxedClass((PrimitiveType)typeMirror).asType();
+        }else if(typeMirror.getKind().equals(TypeKind.VOID)) {
+            return  processingEnv.getElementUtils().getTypeElement(Void.class.getName()).asType();
         }else{
             return typeMirror;
         }
@@ -422,5 +448,82 @@ public class DbProcessorUtils {
 
         return entityTypeElements;
     }
+
+    /**
+     * Find the AnnotationMirror for the given annotationClass.
+     *
+     * @param element Element that is annotated
+     * @param annotationClass The class of the annotation to find
+     * @return AnnotationMirror matching the given class, or null if there is no such AnnotationMirror
+     */
+    public static AnnotationMirror getAnnotationMirrorByClass(Element element,
+                                                              Class<? extends Annotation> annotationClass) {
+        for(AnnotationMirror mirror : element.getAnnotationMirrors()) {
+            String annotationClassName = ((TypeElement)mirror.getAnnotationType().asElement())
+                    .getQualifiedName().toString();
+            if(annotationClassName.equals(annotationClass.getName().toString()))
+                return mirror;
+        }
+
+        return null;
+    }
+
+    /**
+     * Get an annotation value from the given annotation mirror
+     *
+     * @param valueType The class for the return type - String.class for literals, TypeMirror.class
+     *                  for class values.
+     * @param annotationName The name of the annotation mirror for which we want the value
+     * @param annotationMirror The annotation mirror from which we want to retrieve a value
+     * @param <T> The return type
+     * @return Casted value of the named annotation key
+     */
+    public static <T> T getAnnotationValue(Class<T> valueType, String annotationName,
+                                            AnnotationMirror annotationMirror) {
+        for(Map.Entry<? extends ExecutableElement, ? extends AnnotationValue> entry :
+                annotationMirror.getElementValues().entrySet()) {
+            String key = entry.getKey().getSimpleName().toString();
+            Object value = entry.getValue().getValue();
+
+            if(key.equals(annotationName))
+                return (T)value;
+        }
+
+        return null;
+    }
+
+    /**
+     * Resolve the entity type for this Dao
+     *
+     * @param daoType The DAO Type
+     * @param processingEnv Processing environment
+     * @return TypeMirror representing the entity class for the given DAO
+     */
+    public static TypeMirror resolveDaoEntityType(TypeMirror daoType,
+                                                  ProcessingEnvironment processingEnv) {
+        TypeElement baseDaoTypeEl = processingEnv.getElementUtils().getTypeElement(
+                BaseDao.class.getName());
+        return daoType.accept(
+                new TypeVariableResolutionVisitor("T", baseDaoTypeEl), new ArrayList<>());
+
+    }
+
+    /**
+     * Find the TypeMirror that this Dao should inherit permissions from (if any)
+     *
+     * @param daoType The DAO which is to inherit permissions
+     *
+     * @return TypeMirror representing the other DAO from which permissions should be
+     *          inherited, or null if not applicable.
+     */
+    public static TypeMirror findDaoToInheritPermissionFrom(TypeElement daoType) {
+        AnnotationMirror umDaoMirror = getAnnotationMirrorByClass(daoType, UmDao.class);
+        if(umDaoMirror == null)
+            return null;
+
+        return getAnnotationValue(TypeMirror.class, "inheritPermissionFrom",
+                umDaoMirror);
+    }
+
 }
 

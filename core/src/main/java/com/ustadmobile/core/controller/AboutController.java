@@ -50,13 +50,14 @@ public class AboutController extends UstadBaseController  {
 
         aboutView.setVersionInfo(impl.getVersion(context) + " - " +
                 UMCalendarUtil.makeHTTPDate(impl.getBuildTimestamp(context)));
-    }
 
-    public void setUIStrings() {
-        UstadMobileSystemImpl impl = UstadMobileSystemImpl.getInstance();
         aboutView.setVersionInfo(impl.getVersion(context) + " - " +
                 UMCalendarUtil.makeHTTPDate(impl.getBuildTimestamp(context)));
         aboutView.setAboutHTML(aboutHTMLStr);
+    }
+
+    public void setUIStrings() {
+
     }
 
     public void setView(UstadView view) {
