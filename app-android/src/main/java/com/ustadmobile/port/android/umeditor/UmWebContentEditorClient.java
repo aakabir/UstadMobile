@@ -44,7 +44,7 @@ public class UmWebContentEditorClient extends WebViewClient {
             "font",
             "templates",
             "locale",
-            "font-awesome"
+            "material-icon"
     };
 
     /**
