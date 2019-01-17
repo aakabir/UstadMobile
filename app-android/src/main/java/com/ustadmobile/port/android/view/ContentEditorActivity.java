@@ -8,7 +8,6 @@ import android.content.ClipboardManager;
 import android.content.Context;
 import android.content.Intent;
 import android.content.pm.PackageManager;
-import android.content.res.Configuration;
 import android.content.res.Resources;
 import android.content.res.TypedArray;
 import android.graphics.Bitmap;
@@ -24,6 +23,7 @@ import android.support.annotation.VisibleForTesting;
 import android.support.design.widget.AppBarLayout;
 import android.support.design.widget.BottomSheetBehavior;
 import android.support.design.widget.FloatingActionButton;
+import android.support.design.widget.NavigationView;
 import android.support.design.widget.TabLayout;
 import android.support.v4.app.ActivityCompat;
 import android.support.v4.app.Fragment;
@@ -34,6 +34,7 @@ import android.support.v4.content.FileProvider;
 import android.support.v4.view.GravityCompat;
 import android.support.v4.view.ViewPager;
 import android.support.v4.widget.DrawerLayout;
+import android.support.v7.app.ActionBarDrawerToggle;
 import android.support.v7.widget.GridLayoutManager;
 import android.support.v7.widget.RecyclerView;
 import android.util.DisplayMetrics;
@@ -42,6 +43,7 @@ import android.view.Display;
 import android.view.KeyEvent;
 import android.view.LayoutInflater;
 import android.view.Menu;
+import android.view.MenuItem;
 import android.view.View;
 import android.view.ViewGroup;
 import android.webkit.WebSettings;
@@ -62,9 +64,10 @@ import com.ustadmobile.core.util.UMFileUtil;
 import com.ustadmobile.core.view.ContentEditorView;
 import com.ustadmobile.core.view.ContentPreviewView;
 import com.ustadmobile.lib.util.Base64Coder;
-import com.ustadmobile.port.android.umeditor.UmEditorAnimatedViewSwitcher;
+import com.ustadmobile.port.android.impl.http.AndroidAssetsHandler;
 import com.ustadmobile.port.android.umeditor.UmAndroidUriUtil;
 import com.ustadmobile.port.android.umeditor.UmEditorActionView;
+import com.ustadmobile.port.android.umeditor.UmEditorAnimatedViewSwitcher;
 import com.ustadmobile.port.android.umeditor.UmEditorPopUpView;
 import com.ustadmobile.port.android.umeditor.UmFormat;
 import com.ustadmobile.port.android.umeditor.UmFormatStateChangeListener;
@@ -73,7 +76,6 @@ import com.ustadmobile.port.android.umeditor.UmWebContentEditorChromeClient;
 import com.ustadmobile.port.android.umeditor.UmWebContentEditorClient;
 import com.ustadmobile.port.android.umeditor.UmWebContentEditorInterface;
 import com.ustadmobile.port.android.umeditor.UmWebJsResponse;
-import com.ustadmobile.port.android.impl.http.AndroidAssetsHandler;
 import com.ustadmobile.port.android.util.UMAndroidUtil;
 import com.ustadmobile.port.sharedse.contenteditor.UmEditorFileHelper;
 
@@ -125,6 +127,8 @@ public class ContentEditorActivity extends UstadBaseActivity implements ContentE
 
     private DrawerLayout mContentPageDrawer;
 
+    private NavigationView navigationView;
+
     private View docNotFoundView;
 
     private UmEditorActionView toolbar;
@@ -140,6 +144,8 @@ public class ContentEditorActivity extends UstadBaseActivity implements ContentE
     private boolean fileNotFound = false;
 
     private boolean isEditorPreview = false;
+
+    private boolean showPageList = false;
 
     private FloatingActionButton startEditing;
 
@@ -748,6 +754,7 @@ public class ContentEditorActivity extends UstadBaseActivity implements ContentE
         RelativeLayout mInsertMultipleChoice = findViewById(R.id.content_option_multiplechoice);
         RelativeLayout mInsertFillBlanks = findViewById(R.id.content_option_filltheblanks);
         mContentPageDrawer = findViewById(R.id.content_page_drawer);
+        navigationView = findViewById(R.id.content_pages_view);
         umEditorWebView = findViewById(R.id.editor_content);
         progressDialog = findViewById(R.id.progressBar);
         startEditing = findViewById(R.id.btn_start_editing);
@@ -773,7 +780,7 @@ public class ContentEditorActivity extends UstadBaseActivity implements ContentE
                         .setViews(rootView, umEditorWebView,contentOptionsBottomSheetBehavior,
                                 formattingBottomSheetBehavior, mediaSourceBottomSheetBehavior,
                                 mContentPageDrawer);
-        viewSwitcher.closeAnimatedView(ANIMATED_SOFT_KEYBOARD_PANEL);
+        viewSwitcher.closeActivity(false);
 
         ViewPager mViewPager = findViewById(R.id.content_types_viewpager);
         TabLayout mTabLayout = findViewById(R.id.content_types_tabs);
@@ -791,7 +798,7 @@ public class ContentEditorActivity extends UstadBaseActivity implements ContentE
                 if(fileNotFound){
                     finish();
                 }else{
-                    viewSwitcher.closeActivity();
+                    viewSwitcher.closeActivity(true);
                 }
             });
             umEditorActionView.setUmFormatHelper(umFormatHelper);
@@ -852,9 +859,6 @@ public class ContentEditorActivity extends UstadBaseActivity implements ContentE
         });
 
 
-
-
-
         mInsertMultimedia.setOnClickListener(v ->{
             isMultimediaFilePicker = true;
             viewSwitcher.animateView(UmEditorAnimatedViewSwitcher.ANIMATED_MEDIA_TYPE_PANEL);
@@ -892,6 +896,42 @@ public class ContentEditorActivity extends UstadBaseActivity implements ContentE
         umEditorWebView.setLayerType(View.LAYER_TYPE_HARDWARE, null);
         presenter.handleContentEntryFileStatus();
 
+        setupPageList();
+
+    }
+
+    /**
+     * Set up page list to the drawer layout.
+     */
+    private void setupPageList(){
+        //Listen for specific page selection and load it to the editor.
+        navigationView.setNavigationItemSelectedListener(new NavigationView.OnNavigationItemSelectedListener() {
+            @Override
+            public boolean onNavigationItemSelected(@NonNull MenuItem item) {
+
+                //listen for the page items
+                return false;
+            }
+        });
+        ActionBarDrawerToggle actionBarDrawerToggle = new ActionBarDrawerToggle(
+                this, mContentPageDrawer, toolbar, 0,
+                0) {
+            @Override
+            public void onDrawerClosed(View drawerView) {
+                super.onDrawerClosed(drawerView);
+                viewSwitcher.animateView(ANIMATED_SOFT_KEYBOARD_PANEL);
+            }
+        };
+        mContentPageDrawer.addDrawerListener(actionBarDrawerToggle);
+        addNewPage();
+    }
+
+
+    private void addNewPage(){
+        Menu drawerMenu = navigationView.getMenu();
+        drawerMenu.add("Hello there");
+
+
     }
 
 
@@ -919,6 +959,19 @@ public class ContentEditorActivity extends UstadBaseActivity implements ContentE
     }
 
 
+    @Override
+    public void onAnimatedViewsClosed(boolean finishActivity) {
+        if(finishActivity){
+            if(isActivityActive){
+                handleUpdateFile();
+            }
+        }else{
+            if(showPageList){
+                showPageList = false;
+                mContentPageDrawer.openDrawer(GravityCompat.END);
+            }
+        }
+    }
 
     @Override
     public void onFocusRequested() { }
@@ -1039,12 +1092,6 @@ public class ContentEditorActivity extends UstadBaseActivity implements ContentE
         }
     }
 
-    @Override
-    public void onAnimatedViewsClosed() {
-        if(isActivityActive){
-            handleUpdateFile();
-        }
-    }
 
     @Override
     protected void onResume() {
@@ -1064,7 +1111,7 @@ public class ContentEditorActivity extends UstadBaseActivity implements ContentE
             umFormatHelper.destroy();
         }
         if(viewSwitcher != null){
-            viewSwitcher.closeActivity();
+            viewSwitcher.closeActivity(true);
         }
         super.onDestroy();
     }
@@ -1129,7 +1176,7 @@ public class ContentEditorActivity extends UstadBaseActivity implements ContentE
 
     @Override
     public void onBackPressed() {
-       viewSwitcher.closeActivity();
+       viewSwitcher.closeActivity(true);
     }
 
     @Override
@@ -1144,7 +1191,8 @@ public class ContentEditorActivity extends UstadBaseActivity implements ContentE
     @Override
     public void onActionViewClicked(int itemId) {
         if (itemId == R.id.content_action_pages) {
-            mContentPageDrawer.openDrawer(GravityCompat.END);
+            showPageList = true;
+            viewSwitcher.closeActivity(false);
 
         }else if(itemId == R.id.content_action_format){
 
@@ -1153,7 +1201,7 @@ public class ContentEditorActivity extends UstadBaseActivity implements ContentE
         }else if(itemId == R.id.content_action_preview){
             openPreview = true;
             isMultimediaFilePicker = false;
-            viewSwitcher.closeActivity();
+            viewSwitcher.closeActivity(true);
 
         }else if(itemId == R.id.content_action_insert){
 
