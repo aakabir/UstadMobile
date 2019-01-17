@@ -36,7 +36,7 @@ import java.util.concurrent.TimeUnit;
  *     Use {@link UmEditorAnimatedViewSwitcher#closeAnimatedView(String)} to send request to close a
  *     certain animated view depending on the view key passed into it.
  *
- *     Use {@link UmEditorAnimatedViewSwitcher#closeActivity()} to handle activity closing task
+ *     Use {@link UmEditorAnimatedViewSwitcher#closeActivity(boolean)} to handle activity closing task
  *     which will close all the activity views before shutting down.
  * </p>
  *
@@ -92,6 +92,7 @@ public class UmEditorAnimatedViewSwitcher {
      * Key which represents the device soft keyboard
      */
     public static final String ANIMATED_SOFT_KEYBOARD_PANEL = "soft_keyboard";
+
 
     public static  final  long MAX_SOFT_KEYBOARD_DELAY = TimeUnit.SECONDS.toMillis(1);
 
@@ -414,7 +415,7 @@ public class UmEditorAnimatedViewSwitcher {
     /**
      * Close all animated view before destroying the activity.
      */
-    public void closeActivity(){
+    public void closeActivity(boolean finishActivity){
         boolean isDrawerOpen = drawerLayout.isDrawerOpen(GravityCompat.END);
 
         if(isDrawerOpen){
@@ -441,7 +442,7 @@ public class UmEditorAnimatedViewSwitcher {
 
                 if(closedListener != null){
                     editorActivated = false;
-                    closedListener.onAnimatedViewsClosed();
+                    closedListener.onAnimatedViewsClosed(finishActivity);
                 }
             }
         },MAX_SOFT_KEYBOARD_DELAY);
@@ -493,8 +494,9 @@ public class UmEditorAnimatedViewSwitcher {
     public interface OnAnimatedViewsClosedListener {
         /**
          * Invoked when all animated views are closed
+         * @param finishActivity flag to indicate whether action will result to activity finish or not.
          */
-        void onAnimatedViewsClosed();
+        void onAnimatedViewsClosed(boolean finishActivity);
 
         /**
          * Invoked when WebView requests a focus.
