@@ -45,6 +45,8 @@ UmQuestionWidget.WIDGET_NAME_FILL_BLANKS = "fill-the-blanks";
 /** Flag which used to identify all non question content widget */
 UmQuestionWidget.WIDGET_NAME_OTHER_CONTENT = "content";
 
+UmQuestionWidget.isChoiceAdded = false;
+
 /** Holds clipboard value after cut action */
 UmQuestionWidget.CLIPBOARD_CONTENT = null;
 
@@ -385,6 +387,7 @@ UmQuestionWidget.handleWidgetListeners = () => {
  * @param isTest
  */
 UmMultiChoiceQuestionWidget.prototype.addChoice = function(event,isTest = false){
+    UmQuestionWidget.isChoiceAdded = true;
     const choiceTemplateUrl = (isTest ? "/":"") + questionTemplatesDir+"template-qn-choice.html";
     $.ajax({url: choiceTemplateUrl, success: (choice) => {
         choice = $(choice).attr("id",UmQuestionWidget.ELEMENT_ID_TAG+UmQuestionWidget.getNextUniqueId());

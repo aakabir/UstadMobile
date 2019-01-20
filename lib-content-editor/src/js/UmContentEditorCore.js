@@ -574,53 +574,50 @@ UmContentEditorCore.prototype.insertQuestionNodeContent = (questionNode,isFromCl
 
 /**
  * Move cursor to next focusable unprotected element in the question block.
- * @param event event emitted.
+ * @param currentNode currently focused node.
+ * @param event emitted events (click/selection)
  *
  * Since the entire body will be editable, there is no easy way to move cursor to the next focusable element
  * (all elements are focusable).Instead we have to tell the cursor where to go.
  * @returns next focusable element (For testing purpose since we can't emit keyboard events);
  */
-UmContentEditorCore.setFocusToNextUnprotectedFocusableElement = (event) => {
+UmContentEditorCore.setFocusToNextUnprotectedFocusableElement = (currentNode,event) => {
     let nextElementFocusSelector = "p:not(.immutable-content)";
     let questionActionHolderSelector = ".question-action-holder";
     const labelSelector = ".immutable-content";
     let nextFocusableElement = null;
-    let eventTargetElement = event.target;
-    event.stopImmediatePropagation();
-    if(!eventOcurredAfterSelectionProtectionCheck && ($(eventTargetElement).is(labelSelector) || $(eventTargetElement).is(questionActionHolderSelector))){
+    if(!eventOcurredAfterSelectionProtectionCheck && ($(currentNode).is(labelSelector) || $(currentNode).is(questionActionHolderSelector))){
         //Handle when clicked on immutable content, focus to the next/previous focusable element
         
         //check if event came from question action holder.
-        eventTargetElement = $(eventTargetElement).is(questionActionHolderSelector) ? $(eventTargetElement).next():eventTargetElement;
+        currentNode = $(currentNode).is(questionActionHolderSelector) ? $(currentNode).next():currentNode;
         
-        nextFocusableElement = UmContentEditorCore.prototype.getNextElementMatchingSelector(eventTargetElement,nextElementFocusSelector);
+        nextFocusableElement = UmContentEditorCore.prototype.getNextElementMatchingSelector(currentNode,nextElementFocusSelector);
         //If walking didn't find a node matching selector, start traversing
         if(!nextFocusableElement){
-            nextFocusableElement = UmContentEditorCore.prototype.getPrevElementMatchingSelector(eventTargetElement,nextElementFocusSelector);
+            nextFocusableElement = UmContentEditorCore.prototype.getPrevElementMatchingSelector(currentNode,nextElementFocusSelector);
         }
         UmContentEditorCore.prototype.setCursorToAnyNonProtectedFucusableElement(nextFocusableElement);
         UmContentEditorCore.prototype.scrollToElement(nextFocusableElement);
         return nextFocusableElement;
-    }else if($(eventTargetElement).is(".add-choice,.action-delete-inner")){
+    }else if($(currentNode).is(".add-choice,.action-delete-inner")){
         //Handle for delete choice and add choice buttons/spans, focus to the choice body
-        const isDeletion = $(eventTargetElement).is(".action-delete-inner");
-        eventTargetElement =  isDeletion ? $($(eventTargetElement).closest("span")).closest("div div.question"): eventTargetElement;
+        const isDeletion = $(currentNode).is(".action-delete-inner");
+        const isAddChoiceDiv = $(currentNode).is("div.question-add-choice");
+        const isAddChoiceButton = $(currentNode).is("button.add-choice");
+    
         //Wait for the action to take place i.e delete/add then scroll to the respective element.
         setTimeout(function () {
-            nextElementFocusSelector = (isDeletion ? ".question-body":".question-choice-body") + " p:first-of-type";
-            eventTargetElement = isDeletion ? eventTargetElement: $($(eventTargetElement).closest("div div.question")).find(".question-choice").last();
-            nextFocusableElement = $(eventTargetElement).find(nextElementFocusSelector).get(0);
+            nextElementFocusSelector = isDeletion ? ".question-body":(isAddChoiceButton &&  UmQuestionWidget.isChoiceAdded ? ".question-choice-body" + " p:first-of-type":"p:first-of-type");
+            currentNode = isDeletion ? currentNode: (isAddChoiceButton && UmQuestionWidget.isChoiceAdded ?
+            $($(currentNode).closest("div div.question")).find(".question-choice").last():$($(currentNode).closest("div div.question")).next());
+            UmQuestionWidget.isChoiceAdded = false;
+            nextFocusableElement = $(currentNode).find(nextElementFocusSelector).get(0);
             UmContentEditorCore.prototype.setCursorToAnyNonProtectedFucusableElement(nextFocusableElement);
             UmContentEditorCore.prototype.scrollToElement(nextFocusableElement);
             return nextFocusableElement;
-        },isDeletion ? 0:averageEventTimeout);
+        },isAddChoiceButton ? averageEventTimeout:0);
 
-    }else if($(eventTargetElement).is(".question-add-choice")){
-        //Handle when someone clicks outside add choice button, focus to the next extra content widget
-        nextElementFocusSelector =  "p:first-of-type";
-        nextFocusableElement = $($($(eventTargetElement).closest("div div.question")).next()).find(nextElementFocusSelector).get(0);
-        UmContentEditorCore.prototype.setCursorToAnyNonProtectedFucusableElement(nextFocusableElement);
-        UmContentEditorCore.prototype.scrollToElement(nextFocusableElement);
     }
     return nextFocusableElement;
 };
@@ -796,7 +793,6 @@ UmContentEditorCore.prototype.isElementProtected = (currentNode,isDeleteKey = fa
 /** Callback to be sent to the native side to help blocking delete/backspace key */
 UmContentEditorCore.prototype.onProtectedElementCheck = (currentNode) => {
     const isProtected = UmContentEditorCore.prototype.isElementProtected(currentNode);
-    console.log("umEditor",isProtected);
     try{
         UmContentEditor.onProtectedElementCheck(JSON.stringify({action:'onProtectedElementCheck',content:btoa(isProtected)}));
     }catch (e) {
@@ -885,13 +881,12 @@ UmContentEditorCore.initEditor = (locale = "en", showToolbar = false) => {
                         selectedContent = range.toHtml();
                     }
                     this.selectedContent = selectedContent;
+                    UmContentEditorCore.setFocusToNextUnprotectedFocusableElement(currentNode,e);
                     protectedSelection = $(selectedContent).is(doNotRemoveSelector);
                     UmContentEditorCore.prototype.onProtectedElementCheck(currentNode);
                 }catch (e) {
                     console.log(e);
                 }
-
-                UmContentEditorCore.setFocusToNextUnprotectedFocusableElement(e);
             });
 
             ed.on('Paste', e => {
@@ -913,9 +908,10 @@ UmContentEditorCore.initEditor = (locale = "en", showToolbar = false) => {
              * @type {[type]}
              */
             ed.on('click', e => {
+                //e.stopImmediatePropagation();
                 UmContentEditorCore.prototype.checkActivatedControls();
                 UmContentEditorCore.prototype.getNodeDirectionality();
-                UmContentEditorCore.setFocusToNextUnprotectedFocusableElement(e);
+                UmContentEditorCore.setFocusToNextUnprotectedFocusableElement(e.target,e);
             });
 
             /**
@@ -941,8 +937,9 @@ UmContentEditorCore.initEditor = (locale = "en", showToolbar = false) => {
                 isSoftKeyboard =  e.key === "Unidentified";
                 const currentNode = this.selectedContent.length > 0 ? $("<div/>").append($(this.selectedContent).clone()).get(0):tinymce.activeEditor.selection.getNode();
                 if(!isSoftKeyboard){
-                     UmContentEditorCore.checkProtectedElements(currentNode,e.key === "Backspace" || e.key === "Delete",e);
-                     UmContentEditorCore.setFocusToNextUnprotectedFocusableElement(e);
+                    e.stopImmediatePropagation();
+                    UmContentEditorCore.checkProtectedElements(currentNode,e.key === "Backspace" || e.key === "Delete",e);
+                    UmContentEditorCore.setFocusToNextUnprotectedFocusableElement(e.target,e);
                 }else{
                     UmContentEditorCore.prototype.onProtectedElementCheck(currentNode);
                 }
