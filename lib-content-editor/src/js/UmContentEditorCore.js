@@ -1,5 +1,8 @@
 /**
- * Class which handle all content editor operation
+ * This is a class which handles all core functionality of the editor, like preventing immutable content and 
+ * other protected element from being delete from th editor, handles where to focus next when event happens on protected
+ * elements ,handles editor state like Initializing it and formatting the content inside it.
+ * 
  * @returns {*|UmContentEditorCore}
  * @constructor
  *
@@ -27,11 +30,12 @@ let isSoftKeyboard = true;
  */
 const editorContentStateKey = "editor-content-state";
 
+/**Selector for the protected elements i.e elements that should not be deleted from the editor */
+const doNotRemoveSelector = ":not(.embed-responsive),.dont-remove, .dont-remove p:first-of-type, .immutable-content, " +
+".question + .extra-content, .question + .extra-content p:first-of-type";
 
-/**
- * Index which is used to get previous state of the editor
- */
-const previousEditorStateIndex = 0;
+/**Flag which indicate whether selection contains protected elements or not */
+let protectedSelection = false;
 
 /**
  * Allow mutation to affect the editor, we will only undo if the actions aren't delete/cut.
@@ -71,14 +75,8 @@ const indexMultipleChoiceQuestionType = 0;
 const indexFillTheBlanksQuestionType = 1;
 
 /**
- * Flag which shows if by any chance content was selected
- * @type {boolean} True when selection was performed otherwise false.
- */
-let wasContentSelected = false;
-
-/**
  * Flag which hold a value when content get selected and it includes protected content
- * @type {boolean} True if
+ * @type {boolean} True if selected content is protected otherwise this will be false.
  */
 let isProtectedElement = false;
 
@@ -86,8 +84,6 @@ let isProtectedElement = false;
  * Tracks mutation if came from question insertion.
  */
 let isQuestionWidgetInsert = false;
-
-
 
 /**
  * List of all tinymce formatting commands which will be used by native side.
@@ -99,7 +95,6 @@ UmContentEditorCore.formattingCommandList = [
     'JustifyFull','InsertUnorderedList','InsertOrderedList','mceDirectionLTR','mceDirectionRTL','FontSize'
 ];
 
-
 /**
  * Check if a toolbar button is active or not
  * @param commandIdentifier Command identifier as found in documentation
@@ -110,7 +105,6 @@ UmContentEditorCore.prototype.checkCommandState = (commandIdentifier) => {
     return tinyMCE.activeEditor.queryCommandState(commandIdentifier);
 };
 
-
 /**
  * Check if the control was executed at least once.
  * @param commandIdentifier Command identifier as found in documentation
@@ -120,7 +114,6 @@ UmContentEditorCore.prototype.checkCommandState = (commandIdentifier) => {
 UmContentEditorCore.prototype.checkCommandValue = (commandIdentifier) => {
     return tinyMCE.activeEditor.queryCommandValue(commandIdentifier) != null;
 };
-
 
 /**
  * Change editor font size
@@ -143,7 +136,6 @@ UmContentEditorCore.editorActionUndo = () => {
     UmContentEditorCore.executeCommand("Undo",null);
     UmContentEditorCore.prototype.checkCommandState("Undo");
 };
-
 
 /**
  * Redo previously performed action
@@ -324,18 +316,19 @@ UmContentEditorCore.checkCurrentActiveControls = (commandValue) => {
     return {action:'activeControl',content:btoa(commandValue+"-"+isActive)};
 };
 
+/** Encode non latin text like arabic and language's text like that, bto itself fails to do that */
 UmContentEditorCore.base64Encode = (content) => {
     return btoa(encodeURIComponent(content).replace(/%([0-9A-F]{2})/g, function(match, p1) {
         return String.fromCharCode(parseInt(p1, 16));
     }));
 };
 
+/** Decode non latin text like arabic and language's text like that, bto itself fails to do that */
 UmContentEditorCore.base64Decode = (content) =>{
     return decodeURIComponent(Array.prototype.map.call(atob(content), function(c) {
         return '%' + ('00' + c.charCodeAt(0).toString(16)).slice(-2);
     }).join(''));
 };
-
 
 /**
  * Insert multiple choice question template to the editor
@@ -492,7 +485,6 @@ UmContentEditorCore.insertTestQuestionTemplate = () =>{
     UmContentEditorCore.prototype.insertQuestionTemplate(indexFillTheBlanksQuestionType,true);
 };
 
-
 /**
  * Get last extra content widget in the content editor
  * @returns content widget element
@@ -516,7 +508,6 @@ UmContentEditorCore.prototype.getLastNonProtectedFucasableElement = () =>{
     return $(pageBreaks[pageBreaks.length - 1]).get(0);
 };
 
-
 /**
  * Insert media content in the editor.
  * @param source file source path relative to the tinymce editor.
@@ -525,8 +516,8 @@ UmContentEditorCore.prototype.getLastNonProtectedFucasableElement = () =>{
 UmContentEditorCore.insertMediaContent = (source, mimeType) => {
     let mediaContent = null;
     if(mimeType.includes("image")){
-        mediaContent = "<div align=\"center\" class=\"embed-responsive embed-responsive-16by9\">" +
-            "<img src=\""+source+"\" class=\"embed-responsive-item\">" +
+        mediaContent = "<div align=\"center\" class=\"text-center\">" +
+            "<img src=\""+source+"\" class=\"img-fluid\">" +
             "</div>";
     }else if(mimeType.includes("audio")){
         mediaContent = '<audio controls controlsList="nodownload" class="media-audio"><source src="'+source+'" type="'+mimeType+'"></audio>';
@@ -551,7 +542,6 @@ UmContentEditorCore.insertMediaContent = (source, mimeType) => {
 
 };
 
-
 /**
  * Tinymce command to insert content in the editor
  * @param content content to be inserted in the editor.
@@ -559,7 +549,6 @@ UmContentEditorCore.insertMediaContent = (source, mimeType) => {
 UmContentEditorCore.insertContentRaw = (content) => {
     tinymce.activeEditor.execCommand('mceInsertContent', false, content);
 };
-
 
 /**
  * Handle question node when inserted/modified to the editor (This will be called on editor preInit)
@@ -583,21 +572,24 @@ UmContentEditorCore.prototype.insertQuestionNodeContent = (questionNode,isFromCl
     tinymce.activeEditor.dom.remove(tinymce.activeEditor.dom.select('p.pg-break'));
 };
 
-
 /**
  * Move cursor to next focusable unprotected element in the question block.
- * @param eventTargetElement target element from click or keydown event.
+ * @param event event emitted.
  *
  * Since the entire body will be editable, there is no easy way to move cursor to the next focusable element
  * (all elements are focusable).Instead we have to tell the cursor where to go.
  * @returns next focusable element (For testing purpose since we can't emit keyboard events);
  */
-UmContentEditorCore.setFocusToNextUnprotectedFocusableElement = (eventTargetElement) => {
+UmContentEditorCore.setFocusToNextUnprotectedFocusableElement = (event) => {
     let nextElementFocusSelector = "p:not(.immutable-content)";
     let questionActionHolderSelector = ".question-action-holder";
     const labelSelector = ".immutable-content";
     let nextFocusableElement = null;
+    let eventTargetElement = event.target;
+    event.stopImmediatePropagation();
     if(!eventOcurredAfterSelectionProtectionCheck && ($(eventTargetElement).is(labelSelector) || $(eventTargetElement).is(questionActionHolderSelector))){
+        //Handle when clicked on immutable content, focus to the next/previous focusable element
+        
         //check if event came from question action holder.
         eventTargetElement = $(eventTargetElement).is(questionActionHolderSelector) ? $(eventTargetElement).next():eventTargetElement;
         
@@ -610,8 +602,10 @@ UmContentEditorCore.setFocusToNextUnprotectedFocusableElement = (eventTargetElem
         UmContentEditorCore.prototype.scrollToElement(nextFocusableElement);
         return nextFocusableElement;
     }else if($(eventTargetElement).is(".add-choice,.action-delete-inner")){
+        //Handle for delete choice and add choice buttons/spans, focus to the choice body
         const isDeletion = $(eventTargetElement).is(".action-delete-inner");
         eventTargetElement =  isDeletion ? $($(eventTargetElement).closest("span")).closest("div div.question"): eventTargetElement;
+        //Wait for the action to take place i.e delete/add then scroll to the respective element.
         setTimeout(function () {
             nextElementFocusSelector = (isDeletion ? ".question-body":".question-choice-body") + " p:first-of-type";
             eventTargetElement = isDeletion ? eventTargetElement: $($(eventTargetElement).closest("div div.question")).find(".question-choice").last();
@@ -621,6 +615,12 @@ UmContentEditorCore.setFocusToNextUnprotectedFocusableElement = (eventTargetElem
             return nextFocusableElement;
         },isDeletion ? 0:averageEventTimeout);
 
+    }else if($(eventTargetElement).is(".question-add-choice")){
+        //Handle when someone clicks outside add choice button, focus to the next extra content widget
+        nextElementFocusSelector =  "p:first-of-type";
+        nextFocusableElement = $($($(eventTargetElement).closest("div div.question")).next()).find(nextElementFocusSelector).get(0);
+        UmContentEditorCore.prototype.setCursorToAnyNonProtectedFucusableElement(nextFocusableElement);
+        UmContentEditorCore.prototype.scrollToElement(nextFocusableElement);
     }
     return nextFocusableElement;
 };
@@ -719,7 +719,6 @@ UmContentEditorCore.prototype.setCursorPositionToTheLastNonProtectedElement = (r
     }
 };
 
-
 /**
  * Scroll page to the targeted element in the editor.
  * @param element target element to scroll to
@@ -771,9 +770,9 @@ UmContentEditorCore.prototype.setCursor = (element = null,isRoot) =>{
  * @param event keydown event
  * @returns {boolean} True is the action should take place otherwise false.
  */
-UmContentEditorCore.checkProtectedElements = (currentNode,isDeleteKey,selectedContentLength, event) => {
-    if(UmContentEditorCore.prototype.isElementProtected(currentNode,selectedContentLength,isDeleteKey,false)){
-        eventOcurredAfterSelectionProtectionCheck = preventSelection;
+UmContentEditorCore.checkProtectedElements = (currentNode,isDeleteKey, event) => {
+    if(UmContentEditorCore.prototype.isElementProtected(currentNode,isDeleteKey,false)){
+        eventOcurredAfterSelectionProtectionCheck = protectedSelection;
         return UmContentEditorCore.prototype.preventDefaultAndStopPropagation(event);
     }
     return true;
@@ -787,24 +786,19 @@ UmContentEditorCore.checkProtectedElements = (currentNode,isDeleteKey,selectedCo
  *                              If length is 0, the check only continues if the key is delete or backspace.
  * @param isCallback flag to indicate if the task is for callback or not.
  * */
-UmContentEditorCore.prototype.isElementProtected = (currentNode = null,selectedContentLength = null, isDeleteKey = false, isCallback = true)=>{
-    const doNotRemoveSelector = ":not(.embed-responsive),.dont-remove, .dont-remove p:first-of-type, .immutable-content, " +
-    ".question + .extra-content, .question + .extra-content p:first-of-type";
-
-    if(currentNode === null){currentNode = tinymce.activeEditor.getNode();}
-    if(selectedContentLength === null){selectedContentLength = this.selectNodeContents.length;}
+UmContentEditorCore.prototype.isElementProtected = (currentNode,isDeleteKey = false, isCallback = true)=>{
     const cursorPositionIndex = UmContentEditorCore.prototype.getCursorPositionRelativeToTheEditableElementContent();
-    const preventSelection = selectedContentLength > 0 && $(currentNode).find(doNotRemoveSelector).length > 0;
     const matchesSelector = $(currentNode).is(doNotRemoveSelector);
-    return isCallback ? (preventSelection || (cursorPositionIndex === 0 && matchesSelector)) : 
-    ((isDeleteKey && matchesSelector && cursorPositionIndex === 0) || preventSelection);
+    return isCallback ? (protectedSelection || (cursorPositionIndex === 0 && matchesSelector)) : 
+    ((isDeleteKey && matchesSelector && cursorPositionIndex === 0) || protectedSelection);
 }
 
 /** Callback to be sent to the native side to help blocking delete/backspace key */
-UmContentEditorCore.prototype.onProtectedElementCheck = () => {
-    const allowDeletion = UmContentEditorCore.prototype.isElementProtected();
+UmContentEditorCore.prototype.onProtectedElementCheck = (currentNode) => {
+    const isProtected = UmContentEditorCore.prototype.isElementProtected(currentNode);
+    console.log("umEditor",isProtected);
     try{
-        UmContentEditor.onProtectedElementCheck(JSON.stringify({action:'onProtectedElementCheck',content:btoa(allowDeletion)}));
+        UmContentEditor.onProtectedElementCheck(JSON.stringify({action:'onProtectedElementCheck',content:btoa(isProtected)}));
     }catch (e) {
         console.log("onContentChanged:",e);
     }
@@ -891,12 +885,13 @@ UmContentEditorCore.initEditor = (locale = "en", showToolbar = false) => {
                         selectedContent = range.toHtml();
                     }
                     this.selectedContent = selectedContent;
-                    UmContentEditorCore.prototype.onProtectedElementCheck(currentNode,this.selectedContent.length);
+                    protectedSelection = $(selectedContent).is(doNotRemoveSelector);
+                    UmContentEditorCore.prototype.onProtectedElementCheck(currentNode);
                 }catch (e) {
                     console.log(e);
                 }
 
-                UmContentEditorCore.setFocusToNextUnprotectedFocusableElement(currentNode);
+                UmContentEditorCore.setFocusToNextUnprotectedFocusableElement(e);
             });
 
             ed.on('Paste', e => {
@@ -920,7 +915,7 @@ UmContentEditorCore.initEditor = (locale = "en", showToolbar = false) => {
             ed.on('click', e => {
                 UmContentEditorCore.prototype.checkActivatedControls();
                 UmContentEditorCore.prototype.getNodeDirectionality();
-                UmContentEditorCore.setFocusToNextUnprotectedFocusableElement(e.target);
+                UmContentEditorCore.setFocusToNextUnprotectedFocusableElement(e);
             });
 
             /**
@@ -946,10 +941,10 @@ UmContentEditorCore.initEditor = (locale = "en", showToolbar = false) => {
                 isSoftKeyboard =  e.key === "Unidentified";
                 const currentNode = this.selectedContent.length > 0 ? $("<div/>").append($(this.selectedContent).clone()).get(0):tinymce.activeEditor.selection.getNode();
                 if(!isSoftKeyboard){
-                     UmContentEditorCore.checkProtectedElements(currentNode,e.key === "Backspace" || e.key === "Delete",this.selectedContent.length,e);
-                     UmContentEditorCore.setFocusToNextUnprotectedFocusableElement(e.target);
+                     UmContentEditorCore.checkProtectedElements(currentNode,e.key === "Backspace" || e.key === "Delete",e);
+                     UmContentEditorCore.setFocusToNextUnprotectedFocusableElement(e);
                 }else{
-                    UmContentEditorCore.prototype.onProtectedElementCheck(currentNode,this.selectedContent.length);
+                    UmContentEditorCore.prototype.onProtectedElementCheck(currentNode);
                 }
             });
         }
@@ -964,9 +959,6 @@ UmContentEditorCore.initEditor = (locale = "en", showToolbar = false) => {
 
         rangy.init();
         const editorContainer = $("#umEditor");
-        
-        //save editor state at start
-        UmContentEditorCore.prototype.saveEditorState();
 
         //set default directionality
         $(editorContainer).attr("dir",UmQuestionWidget._locale.directionality);
@@ -1056,8 +1048,3 @@ UmContentEditorCore.initEditor = (locale = "en", showToolbar = false) => {
 UmContentEditorCore.getContent = () => {
     return tinymce.activeEditor.getContent();
 };
-
-
-
-
-
