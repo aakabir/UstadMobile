@@ -5,6 +5,5 @@
                 <dc:title></dc:title>
         </metadata>
         <spine>
-                <itemref idref="page.xhtml" />
         </spine>
 </package>
