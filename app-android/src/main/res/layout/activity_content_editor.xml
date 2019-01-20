@@ -3,7 +3,9 @@
     xmlns:android="http://schemas.android.com/apk/res/android"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
+    xmlns:tools="http://schemas.android.com/tools"
     android:id="@+id/content_page_drawer"
+    tools:openDrawer="right"
     xmlns:app="http://schemas.android.com/apk/res-auto"
     xmlns:fab="http://schemas.android.com/apk/res-auto">
 
@@ -21,10 +23,12 @@
             android:layout_width="match_parent"
             android:layout_height="match_parent">
             <!-- Main content -->
-            <WebView
+            <com.ustadmobile.port.android.umeditor.UmEditorWebView
                 android:id="@+id/editor_content"
                 android:layout_marginTop="?actionBarSize"
                 android:layout_width="match_parent"
+                app:layout_anchor="@+id/bottom_sheet_container"
+                app:layout_anchorGravity="top|end"
                 android:layout_height="match_parent"/>
         </RelativeLayout>
 
@@ -77,7 +81,7 @@
                     android:layout_gravity="center_vertical"
                     android:textSize="12sp"
                     android:text="@string/to_start_editing"
-                    android:layout_marginRight="@dimen/dimen_10dp"
+                    android:layout_marginEnd="@dimen/dimen_10dp"
                     android:id="@+id/editing_label"
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content" />
@@ -132,23 +136,28 @@
             android:layout_gravity="bottom"
             android:layout_height="wrap_content">
             <com.ustadmobile.port.android.umeditor.UmEditorActionView
-                android:layout_marginRight="14dp"
+                android:layout_marginEnd="14dp"
                 android:id="@+id/um_toolbar_bottom"
                 app:contentInsetLeft="0dp"
                 app:contentInsetStart="0dp"
-                android:paddingLeft="4dp"
+                android:paddingStart="4dp"
                 android:layout_width="match_parent"
                 android:layout_height="?attr/actionBarSize"
-                />
+                tools:ignore="RtlSymmetry" />
         </android.support.design.widget.AppBarLayout>
     </android.support.design.widget.CoordinatorLayout>
 
     <android.support.design.widget.NavigationView
-        android:layout_marginTop="@dimen/abc_action_bar_default_height_material"
+        android:clipToPadding="false"
         android:id="@+id/content_pages_view"
         android:layout_width="wrap_content"
         android:layout_height="match_parent"
         android:layout_gravity="end"
+        app:headerLayout="@layout/umeditor_filelist_header_view"
+        android:background="@color/icons"
+        app:itemIconTint="@color/umeditor_checked_file_item"
+        app:itemTextColor="@color/umeditor_checked_file_item"
+        app:itemBackground="@drawable/umeditor_file_item_background"
         android:fitsSystemWindows="true"/>
 
 </android.support.v4.widget.DrawerLayout>
