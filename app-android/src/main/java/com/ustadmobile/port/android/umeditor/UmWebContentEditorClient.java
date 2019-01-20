@@ -17,6 +17,7 @@ import static com.ustadmobile.core.view.ContentEditorView.RESOURCE_JS_TINYMCE;
 import static com.ustadmobile.core.view.ContentEditorView.RESOURCE_JS_USTAD_EDITOR;
 import static com.ustadmobile.core.view.ContentEditorView.RESOURCE_JS_USTAD_WIDGET;
 import static com.ustadmobile.port.sharedse.contenteditor.UmEditorFileHelper.EDITOR_BASE_DIR_NAME;
+import static com.ustadmobile.port.sharedse.contenteditor.UmEditorFileHelper.OEBPS_DIRECTORY;
 
 /**
  * Class which handles HTTP request from WebView and native-to-js client interaction
@@ -65,15 +66,8 @@ public class UmWebContentEditorClient extends WebViewClient {
 
         if(isInnerResource(resourceUri) || isUmEditorResource(resourceUri)){
             try{
-                String resourcePath;
-                if(isInnerResource(resourceUri)){
-                    resourcePath = UMFileUtil.joinPaths("http",
-                            "/"+ EDITOR_BASE_DIR_NAME +"/"+getResourcePath(resourceUri));
-                }else{
-                    resourcePath = UMFileUtil.joinPaths("http",
-                            "/"+ EDITOR_BASE_DIR_NAME +getRealResourcePath(resourceUri));
-                }
-
+                String resourcePath = UMFileUtil.joinPaths("http",
+                        EDITOR_BASE_DIR_NAME,getResourcePath(resourceUri));
                 inputStream = context.getAssets().open(resourcePath);
                 return new WebResourceResponse(mimeType,"utf-8", 200,
                         "OK", request.getRequestHeaders(),inputStream);
@@ -88,8 +82,8 @@ public class UmWebContentEditorClient extends WebViewClient {
         String [] parts = requestUri.split("/");
         ArrayList<String> newParts = new ArrayList<>();
         for(int i = 0; i< parts.length;i++){
-            if(i > 3){
-                newParts.add( parts[i]);
+            if(i > 3 && !parts[i].equals(OEBPS_DIRECTORY)){
+                newParts.add(parts[i]);
             }
         }
         String[] url = new String[newParts.size()];
@@ -97,9 +91,6 @@ public class UmWebContentEditorClient extends WebViewClient {
         return UMFileUtil.joinPaths(url);
     }
 
-    private String getRealResourcePath(String resourcePath){
-        return resourcePath.split(EDITOR_BASE_DIR_NAME)[1];
-    }
 
     /**
      * Check if the resource is from plugin calls.

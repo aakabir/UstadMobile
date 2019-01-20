@@ -97,8 +97,25 @@ public class UmWebContentEditorInterface {
         }
     }
 
+    /**
+     * Listen for content cut event
+     * @param callbackValue Value passed from the JS side
+     */
     @JavascriptInterface
     public void onContentCut(String callbackValue) {
+        try{
+            activity.runOnUiThread(() -> callback.onCallbackReceived(callbackValue));
+        }catch (Exception e){
+            e.printStackTrace();
+        }
+    }
+
+    /**
+     * Listen for the protect element selection check
+     * @param callbackValue Value passed from the JS side
+     */
+    @JavascriptInterface
+    public void onProtectedElementCheck(String callbackValue){
         try{
             activity.runOnUiThread(() -> callback.onCallbackReceived(callbackValue));
         }catch (Exception e){
