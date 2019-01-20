@@ -31,8 +31,10 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Date;
 import java.util.List;
+import java.util.Locale;
 import java.util.Objects;
 import java.util.zip.ZipEntry;
 import java.util.zip.ZipInputStream;
@@ -59,6 +61,10 @@ public class UmEditorFileHelper implements UmEditorFileHelperCore {
 
     public static final String MEDIA_DIRECTORY = "media/";
 
+    public static final String OEBPS_DIRECTORY = "OEBPS";
+
+    private String selectedPageIndex = null;
+
     protected Object context;
 
     private EmbeddedHTTPD embeddedHTTPD;
@@ -73,10 +79,18 @@ public class UmEditorFileHelper implements UmEditorFileHelperCore {
 
     private boolean isTestExecution = false;
 
-    private static String tempFile = ".media-hide.info";
+    private static String TEMP_MEDIA_FILE = "media-hide.info";
 
-    private String assetsDir = "assets-" +
-            new SimpleDateFormat("yyyyMMddHHmmss").format(new Date()) + "";
+    private static String PAGES_FILE_EXTENSION = ".html";
+
+    private static final String PAGE_PREFIX = "page_";
+
+    private static final String ZIP_FILE_EXTENSION = ".zip";
+
+    private String contentOpfFile = "content.opf";
+
+    private String assetsDir = String.format("assets-%s",
+            new SimpleDateFormat("yyyyMMddHHmmss",Locale.getDefault()).format(new Date()));
 
     public static final String EDITOR_BASE_DIR_NAME = "umEditor";
 
@@ -177,10 +191,11 @@ public class UmEditorFileHelper implements UmEditorFileHelperCore {
     public void mountFile(String filePath, UmCallback<Void> callback) {
         new Thread(() -> {
             sourceFile = new File(filePath);
-            String mountedToPath = sourceFile.getName().replace(".zip","");
+            String mountedToPath = sourceFile.getName().replace(ZIP_FILE_EXTENSION,"");
             File extractToPath = new File(tempDestinationDir,mountedToPath);
             destinationTempDir = extractToPath;
-            mediaDestinationDir = new File(destinationTempDir,MEDIA_DIRECTORY);
+            mediaDestinationDir = new File(destinationTempDir,
+                    UMFileUtil.joinPaths(OEBPS_DIRECTORY,MEDIA_DIRECTORY));
             boolean unZipped = false;
             try {
                 unZipped = unZipFile(sourceFile, destinationTempDir);
@@ -189,10 +204,12 @@ public class UmEditorFileHelper implements UmEditorFileHelperCore {
                 callback.onFailure(e);
             }finally {
                 if(unZipped){
-                    embeddedHTTPD.addRoute( EDITOR_BASE_DIR_NAME +"(.)+",
-                            FileDirectoryHandler.class,extractToPath);
+                    String resourceBaseDir =
+                            UMFileUtil.joinPaths(EDITOR_BASE_DIR_NAME ,OEBPS_DIRECTORY);
+                    embeddedHTTPD.addRoute(resourceBaseDir+"(.)+",
+                            FileDirectoryHandler.class,new File(extractToPath,OEBPS_DIRECTORY));
                     mountedTempDirBaseUrl = UMFileUtil.joinPaths(LOCAL_ADDRESS +
-                            embeddedHTTPD.getListeningPort()+"/", EDITOR_BASE_DIR_NAME);
+                            embeddedHTTPD.getListeningPort()+"/", EDITOR_BASE_DIR_NAME,OEBPS_DIRECTORY);
                     callback.onSuccess(null);
                 }else{
                     callback.onSuccess(null);
@@ -203,9 +220,12 @@ public class UmEditorFileHelper implements UmEditorFileHelperCore {
     }
 
 
-
+    /**
+     * Handle file on database level
+     * @param contentEntryFileUid Uid of the opened content entry
+     * @param callback
+     */
     private void handleFileInDb(long contentEntryFileUid,UmCallback<String> callback){
-
         long lastModified = System.currentTimeMillis();
         ContentEntry contentEntry = new ContentEntry();
         contentEntry.setLastModified(lastModified);
@@ -289,11 +309,11 @@ public class UmEditorFileHelper implements UmEditorFileHelperCore {
         new Thread(() -> {
             try {
                 int unUsedFileCounter = 0;
-                if(mediaDestinationDir != null){
-                    File [] allResources = mediaDestinationDir.listFiles();
+                if(getDestinationMediaDirPath() != null){
+                    File [] allResources = new File(getDestinationMediaDirPath()).listFiles();
                     assert allResources != null;
                     for(File resource:allResources){
-                        if(!isResourceInUse(resource.getName()) && !resource.getName().equals(tempFile)){
+                        if(!isResourceInUse(resource.getName()) && !resource.getName().equals(TEMP_MEDIA_FILE)){
                             if(resource.delete()) unUsedFileCounter++;
                         }
                     }
@@ -305,11 +325,115 @@ public class UmEditorFileHelper implements UmEditorFileHelperCore {
         }).start();
     }
 
-    //Loop through the page and check if resources is in use.
+    @Override
+    public void addPageToTheDocument(String pageTitle, UmCallback<UmPage> callback) {
+        List<UmPage> umPageList = getDocumentPages();
+        UmPage umPage = new UmPage();
+        int pageNumber = 1;
+        if(umPageList.size() > 0){
+            //create arrays of page numbers
+            int [] pages = new int[umPageList.size()];
+            for(int i = 0; i < umPageList.size(); i++){
+                pages[i] = umPageList.get(i).getNumber();
+            }
+            int lastPageIndex = pages.length - 1;
+            Arrays.sort(pages);
+            pageNumber = pages[lastPageIndex]++;
+
+        }
+        umPage.setTitle(pageTitle);
+        umPage.setNumber(pageNumber);
+        umPage.setIndex(PAGE_PREFIX+pageNumber+PAGES_FILE_EXTENSION);
+        boolean pageCreated = false;
+        IOException exception = null;
+        try{
+            InputStream is = new FileInputStream(new File(getTempDestinationDirPath(), PAGE_TEMPLATE));
+            pageCreated = UMFileUtil.copyFile(is,new File(getEpubFilesDestination(),
+                    umPage.getIndex()));
+            if(pageCreated){
+                pageCreated = updatePageTitle(umPage.getTitle(), umPage.getIndex()) &&
+                        updateSpineInOPF(umPage.getIndex());
+            }
+        } catch (IOException e) {
+            exception = e;
+        }finally {
+            if(pageCreated){
+                callback.onSuccess(umPage);
+            }else{
+                assert exception != null;
+                callback.onFailure(new Throwable("New page was not added "+ exception.getMessage()));
+            }
+        }
+    }
+
+    @Override
+    public void removePageFromTheDocument(String pageIndex, UmCallback<UmPage> callback) {
+        UmPage deletedPage = null;
+        for(UmPage umPage: getDocumentPages()){
+            if(umPage.getIndex().equals(pageIndex)){
+                deletedPage = umPage;
+                break;
+            }
+        }
+        File pagePath = new File(getEpubFilesDestination(), pageIndex);
+        if(pagePath.delete()){
+            callback.onSuccess(deletedPage);
+        }else{
+            callback.onFailure(new Throwable("Failed to delete page with index "+pageIndex));
+        }
+    }
+
+    @Override
+    public void setCurrentSelectedPage(String pageIndex) {
+        this.selectedPageIndex = pageIndex;
+    }
+
+    @Override
+    public List<UmPage> getDocumentPages() {
+        File [] allFiles = new File(destinationTempDir,OEBPS_DIRECTORY).listFiles();
+        String pageNameNumberSeparator = "_";
+        int pageNumberIndex = 1;
+        List<UmPage> pageList = new ArrayList<>();
+        assert allFiles != null;
+        for(File file: allFiles){
+            if(file.getName().endsWith(PAGES_FILE_EXTENSION)
+                    && !file.getName().equals(PAGE_TEMPLATE)){
+                UmPage umPage = new UmPage();
+                String [] pageName = file.getName().split(pageNameNumberSeparator);
+                umPage.setNumber(pageName.length > 1
+                        ? Integer.parseInt(pageName[pageNumberIndex]
+                        .replace(PAGES_FILE_EXTENSION,"")):1);
+                umPage.setIndex(file.getName());
+                try {
+                    umPage.setTitle(getPageTitle(file.getName()));
+                } catch (IOException e) {
+                    e.printStackTrace();
+                }
+                pageList.add(umPage);
+            }
+        }
+        return pageList;
+    }
+
+    @Override
+    public boolean updatePageTitle(String pageTitle, String pageIndex) throws IOException {
+        File pagePath = new File(getEpubFilesDestination(), pageIndex);
+        Document pageDoc =  Jsoup.parse(UMFileUtil.readTextFile(pagePath.getAbsolutePath()));
+        pageDoc.select("title").first().text(pageTitle);
+        UMFileUtil.writeToFile(pagePath,pageDoc.toString());
+        return pageDoc.toString().contains(pageTitle);
+    }
+
+
+    /**
+     * Check if resource is being used in ant document tag.
+     * @param resourceName Resource name to be checked
+     * @return True if in use otherwise false.
+     */
     private boolean isResourceInUse(String resourceName){
         try {
             Document index = Jsoup.parse(UMFileUtil.readTextFile(
-                    new File(destinationTempDir, INDEX_FILE).getAbsolutePath()));
+                    new File(getEpubFilesDestination(), selectedPageIndex).getAbsolutePath()));
             Element previewContainer = index.select("#" + EDITOR_BASE_DIR_NAME).first();
             Elements sources = previewContainer.select("img[src],source[src]");
 
@@ -337,7 +461,7 @@ public class UmEditorFileHelper implements UmEditorFileHelperCore {
     }
 
     @Override
-    public String getDestinationDirPath() {
+    public String getTempDestinationDirPath() {
         return destinationTempDir.getAbsolutePath();
     }
 
@@ -349,6 +473,11 @@ public class UmEditorFileHelper implements UmEditorFileHelperCore {
     @Override
     public String getMountedTempDirRequestUrl() {
         return mountedTempDirBaseUrl;
+    }
+
+    @Override
+    public String getEpubFilesDestination() {
+        return new File(destinationTempDir,OEBPS_DIRECTORY+File.separator).getAbsolutePath();
     }
 
     /**
@@ -467,5 +596,32 @@ public class UmEditorFileHelper implements UmEditorFileHelperCore {
 
         return Objects.requireNonNull(destDir.listFiles()).length > 0;
     }
+
+    /**
+     * Get page title from the page by it's index.
+     * @param pageIndex index used to find a page to get a ttile from.
+     * @return title of the page.
+     * @throws IOException
+     */
+    private String getPageTitle (String pageIndex) throws IOException {
+        File pagePath = new File(getEpubFilesDestination(), pageIndex);
+        Document pageDoc =  Jsoup.parse(UMFileUtil.readTextFile(pagePath.getAbsolutePath()));
+        return pageDoc.select("title").first().text();
+    }
+
+    /**
+     * Update spine items on  opf file
+     * @param pageIndex page index to be updates
+     * @return true if updated otherwise false.
+     * @throws IOException
+     */
+    private boolean updateSpineInOPF(String pageIndex) throws IOException {
+        File pagePath = new File(getEpubFilesDestination(), contentOpfFile);
+        Document pageDoc =  Jsoup.parse(UMFileUtil.readTextFile(pagePath.getAbsolutePath()));
+        pageDoc.select("spine").append("<itemref idref=\""+pageIndex+"\"/>");
+        UMFileUtil.writeToFile(pagePath,pageDoc.toString());
+        return pageDoc.toString().contains(pageIndex);
+    }
+
 
 }

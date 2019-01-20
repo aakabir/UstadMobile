@@ -132,7 +132,7 @@ public class UmEditorFileHelperTest {
 
 
         assertTrue("File was extracted to temporary directory",
-                new File(umEditorFileHelper.getDestinationDirPath()).exists());
+                new File(umEditorFileHelper.getTempDestinationDirPath()).exists());
 
         assertEquals("File was successfully mounted and can be accessed via HTTP",
                 HttpURLConnection.HTTP_OK, responseCode);
@@ -157,7 +157,7 @@ public class UmEditorFileHelperTest {
                         //copy index_.html file to media directory which won't be used at all
                         try {
                             InputStream is = new FileInputStream(new File(umEditorFileHelper
-                                    .getDestinationDirPath(), indexFile));
+                                    .getTempDestinationDirPath(), indexFile));
                             File dest = new File(umEditorFileHelper.getDestinationMediaDirPath(), indexFile);
                             boolean copied = UMFileUtil.copyFile(is,dest) ;
                             copyResultRef.set(copied);
@@ -227,7 +227,7 @@ public class UmEditorFileHelperTest {
                         //update media directory with temp file
                         try {
                             InputStream is = new FileInputStream(new File(umEditorFileHelper
-                                    .getDestinationDirPath(), indexFile));
+                                    .getTempDestinationDirPath(), indexFile));
                             File dest = new File(umEditorFileHelper.getDestinationMediaDirPath(), indexFile);
                             boolean copied = UMFileUtil.copyFile(is,dest);
                             copyResultRef.set(copied);
@@ -297,7 +297,7 @@ public class UmEditorFileHelperTest {
                         //update media directory with temp file
                         try {
                             InputStream is = new FileInputStream(new File(umEditorFileHelper
-                                    .getDestinationDirPath(), indexFile));
+                                    .getTempDestinationDirPath(), indexFile));
                             File dest = new File(umEditorFileHelper.getDestinationMediaDirPath(), indexFile);
                             boolean copied = UMFileUtil.copyFile(is,dest) ;
                             updateResultRef.set(copied);
