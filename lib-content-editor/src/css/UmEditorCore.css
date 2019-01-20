@@ -153,11 +153,13 @@ select,button :focus :active{
     margin: 10px 0 10px 0 !important;
     max-width: 100%;
 }
-
+.text-center{
+    min-width: 100% !important;
+}
 img{
     margin: 10px 0 !important;
     background: transparent !important;
-    max-width:100%;
+    min-width:100%;
     height:auto;
 }
 
