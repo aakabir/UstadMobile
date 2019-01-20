@@ -109,7 +109,7 @@ public class ContentEntryListFragment extends UstadBaseFragment implements Conte
 
     @Override
     public void setToolbarTitle(String title) {
-        if(contentEntryListener != null)
+        if(contentEntryListener != null && title != null)
             contentEntryListener.setTitle(title);
     }
 

@@ -16,6 +16,7 @@ import android.net.Uri;
 import android.os.Build;
 import android.os.Bundle;
 import android.os.Environment;
+import android.os.Handler;
 import android.provider.MediaStore;
 import android.support.annotation.NonNull;
 import android.support.annotation.Nullable;
@@ -31,10 +32,8 @@ import android.support.v4.app.FragmentManager;
 import android.support.v4.app.FragmentStatePagerAdapter;
 import android.support.v4.content.ContextCompat;
 import android.support.v4.content.FileProvider;
-import android.support.v4.view.GravityCompat;
 import android.support.v4.view.ViewPager;
 import android.support.v4.widget.DrawerLayout;
-import android.support.v7.app.ActionBarDrawerToggle;
 import android.support.v7.widget.GridLayoutManager;
 import android.support.v7.widget.RecyclerView;
 import android.util.DisplayMetrics;
@@ -43,11 +42,9 @@ import android.view.Display;
 import android.view.KeyEvent;
 import android.view.LayoutInflater;
 import android.view.Menu;
-import android.view.MenuItem;
 import android.view.View;
 import android.view.ViewGroup;
 import android.webkit.WebSettings;
-import android.webkit.WebView;
 import android.widget.ImageView;
 import android.widget.ProgressBar;
 import android.widget.RelativeLayout;
@@ -55,6 +52,7 @@ import android.widget.TextView;
 
 import com.google.gson.Gson;
 import com.toughra.ustadmobile.R;
+import com.ustadmobile.core.contenteditor.UmEditorFileHelperCore;
 import com.ustadmobile.core.controller.ContentEditorPresenter;
 import com.ustadmobile.core.generated.locale.MessageID;
 import com.ustadmobile.core.impl.UMLog;
@@ -69,6 +67,7 @@ import com.ustadmobile.port.android.umeditor.UmAndroidUriUtil;
 import com.ustadmobile.port.android.umeditor.UmEditorActionView;
 import com.ustadmobile.port.android.umeditor.UmEditorAnimatedViewSwitcher;
 import com.ustadmobile.port.android.umeditor.UmEditorPopUpView;
+import com.ustadmobile.port.android.umeditor.UmEditorWebView;
 import com.ustadmobile.port.android.umeditor.UmFormat;
 import com.ustadmobile.port.android.umeditor.UmFormatStateChangeListener;
 import com.ustadmobile.port.android.umeditor.UmGridSpacingItemDecoration;
@@ -96,7 +95,6 @@ import java.util.concurrent.CopyOnWriteArrayList;
 
 import id.zelory.compressor.Compressor;
 
-import static com.ustadmobile.core.contenteditor.UmEditorFileHelperCore.INDEX_FILE;
 import static com.ustadmobile.port.android.umeditor.UmEditorAnimatedViewSwitcher.ANIMATED_CONTENT_OPTION_PANEL;
 import static com.ustadmobile.port.android.umeditor.UmEditorAnimatedViewSwitcher.ANIMATED_SOFT_KEYBOARD_PANEL;
 import static com.ustadmobile.port.android.umeditor.UmEditorAnimatedViewSwitcher.MAX_SOFT_KEYBOARD_DELAY;
@@ -123,7 +121,7 @@ public class ContentEditorActivity extends UstadBaseActivity implements ContentE
 
     private UmEditorActionView umEditorActionView;
 
-    private WebView umEditorWebView;
+    private UmEditorWebView umEditorWebView;
 
     private DrawerLayout mContentPageDrawer;
 
@@ -154,6 +152,12 @@ public class ContentEditorActivity extends UstadBaseActivity implements ContentE
     private Uri cameraMedia;
 
     private File fileFromCamera;
+
+    private String currentLoadedPage = null;
+
+    private int fileGroupAndOrderId = 0;
+
+    private static final String PAGE_NAME_TAG = "page_name";
 
     private static  int displayWidth = 0;
 
@@ -678,13 +682,18 @@ public class ContentEditorActivity extends UstadBaseActivity implements ContentE
         }
 
         @Override
+        public void onAttach(Context context) {
+            super.onAttach(context);
+             umFormatHelper.setStateChangeListener(this);
+        }
+
+        @Override
         public View onCreateView(@NonNull LayoutInflater inflater, ViewGroup container,
                                  Bundle savedInstanceState) {
             View rootView = inflater.inflate(R.layout.fragment_content_formatting,
                     container, false);
             RecyclerView mRecyclerView = rootView.findViewById(R.id.formats_list);
             adapter = new FormatsAdapter();
-            umFormatHelper.setStateChangeListener(this);
             adapter.setUmFormats(umFormatHelper.getFormatListByType(formattingType));
             int itemWidth = 60;
             GridLayoutManager mLayoutManager = new GridLayoutManager(getContext(),
@@ -840,11 +849,18 @@ public class ContentEditorActivity extends UstadBaseActivity implements ContentE
         startEditing.setOnClickListener(v -> {
             progressDialog.setVisibility(View.VISIBLE);
             if(isEditorPreview){
-                loadIndexFile();
+                loadPage();
             }else{
                 initializeEditor();
             }
 
+        });
+
+        findViewById(R.id.content_option_page).setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                addNewPage();
+            }
         });
 
         mFromCamera.setOnClickListener(v -> {
@@ -896,43 +912,63 @@ public class ContentEditorActivity extends UstadBaseActivity implements ContentE
         umEditorWebView.setLayerType(View.LAYER_TYPE_HARDWARE, null);
         presenter.handleContentEntryFileStatus();
 
-        setupPageList();
+        setupPagesListDrawer();
 
     }
 
     /**
-     * Set up page list to the drawer layout.
+     * Set up page list drawer layout.
      */
-    private void setupPageList(){
+    private void setupPagesListDrawer(){
         //Listen for specific page selection and load it to the editor.
-        navigationView.setNavigationItemSelectedListener(new NavigationView.OnNavigationItemSelectedListener() {
-            @Override
-            public boolean onNavigationItemSelected(@NonNull MenuItem item) {
-
-                //listen for the page items
-                return false;
-            }
+        navigationView.setNavigationItemSelectedListener(item -> {
+            handlePageSelection(item.getItemId());
+            return true;
         });
-        ActionBarDrawerToggle actionBarDrawerToggle = new ActionBarDrawerToggle(
-                this, mContentPageDrawer, toolbar, 0,
-                0) {
+
+        mContentPageDrawer.addDrawerListener(new DrawerLayout.DrawerListener() {
             @Override
-            public void onDrawerClosed(View drawerView) {
-                super.onDrawerClosed(drawerView);
-                viewSwitcher.animateView(ANIMATED_SOFT_KEYBOARD_PANEL);
+            public void onDrawerSlide(@NonNull View drawerView, float slideOffset) { }
+
+            @Override
+            public void onDrawerOpened(@NonNull View drawerView) { }
+
+            @Override
+            public void onDrawerClosed(@NonNull View drawerView) {
+                viewSwitcher.closeActivity(false);
             }
-        };
-        mContentPageDrawer.addDrawerListener(actionBarDrawerToggle);
-        addNewPage();
+
+            @Override
+            public void onDrawerStateChanged(int newState) { }
+        });
     }
 
 
-    private void addNewPage(){
-        Menu drawerMenu = navigationView.getMenu();
-        drawerMenu.add("Hello there");
+    /**
+     * Handle page selection
+     * @param pageNumber selected page number
+     */
+    private void handlePageSelection(int pageNumber){
+        for(UmEditorFileHelperCore.UmPage umPage : umEditorFileHelper.getDocumentPages()){
+            if(umPage.getNumber() == pageNumber){
+                currentLoadedPage = umPage.getIndex();
+                umEditorFileHelper.setCurrentSelectedPage(currentLoadedPage);
+                break;
+            }
+        }
+        //set selected item checked
+        navigationView.setCheckedItem(pageNumber);
+        //close the drawer
+        if(mContentPageDrawer.isDrawerOpen(navigationView)){
+            mContentPageDrawer.closeDrawer(navigationView);
+        }
 
+        //wait for the drawer to close then load the page
+        new Handler().postDelayed(this::loadPage,300);
 
     }
+
+
 
 
     @Override
@@ -942,6 +978,17 @@ public class ContentEditorActivity extends UstadBaseActivity implements ContentE
         return true;
     }
 
+    @Override
+    protected void onSaveInstanceState(Bundle outState) {
+        super.onSaveInstanceState(outState);
+        outState.putString(PAGE_NAME_TAG, currentLoadedPage);
+    }
+
+    @Override
+    protected void onRestoreInstanceState(Bundle savedInstanceState) {
+        super.onRestoreInstanceState(savedInstanceState);
+        currentLoadedPage = savedInstanceState.getString(PAGE_NAME_TAG);
+    }
 
     @Override
     public void onStateChanged(UmFormat format) {
@@ -968,7 +1015,9 @@ public class ContentEditorActivity extends UstadBaseActivity implements ContentE
         }else{
             if(showPageList){
                 showPageList = false;
-                mContentPageDrawer.openDrawer(GravityCompat.END);
+                if(!mContentPageDrawer.isDrawerOpen(navigationView)){
+                    mContentPageDrawer.openDrawer(navigationView);
+                }
             }
         }
     }
@@ -1038,14 +1087,14 @@ public class ContentEditorActivity extends UstadBaseActivity implements ContentE
                 break;
             case ACTION_SAVE_CONTENT:
                 try{
-                    Document indexFile = getIndexDocument();
+                    Document indexFile = getLoadedPageContent();
                     Elements contentContainer = indexFile.select("#"+EDITOR_BASE_DIR_NAME);
                     contentContainer.first().html(content);
                     String utf8Content = URLDecoder.decode(content,"UTF-8");
                     UstadMobileSystemImpl.l(UMLog.DEBUG,700, utf8Content);
                     //Update index.html file
-                    UMFileUtil.writeToFile(new File(umEditorFileHelper.getDestinationDirPath(),
-                            INDEX_FILE),indexFile.html());
+                    UMFileUtil.writeToFile(new File(umEditorFileHelper.getEpubFilesDestination(),
+                            currentLoadedPage),indexFile.html());
                 } catch (UnsupportedEncodingException e) {
                     e.printStackTrace();
                 }
@@ -1073,6 +1122,11 @@ public class ContentEditorActivity extends UstadBaseActivity implements ContentE
                     clipboard.setPrimaryClip(clip);
                 } catch (UnsupportedEncodingException e) {
                     e.printStackTrace();
+                }
+                break;
+            case ACTION_CHECK_COMPLETED:
+                if(umEditorWebView.getInputConnectionWrapper() != null){
+                    umEditorWebView.getInputConnectionWrapper().setProtectedElement(Boolean.valueOf(content));
                 }
                 break;
         }
@@ -1191,8 +1245,12 @@ public class ContentEditorActivity extends UstadBaseActivity implements ContentE
     @Override
     public void onActionViewClicked(int itemId) {
         if (itemId == R.id.content_action_pages) {
-            showPageList = true;
-            viewSwitcher.closeActivity(false);
+            if(mContentPageDrawer.isDrawerOpen(navigationView)){
+                mContentPageDrawer.closeDrawer(navigationView);
+            }else{
+                showPageList = true;
+                viewSwitcher.closeActivity(false);
+            }
 
         }else if(itemId == R.id.content_action_format){
 
@@ -1251,9 +1309,9 @@ public class ContentEditorActivity extends UstadBaseActivity implements ContentE
      * Get base index.html file reference
      * @return Index.html file location
      */
-    private Document getIndexDocument(){
+    private Document getLoadedPageContent(){
         try {
-            File indexFile = new File(umEditorFileHelper.getDestinationDirPath(),INDEX_FILE);
+            File indexFile = new File(umEditorFileHelper.getEpubFilesDestination(), currentLoadedPage);
             return  Jsoup.parse(UMFileUtil.readTextFile(indexFile.getAbsolutePath()));
         } catch (IOException e) {
             e.printStackTrace();
@@ -1266,8 +1324,8 @@ public class ContentEditorActivity extends UstadBaseActivity implements ContentE
      * @return True if the document is empty otherwise false.
      */
     private boolean isDocumentEmpty(){
-        Document indexFile = getIndexDocument();
-        Elements innerContent = indexFile.select("#"+EDITOR_BASE_DIR_NAME);
+        Document loadedPage = getLoadedPageContent();
+        Elements innerContent = loadedPage.select("#"+EDITOR_BASE_DIR_NAME);
         return innerContent.html().length() <= 0;
     }
 
@@ -1403,9 +1461,9 @@ public class ContentEditorActivity extends UstadBaseActivity implements ContentE
                     toolbar.setMenuVisible(false);
                     viewSwitcher.closeAnimatedView(ANIMATED_SOFT_KEYBOARD_PANEL);
                     startEditing.setVisibility(View.VISIBLE);
-                    loadIndexFile();
+                    loadPage();
                 }else{
-                    if(deleteTempDir(new File(umEditorFileHelper.getDestinationDirPath()))){
+                    if(deleteTempDir(new File(umEditorFileHelper.getTempDestinationDirPath()))){
                         finish();
                     }
                 }
@@ -1626,19 +1684,61 @@ public class ContentEditorActivity extends UstadBaseActivity implements ContentE
     }
 
 
-    @Override
-    public void loadIndexFile() {
+    private void loadPage() {
         umEditorWebView.setWebViewClient(new UmWebContentEditorClient(this));
         args.put(ContentEditorView.EDITOR_PREVIEW_PATH, UMFileUtil.joinPaths(
-                umEditorFileHelper.getMountedTempDirRequestUrl(),INDEX_FILE));
+                umEditorFileHelper.getMountedTempDirRequestUrl(), currentLoadedPage));
         String urlToLoad = UMFileUtil.joinPaths(umEditorFileHelper.getMountedTempDirRequestUrl(),
-                INDEX_FILE);
+                currentLoadedPage);
         umEditorWebView.clearCache(true);
         umEditorWebView.clearHistory();
         umEditorWebView.loadUrl(urlToLoad);
-        handleBlankDocumentView();
+
+        if(isEditorInitialized){
+            handleBlankDocumentView();
+        }
     }
 
+
+
+    @Override
+    public void handleDocumentPages() {
+        View headerView = navigationView.getHeaderView(0);
+        TextView documentTitle = headerView.findViewById(R.id.document_title);
+        documentTitle.setText("Dummy document name");
+        //set file list
+        Menu drawerMenu = navigationView.getMenu();
+        List<UmEditorFileHelperCore.UmPage> pageList = umEditorFileHelper.getDocumentPages();
+        if(pageList.size() > 0){
+            for(UmEditorFileHelperCore.UmPage page: pageList){
+                drawerMenu.add(fileGroupAndOrderId,page.getNumber(),
+                        fileGroupAndOrderId,page.getTitle()).setCheckable(true);
+            }
+            //check and load first page in the list
+            handlePageSelection(navigationView.getMenu().getItem(0).getItemId());
+
+        }else{
+            addNewPage();
+        }
+    }
+
+    /**
+     * Add new page to the document
+     */
+    private void addNewPage(){
+        Menu drawerMenu = navigationView.getMenu();
+        umEditorFileHelper.addPageToTheDocument("Untitled Page",
+                new UmCallback<UmEditorFileHelperCore.UmPage>() {
+                    @Override
+                    public void onSuccess(UmEditorFileHelperCore.UmPage page) {
+                        drawerMenu.add(fileGroupAndOrderId,page.getNumber(),
+                                fileGroupAndOrderId,page.getTitle()).setCheckable(true);
+                        handlePageSelection(navigationView.getMenu().findItem(page.getNumber()).getItemId());
+                    }
+                    @Override
+                    public void onFailure(Throwable exception) { }
+                });
+    }
 
 
     @VisibleForTesting

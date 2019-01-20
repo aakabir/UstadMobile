@@ -68,8 +68,6 @@ public class BasePointController extends UstadBaseController {
 
     public static final int CMD_RECEIVE_ENTRY = 1006;
 
-    public static final int CMD_START_CONTENT_EDITOR = 1007;
-
     public BasePointController(Object context, BasePointView view) {
         super(context);
         this.basePointView = view;
@@ -171,12 +169,6 @@ public class BasePointController extends UstadBaseController {
 
     public void handleClickShareApp() {
         basePointView.showShareAppDialog();
-    }
-
-    public void handleStartEditor(){
-        Hashtable args = new Hashtable();
-        args.put(ContentEditorView.CONTENT_ENTRY_FILE_UID,"1");
-        UstadMobileSystemImpl.getInstance().go(ContentEditorView.VIEW_NAME,args, context);
     }
 
     public void handleClickReceive() {

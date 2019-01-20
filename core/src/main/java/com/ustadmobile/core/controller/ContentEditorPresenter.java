@@ -94,7 +94,7 @@ public class ContentEditorPresenter extends UstadBaseController<ContentEditorVie
             @Override
             public void onSuccess(Void result) {
                 if(filePath.length() > 0){
-                    view.runOnUiThread(() -> view.loadIndexFile());
+                    view.runOnUiThread(() -> view.handleDocumentPages());
                 }else{
                     view.runOnUiThread(() -> view.showNotFoundErrorMessage());
                 }

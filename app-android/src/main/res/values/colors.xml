@@ -60,5 +60,6 @@
     <color name="content_white_btn_ripple">#50BDBDBD</color>
     <color name="content_icon_active">#263238</color>
     <color name="content_white_fab_pressed">#fcfcfc</color>
+    <color name="colorTextSecondaryTransparent">#21757575</color>
 
 </resources>
