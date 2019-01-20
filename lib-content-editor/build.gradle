@@ -42,7 +42,7 @@ task copyResourcesToAndroidAssets << {
 
     delete rootPath + "dist"
     delete rootTemplatePath + "umEditorBlankDoc.zip"
-    delete umEditorAssetsPath + templates + "/index.html"
+    delete umEditorAssetsPath + templates + "/template_page.html"
     delete umEditorAssetsPath + templates + "/umEditorBlankDoc"
 
 }
@@ -53,8 +53,6 @@ task createUmEditorBlankDocumentArchive(type: Zip) {
     def blankDocPath = rootTemplatePath + "umEditorBlankDoc"
 
     from blankDocPath
-    include '*'
-    include '*/*'
     archiveName 'umEditorBlankDoc.zip'
     destinationDir(file(rootTemplatePath))
 
@@ -67,19 +65,25 @@ copyResourcesToAndroidAssets.dependsOn(createUmEditorBlankDocumentArchive)
 
 /*Task which creates all directories necessary for preparing a blank document template*/
 task prepareUmEditorDirectories << {
+    def epubMetaInf = "META-INF/"
+    def epubOebps = "OEBPS/"
+    def epubMimeType =  "mimetype"
     def blankDocPath = rootTemplatePath + "umEditorBlankDoc/"
-    def blankDocCssPath = blankDocPath +"css/"
-    def blankDocJsPath = blankDocPath +"js/"
-    def blankDocMediaPath = blankDocPath +"media/"
+    def blankDocCssPath = blankDocPath+epubOebps +"css/"
+    def blankDocJsPath = blankDocPath +epubOebps+"js/"
+    def blankDocMediaPath = blankDocPath +epubOebps+"media/"
 
-    copy { from rootTemplatePath+"index.html" into blankDocPath }
+    copy { from rootTemplatePath+"template_page.html" into blankDocPath }
+    copy { from rootPath+"epub/"+epubMetaInf into blankDocPath+epubMetaInf}
+    copy { from rootPath+"epub/"+epubOebps into blankDocPath+epubOebps}
+    copy { from rootPath+"epub/"+epubMimeType into blankDocPath}
     copy { from rootPath+"/lib/bootstrap/css/bootstrap.min.css", rootPath+"dist/css/UmEditorCore.min.css" into blankDocCssPath }
     copy { from rootPath+"/lib/bootstrap/js/bootstrap.min.js", rootPath+"/lib/jquery/jquery3.3.1.min.js",
             rootPath+"dist/js/UmContentEditorCore.min.js", rootPath+"dist/js/UmQuestionWidget.min.js" into blankDocJsPath }
 
     File mediaDir = new File(blankDocMediaPath)
     mediaDir.mkdir()
-    new File(blankDocMediaPath+"/.media-hide.info").text = "media-dir"
+    new File(blankDocMediaPath+"/media-hide.info").text = "media-dir"
 }
 createUmEditorBlankDocumentArchive.dependsOn(prepareUmEditorDirectories)
 
