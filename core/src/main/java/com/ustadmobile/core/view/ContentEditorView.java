@@ -54,6 +54,7 @@ public interface ContentEditorView extends UstadView {
     String ACTION_SAVE_CONTENT ="onSaveContent";
     String ACTION_SELECT_ALL = "selectAll";
     String ACTION_CONTENT_CUT = "onContentCut";
+    String ACTION_CHECK_COMPLETED = "onProtectedElementCheck";
 
     /**
      * Question templates insert command tag.
@@ -185,9 +186,9 @@ public interface ContentEditorView extends UstadView {
     void selectAllContent();
 
     /**
-     * Load index file to the webview
+     * Handle all document pages
      */
-    void loadIndexFile();
+    void handleDocumentPages();
 
     /**
      * Get active file helper instance
