@@ -26,7 +26,7 @@ describe('#Protected content', function() {
     describe('givenActiveEditor_whenNotProtectedElementIsSelectedAndDeleteKeyIsPressed_thenShouldBeDeleted', function() {
         it('Content deletion allowed', function() {
             const currentNode = "<p>Sample label</p>";
-            const isKeyAllowed = UmContentEditorCore.checkProtectedElements(currentNode,true,currentNode.length,{});
+            const isKeyAllowed = UmContentEditorCore.checkProtectedElements(currentNode,false);
             isKeyAllowed.should.equal(true);
         });
     });
