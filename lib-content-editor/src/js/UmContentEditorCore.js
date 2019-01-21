@@ -132,7 +132,6 @@ UmContentEditorCore.setFontSize = (fontSize) => {
  * @returns {{action: string, content: string}} callback object
  */
 UmContentEditorCore.editorActionUndo = () => {
-    rollbackActionPerformed = true;
     UmContentEditorCore.executeCommand("Undo",null);
     UmContentEditorCore.prototype.checkCommandState("Undo");
 };
@@ -575,20 +574,24 @@ UmContentEditorCore.prototype.insertQuestionNodeContent = (questionNode,isFromCl
 /**
  * Move cursor to next focusable unprotected element in the question block.
  * @param currentNode currently focused node.
- * @param event emitted events (click/selection)
  *
  * Since the entire body will be editable, there is no easy way to move cursor to the next focusable element
  * (all elements are focusable).Instead we have to tell the cursor where to go.
  * @returns next focusable element (For testing purpose since we can't emit keyboard events);
  */
-UmContentEditorCore.setFocusToNextUnprotectedFocusableElement = (currentNode,event) => {
+UmContentEditorCore.setFocusToNextUnprotectedFocusableElement = (currentNode, event) => {
     let nextElementFocusSelector = "p:not(.immutable-content)";
-    let questionActionHolderSelector = ".question-action-holder";
+    const questionActionHolderSelector = ".question-action-holder";
     const labelSelector = ".immutable-content";
+    const isDeleteButton = $(currentNode).is(".action-delete-inner");
+    const isAddChoiceDiv = $(currentNode).is("div.question-add-choice");
+    const isAddChoiceButton = $(currentNode).is("button.add-choice");
+    const questionSelector = "div div.question";
+    const choiceParagraphSelector = ".question-choice-body p:first-of-type";
+    const questionBodyParagraphSelector = ".question-body p:first-of-type";
     let nextFocusableElement = null;
+    //Handle when clicked on immutable content, focus to the next/previous focusable element
     if(!eventOcurredAfterSelectionProtectionCheck && ($(currentNode).is(labelSelector) || $(currentNode).is(questionActionHolderSelector))){
-        //Handle when clicked on immutable content, focus to the next/previous focusable element
-        
         //check if event came from question action holder.
         currentNode = $(currentNode).is(questionActionHolderSelector) ? $(currentNode).next():currentNode;
         
@@ -600,24 +603,47 @@ UmContentEditorCore.setFocusToNextUnprotectedFocusableElement = (currentNode,eve
         UmContentEditorCore.prototype.setCursorToAnyNonProtectedFucusableElement(nextFocusableElement);
         UmContentEditorCore.prototype.scrollToElement(nextFocusableElement);
         return nextFocusableElement;
-    }else if($(currentNode).is(".add-choice,.action-delete-inner")){
-        //Handle for delete choice and add choice buttons/spans, focus to the choice body
-        const isDeletion = $(currentNode).is(".action-delete-inner");
-        const isAddChoiceDiv = $(currentNode).is("div.question-add-choice");
-        const isAddChoiceButton = $(currentNode).is("button.add-choice");
-    
-        //Wait for the action to take place i.e delete/add then scroll to the respective element.
-        setTimeout(function () {
-            nextElementFocusSelector = isDeletion ? ".question-body":(isAddChoiceButton &&  UmQuestionWidget.isChoiceAdded ? ".question-choice-body" + " p:first-of-type":"p:first-of-type");
-            currentNode = isDeletion ? currentNode: (isAddChoiceButton && UmQuestionWidget.isChoiceAdded ?
-            $($(currentNode).closest("div div.question")).find(".question-choice").last():$($(currentNode).closest("div div.question")).next());
-            UmQuestionWidget.isChoiceAdded = false;
+    }else if(isAddChoiceButton){
+        //for add choice button, wait for choice to be added then focus to newly added choice body
+        setTimeout(function(){
+            event.stopImmediatePropagation();
+            if(UmQuestionWidget.isChoiceAdded){
+                currentNode = $($(currentNode).closest(questionSelector)).find(".question-choice").last();
+                nextFocusableElement = $(currentNode).find(choiceParagraphSelector).get(0);
+                UmContentEditorCore.prototype.setCursorToAnyNonProtectedFucusableElement(nextFocusableElement);
+                UmContentEditorCore.prototype.scrollToElement(nextFocusableElement);
+                UmQuestionWidget.isChoiceAdded = false;
+                return nextFocusableElement;
+            }
+        },averageEventTimeout);
+    }else if(isAddChoiceDiv){
+        //For choice div, focus to the next extra content widget below the question
+        event.stopImmediatePropagation();
+        if(!UmQuestionWidget.isChoiceAdded){
+            nextElementFocusSelector = "p:first-of-type";
+            currentNode = $($(currentNode).closest(questionSelector)).next();
             nextFocusableElement = $(currentNode).find(nextElementFocusSelector).get(0);
             UmContentEditorCore.prototype.setCursorToAnyNonProtectedFucusableElement(nextFocusableElement);
             UmContentEditorCore.prototype.scrollToElement(nextFocusableElement);
             return nextFocusableElement;
-        },isAddChoiceButton ? averageEventTimeout:0);
-
+        }
+    }else if(isDeleteButton){
+        //For delete icon, wait for the delete action to take place and focus to the last choice or when no choices question body
+        currentNode = $($($($(currentNode).closest("span")).parent()).parent()).closest(questionSelector);
+        setTimeout(function(){
+            event.stopImmediatePropagation();
+            nextElementFocusSelector = choiceParagraphSelector+ " + p:last-of-type";
+            const foundChoices = $(currentNode).find(choiceParagraphSelector);
+            //check if there are choices left and focus to the last choice otherwise focus on body
+            if(foundChoices.length > 0){
+                nextFocusableElement = $(foundChoices).last().get(0);
+            }else{
+                nextFocusableElement = $(currentNode).find(questionBodyParagraphSelector).get(0);
+            }
+            UmContentEditorCore.prototype.setCursorToAnyNonProtectedFucusableElement(nextFocusableElement);
+            UmContentEditorCore.prototype.scrollToElement(nextFocusableElement);
+            return nextFocusableElement;
+        },averageEventTimeout);
     }
     return nextFocusableElement;
 };
@@ -762,12 +788,10 @@ UmContentEditorCore.prototype.setCursor = (element = null,isRoot) =>{
  * Check if the current action is worth taking place (Physical Keyboard)
  * @param currentNode current selected node
  * @param isDeleteKey true if the key is either delete or backspace, false otherwise
- * @param selectedContentLength length of the selected content. Used only to determine if the length is non-zero.
- *                              If length is 0, the check only continues if the key is delete or backspace.
  * @param event keydown event
  * @returns {boolean} True is the action should take place otherwise false.
  */
-UmContentEditorCore.checkProtectedElements = (currentNode,isDeleteKey, event) => {
+UmContentEditorCore.checkProtectedElements = (currentNode,isDeleteKey, event = null) => {
     if(UmContentEditorCore.prototype.isElementProtected(currentNode,isDeleteKey,false)){
         eventOcurredAfterSelectionProtectionCheck = protectedSelection;
         return UmContentEditorCore.prototype.preventDefaultAndStopPropagation(event);
@@ -908,11 +932,10 @@ UmContentEditorCore.initEditor = (locale = "en", showToolbar = false) => {
              * @type {[type]}
              */
             ed.on('click', e => {
-                //e.stopImmediatePropagation();
                 UmContentEditorCore.prototype.checkActivatedControls();
                 UmContentEditorCore.prototype.getNodeDirectionality();
                 UmContentEditorCore.setFocusToNextUnprotectedFocusableElement(e.target,e);
-            });
+            },true);
 
             /**
              * Listen for the key up event
@@ -1001,7 +1024,6 @@ UmContentEditorCore.initEditor = (locale = "en", showToolbar = false) => {
                     UmContentEditorCore.prototype.setCursor(null,false);
                 }
 
-
                 //add immutable class to all labels
                 UmQuestionWidget.handleImmutableContent();
                 
@@ -1020,7 +1042,6 @@ UmContentEditorCore.initEditor = (locale = "en", showToolbar = false) => {
 
             });
             contentChangeObserver.observe(document.querySelector('#umEditor'),contentWatcherFilters);
-            
             
             //add observer to watch controls state changes
             const menuWatcherFilter = {
