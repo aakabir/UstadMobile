@@ -75,7 +75,7 @@ mocha-chrome content-formatting-tests.html --timeout 6000
   
 mocha-chrome content-template-tests.html --timeout 6000  
   
-mocha-chrome content-protection.html--timeout 6000
+mocha-chrome content-protection.html --timeout 6000
 
 mocha-chrome content-next-focus.html --timeout 6000  
 ``` 
