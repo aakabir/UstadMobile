@@ -224,7 +224,6 @@ UmQuestionWidget.prototype.startEditing = function() {
     $(this.element).find('.question-action-holder').removeClass("hide-element").addClass("show-element");
     $(this.element).find('.action-inner').removeClass("hide-element").addClass("show-element");
     $(this.element).find('.question-answer').removeClass("show-element").addClass("hide-element");
-    $(this.element).find(".extra-content").removeClass("hide-element").addClass("show-element");
     if(UmQuestionWidget.isNewQuestion){
             UmQuestionWidget.prototype.handleNewQuestionNode(this.element);
         }else{
@@ -272,12 +271,8 @@ UmQuestionWidget.prototype.handleExistingQuestionNode = (element) => {
     $(element).removeClass("card default-margin-bottom default-padding-top");
     $(element).find(".multi-choice").removeClass("default-margin-top").addClass("default-margin-bottom");
     $(element).find(".question-answer").removeClass("default-margin-bottom");
-    $(element).find("p.pg-break").addClass("show-element").removeClass("hide-element");
-    $(element).find(".question-action-holder").addClass("show-element").removeClass("hide-element");
-    $(element).find(".select-option").addClass("show-element").removeClass("hide-element");
-    $(element).find(".fill-blanks").addClass("show-element").removeClass("hide-element");
-    $(element).find(".question-choice-answer").addClass("show-element").removeClass("hide-element");
-    $(element).find(".question-choice-feedback").addClass("show-element").removeClass("hide-element");
+    $(element).find("p.pg-break, .question-choice-answer , .question-choice-feedback, .fill-blanks,.select-option , .question-action-holder")
+    .addClass("show-element").removeClass("hide-element");
 };
 
 /**Handle question choices */
@@ -337,6 +332,16 @@ UmFillTheBlanksQuestionWidget.prototype.startEditing = function(){
         +UmQuestionWidget._locale.placeholders.labelForQuestionRightFeedbackText+"</label>");
     $(this.element).find(".question-choice-feedback-wrong").before("<label class='um-labels'>"
         +UmQuestionWidget._locale.placeholders.labelForQuestionWrongFeedbackText+"</label>");
+    return this.element;
+};
+
+/**
+ * Switch on editing mode to the extra content widget
+ * @returns question widget with controls
+ */
+UmOtherContentWidget.prototype.startEditing = function(){
+    UmQuestionWidget.prototype.startEditing.apply(this, arguments);
+    $(this.element).find(".extra-content").removeClass("hide-element").addClass("show-element");
     return this.element;
 };
 

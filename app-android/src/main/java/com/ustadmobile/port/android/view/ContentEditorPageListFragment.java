@@ -1,30 +1,224 @@
 package com.ustadmobile.port.android.view;
 
 
+import android.annotation.SuppressLint;
+import android.app.Activity;
+import android.app.Dialog;
 import android.os.Bundle;
+import android.support.annotation.NonNull;
+import android.support.annotation.Nullable;
+import android.support.v4.app.DialogFragment;
 import android.support.v4.app.Fragment;
+import android.support.v4.view.MotionEventCompat;
+import android.support.v7.widget.LinearLayoutManager;
+import android.support.v7.widget.RecyclerView;
+import android.support.v7.widget.Toolbar;
+import android.support.v7.widget.helper.ItemTouchHelper;
 import android.view.LayoutInflater;
+import android.view.MotionEvent;
 import android.view.View;
 import android.view.ViewGroup;
+import android.view.Window;
+import android.view.WindowManager;
+import android.widget.ImageView;
+import android.widget.TextView;
 
 import com.toughra.ustadmobile.R;
+import com.ustadmobile.core.controller.ContentEditorPageListPresenter;
+import com.ustadmobile.core.opf.UstadJSOPFItem;
+import com.ustadmobile.core.view.ContentEditorPageListView;
+import com.ustadmobile.port.android.umeditor.UmOnStartDragListener;
+import com.ustadmobile.port.android.umeditor.UmPageActionListener;
+import com.ustadmobile.port.android.umeditor.UmPageItemTouchAdapter;
+import com.ustadmobile.port.android.umeditor.UmPageItemTouchCallback;
+import com.ustadmobile.port.android.util.UMAndroidUtil;
+
+import java.util.List;
 
 /**
  * A simple {@link Fragment} subclass.
  */
-public class ContentEditorPageListFragment extends Fragment {
+public class ContentEditorPageListFragment extends DialogFragment
+        implements UmOnStartDragListener, ContentEditorPageListView {
 
+    private List<UstadJSOPFItem> pageList;
+
+    private ItemTouchHelper mItemTouchHelper;
+
+    private UmPageActionListener pageActionListener;
+
+    private ContentEditorPageListPresenter presenter;
 
     public ContentEditorPageListFragment() {
         // Required empty public constructor
     }
 
 
+    private class PageListAdapter extends RecyclerView.Adapter<PageListAdapter.PageViewHolder>
+            implements UmPageItemTouchAdapter {
+        private UmOnStartDragListener mDragStartListener;
+
+        PageListAdapter(UmOnStartDragListener mDragStartListener){
+            this.mDragStartListener = mDragStartListener;
+        }
+
+        @NonNull
+        @Override
+        public PageViewHolder onCreateViewHolder(@NonNull ViewGroup parent, int viewType) {
+            View view = LayoutInflater.from(parent.getContext()).inflate(
+                    R.layout.umcontenteditor_filelist_item, parent, false);
+            return new PageViewHolder(view);
+        }
+
+        @SuppressLint("ClickableViewAccessibility")
+        @Override
+        public void onBindViewHolder(@NonNull PageViewHolder holder, int position) {
+            final UstadJSOPFItem pageItem = pageList.get(holder.getAdapterPosition());
+            holder.pageTitle.setText(pageItem.title);
+            holder.pageReorderHandle.setOnTouchListener((v, event) -> {
+                if (MotionEventCompat.getActionMasked(event) == MotionEvent.ACTION_DOWN) {
+                    mDragStartListener.onDragStarted(holder);
+                }
+                return false;
+            });
+            holder.itemView.setOnClickListener(v ->
+                    presenter.handlePageSelected(pageItem));
+        }
+
+        @Override
+        public int getItemCount() {
+            return pageList.size();
+        }
+
+        @Override
+        public void onPageItemMove(int fromPosition, int toPosition) {
+            UstadJSOPFItem prev = pageList.get(fromPosition);
+            pageList.add(toPosition > fromPosition ? toPosition - 1 : toPosition, prev);
+            pageList.remove(fromPosition);
+            presenter.handleReOrderPages(pageList);
+            notifyItemMoved(fromPosition, toPosition);
+        }
+
+        class PageViewHolder extends RecyclerView.ViewHolder{
+            ImageView pageReorderHandle;
+            TextView pageTitle;
+            ImageView pageOptionHandle;
+            PageViewHolder(View itemView) {
+                super(itemView);
+                pageReorderHandle = itemView.findViewById(R.id.page_handle);
+                pageOptionHandle = itemView.findViewById(R.id.page_option);
+                pageTitle = itemView.findViewById(R.id.page_title);
+            }
+        }
+    }
+
+
+    public void setPageActionListener(Activity activity){
+        pageActionListener = (UmPageActionListener) activity;
+    }
+
+    public void setPageList(List<UstadJSOPFItem> pageList){
+        this.pageList = pageList;
+    }
+
+    @Override
+    public void onCreate(@Nullable Bundle savedInstanceState) {
+        super.onCreate(savedInstanceState);
+        setStyle(DialogFragment.STYLE_NORMAL, R.style.FullScreenDialogStyle);
+    }
+
     @Override
     public View onCreateView(LayoutInflater inflater, ViewGroup container,
                              Bundle savedInstanceState) {
         // Inflate the layout for this fragment
-        return inflater.inflate(R.layout.fragment_content_editor_page_list, container, false);
+        View rootView = inflater.inflate(R.layout.fragment_content_editor_page_list,
+                container, false);
+        Toolbar toolbar = rootView.findViewById(R.id.toolbar);
+        toolbar.setNavigationIcon(R.drawable.ic_close_white_24dp);
+        toolbar.setNavigationOnClickListener(view1 -> dismiss());
+        toolbar.setTitle("Document title");
+
+        RecyclerView pageListView = rootView.findViewById(R.id.page_list);
+        PageListAdapter mPageListAdapter = new PageListAdapter(this);
+        LinearLayoutManager layoutManager = new LinearLayoutManager(getActivity());
+        layoutManager.setOrientation(LinearLayoutManager.VERTICAL);
+        pageListView.setLayoutManager(layoutManager);
+        pageListView.setAdapter(mPageListAdapter);
+
+        ItemTouchHelper.Callback callback = new UmPageItemTouchCallback(mPageListAdapter);
+        mItemTouchHelper = new ItemTouchHelper(callback);
+        mItemTouchHelper.attachToRecyclerView(pageListView);
+
+        presenter = new ContentEditorPageListPresenter(this, null,this);
+        presenter.onCreate(UMAndroidUtil.bundleToHashtable(savedInstanceState));
+
+        return rootView;
     }
 
+    @Override
+    public void onStart() {
+        super.onStart();
+        Dialog dialog = getDialog();
+        if (dialog != null) {
+            int width = ViewGroup.LayoutParams.MATCH_PARENT;
+            int height = ViewGroup.LayoutParams.MATCH_PARENT;
+            dialog.getWindow().setLayout(width, height);
+        }
+    }
+
+
+    @Override
+    public void onDragStarted(RecyclerView.ViewHolder viewHolder) {
+        mItemTouchHelper.startDrag(viewHolder);
+    }
+
+    @Override
+    public void updatePageList(List<UstadJSOPFItem> newPageList) {
+        pageActionListener.onOrderChanged(newPageList);
+    }
+
+    @Override
+    public void addNewPage(UstadJSOPFItem page) {
+        pageActionListener.onPageCreate(page);
+    }
+
+    @Override
+    public void removePage(UstadJSOPFItem page) {
+        pageActionListener.onPageRemove(page);
+    }
+
+    @Override
+    public void loadPage(UstadJSOPFItem page) {
+        pageActionListener.onPageSelected(page.href);
+    }
+
+    @Override
+    public void updatePage(UstadJSOPFItem page) {
+        pageActionListener.onPageUpdate(page);
+    }
+
+    @Override
+    public int getDirection() {
+        return 0;
+    }
+
+    @Override
+    public void setDirection(int dir) {
+
+    }
+
+    @Override
+    public void setAppMenuCommands(String[] labels, int[] ids) {
+
+    }
+
+    @Override
+    public void setUIStrings() {
+
+    }
+
+    @Override
+    public void runOnUiThread(Runnable r) {
+
+    }
 }

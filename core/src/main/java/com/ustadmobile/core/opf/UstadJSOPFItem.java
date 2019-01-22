@@ -30,14 +30,17 @@
  */
 package com.ustadmobile.core.opf;
 
+import java.io.Serializable;
+
 /**
  *
  * @author varuna
  */
-public class UstadJSOPFItem {
+public class UstadJSOPFItem implements Serializable {
     public String href;
     public String mimeType;
     public String properties;
+    public String title;
     public boolean linear;
     public String id;
     

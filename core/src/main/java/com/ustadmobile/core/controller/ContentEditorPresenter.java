@@ -2,12 +2,20 @@ package com.ustadmobile.core.controller;
 
 import com.ustadmobile.core.db.UmAppDatabase;
 import com.ustadmobile.core.db.dao.ContentEntryFileStatusDao;
+import com.ustadmobile.core.generated.locale.MessageID;
 import com.ustadmobile.core.impl.UmCallback;
+import com.ustadmobile.core.impl.UstadMobileSystemImpl;
+import com.ustadmobile.core.opf.UstadJSOPF;
+import com.ustadmobile.core.opf.UstadJSOPFItem;
 import com.ustadmobile.core.view.ContentEditorView;
 import com.ustadmobile.lib.db.entities.ContentEntryFileStatus;
 
+import org.xmlpull.v1.XmlPullParserException;
+
 import java.io.File;
+import java.io.IOException;
 import java.util.Hashtable;
+import java.util.List;
 
 import static com.ustadmobile.core.view.ContentEditorView.ACTION_INSERT_CONTENT;
 import static com.ustadmobile.core.view.ContentEditorView.ACTION_REDO;
@@ -37,6 +45,21 @@ import static com.ustadmobile.core.view.ContentEditorView.TEXT_FORMAT_TYPE_UNDER
 public class ContentEditorPresenter extends UstadBaseController<ContentEditorView> {
 
     private Hashtable args;
+
+    private boolean isEditorInitialized = false;
+
+    private boolean isEditingModeOn = false;
+
+    private boolean openPreview = false;
+
+    private boolean isMultimediaFilePicker = false;
+
+    private boolean fileNotFound = false;
+
+    private boolean isInEditorPreview = false;
+
+    private String selectedPageToLoad = null;
+
 
     public ContentEditorPresenter(Object context, Hashtable arguments, ContentEditorView view) {
         super(context, arguments, view);
@@ -74,7 +97,10 @@ public class ContentEditorPresenter extends UstadBaseController<ContentEditorVie
 
                 }else{
                     if(!new File(result.getFilePath()).exists()){
-                        view.runOnUiThread(() -> view.showNotFoundErrorMessage());
+                        view.runOnUiThread(() -> {
+                            fileNotFound = true;
+                            view.showNotFoundErrorMessage();
+                        });
                     }else{
                         mountFile(result.getFilePath());
                     }
@@ -94,7 +120,32 @@ public class ContentEditorPresenter extends UstadBaseController<ContentEditorVie
             @Override
             public void onSuccess(Void result) {
                 if(filePath.length() > 0){
-                    view.runOnUiThread(() -> view.handleDocumentPages());
+                    try{
+                        List<UstadJSOPFItem> pageList = view.getFileHelper().getPageList();
+                        if(pageList.size() == 0){
+                            UstadJSOPFItem pageItem = new UstadJSOPFItem();
+                            pageItem.title = UstadMobileSystemImpl.getInstance()
+                                    .getString(MessageID.content_untitled_page, view.getContext());
+                            view.getFileHelper().addPage(pageItem,
+                                    new UmCallback<String>() {
+                                        @Override
+                                        public void onSuccess(String result) {
+                                            if(result != null){
+                                                selectedPageToLoad = result;
+                                                view.runOnUiThread(() -> view.handleSelectedPage());
+                                            }
+                                        }
+                                        @Override
+                                        public void onFailure(Throwable exception) {
+
+                                        }
+                                    });
+                        }
+                    } catch (XmlPullParserException e) {
+                        e.printStackTrace();
+                    } catch (IOException e) {
+                        e.printStackTrace();
+                    }
                 }else{
                     view.runOnUiThread(() -> view.showNotFoundErrorMessage());
                 }
@@ -205,6 +256,111 @@ public class ContentEditorPresenter extends UstadBaseController<ContentEditorVie
         });
     }
 
+    /**
+     * Check if tinymce is initialized on currenlty loaded page
+     * @return initialization status.
+     */
+    public boolean isEditorInitialized() {
+        return isEditorInitialized;
+    }
+
+    /**
+     * Set tinymce initialization status
+     * @param editorInitialized True if tinymce is inialized on the currently loaded page potherwise
+     *                          false.
+     */
+    public void setEditorInitialized(boolean editorInitialized) {
+        isEditorInitialized = editorInitialized;
+    }
+
+    /**
+     * Check if the editing mode is on.
+     * @return mode status
+     */
+    public boolean isEditingModeOn() {
+        return isEditingModeOn;
+    }
+
+    /**
+     * Set editing mode status
+     * @param editingModeOn True if the edditing mode is on, otherwise the editor
+     *                      is not in editing mode.
+     */
+    public void setEditingModeOn(boolean editingModeOn) {
+        isEditingModeOn = editingModeOn;
+    }
+
+    /**
+     * Check if you are about to navigate to preview activity
+     * @return preview status flag.
+     */
+    public boolean isOpenPreview() {
+        return openPreview;
+    }
+
+    /**
+     * Set preview activity navigation status
+     * @param openPreview True if about to navigate to the preview activity
+     */
+    public void setOpenPreview(boolean openPreview) {
+        this.openPreview = openPreview;
+    }
+
+    /**
+     * Check if the multimedia picker is opened or not
+     * @return Picker status
+     */
+    public boolean isMultimediaFilePicker() {
+        return isMultimediaFilePicker;
+    }
+
+    /**
+     * Set multimedia picker opened status
+     * @param multimediaFilePicker True if the picker is opened otherwise the picker isn't opened.
+     */
+    public void setMultimediaFilePicker(boolean multimediaFilePicker) {
+        isMultimediaFilePicker = multimediaFilePicker;
+    }
+
+    /**
+     * Check if file does exists on device
+     * @return True if file exists on device otherwise the file has been deleted by the user.
+     */
+    public boolean isFileNotFound() {
+        return fileNotFound;
+    }
+
+    /**
+     * Set file existence's status
+     * @param fileNotFound True if the file is on user device otherwise false.
+     */
+    public void setFileNotFound(boolean fileNotFound) {
+        this.fileNotFound = fileNotFound;
+    }
+
+    /**
+     * Check if the content is being previewed on the editor
+     * @return
+     */
+    public boolean isInEditorPreview() {
+        return isInEditorPreview;
+    }
+
+    /**
+     * Set if the preview is done on the editor itself.
+     * @param inEditorPreview True if is editor preview otherwise false.
+     */
+    public void setInEditorPreview(boolean inEditorPreview) {
+        isInEditorPreview = inEditorPreview;
+    }
+
+    public String getSelectedPageToLoad() {
+        return selectedPageToLoad;
+    }
+
+    public void setSelectedPageToLoad(String selectedPageToLoad) {
+        this.selectedPageToLoad = selectedPageToLoad;
+    }
 
     @Override
     public void setUIStrings() {

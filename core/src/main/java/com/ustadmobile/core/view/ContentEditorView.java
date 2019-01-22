@@ -188,7 +188,7 @@ public interface ContentEditorView extends UstadView {
     /**
      * Handle all document pages
      */
-    void handleDocumentPages();
+    void handleSelectedPage();
 
     /**
      * Get active file helper instance
