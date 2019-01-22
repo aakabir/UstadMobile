@@ -1,6 +1,9 @@
 package com.ustadmobile.core.contenteditor;
 
 import com.ustadmobile.core.impl.UmCallback;
+import com.ustadmobile.core.opf.UstadJSOPFItem;
+
+import org.xmlpull.v1.XmlPullParserException;
 
 import java.io.IOException;
 import java.util.List;
@@ -33,42 +36,6 @@ import java.util.List;
  */
 public interface UmEditorFileHelperCore {
 
-    /**
-     * Class which represents a single page in a document
-     */
-    class UmPage {
-
-        private String title;
-
-        private int number;
-
-        private String index;
-
-        public String getTitle() {
-            return title;
-        }
-
-        public void setTitle(String title) {
-            this.title = title;
-        }
-
-        public int getNumber() {
-            return number;
-        }
-
-        public void setNumber(int number) {
-            this.number = number;
-        }
-
-        public String getIndex() {
-            return index;
-        }
-
-        public void setIndex(String index) {
-            this.index = index;
-        }
-    }
-
 
     String PAGE_TEMPLATE = "template_page.html";
 
@@ -99,17 +66,22 @@ public interface UmEditorFileHelperCore {
 
     /**
      * Create new page to the document.
-     * @param pageTitle Title of the page to be created
+     * @param page Page to be created
      * @param callback UmCallback
      */
-    void addPageToTheDocument(String pageTitle, UmCallback<UmPage> callback);
+    void addPage(UstadJSOPFItem page, UmCallback<String> callback);
 
     /**
      * Delete a page from the document
-     * @param pageIndex Page index to be deleted from the doc.
+     * @param page Page to be deleted from the doc.
      * @param callback UmCallback return deleted page.
      */
-    void removePageFromTheDocument(String pageIndex, UmCallback<UmPage> callback);
+    void removePage(UstadJSOPFItem page, UmCallback<Boolean> callback);
+
+    void updatePage(UstadJSOPFItem page, UmCallback<Boolean> callback);
+
+
+    void changePageOrder(List<UstadJSOPFItem> pageList, UmCallback<Boolean> callback);
 
     /**
      * Set current selected page from page list.
@@ -121,16 +93,7 @@ public interface UmEditorFileHelperCore {
      * Get all document pages.
      * @return list of all document pages.
      */
-    List<UmPage> getDocumentPages();
-
-    /**
-     * Update page title
-     * @param pageTitle title to be set
-     * @param pageIndex page index (i.e page_1.html)
-     * @return True if page was updated successfully otherwise false.
-     * @throws IOException
-     */
-    boolean updatePageTitle(String pageTitle, String pageIndex) throws IOException;
+     List<UstadJSOPFItem> getPageList() throws IOException, XmlPullParserException;
 
     /**
      * Get source file path i.e zipped file
