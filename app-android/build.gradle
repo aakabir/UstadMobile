@@ -474,7 +474,6 @@ dependencies {
     androidTestImplementation project(":sharedse-tests")
     androidTestImplementation project(":lib-core-fs-tests")
 
-
     /*
      * If this needs to be made compatible as a library for something using older appcompat libs -
      * use this format:
@@ -486,6 +485,7 @@ dependencies {
     implementation "com.android.support:design:$version_android_support_lib"
     implementation "com.android.support:support-v4:$version_android_support_lib"
     implementation "com.android.support:recyclerview-v7:$version_android_support_lib"
+    implementation "com.android.support:design:$version_android_support_lib"
     implementation "com.android.support.constraint:constraint-layout:$version_android_constraint_layout"
 
     //Image loading library
@@ -514,6 +514,7 @@ dependencies {
     //Crash reporting
     implementation "ch.acra:acra-http:$version_android_acra"
     implementation "ch.acra:acra-dialog:$version_android_acra"
+
 
     //Gson for JSON serializing and deserializing
     implementation "com.google.code.gson:gson:$version_gson"

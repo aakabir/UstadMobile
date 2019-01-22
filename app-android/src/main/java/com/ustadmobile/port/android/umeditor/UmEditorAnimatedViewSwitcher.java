@@ -53,8 +53,6 @@ public class UmEditorAnimatedViewSwitcher {
 
     private BottomSheetBehavior contentOptionsBottomSheetBehavior;
 
-    private DrawerLayout drawerLayout;
-
     private WebView editorView;
 
     private OnAnimatedViewsClosedListener closedListener;
@@ -151,20 +149,17 @@ public class UmEditorAnimatedViewSwitcher {
      * @param insertContentSheet content option bottom sheet view
      * @param formatSheet Formats types bottom sheet view
      * @param mediaSheet Media sources bottom sheet view
-     * @param drawerLayout Drawer layout view
      * @return UmEditorAnimatedViewSwitcher instance.
      */
     public UmEditorAnimatedViewSwitcher setViews(View rootView, WebView editorView,
                                                  BottomSheetBehavior insertContentSheet,
                                                  BottomSheetBehavior formatSheet,
-                                                 BottomSheetBehavior mediaSheet,
-                                                 DrawerLayout drawerLayout){
+                                                 BottomSheetBehavior mediaSheet){
         this.contentOptionsBottomSheetBehavior = insertContentSheet;
         this.formattingBottomSheetBehavior = formatSheet;
         this.mediaSourceBottomSheetBehavior = mediaSheet;
         this.rootView = rootView;
         this.editorView = editorView;
-        this.drawerLayout = drawerLayout;
         initializeSwitcher();
         return this;
     }
@@ -415,12 +410,7 @@ public class UmEditorAnimatedViewSwitcher {
     /**
      * Close all animated view before destroying the activity.
      */
-    public void closeActivity(boolean finishActivity){
-        boolean isDrawerOpen = drawerLayout.isDrawerOpen(GravityCompat.END);
-
-        if(isDrawerOpen){
-            drawerLayout.closeDrawer(GravityCompat.END);
-        }
+    public void closeActivity(boolean close){
 
         if(isMediaSourceBottomSheetExpanded()){
             setMediaSourceBottomSheetBehavior(false);
@@ -438,11 +428,11 @@ public class UmEditorAnimatedViewSwitcher {
 
         new android.os.Handler().postDelayed(() -> {
             if(!isMediaSourceBottomSheetExpanded() && !isFormattingBottomSheetExpanded()
-                    && !isDrawerOpen && !isContentOptionsBottomSheetExpanded() && !isKeyboardActive){
+                    && !isContentOptionsBottomSheetExpanded() && !isKeyboardActive){
 
                 if(closedListener != null){
                     editorActivated = false;
-                    closedListener.onAnimatedViewsClosed(finishActivity);
+                    closedListener.onAnimatedViewsClosed(close);
                 }
             }
         },MAX_SOFT_KEYBOARD_DELAY);
