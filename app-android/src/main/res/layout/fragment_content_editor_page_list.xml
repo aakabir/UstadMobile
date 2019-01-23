@@ -16,16 +16,21 @@
         </android.support.v7.widget.Toolbar>
 
     </android.support.design.widget.AppBarLayout>
-    <FrameLayout
+    <android.support.v7.widget.RecyclerView
+        app:layout_behavior="@string/appbar_scrolling_view_behavior"
+        android:id="@+id/page_list"
         android:layout_width="match_parent"
-        android:layout_height="match_parent"
-        app:layout_behavior="@string/appbar_scrolling_view_behavior">
+        android:layout_height="match_parent"/>
 
-        <android.support.v7.widget.RecyclerView
-            android:id="@+id/page_list"
-            android:layout_width="match_parent"
-            android:layout_height="match_parent"/>
-
-
-    </FrameLayout>
+    <ru.dimorinny.floatingtextbutton.FloatingTextButton
+        android:layout_marginBottom="@dimen/dimen_16dp"
+        app:layout_anchor="@id/page_list"
+        app:layout_anchorGravity="bottom|center_horizontal"
+        android:id="@+id/btn_add_page"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        app:floating_background_color="@color/accent"
+        app:floating_left_icon="@drawable/ic_add_black_24dp"
+        app:floating_title="@string/content_add_page"
+        app:floating_title_color="@android:color/black" />
 </android.support.design.widget.CoordinatorLayout>

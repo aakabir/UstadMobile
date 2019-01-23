@@ -282,4 +282,7 @@
     <string name="content_blank_doc_start_label">to start editing.</string>
     <string name="content_option_page">New page</string>
     <string name="content_untitled_page">Untitled page</string>
+    <string name="content_add_page">Add page</string>
+    <string name="content_update_page_title">Update page</string>
+    <string name="content_action_page_remove">Remove page</string>
 </resources>

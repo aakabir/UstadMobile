@@ -3,7 +3,9 @@ package com.ustadmobile.port.android.view;
 
 import android.annotation.SuppressLint;
 import android.app.Activity;
+import android.app.AlertDialog;
 import android.app.Dialog;
+import android.content.Context;
 import android.os.Bundle;
 import android.support.annotation.NonNull;
 import android.support.annotation.Nullable;
@@ -11,6 +13,7 @@ import android.support.v4.app.DialogFragment;
 import android.support.v4.app.Fragment;
 import android.support.v4.view.MotionEventCompat;
 import android.support.v7.widget.LinearLayoutManager;
+import android.support.v7.widget.PopupMenu;
 import android.support.v7.widget.RecyclerView;
 import android.support.v7.widget.Toolbar;
 import android.support.v7.widget.helper.ItemTouchHelper;
@@ -18,13 +21,13 @@ import android.view.LayoutInflater;
 import android.view.MotionEvent;
 import android.view.View;
 import android.view.ViewGroup;
-import android.view.Window;
-import android.view.WindowManager;
 import android.widget.ImageView;
 import android.widget.TextView;
 
 import com.toughra.ustadmobile.R;
 import com.ustadmobile.core.controller.ContentEditorPageListPresenter;
+import com.ustadmobile.core.generated.locale.MessageID;
+import com.ustadmobile.core.impl.UstadMobileSystemImpl;
 import com.ustadmobile.core.opf.UstadJSOPFItem;
 import com.ustadmobile.core.view.ContentEditorPageListView;
 import com.ustadmobile.port.android.umeditor.UmOnStartDragListener;
@@ -34,6 +37,8 @@ import com.ustadmobile.port.android.umeditor.UmPageItemTouchCallback;
 import com.ustadmobile.port.android.util.UMAndroidUtil;
 
 import java.util.List;
+
+import ru.dimorinny.floatingtextbutton.FloatingTextButton;
 
 /**
  * A simple {@link Fragment} subclass.
@@ -48,6 +53,8 @@ public class ContentEditorPageListFragment extends DialogFragment
     private UmPageActionListener pageActionListener;
 
     private ContentEditorPageListPresenter presenter;
+
+    private boolean isScrollDirectionUp = false;
 
     public ContentEditorPageListFragment() {
         // Required empty public constructor
@@ -81,8 +88,24 @@ public class ContentEditorPageListFragment extends DialogFragment
                 }
                 return false;
             });
+            holder.pageOptionHandle.setOnClickListener(v ->
+                    showPopUpMenu(holder.itemView.getContext(),holder.pageOptionHandle,pageItem));
             holder.itemView.setOnClickListener(v ->
                     presenter.handlePageSelected(pageItem));
+        }
+
+        private void showPopUpMenu(Context context, View anchorView,UstadJSOPFItem pageItem){
+            PopupMenu popup = new PopupMenu(context, anchorView);
+            popup.getMenuInflater().inflate(R.menu.menu_content_editor_page_option, popup.getMenu());
+            popup.setOnMenuItemClickListener(item -> {
+              if(item.getItemId() == R.id.action_page_update){
+                    presenter.handleUpdatePage(pageItem);
+                }else if(item.getItemId() ==R.id.action_page_delete){
+                    presenter.handleRemovePage(pageItem);
+                }
+                return true;
+            });
+            popup.show();
         }
 
         @Override
@@ -139,6 +162,7 @@ public class ContentEditorPageListFragment extends DialogFragment
         toolbar.setTitle("Document title");
 
         RecyclerView pageListView = rootView.findViewById(R.id.page_list);
+        FloatingTextButton btnAddPage = rootView.findViewById(R.id.btn_add_page);
         PageListAdapter mPageListAdapter = new PageListAdapter(this);
         LinearLayoutManager layoutManager = new LinearLayoutManager(getActivity());
         layoutManager.setOrientation(LinearLayoutManager.VERTICAL);
@@ -151,6 +175,37 @@ public class ContentEditorPageListFragment extends DialogFragment
 
         presenter = new ContentEditorPageListPresenter(this, null,this);
         presenter.onCreate(UMAndroidUtil.bundleToHashtable(savedInstanceState));
+
+        pageListView.clearOnScrollListeners();
+        pageListView.addOnScrollListener(new RecyclerView.OnScrollListener() {
+            @Override
+            public void onScrollStateChanged(RecyclerView recyclerView, int newState) {
+                switch (newState) {
+                    case RecyclerView.SCROLL_STATE_IDLE:
+                        btnAddPage.setVisibility(View.VISIBLE);
+                        break;
+                    default:
+                        btnAddPage.setVisibility(View.GONE);
+                        break;
+                }
+                super.onScrollStateChanged(recyclerView, newState);
+            }
+        });
+        pageListView.addOnScrollListener(new RecyclerView.OnScrollListener() {
+            @Override
+            public void onScrolled(RecyclerView recyclerView, int dx, int dy) {
+                isScrollDirectionUp = dy > 0;
+                super.onScrolled(recyclerView, dx, dy);
+            }
+            @Override
+            public void onScrollStateChanged(RecyclerView recyclerView, int newState) {
+                btnAddPage.setVisibility(newState != RecyclerView.SCROLL_STATE_IDLE
+                        && !isScrollDirectionUp ? View.VISIBLE:View.GONE);
+                super.onScrollStateChanged(recyclerView, newState);
+            }
+        });
+
+        btnAddPage.setOnClickListener(v -> showPageAddDialog(null));
 
         return rootView;
     }
@@ -166,6 +221,30 @@ public class ContentEditorPageListFragment extends DialogFragment
         }
     }
 
+    private void showPageAddDialog(UstadJSOPFItem pageItem){
+        final boolean isNewPage = pageItem.title == null;
+        UstadMobileSystemImpl impl = UstadMobileSystemImpl.getInstance();
+        String dialogTitle = isNewPage ? impl.getString(MessageID.content_add_page,
+                getActivity()):impl.getString(MessageID.content_update_page_title,
+                getActivity());
+        pageItem.title  = isNewPage ? impl.getString(MessageID.content_untitled_page,
+                getActivity()):pageItem.title;
+        AlertDialog.Builder builder = new AlertDialog.Builder(getActivity());
+        LayoutInflater inflater = this.getLayoutInflater();
+        builder.setTitle(dialogTitle);
+        builder.setPositiveButton("", (dialog, which) -> {
+            pageItem.title = "";
+            if(isNewPage){
+                pageActionListener.onPageCreate(pageItem);
+            }else{
+                pageActionListener.onPageUpdate(pageItem);
+            }
+            dialog.dismiss();
+        });
+        builder.setNegativeButton("", (dialog, which) -> dialog.dismiss());
+        builder.show();
+    }
+
 
     @Override
     public void onDragStarted(RecyclerView.ViewHolder viewHolder) {
@@ -179,7 +258,7 @@ public class ContentEditorPageListFragment extends DialogFragment
 
     @Override
     public void addNewPage(UstadJSOPFItem page) {
-        pageActionListener.onPageCreate(page);
+        showPageAddDialog(page);
     }
 
     @Override
@@ -194,7 +273,7 @@ public class ContentEditorPageListFragment extends DialogFragment
 
     @Override
     public void updatePage(UstadJSOPFItem page) {
-        pageActionListener.onPageUpdate(page);
+        showPageAddDialog(page);
     }
 
     @Override

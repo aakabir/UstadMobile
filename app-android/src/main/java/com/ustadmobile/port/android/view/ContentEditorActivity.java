@@ -1186,7 +1186,6 @@ public class ContentEditorActivity extends UstadBaseActivity implements ContentE
                 e.printStackTrace();
             }
 
-
         }else if(itemId == R.id.content_action_format){
 
             viewSwitcher.animateView(UmEditorAnimatedViewSwitcher.ANIMATED_FORMATTING_PANEL);

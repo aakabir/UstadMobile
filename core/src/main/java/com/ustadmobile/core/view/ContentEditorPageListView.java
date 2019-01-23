@@ -4,7 +4,8 @@ import com.ustadmobile.core.opf.UstadJSOPFItem;
 
 import java.util.List;
 
-public interface ContentEditorPageListView extends UstadView{
+public interface ContentEditorPageListView extends UstadView {
+
     String TAG = ContentEditorPageListView.class.getSimpleName();
 
     void updatePageList(List<UstadJSOPFItem> newPageList);

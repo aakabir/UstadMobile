@@ -20,6 +20,7 @@ allprojects {
         maven {
             url "http://devserver2.ustadmobile.com/repo-mvn"
         }
+        maven { url "https://jitpack.io" }
     }
 }
 
@@ -87,6 +88,7 @@ ext {
     version_android_firebase_auth = "16.0.4"
     version_android_facebook_login = "4.37.0"
     version_android_twitter_login = "3.3.0"
+    version_android_fab_extended = "0.0.4"
 
 }
 
