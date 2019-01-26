@@ -38,13 +38,66 @@ import java.io.Serializable;
  */
 public class UstadJSOPFItem implements Serializable {
     public String href;
+
     public String mimeType;
+
     public String properties;
+
     public String title;
+
     public boolean linear;
+
     public String id;
     
     public UstadJSOPFItem(){
         this.linear = true;
+    }
+
+    public String getHref() {
+        return href;
+    }
+
+    public void setHref(String href) {
+        this.href = href;
+    }
+
+    public String getMimeType() {
+        return mimeType;
+    }
+
+    public void setMimeType(String mimeType) {
+        this.mimeType = mimeType;
+    }
+
+    public String getProperties() {
+        return properties;
+    }
+
+    public void setProperties(String properties) {
+        this.properties = properties;
+    }
+
+    public boolean isLinear() {
+        return linear;
+    }
+
+    public void setLinear(boolean linear) {
+        this.linear = linear;
+    }
+
+    public String getId() {
+        return id;
+    }
+
+    public void setId(String id) {
+        this.id = id;
+    }
+
+    public String getTitle() {
+        return title;
+    }
+
+    public void setTitle(String title) {
+        this.title = title;
     }
 }
