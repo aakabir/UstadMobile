@@ -476,7 +476,7 @@ public class UmEditorFileHelper implements UmEditorFileHelperCore {
 
     @Override
     public  List<UstadJSOPFItem> getPageList() throws IOException, XmlPullParserException {
-        File pagePath = new File(getEpubFilesDestination(), getUmOpfContents().getNavItem().href);
+        File pagePath = new File(getEpubFilesDestination(), getUmOpfContents().getNavItem().getHref());
         Document nav =  Jsoup.parse(UMFileUtil.readTextFile(pagePath.getAbsolutePath()));
         Elements navElements = nav.select("ol li a");
         List<UstadJSOPFItem> pageList = new ArrayList<>();
@@ -630,12 +630,16 @@ public class UmEditorFileHelper implements UmEditorFileHelperCore {
      * @return true if updated otherwise false.
      * @throws IOException
      */
-    private boolean addSpineItem(String pageHref) throws IOException {
-        String newItem = "<itemref idref=\""+pageHref+"\"/>";
+    private boolean addSpineItem(String pageHref) throws IOException, XmlPullParserException {
+        UstadJSOPF ustadJSOPF = getUmOpfContents();
+        List<UstadJSOPFItem> spineList = ustadJSOPF.getSpine();
+        UstadJSOPFItem newSpine = new UstadJSOPFItem();
+        newSpine.setHref(pageHref);
+        spineList.add(newSpine);
         Document opf =  Jsoup.parse(UMFileUtil.readTextFile(opfFileDestination.getAbsolutePath()));
         opf.select("spine").append(newItem);
         UMFileUtil.writeToFile(opfFileDestination,opf.body().toString());
-        return opf.toString().contains(newItem);
+        return getUmOpfContents().getSpine().indexOf(newSpine) != -1;
     }
 
     /**
@@ -647,8 +651,12 @@ public class UmEditorFileHelper implements UmEditorFileHelperCore {
      */
     private boolean addNavItem(String pageHref,String pageTitle) throws IOException,
             XmlPullParserException {
-        String newItem = "<li><a href=\""+pageHref+"\">"+pageTitle+"</a></li>";
-        File navFile = new File(getEpubFilesDestination(),getUmOpfContents().getNavItem().href);
+        UstadJSOPF ustadJSOPF = getUmOpfContents();
+        UstadJSOPFItem newNavItem = new UstadJSOPFItem();
+        newNavItem.setHref(pageHref);
+        newNavItem.setTitle(pageTitle);
+
+        File navFile = new File(getEpubFilesDestination(),getUmOpfContents().getNavItem().getHref());
         Document nav =  Jsoup.parse(UMFileUtil.readTextFile(navFile.getAbsolutePath()));
         nav.select("ol").append(newItem);
         UMFileUtil.writeToFile(navFile,nav.toString());

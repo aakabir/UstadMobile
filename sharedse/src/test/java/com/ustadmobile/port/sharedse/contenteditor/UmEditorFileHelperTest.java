@@ -364,4 +364,34 @@ public class UmEditorFileHelperTest {
         assertTrue("Zipped temporary directory has newly added file",zipCheckRef.get());
 
     }
+
+    @Test
+    public void givenActiveEditor_whenNewPageAdded_thenShouldUpdateSpineItems(){
+
+    }
+
+    @Test
+    public void givenActiveEditor_whenPageRemoved_thenShouldUpdateSpineItems(){
+
+    }
+
+    @Test
+    public void givenActiveEditor_whenPageRemoved_thenShouldUpdateNavItems(){
+
+    }
+
+    @Test
+    public void givenActiveEditor_whenNewPageOrMediaContentIsAdded_thenShouldUpdateManifestItems(){
+
+    }
+
+    @Test
+    public void givenActiveEditor_whenNewPageOrMediaContentIsRemoved_thenShouldUpdateManifestItems(){
+
+    }
+
+    @Test
+    public void givenNavigationListItems_whenOrderChanges_thenShouldUpdateOpfFile(){
+
+    }
 }

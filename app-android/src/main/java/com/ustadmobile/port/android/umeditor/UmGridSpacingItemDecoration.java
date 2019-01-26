@@ -5,6 +5,7 @@ import android.support.v7.widget.RecyclerView;
 import android.view.View;
 
 /**
+ * Class which handles {@link RecyclerView} item spacing on a list/grid.
  * Created by Kileha3
  */
 
@@ -14,6 +15,12 @@ public class UmGridSpacingItemDecoration extends RecyclerView.ItemDecoration {
     private int spacing;
     private boolean includeEdge;
 
+    /**
+     * Creating new instance of UmGridSpacingItemDecoration with:-
+     * @param spanCount number of columns to be displayed
+     * @param spacing spacing between items
+     * @param includeEdge True if spacing include edges otherwise edges are excluded.
+     */
     public UmGridSpacingItemDecoration(int spanCount, int spacing, boolean includeEdge) {
         this.spanCount = spanCount;
         this.spacing = spacing;
@@ -22,22 +29,22 @@ public class UmGridSpacingItemDecoration extends RecyclerView.ItemDecoration {
 
     @Override
     public void getItemOffsets(Rect outRect, View view, RecyclerView parent, RecyclerView.State state) {
-        int position = parent.getChildAdapterPosition(view); // item position
-        int column = position % spanCount; // item column
+        int position = parent.getChildAdapterPosition(view);
+        int column = position % spanCount;
 
         if (includeEdge) {
-            outRect.left = spacing - column * spacing / spanCount; // spacing - column * ((1f / spanCount) * spacing)
-            outRect.right = (column + 1) * spacing / spanCount; // (column + 1) * ((1f / spanCount) * spacing)
+            outRect.left = spacing - column * spacing / spanCount;
+            outRect.right = (column + 1) * spacing / spanCount;
 
-            if (position < spanCount) { // top edge
+            if (position < spanCount) {
                 outRect.top = spacing;
             }
-            outRect.bottom = spacing; // item bottom
+            outRect.bottom = spacing;
         } else {
-            outRect.left = column * spacing / spanCount; // column * ((1f / spanCount) * spacing)
-            outRect.right = spacing - (column + 1) * spacing / spanCount; // spacing - (column + 1) * ((1f /    spanCount) * spacing)
+            outRect.left = column * spacing / spanCount;
+            outRect.right = spacing - (column + 1) * spacing / spanCount;
             if (position >= spanCount) {
-                outRect.top = spacing; // item top
+                outRect.top = spacing;
             }
         }
     }

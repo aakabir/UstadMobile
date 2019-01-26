@@ -237,8 +237,8 @@ public class ContentEditorPageListFragment extends UstadDialogFragment
                 getActivity());
         String positiveBtnLabel = isNewPage ? impl.getString(MessageID.add, getActivity())
                 :impl.getString(MessageID.update, getActivity());
-        pageItem.title  = isNewPage ? impl.getString(MessageID.content_untitled_page,
-                getActivity()):pageItem.title;
+        pageItem.setTitle(isNewPage ? impl.getString(MessageID.content_untitled_page,
+                getActivity()):pageItem.getTitle());
 
         AlertDialog.Builder builder = new AlertDialog.Builder(getActivity());
 
@@ -255,7 +255,7 @@ public class ContentEditorPageListFragment extends UstadDialogFragment
 
         builder.setPositiveButton(positiveBtnLabel, (dialog, which) -> {
             if(!titleView.getText().toString().isEmpty()){
-                pageItem.title = titleView.getText().toString();
+                pageItem.setTitle(titleView.getText().toString());
             }
             if(isNewPage){
                 pageActionListener.onPageCreate(pageItem);
