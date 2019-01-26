@@ -5,9 +5,6 @@ import com.ustadmobile.core.contentformats.epub.nav.EpubNavItem;
 import com.ustadmobile.core.contentformats.epub.opf.OpfDocument;
 import com.ustadmobile.core.impl.UmCallback;
 
-import org.xmlpull.v1.XmlPullParserException;
-
-import java.io.IOException;
 import java.util.List;
 
 /**
@@ -84,12 +81,6 @@ public interface UmEditorFileHelperCore {
 
 
     void changePageOrder(List<EpubNavItem> pageList, UmCallback<Boolean> callback);
-
-    /**
-     * Set current selected page from page list.
-     * @param pageIndex html index of the selected page
-     */
-    void setCurrentSelectedPage(String pageIndex);
 
     /**
      * Get all document pages.

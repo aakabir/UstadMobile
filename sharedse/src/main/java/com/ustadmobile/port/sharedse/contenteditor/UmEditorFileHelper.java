@@ -51,7 +51,9 @@ import java.util.zip.ZipOutputStream;
 
 import static com.ustadmobile.core.impl.UstadMobileSystemImpl.SHARED_RESOURCE;
 
-
+/**
+ * Class which is an actual implementation of {@link UmEditorFileHelperCore}
+ */
 public class UmEditorFileHelper implements UmEditorFileHelperCore {
 
     private File tempDestinationDir;
@@ -76,8 +78,6 @@ public class UmEditorFileHelper implements UmEditorFileHelperCore {
 
     public static final String OEBPS_DIRECTORY = "OEBPS";
 
-    private String selectedPageIndex = null;
-
     protected Object context;
 
     private EmbeddedHTTPD embeddedHTTPD;
@@ -92,7 +92,7 @@ public class UmEditorFileHelper implements UmEditorFileHelperCore {
 
     private boolean isTestExecution = false;
 
-    private static String PAGES_FILE_EXTENSION = ".html";
+    private String pageExtension = ".html";
 
     private static final String PAGE_PREFIX = "page_";
 
@@ -322,14 +322,15 @@ public class UmEditorFileHelper implements UmEditorFileHelperCore {
     @Override
     public void removeUnUsedResources(UmCallback<Integer> callback) {
         callback.onSuccess(1);
-        /*new Thread(() -> {
+        new Thread(() -> {
             try {
                 int unUsedFileCounter = 0;
                 if(getDestinationMediaDirPath() != null){
                     File [] allResources = new File(getDestinationMediaDirPath()).listFiles();
                     assert allResources != null;
                     for(File resource:allResources){
-                        if(!isResourceInUse(resource.getName()) && !resource.getName().equals(TEMP_MEDIA_FILE)){
+                        if(!isResourceInUse(resource.getName())
+                                && !resource.getName().equals(MEDIA_DIRECTORY)){
                             if(resource.delete()) unUsedFileCounter++;
                         }
                     }
@@ -338,13 +339,7 @@ public class UmEditorFileHelper implements UmEditorFileHelperCore {
             }catch (NullPointerException e){
                 e.printStackTrace();
             }
-        }).start();*/
-    }
-
-
-    @Override
-    public void setCurrentSelectedPage(String pageIndex) {
-        this.selectedPageIndex = pageIndex;
+        }).start();
     }
 
 
@@ -355,21 +350,32 @@ public class UmEditorFileHelper implements UmEditorFileHelperCore {
      */
     private boolean isResourceInUse(String resourceName){
         try {
-            Document index = Jsoup.parse(UMFileUtil.readTextFile(
-                    new File(getEpubFilesDestination(), selectedPageIndex).getAbsolutePath()));
-            Element previewContainer = index.select("#" + EDITOR_BASE_DIR_NAME).first();
-            Elements sources = previewContainer.select("img[src],source[src]");
 
-            for (Element source : sources) {
-                String srcUrl = source.attr("src");
-                if (srcUrl.endsWith(resourceName)) {
+            for(EpubNavItem navItem: getEpubNavDocument().getToc().getChildren()){
+                Document index = Jsoup.parse(UMFileUtil.readTextFile(
+                        new File(getEpubFilesDestination(), navItem.getHref()).getAbsolutePath()));
+                Element previewContainer = index.select("#" + EDITOR_BASE_DIR_NAME).first();
+                Elements resources = previewContainer.select("img[src],source[src]");
+
+                if(findResource(resourceName,resources)){
                     return true;
                 }
             }
+
         }catch (IOException e) {
             e.printStackTrace();
         }
 
+        return false;
+    }
+
+    private boolean findResource(String resourceName, Elements resources){
+        for (Element resource : resources) {
+            String srcUrl = resource.attr("src");
+            if (srcUrl.endsWith(resourceName)) {
+                return true;
+            }
+        }
         return false;
     }
 
@@ -536,7 +542,7 @@ public class UmEditorFileHelper implements UmEditorFileHelperCore {
                 nextPageNumber = pages.get(lastPageIndex) + 1;
             }
 
-            href = PAGE_PREFIX+nextPageNumber+PAGES_FILE_EXTENSION;
+            href = PAGE_PREFIX+nextPageNumber+ pageExtension;
             InputStream is = new FileInputStream(new File(getTempDestinationDirPath(),
                     PAGE_TEMPLATE));
             created = UMFileUtil.copyFile(is,new File(getEpubFilesDestination(), href));

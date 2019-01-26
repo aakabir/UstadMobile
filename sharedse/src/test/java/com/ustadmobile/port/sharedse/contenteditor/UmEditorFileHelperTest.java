@@ -366,7 +366,12 @@ public class UmEditorFileHelperTest {
     }
 
     @Test
-    public void givenActiveEditor_whenNewPageAdded_thenShouldUpdateSpineItems(){
+    public void givenActiveEditor_whenNewPageIsAdded_thenShouldUpdateSpineItems(){
+
+    }
+
+    @Test
+    public void givenActiveEditor_whenNewPageIsAdded_thenShouldUpdateNavItems(){
 
     }
 
@@ -391,7 +396,7 @@ public class UmEditorFileHelperTest {
     }
 
     @Test
-    public void givenNavigationListItems_whenOrderChanges_thenShouldUpdateOpfFile(){
+    public void givenNavigationListItems_whenOrderChanges_thenShouldUpdateNavItems(){
 
     }
 }
