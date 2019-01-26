@@ -23,8 +23,10 @@ public class AboutActivity extends UstadBaseActivity implements AboutView {
         setContentView(R.layout.activity_about);
         setUMToolbar(R.id.um_toolbar);
         setTitle(R.string.about);
-        mAboutController = new AboutController(this, this);
-        mAboutController.onCreate(UMAndroidUtil.bundleToHashtable(getIntent().getExtras()), null);
+        mAboutController = new AboutController(this,
+                UMAndroidUtil.bundleToHashtable(getIntent().getExtras()),
+                this);
+        mAboutController.onCreate(null);
     }
 
     @Override
@@ -34,7 +36,9 @@ public class AboutActivity extends UstadBaseActivity implements AboutView {
 
     @Override
     public void setAboutHTML(final String aboutHTML) {
-        runOnUiThread(() -> ((WebView)findViewById(R.id.about_html)).loadData(aboutHTML, "text/html", "UTF-8"));
+
+        runOnUiThread(() -> ((WebView)findViewById(R.id.about_html))
+                .loadData(aboutHTML, "text/html", "UTF-8"));
     }
 
     public boolean onCreateOptionsMenu(Menu menu) {

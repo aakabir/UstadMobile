@@ -104,16 +104,12 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.net.URL;
 import java.net.URLConnection;
-import java.text.Format;
-import java.text.SimpleDateFormat;
 import java.util.ArrayList;
-import java.util.Date;
 import java.util.HashMap;
 import java.util.Hashtable;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
-import java.util.Timer;
 import java.util.WeakHashMap;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
@@ -128,15 +124,7 @@ public class UstadMobileSystemImplAndroid extends UstadMobileSystemImplSE {
 
     public static final String TAG = "UstadMobileImplAndroid";
 
-    public static final String PREFS_NAME = "ustadmobilePreferences";
-
     public static final String APP_PREFERENCES_NAME = "UMAPP-PREFERENCES";
-
-    public static final String USER_PREFERENCES_NAME  = "user-";
-
-    public static final String KEY_CURRENTUSER = "app-currentuser";
-
-    public static final String KEY_CURRENTAUTH = "app-currentauth";
 
     public static final String TAG_DIALOG_FRAGMENT = "UMDialogFrag";
 
@@ -179,6 +167,7 @@ public class UstadMobileSystemImplAndroid extends UstadMobileSystemImplSE {
      * @param viewName A unique name e.g. as per the view interface VIEW_NAME
      * @param implementingClass The Activity or Fragment class that implements this view on Android
      */
+    @SuppressWarnings("unused")
     public static void mapView(String viewName, Class implementingClass) {
         viewNameToAndroidImplMap.put(viewName, implementingClass);
     }
@@ -187,13 +176,7 @@ public class UstadMobileSystemImplAndroid extends UstadMobileSystemImplSE {
 
     private UMLogAndroid logger;
 
-    public static final String START_USERNAME = "START_USERNAME";
-
-    public static final String START_AUTH = "START_AUTH";
-
     private WeakHashMap<Context, AppViewAndroid> appViews;
-
-    private Timer sendStatementsTimer;
 
     private static final ContentTypePlugin[] SUPPORTED_CONTENT_TYPES = new ContentTypePlugin[] {
             new EpubTypePluginFs(), new ScormTypePluginFs(), new XapiPackageTypePluginFs(),
@@ -352,7 +335,6 @@ public class UstadMobileSystemImplAndroid extends UstadMobileSystemImplSE {
     protected NetworkManagerAndroid networkManagerAndroid;
 
     /**
-     @deprecated
      */
     public UstadMobileSystemImplAndroid() {
         logger = new UMLogAndroid();
@@ -431,12 +413,6 @@ public class UstadMobileSystemImplAndroid extends UstadMobileSystemImplSE {
         }else {
             return null;
         }
-    }
-
-
-    @Override
-    public String getImplementationName() {
-        return null;
     }
 
 
@@ -631,28 +607,6 @@ public class UstadMobileSystemImplAndroid extends UstadMobileSystemImplSE {
         return appPreferences;
     }
 
-    /**
-     * @inheritDoc
-     */
-    @Override
-    public String[] getAppPrefKeyList(Object context) {
-        return getKeysFromSharedPreferences(getAppSharedPreferences((Context) context));
-    }
-
-
-    /**
-     * Private utility function to get a String array of keys from a SharedPreferences object
-     * @param prefs
-     * @return
-     */
-    private String[] getKeysFromSharedPreferences(SharedPreferences prefs) {
-        Set keySet = prefs.getAll().keySet();
-        String[] retVal = new String[keySet.size()];
-        keySet.toArray(retVal);
-        return retVal;
-    }
-
-
     @Override
     public String getAppPref(String key, Object context) {
         return getAppSharedPreferences((Context)context).getString(key, null);
@@ -693,17 +647,6 @@ public class UstadMobileSystemImplAndroid extends UstadMobileSystemImplSE {
         return logger;
     }
 
-
-    /**
-     * Running on Android we will take the "full fat" version of any files... eg. files without
-     * a x-umprofile tag
-     *
-     * @return
-     */
-    @Override
-    public String getUMProfileName() {
-        return null;
-    }
 
     @Override
     public String getMimeTypeFromExtension(String extension) {
@@ -812,13 +755,6 @@ public class UstadMobileSystemImplAndroid extends UstadMobileSystemImplSE {
                 callback.onSuccess(mountedPath);
             }
         }.execute();
-    }
-
-    @Override
-    public String convertTimeToReadableTime(long time) {
-        Date date = new Date(time);
-        Format format = new SimpleDateFormat("yyyy MM dd HH:mm:ss");
-        return format.format(date);
     }
 
     @Override
