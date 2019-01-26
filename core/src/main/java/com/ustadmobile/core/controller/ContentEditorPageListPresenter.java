@@ -1,6 +1,6 @@
 package com.ustadmobile.core.controller;
 
-import com.ustadmobile.core.opf.UstadJSOPFItem;
+import com.ustadmobile.core.contentformats.epub.nav.EpubNavItem;
 import com.ustadmobile.core.view.ContentEditorPageListView;
 
 import java.util.Hashtable;
@@ -18,28 +18,24 @@ public class ContentEditorPageListPresenter
         super.onCreate(savedState);
     }
 
-    @Override
-    public void setUIStrings() {
 
-    }
-
-    public void handleReOrderPages(List<UstadJSOPFItem> pageList){
+    public void handleReOrderPages(List<EpubNavItem> pageList){
         view.runOnUiThread(() -> view.updatePageList(pageList));
     }
 
-    public void handlePageSelected(UstadJSOPFItem page){
+    public void handlePageSelected(EpubNavItem page){
         view.runOnUiThread(() -> view.loadPage(page));
     }
 
-    public void handleRemovePage(UstadJSOPFItem page){
+    public void handleRemovePage(EpubNavItem page){
         view.runOnUiThread(() -> view.removePage(page));
     }
 
-    public void handleAddPage(UstadJSOPFItem page){
-        view.runOnUiThread(() -> view.addNewPage(page));
+    public void handleAddPage(){
+        view.runOnUiThread(() -> view.addNewPage());
     }
 
-    public void handleUpdatePage(UstadJSOPFItem page){
+    public void handleUpdatePage(EpubNavItem page){
         view.runOnUiThread(() -> view.updatePage(page));
     }
 }

@@ -1,7 +1,9 @@
 package com.ustadmobile.core.contenteditor;
 
+import com.ustadmobile.core.contentformats.epub.nav.EpubNavDocument;
+import com.ustadmobile.core.contentformats.epub.nav.EpubNavItem;
+import com.ustadmobile.core.contentformats.epub.opf.OpfDocument;
 import com.ustadmobile.core.impl.UmCallback;
-import com.ustadmobile.core.opf.UstadJSOPFItem;
 
 import org.xmlpull.v1.XmlPullParserException;
 
@@ -66,22 +68,22 @@ public interface UmEditorFileHelperCore {
 
     /**
      * Create new page to the document.
-     * @param page Page to be created
+     * @param title Title of the page to be created
      * @param callback UmCallback
      */
-    void addPage(UstadJSOPFItem page, UmCallback<String> callback);
+    void addPage(String title, UmCallback<String> callback);
 
     /**
      * Delete a page from the document
      * @param page Page to be deleted from the doc.
      * @param callback UmCallback return deleted page.
      */
-    void removePage(UstadJSOPFItem page, UmCallback<Boolean> callback);
+    void removePage(EpubNavItem page, UmCallback<Boolean> callback);
 
-    void updatePage(UstadJSOPFItem page, UmCallback<Boolean> callback);
+    void updatePage(EpubNavItem page, UmCallback<Boolean> callback);
 
 
-    void changePageOrder(List<UstadJSOPFItem> pageList, UmCallback<Boolean> callback);
+    void changePageOrder(List<EpubNavItem> pageList, UmCallback<Boolean> callback);
 
     /**
      * Set current selected page from page list.
@@ -93,7 +95,10 @@ public interface UmEditorFileHelperCore {
      * Get all document pages.
      * @return list of all document pages.
      */
-     List<UstadJSOPFItem> getPageList() throws IOException, XmlPullParserException;
+     EpubNavDocument getEpubNavDocument();
+
+
+     OpfDocument getEpubOpfDocument();
 
     /**
      * Get source file path i.e zipped file

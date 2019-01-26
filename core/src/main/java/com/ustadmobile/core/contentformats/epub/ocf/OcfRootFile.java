@@ -28,76 +28,35 @@
     GNU General Public License for more details.
 
  */
-package com.ustadmobile.core.opf;
-
-import java.io.Serializable;
+package com.ustadmobile.core.contentformats.epub.ocf;
 
 /**
  *
- * @author varuna
+ * @author mike
  */
-public class UstadJSOPFItem implements Serializable {
-    public String href;
+ public class OcfRootFile {
+    private String fullPath;
 
-    public String mimeType;
+    private String mediaType;
 
-    public String properties;
-
-    public String title;
-
-    public boolean linear;
-
-    public String id;
-    
-    public UstadJSOPFItem(){
-        this.linear = true;
+    public OcfRootFile(String fullPath, String mediaType) {
+        this.fullPath = fullPath;
+        this.mediaType = mediaType;
     }
 
-    public String getHref() {
-        return href;
+    public String getFullPath() {
+        return fullPath;
     }
 
-    public void setHref(String href) {
-        this.href = href;
+    public void setFullPath(String fullPath) {
+        this.fullPath = fullPath;
     }
 
-    public String getMimeType() {
-        return mimeType;
+    public String getMediaType() {
+        return mediaType;
     }
 
-    public void setMimeType(String mimeType) {
-        this.mimeType = mimeType;
-    }
-
-    public String getProperties() {
-        return properties;
-    }
-
-    public void setProperties(String properties) {
-        this.properties = properties;
-    }
-
-    public boolean isLinear() {
-        return linear;
-    }
-
-    public void setLinear(boolean linear) {
-        this.linear = linear;
-    }
-
-    public String getId() {
-        return id;
-    }
-
-    public void setId(String id) {
-        this.id = id;
-    }
-
-    public String getTitle() {
-        return title;
-    }
-
-    public void setTitle(String title) {
-        this.title = title;
+    public void setMediaType(String mediaType) {
+        this.mediaType = mediaType;
     }
 }

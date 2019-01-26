@@ -1,6 +1,6 @@
 package com.ustadmobile.core.view;
 
-import com.ustadmobile.core.opf.UstadJSOPFItem;
+import com.ustadmobile.core.contentformats.epub.nav.EpubNavItem;
 
 import java.util.List;
 
@@ -8,14 +8,14 @@ public interface ContentEditorPageListView extends UstadView {
 
     String TAG = ContentEditorPageListView.class.getSimpleName();
 
-    void updatePageList(List<UstadJSOPFItem> newPageList);
+    void updatePageList(List<EpubNavItem> newPageList);
 
-    void addNewPage(UstadJSOPFItem page);
+    void addNewPage();
 
-    void removePage(UstadJSOPFItem page);
+    void removePage(EpubNavItem page);
 
-    void loadPage(UstadJSOPFItem page);
+    void loadPage(EpubNavItem page);
 
-    void updatePage(UstadJSOPFItem page);
+    void updatePage(EpubNavItem page);
 
 }

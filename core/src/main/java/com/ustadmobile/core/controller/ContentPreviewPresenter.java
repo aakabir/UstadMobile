@@ -25,9 +25,4 @@ public class ContentPreviewPresenter extends UstadBaseController<ContentPreviewV
 
     }
 
-
-    @Override
-    public void setUIStrings() {
-
-    }
 }

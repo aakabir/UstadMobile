@@ -1,11 +1,11 @@
 package com.ustadmobile.core.controller;
 
+import com.ustadmobile.core.contentformats.epub.nav.EpubNavItem;
 import com.ustadmobile.core.db.UmAppDatabase;
 import com.ustadmobile.core.db.dao.ContentEntryFileStatusDao;
 import com.ustadmobile.core.generated.locale.MessageID;
 import com.ustadmobile.core.impl.UmCallback;
 import com.ustadmobile.core.impl.UstadMobileSystemImpl;
-import com.ustadmobile.core.opf.UstadJSOPFItem;
 import com.ustadmobile.core.view.ContentEditorView;
 import com.ustadmobile.lib.db.entities.ContentEntryFileStatus;
 
@@ -119,31 +119,25 @@ public class ContentEditorPresenter extends UstadBaseController<ContentEditorVie
             @Override
             public void onSuccess(Void result) {
                 if(filePath.length() > 0){
-                    try{
-                        List<UstadJSOPFItem> pageList = view.getFileHelper().getPageList();
-                        if(pageList.size() == 0){
-                            UstadJSOPFItem pageItem = new UstadJSOPFItem();
-                            pageItem.title = UstadMobileSystemImpl.getInstance()
-                                    .getString(MessageID.content_untitled_page, view.getContext());
-                            view.getFileHelper().addPage(pageItem,
-                                    new UmCallback<String>() {
-                                        @Override
-                                        public void onSuccess(String result) {
-                                            if(result != null){
-                                                selectedPageToLoad = result;
-                                                view.runOnUiThread(() -> view.handleSelectedPage());
-                                            }
+                    List<EpubNavItem> pageList = view.getFileHelper()
+                            .getEpubNavDocument().getToc().getChildren();
+                    if(pageList.size() == 0){
+                        String pageTitle = UstadMobileSystemImpl.getInstance()
+                                .getString(MessageID.content_untitled_page, view.getContext());
+                        view.getFileHelper().addPage(pageTitle,
+                                new UmCallback<String>() {
+                                    @Override
+                                    public void onSuccess(String result) {
+                                        if(result != null){
+                                            selectedPageToLoad = result;
+                                            view.runOnUiThread(() -> view.handleSelectedPage());
                                         }
-                                        @Override
-                                        public void onFailure(Throwable exception) {
+                                    }
+                                    @Override
+                                    public void onFailure(Throwable exception) {
 
-                                        }
-                                    });
-                        }
-                    } catch (XmlPullParserException e) {
-                        e.printStackTrace();
-                    } catch (IOException e) {
-                        e.printStackTrace();
+                                    }
+                                });
                     }
                 }else{
                     view.runOnUiThread(() -> view.showNotFoundErrorMessage());
@@ -361,8 +355,4 @@ public class ContentEditorPresenter extends UstadBaseController<ContentEditorVie
         this.selectedPageToLoad = selectedPageToLoad;
     }
 
-    @Override
-    public void setUIStrings() {
-
-    }
 }

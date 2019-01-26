@@ -50,12 +50,12 @@ import android.widget.TextView;
 
 import com.google.gson.Gson;
 import com.toughra.ustadmobile.R;
+import com.ustadmobile.core.contentformats.epub.nav.EpubNavItem;
 import com.ustadmobile.core.controller.ContentEditorPresenter;
 import com.ustadmobile.core.generated.locale.MessageID;
 import com.ustadmobile.core.impl.UMLog;
 import com.ustadmobile.core.impl.UmCallback;
 import com.ustadmobile.core.impl.UstadMobileSystemImpl;
-import com.ustadmobile.core.opf.UstadJSOPFItem;
 import com.ustadmobile.core.util.UMFileUtil;
 import com.ustadmobile.core.view.ContentEditorPageListView;
 import com.ustadmobile.core.view.ContentEditorView;
@@ -1179,14 +1179,9 @@ public class ContentEditorActivity extends UstadBaseActivity implements ContentE
             FragmentTransaction transaction = getSupportFragmentManager().beginTransaction();
             transaction.setTransition(FragmentTransaction.TRANSIT_FRAGMENT_OPEN);
             pageListFragment = new ContentEditorPageListFragment();
-            try {
-                pageListFragment.setPageList(umEditorFileHelper.getPageList());
-                pageListFragment.show(transaction, ContentEditorPageListView.TAG);
-            } catch (IOException e) {
-                e.printStackTrace();
-            } catch (XmlPullParserException e) {
-                e.printStackTrace();
-            }
+            pageListFragment.setPageList(umEditorFileHelper.
+                    getEpubNavDocument().getToc().getChildren());
+            pageListFragment.show(transaction, ContentEditorPageListView.TAG);
 
         }else if(itemId == R.id.content_action_format){
 
@@ -1661,7 +1656,7 @@ public class ContentEditorActivity extends UstadBaseActivity implements ContentE
     }
 
     @Override
-    public void onOrderChanged(List<UstadJSOPFItem> newPageList) {
+    public void onOrderChanged(List<EpubNavItem> newPageList) {
         umEditorFileHelper.changePageOrder(newPageList, new UmCallback<Boolean>() {
             @Override
             public void onSuccess(Boolean result) {
@@ -1685,17 +1680,12 @@ public class ContentEditorActivity extends UstadBaseActivity implements ContentE
     }
 
     @Override
-    public void onPageUpdate(UstadJSOPFItem pageItem) {
+    public void onPageUpdate(EpubNavItem pageItem) {
         umEditorFileHelper.updatePage(pageItem, new UmCallback<Boolean>() {
             @Override
             public void onSuccess(Boolean result) {
-                try {
-                    pageListFragment.setPageList(umEditorFileHelper.getPageList());
-                } catch (IOException e) {
-                    e.printStackTrace();
-                } catch (XmlPullParserException e) {
-                    e.printStackTrace();
-                }
+                pageListFragment.setPageList(umEditorFileHelper.
+                        getEpubNavDocument().getToc().getChildren());
             }
 
             @Override
@@ -1708,17 +1698,12 @@ public class ContentEditorActivity extends UstadBaseActivity implements ContentE
     }
 
     @Override
-    public void onPageRemove(UstadJSOPFItem pageItem) {
+    public void onPageRemove(EpubNavItem pageItem) {
         umEditorFileHelper.removePage(pageItem, new UmCallback<Boolean>() {
             @Override
             public void onSuccess(Boolean result) {
-                try {
-                    pageListFragment.setPageList(umEditorFileHelper.getPageList());
-                } catch (IOException e) {
-                    e.printStackTrace();
-                } catch (XmlPullParserException e) {
-                    e.printStackTrace();
-                }
+                pageListFragment.setPageList(umEditorFileHelper.
+                        getEpubNavDocument().getToc().getChildren());
             }
 
             @Override
@@ -1731,17 +1716,12 @@ public class ContentEditorActivity extends UstadBaseActivity implements ContentE
     }
 
     @Override
-    public void onPageCreate(UstadJSOPFItem pageItem) {
-        umEditorFileHelper.addPage(pageItem, new UmCallback<String>() {
+    public void onPageCreate(String title) {
+        umEditorFileHelper.addPage(title, new UmCallback<String>() {
             @Override
             public void onSuccess(String result) {
-                try {
-                    pageListFragment.setPageList(umEditorFileHelper.getPageList());
-                } catch (IOException e) {
-                    e.printStackTrace();
-                } catch (XmlPullParserException e) {
-                    e.printStackTrace();
-                }
+                pageListFragment.setPageList(umEditorFileHelper.
+                        getEpubNavDocument().getToc().getChildren());
             }
 
             @Override

@@ -27,10 +27,10 @@ import android.widget.ImageView;
 import android.widget.TextView;
 
 import com.toughra.ustadmobile.R;
+import com.ustadmobile.core.contentformats.epub.nav.EpubNavItem;
 import com.ustadmobile.core.controller.ContentEditorPageListPresenter;
 import com.ustadmobile.core.generated.locale.MessageID;
 import com.ustadmobile.core.impl.UstadMobileSystemImpl;
-import com.ustadmobile.core.opf.UstadJSOPFItem;
 import com.ustadmobile.core.view.ContentEditorPageListView;
 import com.ustadmobile.port.android.umeditor.UmOnStartDragListener;
 import com.ustadmobile.port.android.umeditor.UmPageActionListener;
@@ -48,7 +48,7 @@ import ru.dimorinny.floatingtextbutton.FloatingTextButton;
 public class ContentEditorPageListFragment extends UstadDialogFragment
         implements UmOnStartDragListener, ContentEditorPageListView {
 
-    private List<UstadJSOPFItem> pageList;
+    private List<EpubNavItem> pageList;
 
     private ItemTouchHelper mItemTouchHelper;
 
@@ -85,8 +85,8 @@ public class ContentEditorPageListFragment extends UstadDialogFragment
         @SuppressLint("ClickableViewAccessibility")
         @Override
         public void onBindViewHolder(@NonNull PageViewHolder holder, int position) {
-            final UstadJSOPFItem pageItem = pageList.get(holder.getAdapterPosition());
-            holder.pageTitle.setText(pageItem.title);
+            final EpubNavItem pageItem = pageList.get(holder.getAdapterPosition());
+            holder.pageTitle.setText(pageItem.getTitle());
             holder.pageReorderHandle.setOnTouchListener((v, event) -> {
                 if (MotionEventCompat.getActionMasked(event) == MotionEvent.ACTION_DOWN) {
                     mDragStartListener.onDragStarted(holder);
@@ -99,7 +99,7 @@ public class ContentEditorPageListFragment extends UstadDialogFragment
                     presenter.handlePageSelected(pageItem));
         }
 
-        private void showPopUpMenu(Context context, View anchorView,UstadJSOPFItem pageItem){
+        private void showPopUpMenu(Context context, View anchorView,EpubNavItem pageItem){
             PopupMenu popup = new PopupMenu(context, anchorView);
             popup.getMenuInflater().inflate(R.menu.menu_content_editor_page_option, popup.getMenu());
             popup.setOnMenuItemClickListener(item -> {
@@ -120,8 +120,8 @@ public class ContentEditorPageListFragment extends UstadDialogFragment
 
         @Override
         public void onPageItemMove(int fromPosition, int toPosition) {
-            UstadJSOPFItem prev = pageList.get(fromPosition);
-            pageList.add(toPosition > fromPosition ? toPosition - 1 : toPosition, prev);
+            EpubNavItem prevPage = pageList.get(fromPosition);
+            pageList.add(toPosition > fromPosition ? toPosition - 1 : toPosition, prevPage);
             pageList.remove(fromPosition);
             presenter.handleReOrderPages(pageList);
             notifyItemMoved(fromPosition, toPosition);
@@ -145,7 +145,7 @@ public class ContentEditorPageListFragment extends UstadDialogFragment
         pageActionListener = (UmPageActionListener) activity;
     }
 
-    public void setPageList(List<UstadJSOPFItem> pageList){
+    public void setPageList(List<EpubNavItem> pageList){
         this.pageList = pageList;
         if(mPageListAdapter != null){
             mPageListAdapter.notifyDataSetChanged();
@@ -187,7 +187,7 @@ public class ContentEditorPageListFragment extends UstadDialogFragment
         pageListView.clearOnScrollListeners();
         pageListView.addOnScrollListener(new RecyclerView.OnScrollListener() {
             @Override
-            public void onScrollStateChanged(RecyclerView recyclerView, int newState) {
+            public void onScrollStateChanged(@NonNull RecyclerView recyclerView, int newState) {
                 switch (newState) {
                     case RecyclerView.SCROLL_STATE_IDLE:
                         btnAddPage.setVisibility(View.VISIBLE);
@@ -201,19 +201,19 @@ public class ContentEditorPageListFragment extends UstadDialogFragment
         });
         pageListView.addOnScrollListener(new RecyclerView.OnScrollListener() {
             @Override
-            public void onScrolled(RecyclerView recyclerView, int dx, int dy) {
+            public void onScrolled(@NonNull RecyclerView recyclerView, int dx, int dy) {
                 isScrollDirectionUp = dy > 0;
                 super.onScrolled(recyclerView, dx, dy);
             }
             @Override
-            public void onScrollStateChanged(RecyclerView recyclerView, int newState) {
+            public void onScrollStateChanged(@NonNull RecyclerView recyclerView, int newState) {
                 btnAddPage.setVisibility(newState != RecyclerView.SCROLL_STATE_IDLE
                         && !isScrollDirectionUp ? View.VISIBLE:View.GONE);
                 super.onScrollStateChanged(recyclerView, newState);
             }
         });
 
-        btnAddPage.setOnClickListener(v -> showPageAddDialog(new UstadJSOPFItem()));
+        btnAddPage.setOnClickListener(v -> showPageAddDialog(null));
 
         return rootView;
     }
@@ -229,8 +229,8 @@ public class ContentEditorPageListFragment extends UstadDialogFragment
         }
     }
 
-    private void showPageAddDialog(UstadJSOPFItem pageItem){
-        final boolean isNewPage = pageItem.title == null;
+    private void showPageAddDialog(EpubNavItem pageItem){
+        final boolean isNewPage = pageItem == null;
         UstadMobileSystemImpl impl = UstadMobileSystemImpl.getInstance();
         String dialogTitle = isNewPage ? impl.getString(MessageID.content_add_page,
                 getActivity()):impl.getString(MessageID.content_update_page_title,
@@ -249,19 +249,18 @@ public class ContentEditorPageListFragment extends UstadDialogFragment
         titleWrapper.setHint(impl.getString(MessageID.content_editor_page_view_hint,
                 getActivity()));
         EditText titleView = dialogView.findViewById(R.id.title);
-        titleView.setText(pageItem.title);
+        titleView.setText(isNewPage ? null:pageItem.getTitle());
         builder.setView(dialogView);
         builder.setTitle(dialogTitle);
 
         builder.setPositiveButton(positiveBtnLabel, (dialog, which) -> {
-            if(!titleView.getText().toString().isEmpty()){
-                pageItem.setTitle(titleView.getText().toString());
-            }
             if(isNewPage){
-                pageActionListener.onPageCreate(pageItem);
+                pageActionListener.onPageCreate(titleView.getText().toString());
             }else{
+                pageItem.setTitle(titleView.getText().toString());
                 pageActionListener.onPageUpdate(pageItem);
             }
+
             dialog.dismiss();
         });
         builder.setNegativeButton(impl.getString(MessageID.cancel,
@@ -276,17 +275,17 @@ public class ContentEditorPageListFragment extends UstadDialogFragment
     }
 
     @Override
-    public void updatePageList(List<UstadJSOPFItem> newPageList) {
+    public void updatePageList(List<EpubNavItem> newPageList) {
         pageActionListener.onOrderChanged(newPageList);
     }
 
     @Override
-    public void addNewPage(UstadJSOPFItem page) {
-        showPageAddDialog(page);
+    public void addNewPage() {
+        showPageAddDialog(null);
     }
 
     @Override
-    public void removePage(UstadJSOPFItem page) {
+    public void removePage(EpubNavItem page) {
         int index = pageList.indexOf(page);
         if(pageList.remove(page)){
             mPageListAdapter.notifyItemRemoved(index);
@@ -295,12 +294,12 @@ public class ContentEditorPageListFragment extends UstadDialogFragment
     }
 
     @Override
-    public void loadPage(UstadJSOPFItem page) {
-        pageActionListener.onPageSelected(page.href);
+    public void loadPage(EpubNavItem page) {
+        pageActionListener.onPageSelected(page.getHref());
     }
 
     @Override
-    public void updatePage(UstadJSOPFItem page) {
+    public void updatePage(EpubNavItem page) {
         showPageAddDialog(page);
     }
 
