@@ -98,7 +98,7 @@ public class UmEditorFileHelper implements UmEditorFileHelperCore {
 
     private static final String ZIP_FILE_EXTENSION = ".zip";
 
-    private static final String htmlMediaType = "text/html";
+    private static final String pageMimeType = "text/html";
 
     private static final int navDocumentDepth = 1;
 
@@ -527,8 +527,8 @@ public class UmEditorFileHelper implements UmEditorFileHelperCore {
             List<EpubNavItem>  pageList = getEpubNavDocument().getToc().getChildren();
             List<Integer> pages = new ArrayList<>();
             for(EpubNavItem navItem: pageList){
-                pages.add(Integer.parseInt(navItem.getHref().split("_")[pageNumberIndex]
-                        .replaceFirst("[.][^.]+$", "")));
+                pages.add(Integer.parseInt(getFileNameWithoutExtension(navItem.getHref()
+                        .split("_")[pageNumberIndex])));
             }
             if(pages.size() > 0){
                 int lastPageIndex = pages.size() - 1;
@@ -542,8 +542,8 @@ public class UmEditorFileHelper implements UmEditorFileHelperCore {
             created = UMFileUtil.copyFile(is,new File(getEpubFilesDestination(), href));
 
             if(created){
-                created = addNavItem(href,title) && addManifestItem(href,htmlMediaType)
-                        && addSpineItem(href) ;
+                created = addNavItem(href,title) && addManifestItem(href, pageMimeType)
+                        && addSpineItem(href);
             }
 
         } catch (IOException e) {
@@ -608,6 +608,10 @@ public class UmEditorFileHelper implements UmEditorFileHelperCore {
         return null;
     }
 
+    private String getFileNameWithoutExtension(String fileName){
+        return fileName.replaceFirst("[.][^.]+$", "");
+    }
+
     private EpubNavItem getNavItemByHref(String href,EpubNavItem root){
         for(EpubNavItem navItem: root.getChildren()){
             if(navItem.getHref().equals(href)){
@@ -652,14 +656,19 @@ public class UmEditorFileHelper implements UmEditorFileHelperCore {
 
     /**
      * Add manifest item on opf file
-     * @param pageHref item ref
-     * @param pageMimeType item mime type
+     * @param href manifest item ref
+     * @param mimeType manifest item mime type
      * @return true if an item was added otherwise false.
-     * @throws IOException
      */
-    private boolean addManifestItem(String pageHref,String pageMimeType) throws IOException {
+    private boolean addManifestItem(String href,String mimeType){
         OpfDocument opfDocument = getEpubOpfDocument();
-        return true;
+        OpfItem manifestItem = new OpfItem();
+        manifestItem.setHref(href);
+        manifestItem.setId(getFileNameWithoutExtension(href));
+        manifestItem.setMimeType(mimeType);
+        opfDocument.getManifestItems().put(manifestItem.getId(),manifestItem);
+        //TODO: write string value
+        return getEpubOpfDocument().getManifestItems().containsKey(manifestItem.getId());
     }
 
     private void updateOpfMetadataInfo(String title,String uuid){
