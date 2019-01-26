@@ -15,6 +15,7 @@ import com.ustadmobile.core.impl.UmAccountManager;
 import com.ustadmobile.core.impl.UmCallback;
 import com.ustadmobile.core.impl.UstadMobileSystemImpl;
 import com.ustadmobile.core.util.UMFileUtil;
+import com.ustadmobile.core.util.UMIOUtils;
 import com.ustadmobile.core.view.ContentEditorView;
 import com.ustadmobile.lib.db.entities.ContentEntry;
 import com.ustadmobile.lib.db.entities.ContentEntryContentEntryFileJoin;
@@ -29,6 +30,7 @@ import org.jsoup.nodes.Element;
 import org.jsoup.select.Elements;
 import org.xmlpull.v1.XmlPullParser;
 import org.xmlpull.v1.XmlPullParserException;
+import org.xmlpull.v1.XmlSerializer;
 
 import java.io.File;
 import java.io.FileInputStream;
@@ -36,6 +38,7 @@ import java.io.FileNotFoundException;
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
+import java.io.OutputStream;
 import java.text.DateFormat;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
@@ -238,7 +241,7 @@ public class UmEditorFileHelper implements UmEditorFileHelperCore {
     /**
      * Handle file on database level
      * @param contentEntryFileUid Uid of the opened content entry
-     * @param callback
+     * @param callback UmCallback
      */
     private void handleFileInDb(long contentEntryFileUid,UmCallback<String> callback){
         long lastModified = System.currentTimeMillis();
@@ -492,33 +495,62 @@ public class UmEditorFileHelper implements UmEditorFileHelperCore {
 
     @Override
     public void updatePage(EpubNavItem page, UmCallback<Boolean> callback) {
+        Exception exception = null;
         EpubNavDocument navDocument = getEpubNavDocument();
         EpubNavItem root = navDocument.getToc();
 
         EpubNavItem navItem = getNavItemByHref(page.getHref(),navDocument.getToc());
         root.getChildren().add(root.getChildren().indexOf(navItem),page);
 
-        File navDocFile = new File(getEpubFilesDestination(),
+        OutputStream bout = null;
+        File navFile = new File(getEpubFilesDestination(),
                 getEpubOpfDocument().getNavItem().getHref());
-
-        //TODO: add string value
-        UMFileUtil.writeToFile(navDocFile,navDocument.toString());
+        try{
+            bout = new FileOutputStream(navFile);
+            XmlSerializer serializer = UstadMobileSystemImpl.getInstance().newXMLSerializer();
+            serializer.setOutput(bout, "UTF-8");
+            navDocument.serialize(serializer);
+        } catch (FileNotFoundException e) {
+            exception = e;
+        } catch (IOException e) {
+            exception = e;
+        }finally {
+            UMIOUtils.closeQuietly(bout);
+        }
+        if(exception != null){
+            callback.onFailure(exception);
+        }
 
         callback.onSuccess(getEpubNavDocument().getNavById(page.getHref()) == null);
     }
 
     @Override
     public void changePageOrder(List<EpubNavItem> pageList, UmCallback<Boolean> callback){
+
+        Exception exception = null;
         EpubNavDocument navDocument = getEpubNavDocument();
         navDocument.getToc().getChildren().clear();
         navDocument.getToc().getChildren().addAll(pageList);
 
-        File navDocFile = new File(getEpubFilesDestination(),
+        OutputStream bout = null;
+        File navFile = new File(getEpubFilesDestination(),
                 getEpubOpfDocument().getNavItem().getHref());
+        try{
+            bout = new FileOutputStream(navFile);
+            XmlSerializer serializer = UstadMobileSystemImpl.getInstance().newXMLSerializer();
+            serializer.setOutput(bout, "UTF-8");
+            navDocument.serialize(serializer);
+        } catch (FileNotFoundException e) {
+            exception = e;
+        } catch (IOException e) {
+            exception = e;
+        }finally {
+            UMIOUtils.closeQuietly(bout);
+        }
 
-        //TODO: add string value
-        UMFileUtil.writeToFile(navDocFile,navDocument.toString());
-
+        if(exception != null){
+            callback.onFailure(exception);
+        }
         callback.onSuccess(getEpubNavDocument().getToc().getChildren() == pageList);
     }
 
@@ -565,15 +597,29 @@ public class UmEditorFileHelper implements UmEditorFileHelperCore {
 
     @Override
     public void removePage(EpubNavItem page, UmCallback<Boolean> callback) {
-
+        Exception exception = null;
         EpubNavDocument navDocument = getEpubNavDocument();
         navDocument.getToc().getChildren().remove(page);
 
-        File navDocFile = new File(getEpubFilesDestination(),
+        OutputStream bout = null;
+        File navFile = new File(getEpubFilesDestination(),
                 getEpubOpfDocument().getNavItem().getHref());
+        try{
+            bout = new FileOutputStream(navFile);
+            XmlSerializer serializer = UstadMobileSystemImpl.getInstance().newXMLSerializer();
+            serializer.setOutput(bout, "UTF-8");
+            navDocument.serialize(serializer);
+        } catch (FileNotFoundException e) {
+           exception = e;
+        } catch (IOException e) {
+           exception = e;
+        }finally {
+            UMIOUtils.closeQuietly(bout);
+        }
 
-        UMFileUtil.writeToFile(navDocFile,navDocument.toString());
-
+        if(exception != null){
+            callback.onFailure(exception);
+        }
         callback.onSuccess(getNavItemByHref(page.getHref(),
                 getEpubNavDocument().getToc()) == null);
     }
@@ -637,8 +683,19 @@ public class UmEditorFileHelper implements UmEditorFileHelperCore {
         OpfItem newSpine = new OpfItem();
         newSpine.setHref(pageHref);
         opfDocument.getSpine().add(newSpine);
-        //TODO: add string value
-        UMFileUtil.writeToFile(opfFileDestination,opfDocument.toString());
+        OutputStream bout = null;
+        try{
+            bout = new FileOutputStream(opfFileDestination);
+            XmlSerializer serializer = UstadMobileSystemImpl.getInstance().newXMLSerializer();
+            serializer.setOutput(bout, "UTF-8");
+            opfDocument.serialize(serializer);
+        } catch (FileNotFoundException e) {
+            e.printStackTrace();
+        } catch (IOException e) {
+            e.printStackTrace();
+        }finally {
+            UMIOUtils.closeQuietly(bout);
+        }
         return getEpubOpfDocument().getSpine().indexOf(newSpine) != -1;
     }
 
@@ -654,9 +711,20 @@ public class UmEditorFileHelper implements UmEditorFileHelperCore {
         navItem.setHref(pageHref);
         navItem.setTitle(pageTitle);
         document.getToc().addChild(navItem);
+        OutputStream bout = null;
         File navFile = new File(getEpubFilesDestination(), getEpubOpfDocument().getNavItem().getHref());
-        //TODO: add string value
-        UMFileUtil.writeToFile(navFile,document.toString());
+        try{
+            bout = new FileOutputStream(navFile);
+            XmlSerializer serializer = UstadMobileSystemImpl.getInstance().newXMLSerializer();
+            serializer.setOutput(bout, "UTF-8");
+            document.serialize(serializer);
+        } catch (FileNotFoundException e) {
+            e.printStackTrace();
+        } catch (IOException e) {
+            e.printStackTrace();
+        }finally {
+            UMIOUtils.closeQuietly(bout);
+        }
         return getEpubNavDocument().getToc().getChildren().indexOf(navItem) != -1;
     }
 
@@ -673,19 +741,43 @@ public class UmEditorFileHelper implements UmEditorFileHelperCore {
         manifestItem.setId(getFileNameWithoutExtension(href));
         manifestItem.setMimeType(mimeType);
         opfDocument.getManifestItems().put(manifestItem.getId(),manifestItem);
-        //TODO: write string value
+        OutputStream bout = null;
+        try{
+            bout = new FileOutputStream(opfFileDestination);
+            XmlSerializer serializer = UstadMobileSystemImpl.getInstance().newXMLSerializer();
+            serializer.setOutput(bout, "UTF-8");
+            opfDocument.serialize(serializer);
+        } catch (FileNotFoundException e) {
+            e.printStackTrace();
+        } catch (IOException e) {
+            e.printStackTrace();
+        }finally {
+            UMIOUtils.closeQuietly(bout);
+        }
         return getEpubOpfDocument().getManifestItems().containsKey(manifestItem.getId());
     }
 
-    private void updateOpfMetadataInfo(String title,String uuid){
+    private boolean updateOpfMetadataInfo(String title,String uuid){
         OpfDocument opfDocument = getEpubOpfDocument();
         opfDocument.setTitle(title == null ? opfDocument.getTitle():title);
         opfDocument.setId(uuid == null ? opfDocument.getId():uuid);
         DateFormat formatter  = new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss'Z'");
         formatter.setTimeZone(TimeZone.getTimeZone("UTC"));
         String metaTime = formatter.format(new Date(System.currentTimeMillis()));
-        //TODO: write string value
-        UMFileUtil.writeToFile(opfFileDestination,opfDocument.toString());
+        OutputStream bout = null;
+        try{
+            bout = new FileOutputStream(opfFileDestination);
+            XmlSerializer serializer = UstadMobileSystemImpl.getInstance().newXMLSerializer();
+            serializer.setOutput(bout, "UTF-8");
+            opfDocument.serialize(serializer);
+        } catch (FileNotFoundException e) {
+            e.printStackTrace();
+        } catch (IOException e) {
+            e.printStackTrace();
+        }finally {
+            UMIOUtils.closeQuietly(bout);
+        }
+        return getEpubOpfDocument().getTitle().equals(title);
     }
 
     @Override
