@@ -124,6 +124,8 @@ public class ContentEditorActivity extends UstadBaseActivity implements ContentE
 
     private UmEditorWebView umEditorWebView;
 
+    private  ContentEditorPageListFragment pageListFragment;
+
     private View docNotFoundView;
 
     private UmEditorActionView toolbar;
@@ -1176,10 +1178,10 @@ public class ContentEditorActivity extends UstadBaseActivity implements ContentE
         if (itemId == R.id.content_action_pages) {
             FragmentTransaction transaction = getSupportFragmentManager().beginTransaction();
             transaction.setTransition(FragmentTransaction.TRANSIT_FRAGMENT_OPEN);
-            ContentEditorPageListFragment fragment = new ContentEditorPageListFragment();
+            pageListFragment = new ContentEditorPageListFragment();
             try {
-                fragment.setPageList(umEditorFileHelper.getPageList());
-                fragment.show(transaction, ContentEditorPageListView.TAG);
+                pageListFragment.setPageList(umEditorFileHelper.getPageList());
+                pageListFragment.show(transaction, ContentEditorPageListView.TAG);
             } catch (IOException e) {
                 e.printStackTrace();
             } catch (XmlPullParserException e) {
@@ -1668,7 +1670,9 @@ public class ContentEditorActivity extends UstadBaseActivity implements ContentE
 
             @Override
             public void onFailure(Throwable exception) {
-
+                if(exception != null){
+                    exception.printStackTrace();
+                }
             }
         });
     }
@@ -1685,12 +1689,20 @@ public class ContentEditorActivity extends UstadBaseActivity implements ContentE
         umEditorFileHelper.updatePage(pageItem, new UmCallback<Boolean>() {
             @Override
             public void onSuccess(Boolean result) {
-
+                try {
+                    pageListFragment.setPageList(umEditorFileHelper.getPageList());
+                } catch (IOException e) {
+                    e.printStackTrace();
+                } catch (XmlPullParserException e) {
+                    e.printStackTrace();
+                }
             }
 
             @Override
             public void onFailure(Throwable exception) {
-
+                if(exception != null){
+                    exception.printStackTrace();
+                }
             }
         });
     }
@@ -1700,12 +1712,20 @@ public class ContentEditorActivity extends UstadBaseActivity implements ContentE
         umEditorFileHelper.removePage(pageItem, new UmCallback<Boolean>() {
             @Override
             public void onSuccess(Boolean result) {
-
+                try {
+                    pageListFragment.setPageList(umEditorFileHelper.getPageList());
+                } catch (IOException e) {
+                    e.printStackTrace();
+                } catch (XmlPullParserException e) {
+                    e.printStackTrace();
+                }
             }
 
             @Override
             public void onFailure(Throwable exception) {
-
+               if(exception != null){
+                   exception.printStackTrace();
+               }
             }
         });
     }
@@ -1715,12 +1735,20 @@ public class ContentEditorActivity extends UstadBaseActivity implements ContentE
         umEditorFileHelper.addPage(pageItem, new UmCallback<String>() {
             @Override
             public void onSuccess(String result) {
-
+                try {
+                    pageListFragment.setPageList(umEditorFileHelper.getPageList());
+                } catch (IOException e) {
+                    e.printStackTrace();
+                } catch (XmlPullParserException e) {
+                    e.printStackTrace();
+                }
             }
 
             @Override
             public void onFailure(Throwable exception) {
-
+                if(exception != null){
+                    exception.printStackTrace();
+                }
             }
         });
     }

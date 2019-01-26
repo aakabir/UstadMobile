@@ -88,6 +88,8 @@ public abstract class UstadBaseActivity extends AppCompatActivity implements Ser
         localeOnCreate = UstadMobileSystemImpl.getInstance().getDisplayedLocale(this);
 
 
+
+
         Intent syncServiceIntent = new Intent(this, UmAppDatabaseSyncService.class);
         bindService(syncServiceIntent, mSyncServiceConnection,
                 Context.BIND_AUTO_CREATE|Context.BIND_ADJUST_WITH_ACTIVITY);
@@ -150,10 +152,6 @@ public abstract class UstadBaseActivity extends AppCompatActivity implements Ser
 
     protected void setDirectionFromSystem() {
         setDirection(UstadMobileSystemImpl.getInstance().getDirection());
-    }
-
-    public void setUIStrings() {
-
     }
 
     public void setDirection(int dir) {
@@ -220,7 +218,6 @@ public abstract class UstadBaseActivity extends AppCompatActivity implements Ser
     @Override
     protected void onSaveInstanceState(Bundle outState) {
         super.onSaveInstanceState(outState);
-        UstadMobileSystemImpl.getInstance().handleSave();
     }
 
     @Override
@@ -233,7 +230,6 @@ public abstract class UstadBaseActivity extends AppCompatActivity implements Ser
     public void onStop() {
         isStarted = false;
         super.onStop();
-        UstadMobileSystemImpl.getInstance().handleSave();
         UstadMobileSystemImplAndroid.getInstanceAndroid().handleActivityStop(this);
     }
 

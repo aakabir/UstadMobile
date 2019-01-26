@@ -33,13 +33,15 @@ import java.io.FileInputStream;
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
+import java.text.DateFormat;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
-import java.util.Arrays;
+import java.util.Collections;
 import java.util.Date;
 import java.util.List;
 import java.util.Locale;
 import java.util.Objects;
+import java.util.TimeZone;
 import java.util.zip.ZipEntry;
 import java.util.zip.ZipInputStream;
 import java.util.zip.ZipOutputStream;
@@ -60,6 +62,8 @@ public class UmEditorFileHelper implements UmEditorFileHelperCore {
     private File mediaDestinationDir;
 
     private File opfFileDestination;
+
+    private File epubFileDestination;
 
     private UmAppDatabase repository;
 
@@ -85,8 +89,6 @@ public class UmEditorFileHelper implements UmEditorFileHelperCore {
 
     private boolean isTestExecution = false;
 
-    private static String TEMP_MEDIA_FILE = "media-hide.info";
-
     private static String PAGES_FILE_EXTENSION = ".html";
 
     private static final String PAGE_PREFIX = "page_";
@@ -94,8 +96,6 @@ public class UmEditorFileHelper implements UmEditorFileHelperCore {
     private static final String ZIP_FILE_EXTENSION = ".zip";
 
     private static final String htmlMediaType = "text/html";
-
-    private String umContentOpf = "content.opf";
 
     private String assetsDir = String.format("assets-%s",
             new SimpleDateFormat("yyyyMMddHHmmss",Locale.getDefault()).format(new Date()));
@@ -202,7 +202,8 @@ public class UmEditorFileHelper implements UmEditorFileHelperCore {
             String mountedToPath = sourceFile.getName().replace(ZIP_FILE_EXTENSION,"");
             File extractToPath = new File(tempDestinationDir,mountedToPath);
             destinationTempDir = extractToPath;
-            opfFileDestination = new File(destinationTempDir,OEBPS_DIRECTORY+File.separator);
+            epubFileDestination = new File(destinationTempDir,OEBPS_DIRECTORY+File.separator);
+            opfFileDestination = new File(epubFileDestination,"content.opf");
             mediaDestinationDir = new File(destinationTempDir,
                     UMFileUtil.joinPaths(OEBPS_DIRECTORY,MEDIA_DIRECTORY));
             boolean unZipped = false;
@@ -337,38 +338,77 @@ public class UmEditorFileHelper implements UmEditorFileHelperCore {
 
     @Override
     public void updatePage(UstadJSOPFItem page, UmCallback<Boolean> callback) {
-        File pagePath = new File(getEpubFilesDestination(), page.href);
+        boolean updated = false;
+        Exception exception = null;
         try {
-            Document pageDoc = Jsoup.parse(UMFileUtil.readTextFile(pagePath.getAbsolutePath()));
-            pageDoc.select("title").first().text(page.title);
-            UMFileUtil.writeToFile(pagePath,pageDoc.toString());
-            callback.onSuccess(pageDoc.toString().contains(page.title));
+            File pagePath = new File(getEpubFilesDestination(), getUmOpfContents().navItem.href);
+            Document nav = Jsoup.parse(UMFileUtil.readTextFile(pagePath.getAbsolutePath()));
+            for(Element pageEl: nav.select("ol li a")){
+                if(pageEl.attr("href").equals(page.href)){
+                    pageEl.text(page.title);
+                    break;
+                }
+            }
+            UMFileUtil.writeToFile(pagePath,nav.toString());
+            updated = nav.toString().contains(page.title);
         } catch (IOException e) {
-            e.printStackTrace();
-            callback.onFailure(e);
+           exception = e;
+        } catch (XmlPullParserException e) {
+           exception = e;
+        }finally {
+            callback.onFailure(exception);
+            callback.onSuccess(updated);
         }
     }
 
     @Override
     public void changePageOrder(List<UstadJSOPFItem> pageList, UmCallback<Boolean> callback){
-
+        boolean orderChanged  = false;
+        Exception exception = null;
+        try {
+            File pagePath = new File(getEpubFilesDestination(), getUmOpfContents().navItem.href);
+            Document nav = Jsoup.parse(UMFileUtil.readTextFile(pagePath.getAbsolutePath()));
+            Document opf = Jsoup.parse(UMFileUtil.readTextFile(opfFileDestination.getAbsolutePath()));
+            Elements navElement = nav.select("ol");
+            Elements spineElement = opf.select("spine");
+            navElement.html("");
+            spineElement.html("");
+            for(UstadJSOPFItem page: pageList){
+                orderChanged = addNavItem(page.href,page.title) && addSpineItem(page.href);
+                if(!orderChanged){
+                    break;
+                }
+            }
+            UMFileUtil.writeToFile(pagePath,nav.toString());
+            UMFileUtil.writeToFile(opfFileDestination,opf.toString());
+        } catch (IOException e) {
+           exception = e;
+        } catch (XmlPullParserException e) {
+           exception = e;
+        }finally {
+            callback.onSuccess(orderChanged);
+            if(!orderChanged){
+                callback.onFailure(exception);
+            }
+        }
     }
 
     @Override
     public void addPage(UstadJSOPFItem pageItem, UmCallback<String> callback) {
         Exception exception = null;
         boolean created = false;
+        int pageNumberIndex = 1, nextPageNumber = 1;
         try{
             List<UstadJSOPFItem>  pageList = getPageList();
-            int pageNumberIndex = 1, nextPageNumber = 1;
-            int [] pages = new int[pageList.size()];
-            for(int i = 0; i < pageList.size(); i++){
-                pages[i] = Integer.parseInt(pageList.get(i).href.split("_")[pageNumberIndex]);
+            List<Integer> pages = new ArrayList<>();
+            for(UstadJSOPFItem page: pageList){
+               pages.add(Integer.parseInt(page.href.split("_")[pageNumberIndex]
+                       .replaceFirst("[.][^.]+$", "")));
             }
-            if(pages.length > 0){
-                int lastPageIndex = pages.length - 1;
-                Arrays.sort(pages);
-                nextPageNumber = pages[lastPageIndex] + 1;
+            if(pages.size() > 0){
+                int lastPageIndex = pages.size() - 1;
+                Collections.sort(pages);
+                nextPageNumber = pages.get(lastPageIndex) + 1;
             }
             String href = PAGE_PREFIX+nextPageNumber+PAGES_FILE_EXTENSION;
             pageItem.href = href;
@@ -383,38 +423,46 @@ public class UmEditorFileHelper implements UmEditorFileHelperCore {
 
         } catch (XmlPullParserException e) {
             exception = e;
-            e.printStackTrace();
         } catch (IOException e) {
             exception = e;
-            e.printStackTrace();
         }finally {
-            callback.onFailure(exception);
             if(pageItem != null && created){
                 callback.onSuccess(pageItem.href);
+            }else{
+                callback.onFailure(exception);
             }
         }
     }
 
     @Override
     public void removePage(UstadJSOPFItem page, UmCallback<Boolean> callback) {
-        /* UmPage deletedPage = null;
-        for(UmPage umPage: getPageList()){
-            if(umPage.getIndex().equals(pageIndex)){
-                deletedPage = umPage;
-                break;
+        boolean removed = false;
+        Exception exception = null;
+        try {
+            File pagePath = new File(getEpubFilesDestination(), getUmOpfContents().navItem.href);
+            Document nav = Jsoup.parse(UMFileUtil.readTextFile(pagePath.getAbsolutePath()));
+            for(Element pageEl: nav.select("ol li a")){
+                if(pageEl.attr("href").equals(page.href)){
+                    pageEl.remove();
+                    break;
+                }
+            }
+            UMFileUtil.writeToFile(pagePath,nav.toString());
+            removed = !nav.toString().contains(page.href);
+        } catch (IOException e) {
+            exception = e;
+        } catch (XmlPullParserException e) {
+            exception = e;
+        }finally {
+            callback.onSuccess(removed);
+            if(!removed){
+                callback.onFailure(exception);
             }
         }
-        File pagePath = new File(getEpubFilesDestination(), pageIndex);
-        if(pagePath.delete()){
-            callback.onSuccess(deletedPage);
-        }else{
-            callback.onFailure(new Throwable("Failed to delete page with index "+pageIndex));
-        }*/
     }
 
     private UstadJSOPF getUmOpfContents() throws IOException, XmlPullParserException {
-        FileInputStream inputStream = new FileInputStream(
-                new File(getEpubFilesDestination(), umContentOpf));
+        FileInputStream inputStream = new FileInputStream(opfFileDestination);
         XmlPullParser xpp = UstadMobileSystemImpl.getInstance().newPullParser(inputStream);
         UstadJSOPF ustadJSOPF = new UstadJSOPF();
         ustadJSOPF.loadFromOPF(xpp);
@@ -429,8 +477,8 @@ public class UmEditorFileHelper implements UmEditorFileHelperCore {
     @Override
     public  List<UstadJSOPFItem> getPageList() throws IOException, XmlPullParserException {
         File pagePath = new File(getEpubFilesDestination(), getUmOpfContents().getNavItem().href);
-        Document pageDoc =  Jsoup.parse(UMFileUtil.readTextFile(pagePath.getAbsolutePath()));
-        Elements navElements = pageDoc.select("ol li a");
+        Document nav =  Jsoup.parse(UMFileUtil.readTextFile(pagePath.getAbsolutePath()));
+        Elements navElements = nav.select("ol li a");
         List<UstadJSOPFItem> pageList = new ArrayList<>();
         for(Element navEl : navElements){
             UstadJSOPFItem navItem = new UstadJSOPFItem();
@@ -584,10 +632,10 @@ public class UmEditorFileHelper implements UmEditorFileHelperCore {
      */
     private boolean addSpineItem(String pageHref) throws IOException {
         String newItem = "<itemref idref=\""+pageHref+"\"/>";
-        Document pageDoc =  Jsoup.parse(UMFileUtil.readTextFile(opfFileDestination.getAbsolutePath()));
-        pageDoc.select("spine").append(newItem);
-        UMFileUtil.writeToFile(opfFileDestination,pageDoc.toString());
-        return pageDoc.toString().contains(newItem);
+        Document opf =  Jsoup.parse(UMFileUtil.readTextFile(opfFileDestination.getAbsolutePath()));
+        opf.select("spine").append(newItem);
+        UMFileUtil.writeToFile(opfFileDestination,opf.body().toString());
+        return opf.toString().contains(newItem);
     }
 
     /**
@@ -597,13 +645,14 @@ public class UmEditorFileHelper implements UmEditorFileHelperCore {
      * @return true if added otherwise false.
      * @throws IOException
      */
-    private boolean addNavItem(String pageHref,String pageTitle) throws IOException, XmlPullParserException {
+    private boolean addNavItem(String pageHref,String pageTitle) throws IOException,
+            XmlPullParserException {
         String newItem = "<li><a href=\""+pageHref+"\">"+pageTitle+"</a></li>";
         File navFile = new File(getEpubFilesDestination(),getUmOpfContents().getNavItem().href);
-        Document pageDoc =  Jsoup.parse(UMFileUtil.readTextFile(navFile.getAbsolutePath()));
-        pageDoc.select("ol").append(newItem);
-        UMFileUtil.writeToFile(navFile,pageDoc.toString());
-        return pageDoc.toString().contains(newItem);
+        Document nav =  Jsoup.parse(UMFileUtil.readTextFile(navFile.getAbsolutePath()));
+        nav.select("ol").append(newItem);
+        UMFileUtil.writeToFile(navFile,nav.toString());
+        return nav.toString().contains(newItem);
     }
 
     /**
@@ -616,12 +665,29 @@ public class UmEditorFileHelper implements UmEditorFileHelperCore {
     private boolean addManifestItem(String pageHref,String pageMimeType) throws IOException {
         String newItem = "<item id=\""+pageHref.replace(".","_")
                 +"\" href=\""+pageHref+"\" media-type=\""+pageMimeType+"\" />";
-        Document pageDoc =  Jsoup.parse(UMFileUtil.readTextFile(opfFileDestination.getAbsolutePath()));
-        pageDoc.select("manifest").append(newItem);
-        UMFileUtil.writeToFile(opfFileDestination,pageDoc.toString());
-        return pageDoc.toString().contains(newItem);
+        Document opf =
+                Jsoup.parse(UMFileUtil.readTextFile(opfFileDestination.getAbsolutePath()));
+        opf.select("manifest").append(newItem);
+        UMFileUtil.writeToFile(opfFileDestination,opf.body().toString());
+        return opf.toString().contains(newItem);
     }
 
+    private void updateOpfMetadataInfo(String title,String uuid) throws IOException,
+            XmlPullParserException {
+        UstadJSOPF opf = getUmOpfContents();
+        title = title == null ? opf.title:title;
+        uuid = uuid == null ? opf.id:uuid;
+        DateFormat formatter  = new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss'Z'");
+        formatter.setTimeZone(TimeZone.getTimeZone("UTC"));
+        String metaTime = formatter.format(new Date(System.currentTimeMillis()));
+        Document meta =
+                Jsoup.parse(UMFileUtil.readTextFile(opfFileDestination.getAbsolutePath()));
+        Element metaElement =  meta.select("metadata").first();
+        metaElement.select("dc:identifier").first().text(uuid);
+        metaElement.select("meta").first().text(metaTime);
+        metaElement.select("dc:title").first().text(title);
+        UMFileUtil.writeToFile(opfFileDestination,meta.toString());
+    }
 
     @Override
     public String getSourceFilePath() {
@@ -650,7 +716,7 @@ public class UmEditorFileHelper implements UmEditorFileHelperCore {
 
     @Override
     public String getEpubFilesDestination() {
-        return opfFileDestination.getAbsolutePath();
+        return epubFileDestination.getAbsolutePath();
     }
 
     /**

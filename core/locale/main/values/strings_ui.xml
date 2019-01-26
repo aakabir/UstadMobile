@@ -285,4 +285,5 @@
     <string name="content_add_page">Add page</string>
     <string name="content_update_page_title">Update page</string>
     <string name="content_action_page_remove">Remove page</string>
+    <string name="content_editor_page_view_hint">Title</string>
 </resources>

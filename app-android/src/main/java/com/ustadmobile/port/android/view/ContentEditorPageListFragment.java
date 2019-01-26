@@ -9,6 +9,7 @@ import android.content.Context;
 import android.os.Bundle;
 import android.support.annotation.NonNull;
 import android.support.annotation.Nullable;
+import android.support.design.widget.TextInputLayout;
 import android.support.v4.app.DialogFragment;
 import android.support.v4.app.Fragment;
 import android.support.v4.view.MotionEventCompat;
@@ -21,6 +22,7 @@ import android.view.LayoutInflater;
 import android.view.MotionEvent;
 import android.view.View;
 import android.view.ViewGroup;
+import android.widget.EditText;
 import android.widget.ImageView;
 import android.widget.TextView;
 
@@ -43,7 +45,7 @@ import ru.dimorinny.floatingtextbutton.FloatingTextButton;
 /**
  * A simple {@link Fragment} subclass.
  */
-public class ContentEditorPageListFragment extends DialogFragment
+public class ContentEditorPageListFragment extends UstadDialogFragment
         implements UmOnStartDragListener, ContentEditorPageListView {
 
     private List<UstadJSOPFItem> pageList;
@@ -51,6 +53,8 @@ public class ContentEditorPageListFragment extends DialogFragment
     private ItemTouchHelper mItemTouchHelper;
 
     private UmPageActionListener pageActionListener;
+
+    private  PageListAdapter mPageListAdapter;
 
     private ContentEditorPageListPresenter presenter;
 
@@ -68,6 +72,7 @@ public class ContentEditorPageListFragment extends DialogFragment
         PageListAdapter(UmOnStartDragListener mDragStartListener){
             this.mDragStartListener = mDragStartListener;
         }
+
 
         @NonNull
         @Override
@@ -142,6 +147,9 @@ public class ContentEditorPageListFragment extends DialogFragment
 
     public void setPageList(List<UstadJSOPFItem> pageList){
         this.pageList = pageList;
+        if(mPageListAdapter != null){
+            mPageListAdapter.notifyDataSetChanged();
+        }
     }
 
     @Override
@@ -163,7 +171,7 @@ public class ContentEditorPageListFragment extends DialogFragment
 
         RecyclerView pageListView = rootView.findViewById(R.id.page_list);
         FloatingTextButton btnAddPage = rootView.findViewById(R.id.btn_add_page);
-        PageListAdapter mPageListAdapter = new PageListAdapter(this);
+        mPageListAdapter = new PageListAdapter(this);
         LinearLayoutManager layoutManager = new LinearLayoutManager(getActivity());
         layoutManager.setOrientation(LinearLayoutManager.VERTICAL);
         pageListView.setLayoutManager(layoutManager);
@@ -205,7 +213,7 @@ public class ContentEditorPageListFragment extends DialogFragment
             }
         });
 
-        btnAddPage.setOnClickListener(v -> showPageAddDialog(null));
+        btnAddPage.setOnClickListener(v -> showPageAddDialog(new UstadJSOPFItem()));
 
         return rootView;
     }
@@ -227,13 +235,28 @@ public class ContentEditorPageListFragment extends DialogFragment
         String dialogTitle = isNewPage ? impl.getString(MessageID.content_add_page,
                 getActivity()):impl.getString(MessageID.content_update_page_title,
                 getActivity());
+        String positiveBtnLabel = isNewPage ? impl.getString(MessageID.add, getActivity())
+                :impl.getString(MessageID.update, getActivity());
         pageItem.title  = isNewPage ? impl.getString(MessageID.content_untitled_page,
                 getActivity()):pageItem.title;
+
         AlertDialog.Builder builder = new AlertDialog.Builder(getActivity());
+
         LayoutInflater inflater = this.getLayoutInflater();
+        View dialogView = inflater.inflate(R.layout.umcontent_dialog_option_actionview,
+                null,false);
+        TextInputLayout titleWrapper = dialogView.findViewById(R.id.titleWrapper);
+        titleWrapper.setHint(impl.getString(MessageID.content_editor_page_view_hint,
+                getActivity()));
+        EditText titleView = dialogView.findViewById(R.id.title);
+        titleView.setText(pageItem.title);
+        builder.setView(dialogView);
         builder.setTitle(dialogTitle);
-        builder.setPositiveButton("", (dialog, which) -> {
-            pageItem.title = "";
+
+        builder.setPositiveButton(positiveBtnLabel, (dialog, which) -> {
+            if(!titleView.getText().toString().isEmpty()){
+                pageItem.title = titleView.getText().toString();
+            }
             if(isNewPage){
                 pageActionListener.onPageCreate(pageItem);
             }else{
@@ -241,7 +264,8 @@ public class ContentEditorPageListFragment extends DialogFragment
             }
             dialog.dismiss();
         });
-        builder.setNegativeButton("", (dialog, which) -> dialog.dismiss());
+        builder.setNegativeButton(impl.getString(MessageID.cancel,
+                getActivity()), (dialog, which) -> dialog.dismiss());
         builder.show();
     }
 
@@ -263,7 +287,11 @@ public class ContentEditorPageListFragment extends DialogFragment
 
     @Override
     public void removePage(UstadJSOPFItem page) {
-        pageActionListener.onPageRemove(page);
+        int index = pageList.indexOf(page);
+        if(pageList.remove(page)){
+            mPageListAdapter.notifyItemRemoved(index);
+            pageActionListener.onPageRemove(page);
+        }
     }
 
     @Override
@@ -276,28 +304,4 @@ public class ContentEditorPageListFragment extends DialogFragment
         showPageAddDialog(page);
     }
 
-    @Override
-    public int getDirection() {
-        return 0;
-    }
-
-    @Override
-    public void setDirection(int dir) {
-
-    }
-
-    @Override
-    public void setAppMenuCommands(String[] labels, int[] ids) {
-
-    }
-
-    @Override
-    public void setUIStrings() {
-
-    }
-
-    @Override
-    public void runOnUiThread(Runnable r) {
-
-    }
 }

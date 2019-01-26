@@ -16,7 +16,6 @@ import com.ustadmobile.test.sharedse.http.RemoteTestServerHttpd;
 import org.json.JSONObject;
 import org.junit.Assert;
 import org.junit.Test;
-
 import java.io.IOException;
 import java.net.HttpURLConnection;
 import java.net.URL;

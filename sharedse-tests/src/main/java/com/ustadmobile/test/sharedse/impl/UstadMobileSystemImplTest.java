@@ -130,8 +130,6 @@ public class UstadMobileSystemImplTest extends UstadMobileSystemImplSE {
     }
 
 
-
-
     @Override
     public String getAppPref(String key, Object context) {
         return ((TestContext)context).getAppProps().getProperty(key);
@@ -177,7 +175,6 @@ public class UstadMobileSystemImplTest extends UstadMobileSystemImplSE {
     public String getMimeTypeFromExtension(String extension) {
         return null;
     }
-
 
     @Override
     public String getVersion(Object context) {

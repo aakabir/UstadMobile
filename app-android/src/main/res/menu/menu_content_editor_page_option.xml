@@ -4,12 +4,12 @@
     <item
         app:showAsAction="always"
         android:id="@+id/action_page_update"
-        android:title="@string/content_action_page_remove"
+        android:title="@string/content_update_page_title"
         />
 
     <item
         app:showAsAction="always"
         android:id="@+id/action_page_delete"
-        android:title="@string/content_update_page_title"
+        android:title="@string/content_action_page_remove"
         />
 </menu>

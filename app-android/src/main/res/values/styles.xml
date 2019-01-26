@@ -32,6 +32,10 @@
 
         <!-- This is important! Don't forget to set window background -->
         <item name="android:windowBackground">@color/icons</item>
+        <item name="android:popupMenuStyle">@style/PopupMenu</item>
+    </style>
+    <style name="PopupMenu" parent="@android:style/Widget.PopupMenu">
+        <item name="android:popupBackground">@android:color/white</item>
     </style>
 
 

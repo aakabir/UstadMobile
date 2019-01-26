@@ -36,6 +36,7 @@ import java.util.UUID;
  * Created by mike on 3/13/18.
  */
 
+@Deprecated
 @UmSmallTest
 public class TestOpdsEntryStatus {
 
