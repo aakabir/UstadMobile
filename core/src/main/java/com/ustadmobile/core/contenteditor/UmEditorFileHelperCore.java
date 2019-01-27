@@ -72,24 +72,57 @@ public interface UmEditorFileHelperCore {
 
     /**
      * Delete a page from the document
-     * @param page Page to be deleted from the doc.
-     * @param callback UmCallback return deleted page.
+     * @param href href of an item to be delete from the docs.
+     * @param callback UmCallback.
      */
-    void removePage(EpubNavItem page, UmCallback<Boolean> callback);
+    void removePage(String href, UmCallback<Boolean> callback);
 
+    /**
+     * Update page
+     * @param page page to be updated
+     * @param callback UmCallback
+     */
     void updatePage(EpubNavItem page, UmCallback<Boolean> callback);
 
-
+    /**
+     * Change navigation items order
+     * @param pageList new page list order
+     * @param callback UmCallback
+     */
     void changePageOrder(List<EpubNavItem> pageList, UmCallback<Boolean> callback);
 
     /**
-     * Get all document pages.
-     * @return list of all document pages.
+     * Get next page to be loaded
+     * i.e When loaded page deleted, instead of having a blank screen it will load the next page.
+     * @return next EpubNavItem
+     */
+    EpubNavItem getNextPage();
+
+    /**
+     * Update an epub title
+     * @param title new title to be set
+     */
+    void updateEpubTitle (String title, UmCallback<Boolean> callback);
+
+    /**
+     * Update manifest item list when new media file is added
+     * @param filename file to be added to the manifest items
+     * @param mimeType file mimetype
+     * @param callback UmCallback
+     */
+    void updateManifestItems (String filename, String mimeType, UmCallback<Boolean> callback);
+
+    /**
+     * Get epub navigation document
+     * @return EpubNavDocument instance
      */
      EpubNavDocument getEpubNavDocument();
 
-
-     OpfDocument getEpubOpfDocument();
+    /**
+     * get epub opf document
+     * @return OpfDocument instance
+     */
+    OpfDocument getEpubOpfDocument();
 
     /**
      * Get source file path i.e zipped file
