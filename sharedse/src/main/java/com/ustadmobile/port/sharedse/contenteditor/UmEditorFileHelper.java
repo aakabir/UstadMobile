@@ -859,7 +859,7 @@ public class UmEditorFileHelper implements UmEditorFileHelperCore {
         opfDocument.setId(uuid == null ? opfDocument.getId():uuid);
         DateFormat formatter  = new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss'Z'");
         formatter.setTimeZone(TimeZone.getTimeZone("UTC"));
-        String metaTime = formatter.format(new Date(System.currentTimeMillis()));
+        String lastUpdateDateTime = formatter.format(new Date(System.currentTimeMillis()));
         ByteArrayOutputStream bout = null;
         try{
             bout = new ByteArrayOutputStream();
