@@ -101,8 +101,9 @@ public interface UmEditorFileHelperCore {
     /**
      * Update an epub title
      * @param title new title to be set
+     * @param newDocument flag to indicate if the document is new or existing one.
      */
-    void updateEpubTitle (String title, UmCallback<Boolean> callback);
+    void updateEpubTitle (String title, boolean newDocument, UmCallback<Boolean> callback);
 
     /**
      * Update manifest item list when new media file is added
