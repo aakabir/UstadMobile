@@ -121,7 +121,7 @@ public class ContentEditorPresenter extends UstadBaseController<ContentEditorVie
                 if(filePath.length() > 0){
                     List<EpubNavItem> pageList = view.getFileHelper()
                             .getEpubNavDocument().getToc().getChildren();
-                    if(pageList.size() == 0){
+                    if(pageList == null || pageList.size() == 0){
                         String pageTitle = UstadMobileSystemImpl.getInstance()
                                 .getString(MessageID.content_untitled_page, view.getContext());
                         view.getFileHelper().addPage(pageTitle,
