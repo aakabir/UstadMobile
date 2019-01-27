@@ -289,7 +289,7 @@ public class ContentEditorPageListFragment extends UstadDialogFragment
         int index = pageList.indexOf(page);
         if(pageList.remove(page)){
             mPageListAdapter.notifyItemRemoved(index);
-            pageActionListener.onPageRemove(page);
+            pageActionListener.onPageRemove(page.getHref());
         }
     }
 

@@ -8,7 +8,7 @@ public interface UmPageActionListener {
 
     void onOrderChanged(List<EpubNavItem> newPageList);
 
-    void onPageRemove(EpubNavItem pageItem);
+    void onPageRemove(String href);
 
     void onPageCreate(String title);
 
