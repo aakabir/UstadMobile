@@ -1698,12 +1698,16 @@ public class ContentEditorActivity extends UstadBaseActivity implements ContentE
     }
 
     @Override
-    public void onPageRemove(EpubNavItem pageItem) {
-        umEditorFileHelper.removePage(pageItem, new UmCallback<Boolean>() {
+    public void onPageRemove(String href) {
+        umEditorFileHelper.removePage(href, new UmCallback<Boolean>() {
             @Override
             public void onSuccess(Boolean result) {
                 pageListFragment.setPageList(umEditorFileHelper.
                         getEpubNavDocument().getToc().getChildren());
+                if(presenter.getSelectedPageToLoad().equals(href)){
+                    presenter.setSelectedPageToLoad(href);
+                    handleSelectedPage();
+                }
             }
 
             @Override
