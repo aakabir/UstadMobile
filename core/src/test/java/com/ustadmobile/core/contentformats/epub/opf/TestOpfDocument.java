@@ -79,6 +79,8 @@ public class TestOpfDocument {
         Assert.assertEquals("Original and reserialized TOC has same navitem",
                 opf.getNavItem().getId(), loadedOpf.getNavItem().getId());
 
+        Assert.assertEquals("Original and reserialized have same number of spine items",
+                opf.getSpine().size(), loadedOpf.getSpine().size());
     }
 
 }

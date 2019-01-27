@@ -18,4 +18,6 @@ public interface ContentEditorPageListView extends UstadView {
 
     void updatePage(EpubNavItem page);
 
+    void updateDocumentTitle();
+
 }

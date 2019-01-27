@@ -8,6 +8,6 @@
             <item id="nav" href="nav.xhtml" properties="nav" media-type="application/xhtml+xml" />
     </manifest>
     <spine>
-
+        <itemref idref="nav" linear="false"/>
     </spine>
 </package>

@@ -4,6 +4,7 @@
     android:layout_width="match_parent"
     android:paddingBottom="@dimen/dimen_20dp"
     android:paddingTop="@dimen/dimen_20dp"
+    android:layout_marginStart="@dimen/dimen_16dp"
     android:layout_height="match_parent">
 
     <android.support.design.widget.TextInputLayout

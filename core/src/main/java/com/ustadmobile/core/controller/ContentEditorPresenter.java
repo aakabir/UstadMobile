@@ -122,22 +122,46 @@ public class ContentEditorPresenter extends UstadBaseController<ContentEditorVie
                     List<EpubNavItem> pageList = view.getFileHelper()
                             .getEpubNavDocument().getToc().getChildren();
                     if(pageList == null || pageList.size() == 0){
-                        String pageTitle = UstadMobileSystemImpl.getInstance()
-                                .getString(MessageID.content_untitled_page, view.getContext());
-                        view.getFileHelper().addPage(pageTitle,
-                                new UmCallback<String>() {
+                        UstadMobileSystemImpl impl = UstadMobileSystemImpl.getInstance();
+                        String pageTitle = impl.getString(MessageID.content_untitled_page,
+                                view.getContext());
+                        String documentTitle = impl.getString(MessageID.content_untitled_document,
+                                view.getContext());
+
+                        //blank document - update document title
+                        view.getFileHelper().updateEpubTitle(documentTitle,
+                                true, new UmCallback<Boolean>() {
                                     @Override
-                                    public void onSuccess(String result) {
-                                        if(result != null){
-                                            selectedPageToLoad = result;
-                                            view.runOnUiThread(() -> view.handleSelectedPage());
+                                    public void onSuccess(Boolean result) {
+                                        if(result){
+                                            //add first page to the blank document
+                                            view.getFileHelper().addPage(pageTitle,
+                                                    new UmCallback<String>() {
+                                                        @Override
+                                                        public void onSuccess(String result) {
+                                                            if(result != null){
+                                                                selectedPageToLoad = result;
+                                                                view.runOnUiThread(() ->
+                                                                        view.handleSelectedPage());
+                                                            }
+                                                        }
+                                                        @Override
+                                                        public void onFailure(Throwable exception) {
+                                                            exception.printStackTrace();
+                                                        }
+                                                    });
                                         }
                                     }
+
                                     @Override
                                     public void onFailure(Throwable exception) {
 
                                     }
                                 });
+                    }else{
+                        selectedPageToLoad = view.getFileHelper()
+                                .getEpubNavDocument().getToc().getChild(0).getHref();
+                        view.runOnUiThread(() -> view.handleSelectedPage());
                     }
                 }else{
                     view.runOnUiThread(() -> view.showNotFoundErrorMessage());

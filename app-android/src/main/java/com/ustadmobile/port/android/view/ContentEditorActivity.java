@@ -792,7 +792,7 @@ public class ContentEditorActivity extends UstadBaseActivity implements ContentE
             toolbar.setUmFormatHelper(umFormatHelper);
             toolbar.inflateMenu(R.menu.menu_content_editor_top_actions,false);
             toolbar.setQuickActionMenuItemClickListener(this);
-            toolbar.setMenuVisible(true);
+            toolbar.setMenuVisible(false);
             toolbar.setNavigationOnClickListener(v -> {
                 if(presenter.isFileNotFound()){
                     finish();
@@ -1164,7 +1164,7 @@ public class ContentEditorActivity extends UstadBaseActivity implements ContentE
     }
 
     @Override
-    public void onQuickActionClicked(String command) {
+    public void onQuickMenuItemClicked(String command) {
         UmFormat format = umFormatHelper.getFormatByCommand(command);
         if(format != null){
             presenter.handleFormatTypeClicked(format.getFormatCommand(),null);
@@ -1173,13 +1173,14 @@ public class ContentEditorActivity extends UstadBaseActivity implements ContentE
 
     @SuppressLint("RestrictedApi")
     @Override
-    public void onActionViewClicked(int itemId) {
+    public void onQuickMenuViewClicked(int itemId) {
         if (itemId == R.id.content_action_pages) {
             FragmentTransaction transaction = getSupportFragmentManager().beginTransaction();
             transaction.setTransition(FragmentTransaction.TRANSIT_FRAGMENT_OPEN);
             pageListFragment = new ContentEditorPageListFragment();
             pageListFragment.setPageList(umEditorFileHelper.
                     getEpubNavDocument().getToc().getChildren());
+            pageListFragment.setDocumentTitle(umEditorFileHelper.getEpubOpfDocument().getTitle());
             pageListFragment.show(transaction, ContentEditorPageListView.TAG);
 
         }else if(itemId == R.id.content_action_format){
@@ -1693,12 +1694,29 @@ public class ContentEditorActivity extends UstadBaseActivity implements ContentE
     }
 
     @Override
+    public void onDocumentTitleUpdate(String title) {
+        umEditorFileHelper.updateEpubTitle(title, false, new UmCallback<Boolean>() {
+            @Override
+            public void onSuccess(Boolean result) {
+                pageListFragment.setDocumentTitle(title);
+            }
+
+            @Override
+            public void onFailure(Throwable exception) {
+                exception.printStackTrace();
+            }
+        });
+    }
+
+    @Override
     public void onPageRemove(String href) {
         umEditorFileHelper.removePage(href, new UmCallback<Boolean>() {
             @Override
             public void onSuccess(Boolean result) {
                 pageListFragment.setPageList(umEditorFileHelper.
                         getEpubNavDocument().getToc().getChildren());
+                pageListFragment.setDocumentTitle(umEditorFileHelper
+                        .getEpubOpfDocument().getTitle());
                 if(presenter.getSelectedPageToLoad().equals(href)){
                     presenter.setSelectedPageToLoad(href);
                     handleSelectedPage();

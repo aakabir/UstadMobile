@@ -16,4 +16,6 @@ public interface UmPageActionListener {
 
     void onPageUpdate(EpubNavItem pageItem);
 
+    void onDocumentTitleUpdate(String title);
+
 }

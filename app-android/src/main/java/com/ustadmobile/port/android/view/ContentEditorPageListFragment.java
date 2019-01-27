@@ -60,6 +60,10 @@ public class ContentEditorPageListFragment extends UstadDialogFragment
 
     private boolean isScrollDirectionUp = false;
 
+    private String documentTitle = null;
+
+    private TextView docTitle;
+
     public ContentEditorPageListFragment() {
         // Required empty public constructor
     }
@@ -67,12 +71,12 @@ public class ContentEditorPageListFragment extends UstadDialogFragment
 
     private class PageListAdapter extends RecyclerView.Adapter<PageListAdapter.PageViewHolder>
             implements UmPageItemTouchAdapter {
+
         private UmOnStartDragListener mDragStartListener;
 
         PageListAdapter(UmOnStartDragListener mDragStartListener){
             this.mDragStartListener = mDragStartListener;
         }
-
 
         @NonNull
         @Override
@@ -120,11 +124,11 @@ public class ContentEditorPageListFragment extends UstadDialogFragment
 
         @Override
         public void onPageItemMove(int fromPosition, int toPosition) {
-            EpubNavItem prevPage = pageList.get(fromPosition);
-            pageList.add(toPosition > fromPosition ? toPosition - 1 : toPosition, prevPage);
+            EpubNavItem oldItem = pageList.get(fromPosition);
             pageList.remove(fromPosition);
-            presenter.handleReOrderPages(pageList);
+            pageList.add(toPosition,oldItem);
             notifyItemMoved(fromPosition, toPosition);
+            presenter.handleReOrderPages(pageList);
         }
 
         class PageViewHolder extends RecyclerView.ViewHolder{
@@ -145,10 +149,17 @@ public class ContentEditorPageListFragment extends UstadDialogFragment
         pageActionListener = (UmPageActionListener) activity;
     }
 
+    public void setDocumentTitle(String title){
+        this.documentTitle = title;
+        if(docTitle != null){
+            docTitle.setText(documentTitle);
+        }
+    }
+
     public void setPageList(List<EpubNavItem> pageList){
         this.pageList = pageList;
         if(mPageListAdapter != null){
-            mPageListAdapter.notifyDataSetChanged();
+            mPageListAdapter.notifyItemRangeChanged(0,pageList.size());
         }
     }
 
@@ -167,7 +178,11 @@ public class ContentEditorPageListFragment extends UstadDialogFragment
         Toolbar toolbar = rootView.findViewById(R.id.toolbar);
         toolbar.setNavigationIcon(R.drawable.ic_close_white_24dp);
         toolbar.setNavigationOnClickListener(view1 -> dismiss());
-        toolbar.setTitle("Document title");
+        toolbar.setTitle("");
+
+        View docEditIcon = rootView.findViewById(R.id.edit_document);
+        docTitle = rootView.findViewById(R.id.document_title);
+        docTitle.setText(documentTitle);
 
         RecyclerView pageListView = rootView.findViewById(R.id.page_list);
         FloatingTextButton btnAddPage = rootView.findViewById(R.id.btn_add_page);
@@ -213,7 +228,9 @@ public class ContentEditorPageListFragment extends UstadDialogFragment
             }
         });
 
-        btnAddPage.setOnClickListener(v -> showPageAddDialog(null));
+        btnAddPage.setOnClickListener(v -> showDocAndPageUpdateDialog(null,false));
+
+        docEditIcon.setOnClickListener(v -> showDocAndPageUpdateDialog(null,true));
 
         return rootView;
     }
@@ -229,15 +246,20 @@ public class ContentEditorPageListFragment extends UstadDialogFragment
         }
     }
 
-    private void showPageAddDialog(EpubNavItem pageItem){
+    private void showDocAndPageUpdateDialog(EpubNavItem pageItem, boolean isDocument){
+
         final boolean isNewPage = pageItem == null;
         UstadMobileSystemImpl impl = UstadMobileSystemImpl.getInstance();
-        String dialogTitle = isNewPage ? impl.getString(MessageID.content_add_page,
-                getActivity()):impl.getString(MessageID.content_update_page_title,
-                getActivity());
-        String positiveBtnLabel = isNewPage ? impl.getString(MessageID.add, getActivity())
-                :impl.getString(MessageID.update, getActivity());
-        pageItem.setTitle(isNewPage ? impl.getString(MessageID.content_untitled_page,
+
+        String dialogTitle = isDocument ? impl.getString(MessageID.content_update_document_title,
+                getActivity()) : (isNewPage ? impl.getString(MessageID.content_add_page,
+                getActivity()) : impl.getString(MessageID.content_update_page_title, getActivity()));
+
+        String positiveBtnLabel = isNewPage && !isDocument ? impl.getString(MessageID.add,
+                getActivity()) : impl.getString(MessageID.update, getActivity());
+
+        String titleToUpdateFrom = isDocument ? documentTitle:
+                (isNewPage ? impl.getString(MessageID.content_untitled_page,
                 getActivity()):pageItem.getTitle());
 
         AlertDialog.Builder builder = new AlertDialog.Builder(getActivity());
@@ -245,20 +267,27 @@ public class ContentEditorPageListFragment extends UstadDialogFragment
         LayoutInflater inflater = this.getLayoutInflater();
         View dialogView = inflater.inflate(R.layout.umcontent_dialog_option_actionview,
                 null,false);
+
         TextInputLayout titleWrapper = dialogView.findViewById(R.id.titleWrapper);
         titleWrapper.setHint(impl.getString(MessageID.content_editor_page_view_hint,
                 getActivity()));
+
         EditText titleView = dialogView.findViewById(R.id.title);
-        titleView.setText(isNewPage ? null:pageItem.getTitle());
+        titleView.setText(titleToUpdateFrom);
         builder.setView(dialogView);
         builder.setTitle(dialogTitle);
 
         builder.setPositiveButton(positiveBtnLabel, (dialog, which) -> {
-            if(isNewPage){
-                pageActionListener.onPageCreate(titleView.getText().toString());
+
+            if(!isDocument){
+                if(isNewPage){
+                    pageActionListener.onPageCreate(titleView.getText().toString());
+                }else{
+                    pageItem.setTitle(titleView.getText().toString());
+                    pageActionListener.onPageUpdate(pageItem);
+                }
             }else{
-                pageItem.setTitle(titleView.getText().toString());
-                pageActionListener.onPageUpdate(pageItem);
+                pageActionListener.onDocumentTitleUpdate(titleView.getText().toString());
             }
 
             dialog.dismiss();
@@ -281,7 +310,7 @@ public class ContentEditorPageListFragment extends UstadDialogFragment
 
     @Override
     public void addNewPage() {
-        showPageAddDialog(null);
+        showDocAndPageUpdateDialog(null,false);
     }
 
     @Override
@@ -295,12 +324,18 @@ public class ContentEditorPageListFragment extends UstadDialogFragment
 
     @Override
     public void loadPage(EpubNavItem page) {
+        dismiss();
         pageActionListener.onPageSelected(page.getHref());
     }
 
     @Override
     public void updatePage(EpubNavItem page) {
-        showPageAddDialog(page);
+        showDocAndPageUpdateDialog(page,false);
+    }
+
+    @Override
+    public void updateDocumentTitle() {
+        showDocAndPageUpdateDialog(null,true);
     }
 
 }

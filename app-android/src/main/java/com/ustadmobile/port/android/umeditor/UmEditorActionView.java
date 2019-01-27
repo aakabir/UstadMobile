@@ -114,9 +114,9 @@ public class UmEditorActionView extends Toolbar {
             changeState(formatIcon,formatHolder,format.isActive());
             formatHolder.setOnClickListener(v -> {
                 if(!isQuickAction){
-                    onQuickActionMenuItemClicked.onActionViewClicked(format.getFormatId());
+                    onQuickActionMenuItemClicked.onQuickMenuViewClicked(format.getFormatId());
                 }else{
-                    onQuickActionMenuItemClicked.onQuickActionClicked(format.getFormatCommand());
+                    onQuickActionMenuItemClicked.onQuickMenuItemClicked(format.getFormatCommand());
                 }
             });
         }
@@ -216,12 +216,12 @@ public class UmEditorActionView extends Toolbar {
          * Invoked when an quick action menu item is clicked.
          * @param command command to be executed.
          */
-        void onQuickActionClicked(String command);
+        void onQuickMenuItemClicked(String command);
 
         /**
          * Invoked when menu view is clicked
          * @param itemId menu item id
          */
-        void onActionViewClicked(int itemId);
+        void onQuickMenuViewClicked(int itemId);
     }
 }
