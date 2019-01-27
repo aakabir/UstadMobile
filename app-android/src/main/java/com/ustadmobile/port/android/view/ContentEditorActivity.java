@@ -81,7 +81,6 @@ import com.ustadmobile.port.sharedse.contenteditor.UmEditorFileHelper;
 import org.jsoup.Jsoup;
 import org.jsoup.nodes.Document;
 import org.jsoup.select.Elements;
-import org.xmlpull.v1.XmlPullParserException;
 
 import java.io.File;
 import java.io.FileInputStream;
@@ -1650,10 +1649,6 @@ public class ContentEditorActivity extends UstadBaseActivity implements ContentE
         presenter.handleFormatTypeClicked(ACTION_INSERT_CONTENT,content);
     }
 
-    @VisibleForTesting
-    public void selectAllTestContent(){
-        presenter.handleFormatTypeClicked(ACTION_SELECT_ALL,null);
-    }
 
     @Override
     public void onOrderChanged(List<EpubNavItem> newPageList) {
@@ -1735,6 +1730,16 @@ public class ContentEditorActivity extends UstadBaseActivity implements ContentE
                 }
             }
         });
+    }
+
+    @VisibleForTesting
+    public void selectAllTestContent(){
+        presenter.handleFormatTypeClicked(ACTION_SELECT_ALL,null);
+    }
+
+    @VisibleForTesting
+    public UmFormatHelper getUmFormatHelper(){
+        return umFormatHelper;
     }
 
 }

@@ -298,6 +298,10 @@ UmQuestionWidget.handleImmutableContent = () => {
     $(document).find(".um-labels").addClass("immutable-content");
 };
 
+UmQuestionWidget.handleExtraContentWidgets = () =>{
+    $(document).find(".extra-content").addClass("show-element").removeClass("hide-element");
+};
+
 /**
  * Switch on editing mode to the other widget
  * @returns question widget with controls

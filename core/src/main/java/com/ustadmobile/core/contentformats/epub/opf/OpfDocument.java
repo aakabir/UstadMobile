@@ -327,15 +327,15 @@ public class OpfDocument {
     public void serialize(XmlSerializer xs) throws IOException {
         xs.startDocument("UTF-8", false);
         xs.setPrefix("", NAMESPACE_OPF);
-        xs.startTag(null, "package");
-        xs.attribute(null,"version", "3.0");
-        xs.attribute(null, "unique-identifier", uniqueIdentifier);
+        xs.startTag(NAMESPACE_OPF, "package");
+        xs.attribute(NAMESPACE_OPF,"version", "3.0");
+        xs.attribute(NAMESPACE_OPF, "unique-identifier", uniqueIdentifier);
         xs.setPrefix("dc", NAMESPACE_DC);
-        xs.startTag(null, "metadata");
+        xs.startTag(NAMESPACE_OPF, "metadata");
 
 
         xs.startTag(NAMESPACE_DC, "identifier");
-        xs.attribute(null, "id", uniqueIdentifier);
+        xs.attribute(NAMESPACE_DC, "id", uniqueIdentifier);
         xs.text(id);
         xs.endTag(NAMESPACE_DC, "identifier");
 
@@ -343,29 +343,29 @@ public class OpfDocument {
         xs.text(title);
         xs.endTag(NAMESPACE_DC, "title");
 
-        xs.endTag(null, "metadata");
+        xs.endTag(NAMESPACE_OPF, "metadata");
 
-        xs.startTag(null, "manifest");
+        xs.startTag(NAMESPACE_OPF, "manifest");
         for(OpfItem item : manifestItems.values()) {
-            xs.startTag(null, "item");
-            xs.attribute(null, "id", item.getId());
-            xs.attribute(null, "href", item.getHref());
-            xs.attribute(null, "media-type", item.getMimeType());
+            xs.startTag(NAMESPACE_OPF, "item");
+            xs.attribute(NAMESPACE_OPF, "id", item.getId());
+            xs.attribute(NAMESPACE_OPF, "href", item.getHref());
+            xs.attribute(NAMESPACE_OPF, "media-type", item.getMimeType());
             if(item.getProperties() != null)
-                xs.attribute(null, "properties", item.getProperties());
-            xs.endTag(null, "item");
+                xs.attribute(NAMESPACE_OPF, "properties", item.getProperties());
+            xs.endTag(NAMESPACE_OPF, "item");
         }
-        xs.endTag(null, "manifest");
+        xs.endTag(NAMESPACE_OPF, "manifest");
 
-        xs.startTag(null, "spine");
+        xs.startTag(NAMESPACE_OPF, "spine");
         for(OpfItem item : spine) {
-            xs.startTag(null, "itemref");
-            xs.attribute(null, "idref", item.getId());
-            xs.endTag(null, "itemref");
+            xs.startTag(NAMESPACE_OPF, "itemref");
+            xs.attribute(NAMESPACE_OPF, "idref", item.getId());
+            xs.endTag(NAMESPACE_OPF, "itemref");
         }
-        xs.endTag(null, "spine");
+        xs.endTag(NAMESPACE_OPF, "spine");
 
-        xs.endTag(null, "package");
+        xs.endTag(NAMESPACE_OPF, "package");
         xs.endDocument();
     }
 

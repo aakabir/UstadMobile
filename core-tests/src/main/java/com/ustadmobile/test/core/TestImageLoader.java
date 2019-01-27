@@ -25,18 +25,6 @@ public class TestImageLoader {
     }
 
 
-    private class TestController extends UstadBaseController{
-
-        public TestController(Object context) {
-            super(context);
-        }
-
-        @Override
-        public void setUIStrings() {
-
-        }
-    }
-
     @Test
     public void testImageLoader() throws IOException{
 //        final String[] loadedImage = new String[1];

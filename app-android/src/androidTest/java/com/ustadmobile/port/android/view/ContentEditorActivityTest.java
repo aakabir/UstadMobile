@@ -128,10 +128,10 @@ public class ContentEditorActivityTest {
         Thread.sleep(TimeUnit.SECONDS.toMillis(1));
 
         //Get formatting type reference
-        UmFormat boldFormat =
-                ContentFormattingHelper.getInstance().getFormatByCommand(TEXT_FORMAT_TYPE_BOLD);
-        UmFormat italicFormat =
-                ContentFormattingHelper.getInstance().getFormatByCommand(TEXT_FORMAT_TYPE_ITALIC);
+        ContentEditorActivity.UmFormatHelper umFormatHelper =
+                mActivityRule.getActivity().getUmFormatHelper();
+        UmFormat boldFormat = umFormatHelper.getFormatByCommand(TEXT_FORMAT_TYPE_BOLD);
+        UmFormat italicFormat = umFormatHelper.getFormatByCommand(TEXT_FORMAT_TYPE_ITALIC);
 
 
         assertTrue("Editing mode was enabled",

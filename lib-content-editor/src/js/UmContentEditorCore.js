@@ -991,7 +991,11 @@ UmContentEditorCore.initEditor = (locale = "en", showToolbar = false) => {
 
         //Check if is a document edit or creating new document
         if($(".question").length > 0){
+            //Handle extra content widget
+            UmQuestionWidget.handleExtraContentWidgets();
+           setTimeout(() => {
             UmContentEditorCore.prototype.setCursorPositionToTheLastNonProtectedElement();
+           }, averageEventTimeout);
         }else{
             if(UmQuestionWidget.removeSpaces($(editorContainer.children().get(0)).text()).length === 0){
                 $(editorContainer.children().get(0)).remove();
