@@ -4,6 +4,8 @@ package com.ustadmobile.port.android.umeditor;
  * Interface to notify a {@link android.support.v7.widget.RecyclerView.Adapter}
  * of moving and dismissal event from a
  * {@link android.support.v7.widget.helper.ItemTouchHelper.Callback}.
+ *
+ * @author kileha3
  */
 public interface UmPageItemTouchAdapter {
 

@@ -4,6 +4,8 @@ import android.support.v7.widget.RecyclerView;
 
 /**
  * Interface which listen for the drag event on recycler view holder
+ *
+ * @author kileha3
  */
 public interface UmOnStartDragListener {
 
