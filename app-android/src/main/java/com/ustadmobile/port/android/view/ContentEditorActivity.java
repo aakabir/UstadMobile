@@ -835,9 +835,6 @@ public class ContentEditorActivity extends UstadBaseActivity implements ContentE
 
         });
 
-        findViewById(R.id.content_option_page).setOnClickListener(v -> {
-            viewSwitcher.closeAnimatedView(ANIMATED_CONTENT_OPTION_PANEL);
-        });
 
         mFromCamera.setOnClickListener(v -> {
             viewSwitcher.closeAnimatedView(UmEditorAnimatedViewSwitcher.ANIMATED_MEDIA_TYPE_PANEL);
@@ -938,10 +935,21 @@ public class ContentEditorActivity extends UstadBaseActivity implements ContentE
 
 
     @Override
-    public void onAnimatedViewsClosed(boolean closed) {
-        if(closed){
+    public void onAllAnimatedViewsClosed(boolean finish) {
+        if(finish){
             if(presenter.isEditingModeOn()){
                 handleUpdateFile();
+            }
+        }else{
+            if(presenter.isOpenPageManagerRequest()){
+                FragmentTransaction transaction = getSupportFragmentManager().beginTransaction();
+                transaction.setTransition(FragmentTransaction.TRANSIT_FRAGMENT_OPEN);
+                pageListFragment = new ContentEditorPageListFragment();
+                pageListFragment.setPageList(umEditorFileHelper.
+                        getEpubNavDocument().getToc().getChildren());
+                pageListFragment.setDocumentTitle(umEditorFileHelper.getEpubOpfDocument().getTitle());
+                pageListFragment.show(transaction, ContentEditorPageListView.TAG);
+                presenter.setOpenPageManagerRequest(false);
             }
         }
     }
@@ -1133,7 +1141,7 @@ public class ContentEditorActivity extends UstadBaseActivity implements ContentE
                         @Override
                         public void onSuccess(Boolean result) {
                             if(result){
-                                if((!presenter.isOpenPreview()
+                                if((!presenter.isOpenPreviewRequest()
                                         || !presenter.isMultimediaFilePicker())
                                         && presenter.isEditorInitialized()){
                                     postProcessEditor();
@@ -1176,20 +1184,15 @@ public class ContentEditorActivity extends UstadBaseActivity implements ContentE
     @Override
     public void onQuickMenuViewClicked(int itemId) {
         if (itemId == R.id.content_action_pages) {
-            FragmentTransaction transaction = getSupportFragmentManager().beginTransaction();
-            transaction.setTransition(FragmentTransaction.TRANSIT_FRAGMENT_OPEN);
-            pageListFragment = new ContentEditorPageListFragment();
-            pageListFragment.setPageList(umEditorFileHelper.
-                    getEpubNavDocument().getToc().getChildren());
-            pageListFragment.setDocumentTitle(umEditorFileHelper.getEpubOpfDocument().getTitle());
-            pageListFragment.show(transaction, ContentEditorPageListView.TAG);
+            presenter.setOpenPageManagerRequest(true);
+            viewSwitcher.closeActivity(false);
 
         }else if(itemId == R.id.content_action_format){
 
             viewSwitcher.animateView(UmEditorAnimatedViewSwitcher.ANIMATED_FORMATTING_PANEL);
 
         }else if(itemId == R.id.content_action_preview){
-            presenter.setOpenPreview(true);
+            presenter.setOpenPreviewRequest(true);
             presenter.setMultimediaFilePicker(false);
             viewSwitcher.closeActivity(true);
 
@@ -1376,8 +1379,8 @@ public class ContentEditorActivity extends UstadBaseActivity implements ContentE
      */
     private void postProcessEditor(){
         runOnUiThread(() -> {
-            if(presenter.isOpenPreview()){
-                presenter.setOpenPreview(false);
+            if(presenter.isOpenPreviewRequest()){
+                presenter.setOpenPreviewRequest(false);
                 presenter.setEditingModeOn(false);
                 args.put(ContentEditorView.EDITOR_REQUEST_URI,
                         umEditorFileHelper.getResourceAccessibleUrl());
@@ -1431,10 +1434,24 @@ public class ContentEditorActivity extends UstadBaseActivity implements ContentE
         File destination = new File(umEditorFileHelper.getMediaDirectory(),
                 compressedFile.getName().replaceAll("\\s+","_").replace("-","_"));
         if(UMFileUtil.copyFile(new FileInputStream(compressedFile),destination)){
-            String source = MEDIA_DIRECTORY + destination.getName();
-            progressDialog.setVisibility(View.GONE);
-            executeJsFunction(umEditorWebView, EDITOR_METHOD_PREFIX+"insertMediaContent",
-                    this, source,mimeType);
+            umEditorFileHelper.updateManifestItems(destination.getName(), mimeType,
+                    new UmCallback<Boolean>() {
+                @Override
+                public void onSuccess(Boolean result) {
+                    if(result){
+                        String source = MEDIA_DIRECTORY + destination.getName();
+                        progressDialog.setVisibility(View.GONE);
+                        executeJsFunction(umEditorWebView,
+                                EDITOR_METHOD_PREFIX + "insertMediaContent",
+                                ContentEditorActivity.this, source,mimeType);
+                    }
+                }
+
+                @Override
+                public void onFailure(Throwable exception) {
+                    exception.printStackTrace();
+                }
+            });
         }
     }
 
@@ -1700,7 +1717,7 @@ public class ContentEditorActivity extends UstadBaseActivity implements ContentE
             public void onSuccess(Boolean result) {
                 if(result){
                     pageListFragment.setDocumentTitle(title);
-                    handleSelectedPage();
+                    runOnUiThread(() -> handleSelectedPage());
                 }
             }
 
@@ -1726,7 +1743,7 @@ public class ContentEditorActivity extends UstadBaseActivity implements ContentE
                 pageListFragment.setDocumentTitle(umEditorFileHelper
                         .getEpubOpfDocument().getTitle());
                 if(presenter.getSelectedPageToLoad().equals(href)){
-                    presenter.setSelectedPageToLoad(href);
+                    presenter.setSelectedPageToLoad(umEditorFileHelper.getNextPage().getHref());
                     handleSelectedPage();
                 }
             }
