@@ -39,6 +39,12 @@ public interface UmEditorFileHelperCore {
     String PAGE_TEMPLATE = "template_page.html";
 
     /**
+     * Initialize UmEditorFileHelperCore
+     * @param context activity context
+     */
+    void init(Object context);
+
+    /**
      * Create new file if the file doesn't
      */
     void createFile(long contentEntryUid,UmCallback<String> callback);
@@ -48,7 +54,7 @@ public interface UmEditorFileHelperCore {
      * @param filePath local path of the entry file.
      * @param callback ContentEditorFileHelperCallback
      */
-    void mountFile(String filePath, UmCallback<Void> callback);
+    void mountFile(String filePath,long contentEntryUid, UmCallback<Void> callback);
 
     /**
      * Update resources to the zipped file and temporary directory when editing
@@ -135,31 +141,31 @@ public interface UmEditorFileHelperCore {
      * Get base tinymce resource request url
      * @return tinymce localhost address
      */
-    String getBaseResourceRequestUrl();
+    String getResourceAccessibleUrl();
 
     /**
      * Get file temporary directory path
      * @return directory path
      */
-    String getTempDestinationDirPath();
+    String getMountedFileTempDirectoryPath();
 
     /**
      * Get media directory path after unzipping the file.
      * @return media path
      */
-    String getDestinationMediaDirPath();
+    String getMediaDirectory();
 
     /**
-     * Get base request for the mounted file temporary directory
-     * @return localhost address
+     * Get url that can be used to access mounted  file.
+     * @return localhost accessible address to the mounted file.
      */
-    String getMountedTempDirRequestUrl();
+    String getMountedFileAccessibleUrl();
 
     /**
      * Get epub resources directory path.
      * @return path to epub file resources
      */
-    String getEpubFilesDestination();
+    String getEpubFilesDirectoryPath();
 
 
 }
