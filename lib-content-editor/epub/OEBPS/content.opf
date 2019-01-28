@@ -6,8 +6,16 @@
     </metadata>
     <manifest>
             <item id="nav" href="nav.xhtml" properties="nav" media-type="application/xhtml+xml" />
+            <item id="UmContentEditorCore" href="UmContentEditorCore.js" properties="" media-type="application/javascript" />
+            <item id="UmQuestionWidget" href="UmQuestionWidget.js" properties="" media-type="application/javascript" />
+            <item id="bootstrap.min" href="bootstrap.min.js" properties="" media-type="application/javascript" />
+            <item id="jquery3.3.1.min" href="jquery3.3.1.min.js" properties="" media-type="application/javascript" />
+            <item id="bootstrap.min" href="bootstrap.min.css" properties="" media-type="text/css" />
+            <item id="UmEditorCore.min" href="UmEditorCore.min.css" properties="" media-type="text/css" />
+            <item id="UmEditorCore.min" href="UmEditorCore.min.css" properties="" media-type="text/css" />
     </manifest>
     <spine>
         <itemref idref="nav" linear="false"/>
+
     </spine>
 </package>
