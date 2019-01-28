@@ -152,7 +152,7 @@ public class ContentEditorPageListFragment extends UstadDialogFragment
     public void setDocumentTitle(String title){
         this.documentTitle = title;
         if(docTitle != null){
-            docTitle.setText(documentTitle);
+           presenter.handleDocumentTitle(title);
         }
     }
 
@@ -228,9 +228,9 @@ public class ContentEditorPageListFragment extends UstadDialogFragment
             }
         });
 
-        btnAddPage.setOnClickListener(v -> showDocAndPageUpdateDialog(null,false));
+        btnAddPage.setOnClickListener(v -> presenter.handleAddPage());
 
-        docEditIcon.setOnClickListener(v -> showDocAndPageUpdateDialog(null,true));
+        docEditIcon.setOnClickListener(v -> presenter.handleDocumentTitleUpdate());
 
         return rootView;
     }
@@ -343,6 +343,11 @@ public class ContentEditorPageListFragment extends UstadDialogFragment
     @Override
     public void updateDocumentTitle() {
         showDocAndPageUpdateDialog(null,true);
+    }
+
+    @Override
+    public void setTitle(String title) {
+        docTitle.setText(title);
     }
 
 }

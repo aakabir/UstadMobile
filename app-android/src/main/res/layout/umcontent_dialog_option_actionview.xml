@@ -13,6 +13,7 @@
         android:layout_width="match_parent"
         android:layout_height="wrap_content">
         <EditText
+            android:lineSpacingExtra="@dimen/dimen_8dp"
             android:paddingTop="@dimen/dimen_10dp"
             android:textColor="@color/text_secondary"
             android:textSize="@dimen/text_title"

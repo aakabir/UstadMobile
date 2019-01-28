@@ -38,4 +38,12 @@ public class ContentEditorPageListPresenter
     public void handleUpdatePage(EpubNavItem page){
         view.runOnUiThread(() -> view.updatePage(page));
     }
+
+    public void handleDocumentTitle(String title){
+        view.runOnUiThread(() -> view.setTitle(title));
+    }
+
+    public void handleDocumentTitleUpdate(){
+        view.runOnUiThread(() -> view.updateDocumentTitle());
+    }
 }
