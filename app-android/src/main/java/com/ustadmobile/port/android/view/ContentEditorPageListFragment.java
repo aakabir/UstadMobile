@@ -348,6 +348,7 @@ public class ContentEditorPageListFragment extends UstadDialogFragment
     @Override
     public void setTitle(String title) {
         docTitle.setText(title);
+        dismiss();
     }
 
 }

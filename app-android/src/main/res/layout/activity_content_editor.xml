@@ -1,163 +1,144 @@
 <?xml version="1.0" encoding="utf-8"?>
-<android.support.v4.widget.DrawerLayout
+<android.support.design.widget.CoordinatorLayout
     xmlns:android="http://schemas.android.com/apk/res/android"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
+    android:id="@+id/coordinationLayout"
+    android:background="@color/icons"
     xmlns:tools="http://schemas.android.com/tools"
-    android:id="@+id/content_page_drawer"
-    tools:openDrawer="right"
     xmlns:app="http://schemas.android.com/apk/res-auto"
     xmlns:fab="http://schemas.android.com/apk/res-auto">
 
-    <android.support.design.widget.CoordinatorLayout
+    <include
+        layout="@layout/toolbar_with_um_progress"/>
+
+
+    <RelativeLayout
+        android:id="@+id/umEditorHolder"
         android:layout_width="match_parent"
-        android:id="@+id/coordinationLayout"
-        android:background="@color/icons"
         android:layout_height="match_parent">
-        <include
-            layout="@layout/toolbar_with_um_progress"/>
-
-
-        <RelativeLayout
-            android:id="@+id/umEditorHolder"
+        <!-- Main content -->
+        <com.ustadmobile.port.android.umeditor.UmEditorWebView
+            android:id="@+id/editor_content"
+            android:layout_marginTop="?actionBarSize"
             android:layout_width="match_parent"
-            android:layout_height="match_parent">
-            <!-- Main content -->
-            <com.ustadmobile.port.android.umeditor.UmEditorWebView
-                android:id="@+id/editor_content"
-                android:layout_marginTop="?actionBarSize"
-                android:layout_width="match_parent"
-                app:layout_anchor="@+id/bottom_sheet_container"
-                app:layout_anchorGravity="top|end"
-                android:layout_height="match_parent"/>
-        </RelativeLayout>
+            app:layout_anchor="@+id/bottom_sheet_container"
+            app:layout_anchorGravity="top|end"
+            android:layout_height="match_parent"/>
+    </RelativeLayout>
 
-        <!-- BottomSheet formatting-->
-        <include layout="@layout/content_editor_bottom_sheets_main" />
+    <!-- BottomSheet formatting-->
+    <include layout="@layout/content_editor_bottom_sheets_main" />
 
-        <!-- BottomSheet media source-->
-        <include layout="@layout/content_multimedia_sources_bottom_sheets_main" />
+    <!-- BottomSheet media source-->
+    <include layout="@layout/content_multimedia_sources_bottom_sheets_main" />
 
-        <!-- BottomSheet content insert-->
-        <include layout="@layout/content_options_bottom_sheets_main" />
+    <!-- BottomSheet content insert-->
+    <include layout="@layout/content_options_bottom_sheets_main" />
 
-        <RelativeLayout
-            android:visibility="gone"
-            android:background="@color/icons"
-            android:id="@+id/new_doc_container"
-            android:layout_width="match_parent"
-            android:layout_height="match_parent">
+    <RelativeLayout
+        android:visibility="gone"
+        android:background="@color/icons"
+        android:id="@+id/new_doc_container"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent">
+        <TextView
+            android:id="@+id/blank_doc_title"
+            android:textColor="@color/divider_faint_blank"
+            android:layout_centerInParent="true"
+            android:textSize="25sp"
+            android:text="@string/blank_document"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content" />
+        <LinearLayout
+            android:orientation="horizontal"
+            android:layout_below="@+id/blank_doc_title"
+            android:layout_centerHorizontal="true"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content">
             <TextView
-                android:id="@+id/blank_doc_title"
-                android:textColor="@color/divider_faint_blank"
-                android:layout_centerInParent="true"
-                android:textSize="25sp"
-                android:text="@string/blank_document"
+                android:layout_gravity="center_vertical"
+                android:textSize="12sp"
+                android:text="@string/click"
+                android:textColor="@color/basepoint_navigation_drawer_tint"
+                android:id="@+id/click_label"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content" />
-            <LinearLayout
-                android:orientation="horizontal"
-                android:layout_below="@+id/blank_doc_title"
-                android:layout_centerHorizontal="true"
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content">
-                <TextView
-                    android:layout_gravity="center_vertical"
-                    android:textSize="12sp"
-                    android:text="@string/click"
-                    android:textColor="@color/basepoint_navigation_drawer_tint"
-                    android:id="@+id/click_label"
-                    android:layout_width="wrap_content"
-                    android:layout_height="wrap_content" />
-                <ImageView
-                    android:tint="@color/accent"
-                    android:layout_marginLeft="@dimen/dimen_10dp"
-                    android:layout_marginRight="@dimen/dimen_10dp"
-                    android:src="@drawable/ic_editor_action"
-                    android:layout_width="@dimen/dimen_16dp"
-                    android:layout_height="@dimen/dimen_16dp" />
-                <TextView
-                    android:textColor="@color/basepoint_navigation_drawer_tint"
-                    android:layout_gravity="center_vertical"
-                    android:textSize="12sp"
-                    android:text="@string/to_start_editing"
-                    android:layout_marginEnd="@dimen/dimen_10dp"
-                    android:id="@+id/editing_label"
-                    android:layout_width="wrap_content"
-                    android:layout_height="wrap_content" />
-            </LinearLayout>
-        </RelativeLayout>
-
-        <RelativeLayout
-            android:visibility="gone"
-            android:background="@color/icons"
-            android:id="@+id/doc_not_found"
-            android:layout_width="match_parent"
-            android:layout_height="match_parent">
             <ImageView
-                android:id="@+id/not_found_icon"
-                android:layout_centerInParent="true"
-                android:tint="@color/divider"
+                android:tint="@color/accent"
                 android:layout_marginLeft="@dimen/dimen_10dp"
                 android:layout_marginRight="@dimen/dimen_10dp"
-                android:src="@drawable/ic_insert_drive_file_black_24dp"
-                android:layout_gravity="center"
-                android:layout_width="70dp"
-                android:layout_height="70dp" />
-
+                android:src="@drawable/ic_editor_action"
+                android:layout_width="@dimen/dimen_16dp"
+                android:layout_height="@dimen/dimen_16dp" />
             <TextView
-                android:layout_marginTop="@dimen/dimen_16dp"
-                android:layout_centerHorizontal="true"
-                android:layout_below="@+id/not_found_icon"
+                android:textColor="@color/basepoint_navigation_drawer_tint"
                 android:layout_gravity="center_vertical"
-                android:textSize="18sp"
-                android:text="@string/file_not_found"
-                android:textColor="@color/divider"
+                android:textSize="12sp"
+                android:text="@string/to_start_editing"
+                android:layout_marginEnd="@dimen/dimen_10dp"
+                android:id="@+id/editing_label"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content" />
-        </RelativeLayout>
+        </LinearLayout>
+    </RelativeLayout>
 
-
-        <android.support.design.widget.FloatingActionButton
-            android:id="@+id/btn_start_editing"
-            android:layout_width="wrap_content"
-            android:layout_gravity="bottom|end"
-            fab:fab_size="normal"
-            android:src="@drawable/ic_editor_action"
-            android:layout_margin="@dimen/dimen_16dp"
-            android:layout_height="wrap_content" />
-
-        <android.support.design.widget.AppBarLayout
-            android:visibility="gone"
-            android:id="@+id/um_appbar_bottom"
-            android:background="@color/icons"
-            android:elevation="@dimen/dimen_8dp"
-            android:layout_width="match_parent"
-            android:layout_gravity="bottom"
-            android:layout_height="wrap_content">
-            <com.ustadmobile.port.android.umeditor.UmEditorActionView
-                android:layout_marginEnd="14dp"
-                android:id="@+id/um_toolbar_bottom"
-                app:contentInsetLeft="0dp"
-                app:contentInsetStart="0dp"
-                android:paddingStart="4dp"
-                android:layout_width="match_parent"
-                android:layout_height="?attr/actionBarSize"
-                tools:ignore="RtlSymmetry" />
-        </android.support.design.widget.AppBarLayout>
-    </android.support.design.widget.CoordinatorLayout>
-
-    <android.support.design.widget.NavigationView
-        android:clipToPadding="false"
-        android:id="@+id/content_pages_view"
-        android:layout_width="wrap_content"
-        android:layout_height="match_parent"
-        android:layout_gravity="end"
-        app:headerLayout="@layout/umeditor_filelist_header_view"
+    <RelativeLayout
+        android:visibility="gone"
         android:background="@color/icons"
-        app:itemIconTint="@color/umeditor_checked_file_item"
-        app:itemTextColor="@color/umeditor_checked_file_item"
-        app:itemBackground="@drawable/umeditor_file_item_background"
-        android:fitsSystemWindows="true"/>
+        android:id="@+id/doc_not_found"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent">
+        <ImageView
+            android:id="@+id/not_found_icon"
+            android:layout_centerInParent="true"
+            android:tint="@color/divider"
+            android:layout_marginLeft="@dimen/dimen_10dp"
+            android:layout_marginRight="@dimen/dimen_10dp"
+            android:src="@drawable/ic_insert_drive_file_black_24dp"
+            android:layout_gravity="center"
+            android:layout_width="70dp"
+            android:layout_height="70dp" />
 
-</android.support.v4.widget.DrawerLayout>
+        <TextView
+            android:layout_marginTop="@dimen/dimen_16dp"
+            android:layout_centerHorizontal="true"
+            android:layout_below="@+id/not_found_icon"
+            android:layout_gravity="center_vertical"
+            android:textSize="18sp"
+            android:text="@string/file_not_found"
+            android:textColor="@color/divider"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content" />
+    </RelativeLayout>
+
+
+    <android.support.design.widget.FloatingActionButton
+        android:id="@+id/btn_start_editing"
+        android:layout_width="wrap_content"
+        android:layout_gravity="bottom|end"
+        fab:fab_size="normal"
+        android:src="@drawable/ic_editor_action"
+        android:layout_margin="@dimen/dimen_16dp"
+        android:layout_height="wrap_content" />
+
+    <android.support.design.widget.AppBarLayout
+        android:visibility="gone"
+        android:id="@+id/um_appbar_bottom"
+        android:background="@color/icons"
+        android:elevation="@dimen/dimen_8dp"
+        android:layout_width="match_parent"
+        android:layout_gravity="bottom"
+        android:layout_height="wrap_content">
+        <com.ustadmobile.port.android.umeditor.UmEditorActionView
+            android:layout_marginEnd="14dp"
+            android:id="@+id/um_toolbar_bottom"
+            app:contentInsetLeft="0dp"
+            app:contentInsetStart="0dp"
+            android:paddingStart="4dp"
+            android:layout_width="match_parent"
+            android:layout_height="?attr/actionBarSize"
+            tools:ignore="RtlSymmetry" />
+    </android.support.design.widget.AppBarLayout>
+
+</android.support.design.widget.CoordinatorLayout>
