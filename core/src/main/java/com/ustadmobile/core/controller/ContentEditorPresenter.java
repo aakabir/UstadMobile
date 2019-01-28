@@ -85,7 +85,7 @@ public class ContentEditorPresenter extends UstadBaseController<ContentEditorVie
                     view.getFileHelper().createFile(contentEntryFileUid,new UmCallback<String>() {
                         @Override
                         public void onSuccess(String result) {
-                            mountFile(result);
+                            mountFile(result,contentEntryFileUid);
                         }
 
                         @Override
@@ -101,7 +101,7 @@ public class ContentEditorPresenter extends UstadBaseController<ContentEditorVie
                             view.showNotFoundErrorMessage();
                         });
                     }else{
-                        mountFile(result.getFilePath());
+                        mountFile(result.getFilePath(),contentEntryFileUid);
                     }
                 }
             }
@@ -114,8 +114,8 @@ public class ContentEditorPresenter extends UstadBaseController<ContentEditorVie
     }
 
 
-    private void mountFile(String filePath){
-        view.getFileHelper().mountFile(filePath, new UmCallback<Void>() {
+    private void mountFile(String filePath,long contentEntryUid){
+        view.getFileHelper().mountFile(filePath, contentEntryUid ,new UmCallback<Void>() {
             @Override
             public void onSuccess(Void result) {
                 if(filePath.length() > 0){

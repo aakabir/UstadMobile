@@ -315,10 +315,17 @@ public class ContentEditorPageListFragment extends UstadDialogFragment
 
     @Override
     public void removePage(EpubNavItem page) {
-        int index = pageList.indexOf(page);
-        if(pageList.remove(page)){
-            mPageListAdapter.notifyItemRemoved(index);
-            pageActionListener.onPageRemove(page.getHref());
+        if(pageList.size() == 1){
+            UstadMobileSystemImpl impl = UstadMobileSystemImpl.getInstance();
+            String message = impl.getString(MessageID.content_editor_page_delete_failure_message,
+                    getActivity());
+            pageActionListener.onDeleteFailure(message);
+        }else{
+            int index = pageList.indexOf(page);
+            if(pageList.remove(page)){
+                mPageListAdapter.notifyItemRemoved(index);
+                pageActionListener.onPageRemove(page.getHref());
+            }
         }
     }
 

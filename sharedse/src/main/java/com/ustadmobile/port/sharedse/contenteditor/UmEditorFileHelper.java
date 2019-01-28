@@ -57,6 +57,8 @@ import static com.ustadmobile.core.impl.UstadMobileSystemImpl.SHARED_RESOURCE;
 
 /**
  * Class which is an actual implementation of {@link UmEditorFileHelperCore}
+ *
+ * @author kileha3
  */
 public class UmEditorFileHelper implements UmEditorFileHelperCore {
 

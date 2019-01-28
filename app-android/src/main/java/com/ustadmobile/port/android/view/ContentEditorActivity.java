@@ -47,6 +47,7 @@ import android.widget.ImageView;
 import android.widget.ProgressBar;
 import android.widget.RelativeLayout;
 import android.widget.TextView;
+import android.widget.Toast;
 
 import com.google.gson.Gson;
 import com.toughra.ustadmobile.R;
@@ -1020,7 +1021,7 @@ public class ContentEditorActivity extends UstadBaseActivity implements ContentE
                     String utf8Content = URLDecoder.decode(content,"UTF-8");
                     UstadMobileSystemImpl.l(UMLog.DEBUG,700, utf8Content);
                     //Update index.html file
-                    UMFileUtil.writeToFile(new File(umEditorFileHelper.getEpubFilesDestination(),
+                    UMFileUtil.writeToFile(new File(umEditorFileHelper.getEpubFilesDirectoryPath(),
                             presenter.getSelectedPageToLoad()),indexFile.html());
                 } catch (UnsupportedEncodingException e) {
                     e.printStackTrace();
@@ -1241,7 +1242,7 @@ public class ContentEditorActivity extends UstadBaseActivity implements ContentE
      */
     private Document getLoadedPageContent(){
         try {
-            File indexFile = new File(umEditorFileHelper.getEpubFilesDestination(),
+            File indexFile = new File(umEditorFileHelper.getEpubFilesDirectoryPath(),
                     presenter.getSelectedPageToLoad());
             return  Jsoup.parse(UMFileUtil.readTextFile(indexFile.getAbsolutePath()));
         } catch (IOException e) {
@@ -1379,7 +1380,7 @@ public class ContentEditorActivity extends UstadBaseActivity implements ContentE
                 presenter.setOpenPreview(false);
                 presenter.setEditingModeOn(false);
                 args.put(ContentEditorView.EDITOR_REQUEST_URI,
-                        umEditorFileHelper.getBaseResourceRequestUrl());
+                        umEditorFileHelper.getResourceAccessibleUrl());
                 UstadMobileSystemImpl.getInstance().go(ContentPreviewView.VIEW_NAME,
                         args,getApplicationContext());
             }else{
@@ -1394,7 +1395,7 @@ public class ContentEditorActivity extends UstadBaseActivity implements ContentE
                     startEditing.setVisibility(View.VISIBLE);
                     handleSelectedPage();
                 }else{
-                    if(deleteTempDir(new File(umEditorFileHelper.getTempDestinationDirPath()))){
+                    if(deleteTempDir(new File(umEditorFileHelper.getMountedFileTempDirectoryPath()))){
                         finish();
                     }
                 }
@@ -1427,7 +1428,7 @@ public class ContentEditorActivity extends UstadBaseActivity implements ContentE
             compressedFile = sourceFile;
         }
 
-        File destination = new File(umEditorFileHelper.getDestinationMediaDirPath(),
+        File destination = new File(umEditorFileHelper.getMediaDirectory(),
                 compressedFile.getName().replaceAll("\\s+","_").replace("-","_"));
         if(UMFileUtil.copyFile(new FileInputStream(compressedFile),destination)){
             String source = MEDIA_DIRECTORY + destination.getName();
@@ -1611,10 +1612,9 @@ public class ContentEditorActivity extends UstadBaseActivity implements ContentE
     @Override
     public void handleSelectedPage() {
         umEditorWebView.setWebViewClient(new UmWebContentEditorClient(this));
-        args.put(ContentEditorView.EDITOR_PREVIEW_PATH, UMFileUtil.joinPaths(
-                umEditorFileHelper.getMountedTempDirRequestUrl(), presenter.getSelectedPageToLoad()));
-        String urlToLoad = UMFileUtil.joinPaths(umEditorFileHelper.getMountedTempDirRequestUrl(),
+        String urlToLoad = UMFileUtil.joinPaths(umEditorFileHelper.getMountedFileAccessibleUrl(),
                 presenter.getSelectedPageToLoad());
+        args.put(ContentEditorView.EDITOR_PREVIEW_PATH, urlToLoad);
         umEditorWebView.clearCache(true);
         umEditorWebView.clearHistory();
         umEditorWebView.loadUrl(urlToLoad);
@@ -1698,7 +1698,10 @@ public class ContentEditorActivity extends UstadBaseActivity implements ContentE
         umEditorFileHelper.updateEpubTitle(title, false, new UmCallback<Boolean>() {
             @Override
             public void onSuccess(Boolean result) {
-                pageListFragment.setDocumentTitle(title);
+                if(result){
+                    pageListFragment.setDocumentTitle(title);
+                    handleSelectedPage();
+                }
             }
 
             @Override
@@ -1706,6 +1709,11 @@ public class ContentEditorActivity extends UstadBaseActivity implements ContentE
                 exception.printStackTrace();
             }
         });
+    }
+
+    @Override
+    public void onDeleteFailure(String message) {
+        Toast.makeText(this,message,Toast.LENGTH_LONG).show();
     }
 
     @Override
