@@ -6,8 +6,6 @@ import android.content.Context;
 import android.graphics.Rect;
 import android.support.annotation.NonNull;
 import android.support.design.widget.BottomSheetBehavior;
-import android.support.v4.view.GravityCompat;
-import android.support.v4.widget.DrawerLayout;
 import android.view.GestureDetector;
 import android.view.MotionEvent;
 import android.view.View;
@@ -432,7 +430,7 @@ public class UmEditorAnimatedViewSwitcher {
 
                 if(closedListener != null){
                     editorActivated = false;
-                    closedListener.onAnimatedViewsClosed(close);
+                    closedListener.onAllAnimatedViewsClosed(close);
                 }
             }
         },MAX_SOFT_KEYBOARD_DELAY);
@@ -484,9 +482,10 @@ public class UmEditorAnimatedViewSwitcher {
     public interface OnAnimatedViewsClosedListener {
         /**
          * Invoked when all animated views are closed
-         * @param finishActivity flag to indicate whether action will result to activity finish or not.
+         * @param finish flag to indicate whether action will result to finishing
+         *                       the activity or not.
          */
-        void onAnimatedViewsClosed(boolean finishActivity);
+        void onAllAnimatedViewsClosed(boolean finish);
 
         /**
          * Invoked when WebView requests a focus.
