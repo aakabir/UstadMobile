@@ -44,6 +44,8 @@ public class UmEditorFileHelperTest {
 
     private static final int MAX_WAITING_TIME = 20;
 
+    private long contentEntryUid = 1L;
+
 
     @Before
     public void setup(){
@@ -74,7 +76,7 @@ public class UmEditorFileHelperTest {
         CountDownLatch mLatch = new CountDownLatch(1);
         AtomicReference<String> resultRef = new AtomicReference<>();
 
-        umEditorFileHelper.createFile(1L,new UmCallback<String>() {
+        umEditorFileHelper.createFile(contentEntryUid,new UmCallback<String>() {
             @Override
             public void onSuccess(String result) {
                 resultRef.set(result);
@@ -103,10 +105,10 @@ public class UmEditorFileHelperTest {
 
         CountDownLatch mLatch = new CountDownLatch(1);
 
-        umEditorFileHelper.createFile(1L,new UmCallback<String>() {
+        umEditorFileHelper.createFile(contentEntryUid,new UmCallback<String>() {
             @Override
             public void onSuccess(String result) {
-                umEditorFileHelper.mountFile(result, new UmCallback<Void>() {
+                umEditorFileHelper.mountFile(result, contentEntryUid,new UmCallback<Void>() {
                     @Override
                     public void onSuccess(Void result) {
                         mLatch.countDown();
@@ -127,7 +129,7 @@ public class UmEditorFileHelperTest {
 
         mLatch.await(MAX_WAITING_TIME, TimeUnit.SECONDS);
 
-        URL url = new URL(UMFileUtil.joinPaths(umEditorFileHelper.getMountedTempDirRequestUrl(),
+        URL url = new URL(UMFileUtil.joinPaths(umEditorFileHelper.getMountedFileAccessibleUrl(),
                 indexFile));
         HttpURLConnection urlConn = (HttpURLConnection) url.openConnection();
         urlConn.connect();
@@ -136,7 +138,7 @@ public class UmEditorFileHelperTest {
 
 
         assertTrue("File was extracted to temporary directory",
-                new File(umEditorFileHelper.getTempDestinationDirPath()).exists());
+                new File(umEditorFileHelper.getMountedFileTempDirectoryPath()).exists());
 
         assertEquals("File was successfully mounted and can be accessed via HTTP",
                 HttpURLConnection.HTTP_OK, responseCode);
@@ -152,18 +154,18 @@ public class UmEditorFileHelperTest {
         AtomicReference<Boolean> copyResultRef = new AtomicReference<>();
 
         //create new file
-        umEditorFileHelper.createFile(1L, new UmCallback<String>() {
+        umEditorFileHelper.createFile(contentEntryUid, new UmCallback<String>() {
             @Override
             public void onSuccess(String result) {
                 //mount newly created file
-                umEditorFileHelper.mountFile(result, new UmCallback<Void>() {
+                umEditorFileHelper.mountFile(result, contentEntryUid,new UmCallback<Void>() {
                     @Override
                     public void onSuccess(Void result) {
                         //copy index_.html file to media directory which won't be used at all
                         try {
                             InputStream is = new FileInputStream(new File(umEditorFileHelper
-                                    .getTempDestinationDirPath(), indexFile));
-                            File dest = new File(umEditorFileHelper.getDestinationMediaDirPath(),
+                                    .getMountedFileTempDirectoryPath(), indexFile));
+                            File dest = new File(umEditorFileHelper.getMediaDirectory(),
                                     indexFile);
                             boolean copied = UMFileUtil.copyFile(is,dest) ;
                             copyResultRef.set(copied);
@@ -223,18 +225,18 @@ public class UmEditorFileHelperTest {
         AtomicReference<Boolean> copyResultRef = new AtomicReference<>();
 
         //create new file
-        umEditorFileHelper.createFile(1L, new UmCallback<String>() {
+        umEditorFileHelper.createFile(contentEntryUid, new UmCallback<String>() {
             @Override
             public void onSuccess(String result) {
                 //mount newly created file
-                umEditorFileHelper.mountFile(result, new UmCallback<Void>() {
+                umEditorFileHelper.mountFile(result, contentEntryUid,new UmCallback<Void>() {
                     @Override
                     public void onSuccess(Void result) {
                         //update media directory with temp file
                         try {
                             InputStream is = new FileInputStream(new File(umEditorFileHelper
-                                    .getTempDestinationDirPath(), indexFile));
-                            File dest = new File(umEditorFileHelper.getDestinationMediaDirPath(),
+                                    .getMountedFileTempDirectoryPath(), indexFile));
+                            File dest = new File(umEditorFileHelper.getMediaDirectory(),
                                     indexFile);
                             boolean copied = UMFileUtil.copyFile(is,dest);
                             copyResultRef.set(copied);
@@ -293,18 +295,18 @@ public class UmEditorFileHelperTest {
         AtomicReference<Boolean> updateResultRef = new AtomicReference<>();
 
         //create new file
-        umEditorFileHelper.createFile(1L,new UmCallback<String>() {
+        umEditorFileHelper.createFile(contentEntryUid,new UmCallback<String>() {
             @Override
             public void onSuccess(String result) {
                 //mount newly created file
-                umEditorFileHelper.mountFile(result, new UmCallback<Void>() {
+                umEditorFileHelper.mountFile(result, contentEntryUid,new UmCallback<Void>() {
                     @Override
                     public void onSuccess(Void result) {
                         //update media directory with temp file
                         try {
                             InputStream is = new FileInputStream(new File(umEditorFileHelper
-                                    .getTempDestinationDirPath(), indexFile));
-                            File dest = new File(umEditorFileHelper.getDestinationMediaDirPath(),
+                                    .getMountedFileTempDirectoryPath(), indexFile));
+                            File dest = new File(umEditorFileHelper.getMediaDirectory(),
                                     indexFile);
                             boolean copied = UMFileUtil.copyFile(is,dest) ;
                             updateResultRef.set(copied);
@@ -317,12 +319,12 @@ public class UmEditorFileHelperTest {
                                         zipResultRef.set(result);
 
                                         umEditorFileHelper.mountFile(
-                                                umEditorFileHelper.getSourceFilePath(),
+                                                umEditorFileHelper.getSourceFilePath(),contentEntryUid,
                                                 new UmCallback<Void>() {
                                             @Override
                                             public void onSuccess(Void result) {
                                                 File fileInZip = new File(umEditorFileHelper
-                                                        .getDestinationMediaDirPath(), indexFile);
+                                                        .getMediaDirectory(), indexFile);
                                                 zipCheckRef.set(fileInZip.exists());
                                                 mLatch.countDown();
                                             }
@@ -483,18 +485,18 @@ public class UmEditorFileHelperTest {
 
 
         //create new file
-        umEditorFileHelper.createFile(1L, new UmCallback<String>() {
+        umEditorFileHelper.createFile(contentEntryUid, new UmCallback<String>() {
             @Override
             public void onSuccess(String result) {
                 //mount newly created file
-                umEditorFileHelper.mountFile(result, new UmCallback<Void>() {
+                umEditorFileHelper.mountFile(result,contentEntryUid, new UmCallback<Void>() {
                     @Override
                     public void onSuccess(Void result) {
                         //copy index_.html file to media directory which won't be used at all
                         try {
                             InputStream is = new FileInputStream(new File(umEditorFileHelper
-                                    .getTempDestinationDirPath(), indexFile));
-                            File dest = new File(umEditorFileHelper.getDestinationMediaDirPath(),
+                                    .getMountedFileTempDirectoryPath(), indexFile));
+                            File dest = new File(umEditorFileHelper.getMediaDirectory(),
                                     indexFile);
                             boolean copied = UMFileUtil.copyFile(is,dest) ;
                             copyResultRef.set(copied);

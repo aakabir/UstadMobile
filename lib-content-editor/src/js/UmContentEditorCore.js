@@ -557,8 +557,9 @@ UmContentEditorCore.insertContentRaw = (content) => {
  */
 UmContentEditorCore.prototype.insertQuestionNodeContent = (questionNode,isFromClipboard = false) => {
     UmQuestionWidget.setQuestionStatus(true);
+    const editorWrapper = $("#umEditor");
     if(!isFromClipboard){
-        tinymce.activeEditor.dom.add(tinymce.activeEditor.getBody(), 'p', {class: 'pg-break',style:'page-break-before: always'}, '');
+        editorWrapper.append(UmQuestionWidget.PAGE_BREAK);
     }else{
         const activeNode = tinymce.activeEditor.selection.getNode();
         const extraContent = $(activeNode).closest("div div.extra-content");
@@ -568,7 +569,7 @@ UmContentEditorCore.prototype.insertQuestionNodeContent = (questionNode,isFromCl
     UmContentEditorCore.insertContentRaw(questionNode);
     UmContentEditorCore.prototype.scrollToElement(UmContentEditorCore.prototype.getLastNonProtectedFucasableElement());
     UmContentEditorCore.prototype.setCursorToAnyNonProtectedFucusableElement(UmContentEditorCore.prototype.getLastExtraContentWidget());
-    tinymce.activeEditor.dom.remove(tinymce.activeEditor.dom.select('p.pg-break'));
+    $(editorWrapper).find("p.pg-break").remove();
 };
 
 /**

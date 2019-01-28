@@ -217,6 +217,7 @@ public class UmEditorFileHelper implements UmEditorFileHelperCore {
             sourceFile = new File(filePath);
             String mountedToPath = sourceFile.getName().replace(ZIP_FILE_EXTENSION,"");
             mountedFileDir = new File(temporaryBaseDirectory,mountedToPath);
+            contentEntryZipFile = new File(filePath);
             updateCoreDirectoriesPath();
             Exception exception = null;
 
@@ -654,6 +655,8 @@ public class UmEditorFileHelper implements UmEditorFileHelperCore {
                             callback.onFailure(exception);
                         }
                     });
+        }else{
+            callback.onSuccess(false);
         }
     }
 
@@ -854,8 +857,9 @@ public class UmEditorFileHelper implements UmEditorFileHelperCore {
         EpubNavItem navItem = getNavItemByHref(href,document.getToc());
         List<EpubNavItem> navItems = document.getToc().getChildren();
         int tobeDeletedNavIndex = navItems.indexOf(navItem);
-        tobeDeletedNavIndex = tobeDeletedNavIndex + (tobeDeletedNavIndex == navItem.size()-1 ? 1:-1);
-        nextNavItem = navItems.get(tobeDeletedNavIndex);
+        int nextNavItemIndex = tobeDeletedNavIndex == navItems.size()
+                ? navItems.size() - 1 : tobeDeletedNavIndex + 1;
+        nextNavItem = navItems.get(nextNavItemIndex);
         boolean metaInfoUpdated = false;
         if(document.getToc().getChildren().remove(navItem)){
             ByteArrayOutputStream bout = null;

@@ -14,7 +14,7 @@ UmQuestionWidget.PAGE_BREAK = '<p style="page-break-before: always" class="pg-br
 
 /** Content widget which hold all non question content in the editor */
 UmQuestionWidget.EXTRA_CONTENT_WIDGET = '<div data-um-widget="content" class="um-row col-sm-12 col-md-12 col-lg-12 default-margin-top extra-content"><p></p></div>' +
-    UmQuestionWidget.PAGE_BREAK;
+UmQuestionWidget.PAGE_BREAK;
 /** Question id prefix */
 UmQuestionWidget.QUESTION_ID_TAG = "id-question-";
 

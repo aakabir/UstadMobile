@@ -9,10 +9,7 @@ import com.ustadmobile.core.impl.UstadMobileSystemImpl;
 import com.ustadmobile.core.view.ContentEditorView;
 import com.ustadmobile.lib.db.entities.ContentEntryFileStatus;
 
-import org.xmlpull.v1.XmlPullParserException;
-
 import java.io.File;
-import java.io.IOException;
 import java.util.Hashtable;
 import java.util.List;
 
@@ -49,7 +46,7 @@ public class ContentEditorPresenter extends UstadBaseController<ContentEditorVie
 
     private boolean isEditingModeOn = false;
 
-    private boolean openPreview = false;
+    private boolean openPreviewRequest = false;
 
     private boolean isMultimediaFilePicker = false;
 
@@ -58,6 +55,8 @@ public class ContentEditorPresenter extends UstadBaseController<ContentEditorVie
     private boolean isInEditorPreview = false;
 
     private String selectedPageToLoad = null;
+
+    private boolean openPageManagerRequest = false;
 
 
     public ContentEditorPresenter(Object context, Hashtable arguments, ContentEditorView view) {
@@ -311,16 +310,16 @@ public class ContentEditorPresenter extends UstadBaseController<ContentEditorVie
      * Check if you are about to navigate to preview activity
      * @return preview status flag.
      */
-    public boolean isOpenPreview() {
-        return openPreview;
+    public boolean isOpenPreviewRequest() {
+        return openPreviewRequest;
     }
 
     /**
      * Set preview activity navigation status
-     * @param openPreview True if about to navigate to the preview activity
+     * @param openPreviewRequest True if about to navigate to the preview activity
      */
-    public void setOpenPreview(boolean openPreview) {
-        this.openPreview = openPreview;
+    public void setOpenPreviewRequest(boolean openPreviewRequest) {
+        this.openPreviewRequest = openPreviewRequest;
     }
 
     /**
@@ -371,12 +370,35 @@ public class ContentEditorPresenter extends UstadBaseController<ContentEditorVie
         isInEditorPreview = inEditorPreview;
     }
 
+    /**
+     * Get currently selected page
+     * @return loaded to the editor
+     */
     public String getSelectedPageToLoad() {
         return selectedPageToLoad;
     }
 
+    /**
+     * Set page to be loaded to the editor
+     * @param selectedPageToLoad page href
+     */
     public void setSelectedPageToLoad(String selectedPageToLoad) {
         this.selectedPageToLoad = selectedPageToLoad;
     }
 
+    /**
+     * Check if page manager opening was initiated
+     * @return true if was iniatiated otherwise it wasn't
+     */
+    public boolean isOpenPageManagerRequest() {
+        return openPageManagerRequest;
+    }
+
+    /**
+     * Set frag to indicate when page manager open is initiated.
+     * @param openPageManagerRequest
+     */
+    public void setOpenPageManagerRequest(boolean openPageManagerRequest) {
+        this.openPageManagerRequest = openPageManagerRequest;
+    }
 }
