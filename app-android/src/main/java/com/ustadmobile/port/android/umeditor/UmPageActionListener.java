@@ -53,4 +53,9 @@ public interface UmPageActionListener {
      */
     void onDeleteFailure(String message);
 
+    /**
+     * invoked when the dialog is closed
+     */
+    void onPageManagerClosed();
+
 }

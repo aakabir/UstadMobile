@@ -362,6 +362,11 @@ UmContentEditorCore.selectAll =  () => {
     body.click();
 };
 
+//For espresso test
+UmContentEditorCore.clickEditorToFocus = () =>{
+    $($("#umEditor").find("div.question-choice").children().get(0)).click();
+}
+
 /**
  * Execute normal formatting commands
  * @param command command to be executed
@@ -444,6 +449,7 @@ UmContentEditorCore.prototype.checkActivatedControls = () => {
           commandState.command = commandString;
           commandState.status = status === null ? false : status;
           commandStatus.push(commandState);
+          console.log("kileha", commandStatus)
     }
 
     try{
@@ -979,7 +985,7 @@ UmContentEditorCore.initEditor = (locale = "en", showToolbar = false) => {
     tinymce.init(configs).then(() => {
 
         rangy.init();
-        const editorContainer = $("#umEditor");
+        const editorContainer = $(document).find("#umEditor");
 
         //set default directionality
         $(editorContainer).attr("dir",UmQuestionWidget._locale.directionality);
@@ -1006,7 +1012,8 @@ UmContentEditorCore.initEditor = (locale = "en", showToolbar = false) => {
             editorContainer.append(extra_widget);
             UmContentEditorCore.prototype.setCursorToAnyNonProtectedFucusableElement(editorContainer.children().get(0))
         }
-        tinymce.activeEditor.dom.remove(tinymce.activeEditor.dom.select('p.pg-break'));
+        
+        editorContainer.find("p.pg-break").remove();
         try{
             UmContentEditor.onInitEditor(JSON.stringify({action:'onInitEditor',content:"true"}));
         }catch (e) {

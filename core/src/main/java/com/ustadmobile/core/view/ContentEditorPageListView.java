@@ -22,4 +22,6 @@ public interface ContentEditorPageListView extends UstadView {
 
     void updateDocumentTitle();
 
+    void closePageManager();
+
 }

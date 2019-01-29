@@ -5,10 +5,13 @@
     android:id="@+id/page_item"
     android:layout_width="match_parent"
     android:layout_height="wrap_content"
-    android:clickable="true"
     android:focusable="true"
-    android:padding="@dimen/dimen_8dp"
-    android:foreground="?selectableItemBackground">
+    android:clickable="true"
+    android:foreground="?android:attr/selectableItemBackground"
+    android:paddingEnd="@dimen/dimen_8dp"
+    android:paddingTop="@dimen/dimen_16dp"
+    android:paddingBottom="@dimen/dimen_16dp"
+    android:paddingStart="@dimen/dimen_8dp">
     <ImageView
         android:id="@+id/page_handle"
         android:layout_width="@dimen/dimen_30dp"

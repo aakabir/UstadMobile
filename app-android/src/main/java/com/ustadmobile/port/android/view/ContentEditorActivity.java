@@ -16,6 +16,7 @@ import android.net.Uri;
 import android.os.Build;
 import android.os.Bundle;
 import android.os.Environment;
+import android.os.Handler;
 import android.provider.MediaStore;
 import android.support.annotation.NonNull;
 import android.support.annotation.Nullable;
@@ -793,7 +794,7 @@ public class ContentEditorActivity extends UstadBaseActivity implements ContentE
             toolbar.setUmFormatHelper(umFormatHelper);
             toolbar.inflateMenu(R.menu.menu_content_editor_top_actions,false);
             toolbar.setQuickActionMenuItemClickListener(this);
-            toolbar.setMenuVisible(false);
+            toolbar.setMenuVisible(true);
             toolbar.setNavigationOnClickListener(v -> {
                 if(presenter.isFileNotFound()){
                     finish();
@@ -946,16 +947,17 @@ public class ContentEditorActivity extends UstadBaseActivity implements ContentE
                 transaction.setTransition(FragmentTransaction.TRANSIT_FRAGMENT_OPEN);
                 pageListFragment = new ContentEditorPageListFragment();
                 pageListFragment.setPageList(umEditorFileHelper.
-                        getEpubNavDocument().getToc().getChildren());
+                        getEpubNavDocument().getToc().getChildren(),presenter.getSelectedPageToLoad());
                 pageListFragment.setDocumentTitle(umEditorFileHelper.getEpubOpfDocument().getTitle());
                 pageListFragment.show(transaction, ContentEditorPageListView.TAG);
-                presenter.setOpenPageManagerRequest(false);
             }
         }
     }
 
     @Override
-    public void onFocusRequested() { }
+    public void onFocusRequested() {
+
+    }
 
     @Override
     public void onProgressChanged(int newProgress) {
@@ -1010,7 +1012,11 @@ public class ContentEditorActivity extends UstadBaseActivity implements ContentE
                     handleWebViewMargin();
                     toolbar.setMenuVisible(true);
                     umEditorWebView.postDelayed(() ->
-                            viewSwitcher.animateView(ANIMATED_SOFT_KEYBOARD_PANEL),
+                            {
+                                if(!presenter.isOpenPageManagerRequest()){
+                                    viewSwitcher.animateView(ANIMATED_SOFT_KEYBOARD_PANEL);
+                                }
+                            },
                             MAX_SOFT_KEYBOARD_DELAY);
                    umEditorWebView.dispatchKeyEvent(new KeyEvent(KeyEvent.KEYCODE_C, KeyEvent.KEYCODE_BACK));
                 }
@@ -1698,7 +1704,8 @@ public class ContentEditorActivity extends UstadBaseActivity implements ContentE
             @Override
             public void onSuccess(Boolean result) {
                 pageListFragment.setPageList(umEditorFileHelper.
-                        getEpubNavDocument().getToc().getChildren());
+                        getEpubNavDocument().getToc().getChildren(),
+                        presenter.getSelectedPageToLoad());
             }
 
             @Override
@@ -1734,12 +1741,20 @@ public class ContentEditorActivity extends UstadBaseActivity implements ContentE
     }
 
     @Override
+    public void onPageManagerClosed() {
+        presenter.setOpenPageManagerRequest(false);
+        new Handler().postDelayed(() -> viewSwitcher.animateView(ANIMATED_SOFT_KEYBOARD_PANEL)
+                ,MAX_SOFT_KEYBOARD_DELAY);
+    }
+
+    @Override
     public void onPageRemove(String href) {
         umEditorFileHelper.removePage(href, new UmCallback<Boolean>() {
             @Override
             public void onSuccess(Boolean result) {
                 pageListFragment.setPageList(umEditorFileHelper.
-                        getEpubNavDocument().getToc().getChildren());
+                        getEpubNavDocument().getToc().getChildren(),
+                        presenter.getSelectedPageToLoad());
                 pageListFragment.setDocumentTitle(umEditorFileHelper
                         .getEpubOpfDocument().getTitle());
                 if(presenter.getSelectedPageToLoad().equals(href)){
@@ -1763,7 +1778,8 @@ public class ContentEditorActivity extends UstadBaseActivity implements ContentE
             @Override
             public void onSuccess(String result) {
                 pageListFragment.setPageList(umEditorFileHelper.
-                        getEpubNavDocument().getToc().getChildren());
+                        getEpubNavDocument().getToc().getChildren(),
+                        presenter.getSelectedPageToLoad());
             }
 
             @Override

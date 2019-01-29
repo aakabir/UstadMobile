@@ -46,4 +46,8 @@ public class ContentEditorPageListPresenter
     public void handleDocumentTitleUpdate(){
         view.runOnUiThread(() -> view.updateDocumentTitle());
     }
+
+    public void handleClosingPageManager(){
+        view.runOnUiThread(() -> view.closePageManager());
+    }
 }

@@ -76,7 +76,8 @@ public class ContentEditorActivityTest {
     }
 
     @Test
-    public void givenButtonToSwitchEditingModeOn_whenClicked_thenShouldTurnEditingModeOn() throws InterruptedException {
+    public void givenButtonToSwitchEditingModeOn_whenClicked_thenShouldTurnEditingModeOn()
+            throws InterruptedException {
 
         //switch on editing mode
         onView(withId(R.id.btn_start_editing)).perform(click());
@@ -89,7 +90,8 @@ public class ContentEditorActivityTest {
 
 
     @Test
-    public void givenInsertContentIconIsClicked_whenEditingIsEnabledAndBottomSheetIsCollapsed_thenShouldExpandContentOptionBottomSheet() throws InterruptedException {
+    public void givenInsertContentIconIsClicked_whenEditingIsEnabledAndBottomSheetIsCollapsed_thenShouldExpandContentOptionBottomSheet()
+            throws InterruptedException {
 
         //switch on editing mode
         onView(withId(R.id.btn_start_editing)).perform(click());
@@ -97,7 +99,7 @@ public class ContentEditorActivityTest {
         Thread.sleep(TimeUnit.SECONDS.toMillis(MAX_WAIT_TIME));
         onView(withId(R.id.content_action_insert)).perform(click());
 
-        Thread.sleep(TimeUnit.SECONDS.toMillis(MAX_WAIT_TIME/2));
+        Thread.sleep(TimeUnit.SECONDS.toMillis(MAX_WAIT_TIME));
 
         assertTrue("Editing mode was enabled",
                 mActivityRule.getActivity().isEditorInitialized());
@@ -108,7 +110,8 @@ public class ContentEditorActivityTest {
 
 
     @Test
-    public void givenFormatTypeMenuIsClicked_whenEditingIsEnabled_thenShouldActivateAndApplyFormatting() throws InterruptedException {
+    public void givenFormatTypeMenuIsClicked_whenEditingIsEnabled_thenShouldActivateAndApplyFormatting()
+            throws InterruptedException {
 
         //switch on editing mode
         onView(withId(R.id.btn_start_editing)).perform(click());
@@ -143,7 +146,8 @@ public class ContentEditorActivityTest {
     }
 
     @Test
-    public void givenMultipleChoiceButtonIsClicked_whenEditingIsEnabled_thenShouldInsertMultipleChoiceTemplate() throws InterruptedException {
+    public void givenMultipleChoiceButtonIsClicked_whenEditingIsEnabled_thenShouldInsertMultipleChoiceTemplate()
+            throws InterruptedException {
 
         //switch on editing mode
         onView(withId(R.id.btn_start_editing)).perform(click());
@@ -166,7 +170,8 @@ public class ContentEditorActivityTest {
     }
 
     @Test
-    public void givenFillInTheBlanksChoiceButtonIsClicked_whenEditingIsEnabled_thenShouldInsertFillInTheBlanksTemplate() throws InterruptedException {
+    public void givenFillInTheBlanksChoiceButtonIsClicked_whenEditingIsEnabled_thenShouldInsertFillInTheBlanksTemplate()
+            throws InterruptedException {
 
         //switch on editing mode
         onView(withId(R.id.btn_start_editing)).perform(click());
@@ -188,7 +193,8 @@ public class ContentEditorActivityTest {
     }
 
     @Test
-    public void givenMultimediaChoiceIsClicked_whenEditingIsEnabled_thenShouldLetUserChooseTheSource() throws InterruptedException {
+    public void givenMultimediaChoiceIsClicked_whenEditingIsEnabled_thenShouldLetUserChooseTheSource()
+            throws InterruptedException {
 
         //switch on editing mode
         onView(withId(R.id.btn_start_editing)).perform(click());
@@ -200,7 +206,7 @@ public class ContentEditorActivityTest {
 
         //insert multiple-choice question
         onView(withId(R.id.content_option_multimedia)).perform(click());
-        Thread.sleep(TimeUnit.SECONDS.toMillis(1));
+        Thread.sleep(TimeUnit.SECONDS.toMillis(MAX_WAIT_TIME));
 
         assertTrue("Editing mode was enabled",
                 mActivityRule.getActivity().isEditorInitialized());

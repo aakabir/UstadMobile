@@ -10,7 +10,8 @@
     <color name="accent">#FF9800</color>
     <color name="accent_dark">#e18601</color>
     <color name="primary_text">#FFFFFF</color>
-    <color name="secondary_text">#727272</color>
+    <color name="secondary_text">#BA727272</color>
+    <color name="secondary_text_light">#41727272</color>
 
     <color name="text_primary">#212121</color>
     <color name="text_secondary">#757575</color>

@@ -12,6 +12,7 @@ import android.support.annotation.Nullable;
 import android.support.design.widget.TextInputLayout;
 import android.support.v4.app.DialogFragment;
 import android.support.v4.app.Fragment;
+import android.support.v4.content.ContextCompat;
 import android.support.v4.view.MotionEventCompat;
 import android.support.v7.widget.LinearLayoutManager;
 import android.support.v7.widget.PopupMenu;
@@ -23,6 +24,7 @@ import android.view.MotionEvent;
 import android.view.View;
 import android.view.ViewGroup;
 import android.widget.EditText;
+import android.widget.FrameLayout;
 import android.widget.ImageView;
 import android.widget.TextView;
 
@@ -62,7 +64,9 @@ public class ContentEditorPageListFragment extends UstadDialogFragment
 
     private String documentTitle = null;
 
-    private TextView docTitle;
+    private String currentHref;
+
+    private TextView titleView;
 
     public ContentEditorPageListFragment() {
         // Required empty public constructor
@@ -97,10 +101,28 @@ public class ContentEditorPageListFragment extends UstadDialogFragment
                 }
                 return false;
             });
+
+            holder.pageTitle.setTextColor(getColor(holder.itemView.getContext(),
+                    pageItem.getHref().equals(currentHref) ? R.color.text_primary:
+                            R.color.text_secondary));
+            holder.pageOptionHandle.setColorFilter(getColor(holder.itemView.getContext(),
+                    pageItem.getHref().equals(currentHref) ? R.color.text_primary:
+                            R.color.text_secondary));
+            holder.pageReorderHandle.setColorFilter(getColor(holder.itemView.getContext(),
+                    pageItem.getHref().equals(currentHref) ? R.color.text_primary:
+                            R.color.text_secondary));
+            holder.itemHolder.setBackgroundColor(getColor(holder.itemView.getContext(),
+                    pageItem.getHref().equals(currentHref) ? R.color.secondary_text_light:
+                            R.color.icons));
+
             holder.pageOptionHandle.setOnClickListener(v ->
                     showPopUpMenu(holder.itemView.getContext(),holder.pageOptionHandle,pageItem));
             holder.itemView.setOnClickListener(v ->
                     presenter.handlePageSelected(pageItem));
+        }
+
+        private int getColor(Context content, int resource){
+            return ContextCompat.getColor(content,resource);
         }
 
         private void showPopUpMenu(Context context, View anchorView,EpubNavItem pageItem){
@@ -135,11 +157,13 @@ public class ContentEditorPageListFragment extends UstadDialogFragment
             ImageView pageReorderHandle;
             TextView pageTitle;
             ImageView pageOptionHandle;
+            FrameLayout itemHolder;
             PageViewHolder(View itemView) {
                 super(itemView);
                 pageReorderHandle = itemView.findViewById(R.id.page_handle);
                 pageOptionHandle = itemView.findViewById(R.id.page_option);
                 pageTitle = itemView.findViewById(R.id.page_title);
+                itemHolder = itemView.findViewById(R.id.page_item);
             }
         }
     }
@@ -151,13 +175,14 @@ public class ContentEditorPageListFragment extends UstadDialogFragment
 
     public void setDocumentTitle(String title){
         this.documentTitle = title;
-        if(docTitle != null){
+        if(titleView != null){
            presenter.handleDocumentTitle(title);
         }
     }
 
-    public void setPageList(List<EpubNavItem> pageList){
+    public void setPageList(List<EpubNavItem> pageList, String currentHref){
         this.pageList = pageList;
+        this.currentHref = currentHref;
         if(mPageListAdapter != null){
             mPageListAdapter.notifyItemRangeChanged(0,pageList.size());
         }
@@ -176,13 +201,10 @@ public class ContentEditorPageListFragment extends UstadDialogFragment
         View rootView = inflater.inflate(R.layout.fragment_content_editor_page_list,
                 container, false);
         Toolbar toolbar = rootView.findViewById(R.id.toolbar);
-        toolbar.setNavigationIcon(R.drawable.ic_close_white_24dp);
-        toolbar.setNavigationOnClickListener(view1 -> dismiss());
-        toolbar.setTitle("");
+        toolbar.setNavigationIcon(R.drawable.ic_arrow_back_white_24dp);
 
-        View docEditIcon = rootView.findViewById(R.id.edit_document);
-        docTitle = rootView.findViewById(R.id.document_title);
-        docTitle.setText(documentTitle);
+        titleView = rootView.findViewById(R.id.document_title);
+        titleView.setText(documentTitle);
 
         RecyclerView pageListView = rootView.findViewById(R.id.page_list);
         FloatingTextButton btnAddPage = rootView.findViewById(R.id.btn_add_page);
@@ -230,7 +252,9 @@ public class ContentEditorPageListFragment extends UstadDialogFragment
 
         btnAddPage.setOnClickListener(v -> presenter.handleAddPage());
 
-        docEditIcon.setOnClickListener(v -> presenter.handleDocumentTitleUpdate());
+        titleView.setOnClickListener(v -> presenter.handleDocumentTitleUpdate());
+
+        toolbar.setNavigationOnClickListener(view1 -> presenter.handleClosingPageManager());
 
         return rootView;
     }
@@ -331,8 +355,8 @@ public class ContentEditorPageListFragment extends UstadDialogFragment
 
     @Override
     public void loadPage(EpubNavItem page) {
-        dismiss();
         pageActionListener.onPageSelected(page.getHref());
+        presenter.handleClosingPageManager();
     }
 
     @Override
@@ -346,9 +370,14 @@ public class ContentEditorPageListFragment extends UstadDialogFragment
     }
 
     @Override
-    public void setTitle(String title) {
-        docTitle.setText(title);
+    public void closePageManager() {
+        pageActionListener.onPageManagerClosed();
         dismiss();
+    }
+
+    @Override
+    public void setTitle(String title) {
+        titleView.setText(title);
     }
 
 }
