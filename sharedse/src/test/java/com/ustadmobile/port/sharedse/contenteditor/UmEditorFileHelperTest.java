@@ -1,19 +1,15 @@
 package com.ustadmobile.port.sharedse.contenteditor;
 
-import com.ustadmobile.core.contentformats.epub.nav.EpubNavDocument;
 import com.ustadmobile.core.contentformats.epub.nav.EpubNavItem;
 import com.ustadmobile.core.db.UmAppDatabase;
 import com.ustadmobile.core.impl.UmCallback;
-import com.ustadmobile.core.impl.UstadMobileSystemImpl;
 import com.ustadmobile.core.util.UMFileUtil;
 import com.ustadmobile.test.core.impl.PlatformTestUtil;
 
 import org.junit.Before;
 import org.junit.Test;
-import org.xmlpull.v1.XmlPullParserException;
 
 import java.io.File;
-import java.io.FileInputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.net.HttpURLConnection;
@@ -38,9 +34,11 @@ public class UmEditorFileHelperTest {
 
     private UmEditorFileHelper umEditorFileHelper;
 
-    private String indexFile = "template_page.html";
-
     private String pageTitle = "Sample page title";
+
+    private String videoFile = "BigBuckBunny.mp4";
+
+    private String videoMimeType = "video/mp4";
 
     private static final int MAX_WAITING_TIME = 20;
 
@@ -104,33 +102,26 @@ public class UmEditorFileHelperTest {
             throws IOException, InterruptedException {
 
         CountDownLatch mLatch = new CountDownLatch(1);
+        AtomicReference<String> resultRef = new AtomicReference<>();
 
-        umEditorFileHelper.createFile(contentEntryUid,new UmCallback<String>() {
+        UmCallback<String> addPageCallback = new UmCallback<String>() {
             @Override
             public void onSuccess(String result) {
-                umEditorFileHelper.mountFile(result, contentEntryUid,new UmCallback<Void>() {
-                    @Override
-                    public void onSuccess(Void result) {
-                        mLatch.countDown();
-                    }
-
-                    @Override
-                    public void onFailure(Throwable exception) {
-
-                    }
-                });
+                resultRef.set(result);
+                mLatch.countDown();
             }
 
             @Override
             public void onFailure(Throwable exception) {
-
+                exception.printStackTrace();
             }
-        });
+        };
+
+        processZippedFile(addPageCallback, mLatch);
 
         mLatch.await(MAX_WAITING_TIME, TimeUnit.SECONDS);
 
-        URL url = new URL(UMFileUtil.joinPaths(umEditorFileHelper.getMountedFileAccessibleUrl(),
-                indexFile));
+        URL url = new URL(UMFileUtil.joinPaths(umEditorFileHelper.getMountedFileAccessibleUrl(), resultRef.get()));
         HttpURLConnection urlConn = (HttpURLConnection) url.openConnection();
         urlConn.connect();
         int responseCode = urlConn.getResponseCode();
@@ -145,144 +136,6 @@ public class UmEditorFileHelperTest {
 
     }
 
-    @Test
-    public void givenContentEditorFileHelper_whenUnUsedResourceFound_thenShouldBeRemoved()
-            throws InterruptedException {
-
-        CountDownLatch mLatch = new CountDownLatch(1);
-        AtomicReference<Integer> resultRef = new AtomicReference<>();
-        AtomicReference<Boolean> copyResultRef = new AtomicReference<>();
-
-        //create new file
-        umEditorFileHelper.createFile(contentEntryUid, new UmCallback<String>() {
-            @Override
-            public void onSuccess(String result) {
-                //mount newly created file
-                umEditorFileHelper.mountFile(result, contentEntryUid,new UmCallback<Void>() {
-                    @Override
-                    public void onSuccess(Void result) {
-                        //copy index_.html file to media directory which won't be used at all
-                        try {
-                            InputStream is = new FileInputStream(new File(umEditorFileHelper
-                                    .getMountedFileTempDirectoryPath(), indexFile));
-                            File dest = new File(umEditorFileHelper.getMediaDirectory(),
-                                    indexFile);
-                            boolean copied = UMFileUtil.copyFile(is,dest) ;
-                            copyResultRef.set(copied);
-
-                            if(copied){
-                                //remove unused files
-                                umEditorFileHelper.removeUnUsedResources(new UmCallback<Integer>(){
-                                    @Override
-                                    public void onSuccess(Integer result) {
-                                        resultRef.set(result);
-                                        mLatch.countDown();
-                                    }
-
-                                    @Override
-                                    public void onFailure(Throwable exception) {
-                                        exception.printStackTrace();
-                                    }
-                                });
-                            }else{
-                                mLatch.countDown();
-                            }
-
-                        } catch (IOException e) {
-                            e.printStackTrace();
-                        }
-                    }
-
-                    @Override
-                    public void onFailure(Throwable exception) {
-
-                    }
-                });
-            }
-
-            @Override
-            public void onFailure(Throwable exception) {
-                exception.printStackTrace();
-            }
-        });
-
-        mLatch.await(MAX_WAITING_TIME, TimeUnit.SECONDS);
-
-        assertTrue("File was added successfully",copyResultRef.get());
-
-        assertEquals("Unused resource was removed successfully",
-                1, (int) resultRef.get());
-    }
-
-
-    @Test
-    public void givenContentUpdated_whenTmpDirZipped_thenShouldBeUpdatedInZip()
-            throws InterruptedException {
-
-        CountDownLatch mLatch = new CountDownLatch(1);
-
-        AtomicReference<Boolean> zipResultRef = new AtomicReference<>();
-        AtomicReference<Boolean> copyResultRef = new AtomicReference<>();
-
-        //create new file
-        umEditorFileHelper.createFile(contentEntryUid, new UmCallback<String>() {
-            @Override
-            public void onSuccess(String result) {
-                //mount newly created file
-                umEditorFileHelper.mountFile(result, contentEntryUid,new UmCallback<Void>() {
-                    @Override
-                    public void onSuccess(Void result) {
-                        //update media directory with temp file
-                        try {
-                            InputStream is = new FileInputStream(new File(umEditorFileHelper
-                                    .getMountedFileTempDirectoryPath(), indexFile));
-                            File dest = new File(umEditorFileHelper.getMediaDirectory(),
-                                    indexFile);
-                            boolean copied = UMFileUtil.copyFile(is,dest);
-                            copyResultRef.set(copied);
-
-                            if(copied){
-                                //zip temp dir
-                                umEditorFileHelper.updateFile(new UmCallback<Boolean>() {
-                                    @Override
-                                    public void onSuccess(Boolean result) {
-                                        zipResultRef.set(result);
-                                        mLatch.countDown();
-                                    }
-
-                                    @Override
-                                    public void onFailure(Throwable exception) {
-
-                                    }
-                                });
-                            }else{
-                                mLatch.countDown();
-                            }
-
-                        } catch (IOException e) {
-                            e.printStackTrace();
-                        }
-                    }
-
-                    @Override
-                    public void onFailure(Throwable exception) {
-                        exception.printStackTrace();
-                    }
-                });
-            }
-
-            @Override
-            public void onFailure(Throwable exception) {
-                exception.printStackTrace();
-            }
-        });
-
-        mLatch.await(MAX_WAITING_TIME, TimeUnit.SECONDS);
-
-        assertTrue("File was added successfully",copyResultRef.get());
-
-        assertTrue("Temp directory was zipped successfully",zipResultRef.get());
-    }
 
     @Test
     public void givenContentAddedToTmpDir_whenTmpDirZipped_thenShouldBeInZip()
@@ -292,7 +145,7 @@ public class UmEditorFileHelperTest {
 
         AtomicReference<Boolean> zipResultRef = new AtomicReference<>();
         AtomicReference<Boolean> zipCheckRef = new AtomicReference<>();
-        AtomicReference<Boolean> updateResultRef = new AtomicReference<>();
+        AtomicReference<Boolean> contentAddRef = new AtomicReference<>();
 
         //create new file
         umEditorFileHelper.createFile(contentEntryUid,new UmCallback<String>() {
@@ -303,16 +156,15 @@ public class UmEditorFileHelperTest {
                     @Override
                     public void onSuccess(Void result) {
                         //update media directory with temp file
-                        try {
-                            InputStream is = new FileInputStream(new File(umEditorFileHelper
-                                    .getMountedFileTempDirectoryPath(), indexFile));
-                            File dest = new File(umEditorFileHelper.getMediaDirectory(),
-                                    indexFile);
-                            boolean copied = UMFileUtil.copyFile(is,dest) ;
-                            updateResultRef.set(copied);
+                        try{
+                            InputStream fileIn =
+                                    getClass().getResourceAsStream(videoFile);
+                            File dest = new File(umEditorFileHelper.getMediaDirectory(), videoFile);
+                            if(dest.exists())dest.delete();
+                            boolean mediaAdded  = UMFileUtil.copyFile(fileIn, dest);
+                            contentAddRef.set(mediaAdded);
 
-                            if(copied){
-                                //zip temp dir
+                            if(mediaAdded){
                                 umEditorFileHelper.updateFile(new UmCallback<Boolean>() {
                                     @Override
                                     public void onSuccess(Boolean result) {
@@ -321,19 +173,19 @@ public class UmEditorFileHelperTest {
                                         umEditorFileHelper.mountFile(
                                                 umEditorFileHelper.getSourceFilePath(),contentEntryUid,
                                                 new UmCallback<Void>() {
-                                            @Override
-                                            public void onSuccess(Void result) {
-                                                File fileInZip = new File(umEditorFileHelper
-                                                        .getMediaDirectory(), indexFile);
-                                                zipCheckRef.set(fileInZip.exists());
-                                                mLatch.countDown();
-                                            }
+                                                    @Override
+                                                    public void onSuccess(Void result) {
+                                                        File fileInZip = new File(umEditorFileHelper
+                                                                .getMediaDirectory(), videoFile);
+                                                        zipCheckRef.set(fileInZip.exists());
+                                                        mLatch.countDown();
+                                                    }
 
-                                            @Override
-                                            public void onFailure(Throwable exception) {
-                                                exception.printStackTrace();
-                                            }
-                                        });
+                                                    @Override
+                                                    public void onFailure(Throwable exception) {
+                                                        exception.printStackTrace();
+                                                    }
+                                                });
 
                                     }
 
@@ -345,10 +197,10 @@ public class UmEditorFileHelperTest {
                             }else{
                                 mLatch.countDown();
                             }
-
                         } catch (IOException e) {
                             e.printStackTrace();
                         }
+
                     }
 
                     @Override
@@ -367,7 +219,7 @@ public class UmEditorFileHelperTest {
         mLatch.await(MAX_WAITING_TIME, TimeUnit.SECONDS);
 
 
-        assertTrue("Temporary directory was updated successfully",updateResultRef.get());
+        assertTrue("Temporary directory was updated successfully",contentAddRef.get());
 
         assertTrue("Temporary directory was zipped successfully",zipResultRef.get());
 
@@ -383,7 +235,7 @@ public class UmEditorFileHelperTest {
 
         AtomicReference<String> hrefRef = new AtomicReference<>();
 
-        umEditorFileHelper.addPage(pageTitle, new UmCallback<String>() {
+        UmCallback<String> addPageCallback = new UmCallback<String>() {
             @Override
             public void onSuccess(String result) {
                 hrefRef.set(result);
@@ -394,8 +246,9 @@ public class UmEditorFileHelperTest {
             public void onFailure(Throwable exception) {
                 exception.printStackTrace();
             }
-        });
+        };
 
+        processZippedFile(addPageCallback,mLatch);
 
         mLatch.await(MAX_WAITING_TIME, TimeUnit.SECONDS);
 
@@ -411,15 +264,27 @@ public class UmEditorFileHelperTest {
         AtomicReference<String> href = new AtomicReference<>();
         AtomicReference<Boolean> resultRef = new AtomicReference<>();
 
-        umEditorFileHelper.addPage(pageTitle, new UmCallback<String>() {
+
+        UmCallback<String> addPageCallback = new UmCallback<String>() {
             @Override
             public void onSuccess(String result) {
                 href.set(result);
-                umEditorFileHelper.removePage(result, new UmCallback<Boolean>() {
+                //add another page to make sure a page can be deleted - you cant have a document without a page
+                umEditorFileHelper.addPage(pageTitle, new UmCallback<String>() {
                     @Override
-                    public void onSuccess(Boolean removed) {
-                        resultRef.set(removed);
-                        mLatch.countDown();
+                    public void onSuccess(String result) {
+                        umEditorFileHelper.removePage(result, new UmCallback<Boolean>() {
+                            @Override
+                            public void onSuccess(Boolean removed) {
+                                resultRef.set(removed);
+                                mLatch.countDown();
+                            }
+
+                            @Override
+                            public void onFailure(Throwable exception) {
+                                exception.printStackTrace();
+                            }
+                        });
                     }
 
                     @Override
@@ -433,7 +298,9 @@ public class UmEditorFileHelperTest {
             public void onFailure(Throwable exception) {
                 exception.printStackTrace();
             }
-        });
+        };
+
+        processZippedFile(addPageCallback, mLatch);
 
         mLatch.await(MAX_WAITING_TIME, TimeUnit.SECONDS);
 
@@ -450,64 +317,26 @@ public class UmEditorFileHelperTest {
             throws InterruptedException {
 
         CountDownLatch mLatch = new CountDownLatch(1);
+        AtomicReference<Boolean> manifestUpdateRef = new AtomicReference<>();
+        AtomicReference<Boolean> mediaAddRef = new AtomicReference<>();
 
-        AtomicReference<Boolean> resultRef = new AtomicReference<>();
-
-        String filename = "sampleFile.mp4", fileMimeType = "video/mp4";
-
-        umEditorFileHelper.updateManifestItems(filename, fileMimeType, new UmCallback<Boolean>() {
-            @Override
-            public void onSuccess(Boolean result) {
-                resultRef.set(result);
-                mLatch.countDown();
-            }
-
-            @Override
-            public void onFailure(Throwable exception) {
-                exception.printStackTrace();
-            }
-        });
-
-        mLatch.await(MAX_WAITING_TIME, TimeUnit.SECONDS);
-
-        assertTrue("Manifest items were updated successfully",
-                resultRef.get());
-    }
-
-    @Test
-    public void givenActiveEditor_whenMediaContentIsRemoved_thenShouldUpdateManifestItems()
-            throws InterruptedException {
-
-        CountDownLatch mLatch = new CountDownLatch(1);
-        AtomicReference<Integer> resultRef = new AtomicReference<>();
-        AtomicReference<Boolean> copyResultRef = new AtomicReference<>();
-        AtomicReference<Boolean> manifestRef = new AtomicReference<>();
-
-
-        //create new file
-        umEditorFileHelper.createFile(contentEntryUid, new UmCallback<String>() {
+        UmCallback<String> addPageCallback  = new UmCallback<String>() {
             @Override
             public void onSuccess(String result) {
-                //mount newly created file
-                umEditorFileHelper.mountFile(result,contentEntryUid, new UmCallback<Void>() {
-                    @Override
-                    public void onSuccess(Void result) {
-                        //copy index_.html file to media directory which won't be used at all
-                        try {
-                            InputStream is = new FileInputStream(new File(umEditorFileHelper
-                                    .getMountedFileTempDirectoryPath(), indexFile));
-                            File dest = new File(umEditorFileHelper.getMediaDirectory(),
-                                    indexFile);
-                            boolean copied = UMFileUtil.copyFile(is,dest) ;
-                            copyResultRef.set(copied);
 
-                            if(copied){
-                                //remove unused files
-                                umEditorFileHelper.removeUnUsedResources(new UmCallback<Integer>(){
+                try{
+                    InputStream fileIn =
+                            getClass().getResourceAsStream(videoFile);
+                    File dest = new File(umEditorFileHelper.getMediaDirectory(), videoFile);
+                    if(dest.exists())dest.delete();
+                    boolean mediaAdded  = UMFileUtil.copyFile(fileIn, dest);
+                    mediaAddRef.set(mediaAdded);
+                    if(mediaAdded){
+                        umEditorFileHelper.updateManifestItems(videoFile, videoMimeType,
+                                new UmCallback<Boolean>() {
                                     @Override
-                                    public void onSuccess(Integer result) {
-                                        resultRef.set(result);
-                                        manifestRef.set(result > 0);
+                                    public void onSuccess(Boolean result) {
+                                        manifestUpdateRef.set(result);
                                         mLatch.countDown();
                                     }
 
@@ -516,13 +345,143 @@ public class UmEditorFileHelperTest {
                                         exception.printStackTrace();
                                     }
                                 });
-                            }else{
+                    }else {
+                        mLatch.countDown();
+                    }
+                } catch (IOException e) {
+                    e.printStackTrace();
+                }
+            }
+
+            @Override
+            public void onFailure(Throwable exception) {
+                exception.printStackTrace();
+            }
+        };
+
+        processZippedFile(addPageCallback, mLatch);
+
+        mLatch.await(MAX_WAITING_TIME, TimeUnit.SECONDS);
+
+        assertTrue("Media content was added successfully", mediaAddRef.get());
+
+        assertTrue("Manifest items were updated successfully", mediaAddRef.get());
+    }
+
+    @Test
+    public void givenActiveEditor_whenMediaContentIsRemoved_thenShouldUpdateManifestItems()
+            throws InterruptedException {
+
+        CountDownLatch mLatch = new CountDownLatch(1);
+        AtomicReference<Integer> unUsedResourceRef = new AtomicReference<>();
+        AtomicReference<Boolean> mediaAddRef = new AtomicReference<>();
+        AtomicReference<Boolean> manifestUpdateRef = new AtomicReference<>();
+
+
+        UmCallback<String> addPageCallback = new UmCallback<String>() {
+            @Override
+            public void onSuccess(String result) {
+                try{
+                    InputStream fileIn =
+                            getClass().getResourceAsStream(videoFile);
+                    File dest = new File(umEditorFileHelper.getMediaDirectory(), videoFile);
+                    if(dest.exists())dest.delete();
+                    boolean mediaAdded  = UMFileUtil.copyFile(fileIn, dest);
+                    mediaAddRef.set(mediaAdded);
+                    if(mediaAdded){
+                        umEditorFileHelper.updateManifestItems(dest.getName(),
+                                videoMimeType, new UmCallback<Boolean>() {
+                            @Override
+                            public void onSuccess(Boolean result) {
+                                if(result){
+                                    umEditorFileHelper.removeUnUsedResources(new UmCallback<Integer>(){
+                                        @Override
+                                        public void onSuccess(Integer result) {
+                                            unUsedResourceRef.set(result);
+                                            manifestUpdateRef.set(result > 0);
+                                            mLatch.countDown();
+                                        }
+
+                                        @Override
+                                        public void onFailure(Throwable exception) {
+                                            exception.printStackTrace();
+                                        }
+                                    });
+                                }else{
+                                    mLatch.countDown();
+                                }
+                            }
+
+                            @Override
+                            public void onFailure(Throwable exception) {
+                                exception.printStackTrace();
+                            }
+                        });
+                    }else{
+                        mLatch.countDown();
+                    }
+                } catch (IOException e) {
+                    e.printStackTrace();
+                }
+            }
+
+            @Override
+            public void onFailure(Throwable exception) {
+                exception.printStackTrace();
+            }
+        };
+
+        processZippedFile(addPageCallback, mLatch);
+
+        mLatch.await(MAX_WAITING_TIME, TimeUnit.SECONDS);
+
+        assertTrue("File was added successfully",mediaAddRef.get());
+
+        assertEquals("Unused resource was removed successfully",
+                1, (int) unUsedResourceRef.get());
+
+        assertTrue("Manifest items were updates successfully",manifestUpdateRef.get());
+
+    }
+
+    @Test
+    public void givenNavigationListItems_whenOrderChanges_thenShouldUpdateNavItems()
+            throws InterruptedException {
+
+        CountDownLatch mLatch = new CountDownLatch(1);
+        AtomicReference<Integer> resultPageRef = new AtomicReference<>();
+        AtomicReference<Boolean> orderChangeRef = new AtomicReference<>();
+
+        List<EpubNavItem> newListOrder = new ArrayList<>();
+        List<EpubNavItem> oldListOrder = new ArrayList<>();
+
+       UmCallback<String> addPageCallback = new UmCallback<String>() {
+            @Override
+            public void onSuccess(String result) {
+                resultPageRef.set(1);
+                umEditorFileHelper.addPage(pageTitle, new UmCallback<String>() {
+                    @Override
+                    public void onSuccess(String result) {
+                        resultPageRef.set(2);
+                        oldListOrder.addAll(umEditorFileHelper.getEpubNavDocument()
+                                .getToc().getChildren());
+                        newListOrder.addAll(oldListOrder);
+                        EpubNavItem navItem = newListOrder.remove(0);
+                        newListOrder.add(navItem);
+
+                        umEditorFileHelper.changePageOrder(newListOrder, new UmCallback<Boolean>() {
+                            @Override
+                            public void onSuccess(Boolean result) {
+                                orderChangeRef.set(result);
                                 mLatch.countDown();
                             }
 
-                        } catch (IOException e) {
-                            e.printStackTrace();
-                        }
+                            @Override
+                            public void onFailure(Throwable exception) {
+                                exception.printStackTrace();
+                            }
+                        });
+
                     }
 
                     @Override
@@ -536,64 +495,113 @@ public class UmEditorFileHelperTest {
             public void onFailure(Throwable exception) {
                 exception.printStackTrace();
             }
-        });
+        };
+
+        processZippedFile(addPageCallback , mLatch);
 
         mLatch.await(MAX_WAITING_TIME, TimeUnit.SECONDS);
 
-        assertTrue("File was added successfully",copyResultRef.get());
+        assertEquals("Document had exactly two pages", 2,
+                (int) resultPageRef.get());
 
-        assertEquals("Unused resource was removed successfully",
-                1, (int) resultRef.get());
-
-        assertTrue("Manifest items were updates successfully",manifestRef.get());
+        assertTrue("Order was updated successfully",orderChangeRef.get());
 
     }
 
     @Test
-    public void givenNavigationListItems_whenOrderChanges_thenShouldUpdateNavItems()
-            throws XmlPullParserException, IOException, InterruptedException {
-
+    public void givenActiveEditor_whenNewPageIsAdded_thenPageNumberShouldBeIncremented()
+            throws InterruptedException {
         CountDownLatch mLatch = new CountDownLatch(1);
+        AtomicReference<String> firstPageRef = new AtomicReference<>();
+        AtomicReference<String> secondPageRef = new AtomicReference<>();
 
-        AtomicReference<Boolean> resultRef = new AtomicReference<>();
-
-        List<EpubNavItem> oldListOrder = getEpubNavDoc().getToc().getChildren();
-
-        List<EpubNavItem> newListOrder = new ArrayList<>(oldListOrder);
-        EpubNavItem navItem = newListOrder.remove(0);
-        newListOrder.add(navItem);
-
-        umEditorFileHelper.changePageOrder(newListOrder, new UmCallback<Boolean>() {
+        UmCallback<String> addPageCallback = new UmCallback<String>() {
             @Override
-            public void onSuccess(Boolean result) {
-                resultRef.set(result);
-                mLatch.countDown();
+            public void onSuccess(String result) {
+                firstPageRef.set(result);
+                umEditorFileHelper.addPage(pageTitle, new UmCallback<String>() {
+                    @Override
+                    public void onSuccess(String result) {
+                        secondPageRef.set(result);
+                        mLatch.countDown();
+                    }
+
+                    @Override
+                    public void onFailure(Throwable exception) {
+                        exception.printStackTrace();
+                    }
+                });
             }
 
             @Override
             public void onFailure(Throwable exception) {
                 exception.printStackTrace();
             }
-        });
+        };
+
+        processZippedFile(addPageCallback, mLatch);
 
         mLatch.await(MAX_WAITING_TIME, TimeUnit.SECONDS);
 
-        List<EpubNavItem> navItems = getEpubNavDoc().getToc().getChildren();
+        assertTrue("Fist page name was assigned number 1 after (page_) prefix",
+                firstPageRef.get().contains("_1"));
 
-        assertTrue("Nav items order was successfully changed",
-                resultRef.get());
-
-        assertEquals("New order is exactly as nav doc current order",
-                newListOrder,navItems);
+        assertTrue("Second page name was assigned number 2 after (page_) prefix",
+                secondPageRef.get().contains("_2"));
 
     }
 
 
-    private EpubNavDocument getEpubNavDoc() throws XmlPullParserException, IOException {
-        EpubNavDocument navDoc = new EpubNavDocument();
-        InputStream docIn = getClass().getResourceAsStream("EpubNavDocument.xhtml");
+    private void processZippedFile(UmCallback<String> addPageCallback, CountDownLatch mLatch){
 
-        navDoc.load(UstadMobileSystemImpl.getInstance().newPullParser(docIn, "UTF-8"));
-        return navDoc;
+        UmCallback<Boolean> updateFileCallback = new UmCallback<Boolean>() {
+            @Override
+            public void onSuccess(Boolean result) {
+                if(result){
+                    List<EpubNavItem> pageList =
+                            umEditorFileHelper.getEpubNavDocument().getToc().getChildren();
+                    if(pageList == null || pageList.size() == 0){
+                        umEditorFileHelper.addPage(pageTitle,addPageCallback);
+                    }else{
+                        mLatch.countDown();
+                    }
+                }else{
+                    mLatch.countDown();
+                }
+            }
+
+            @Override
+            public void onFailure(Throwable exception) {
+                exception.printStackTrace();
+            }
+        };
+
+        UmCallback<Void> mountFileCallback = new UmCallback<Void>() {
+            @Override
+            public void onSuccess(Void result) {
+                umEditorFileHelper.updateEpubTitle(pageTitle,true,updateFileCallback);
+            }
+
+            @Override
+            public void onFailure(Throwable exception) {
+                exception.printStackTrace();
+            }
+        };
+
+        UmCallback<String> createFileCallback = new UmCallback<String>() {
+            @Override
+            public void onSuccess(String result) {
+                umEditorFileHelper.mountFile(result,contentEntryUid,mountFileCallback);
+
+            }
+
+            @Override
+            public void onFailure(Throwable exception) {
+                exception.printStackTrace();
+            }
+        };
+
+        umEditorFileHelper.createFile(contentEntryUid,createFileCallback);
     }
+
 }

@@ -395,6 +395,7 @@ public class UmEditorFileHelper implements UmEditorFileHelperCore {
      * @return True if in use otherwise false.
      */
     private boolean isResourceInUse(String resourceName){
+        boolean resourceInUse = false;
         try {
             List<EpubNavItem> navItems = getEpubNavDocument().getToc().getChildren()!=null?
                     getEpubNavDocument().getToc().getChildren():new ArrayList<>();
@@ -405,7 +406,8 @@ public class UmEditorFileHelper implements UmEditorFileHelperCore {
                 Elements resources = previewContainer.select("img[src],source[src]");
 
                 if(findResource(resourceName,resources)){
-                    return true;
+                    resourceInUse = true;
+                    break;
                 }
             }
 
@@ -413,7 +415,7 @@ public class UmEditorFileHelper implements UmEditorFileHelperCore {
             e.printStackTrace();
         }
 
-        return false;
+        return resourceInUse;
     }
 
     /**
@@ -857,8 +859,8 @@ public class UmEditorFileHelper implements UmEditorFileHelperCore {
         EpubNavItem navItem = getNavItemByHref(href,document.getToc());
         List<EpubNavItem> navItems = document.getToc().getChildren();
         int tobeDeletedNavIndex = navItems.indexOf(navItem);
-        int nextNavItemIndex = tobeDeletedNavIndex == navItems.size()
-                ? navItems.size() - 1 : tobeDeletedNavIndex + 1;
+        int nextNavItemIndex = tobeDeletedNavIndex == navItems.size() - 1
+                ? navItems.size() - 2 : tobeDeletedNavIndex + 1;
         nextNavItem = navItems.get(nextNavItemIndex);
         boolean metaInfoUpdated = false;
         if(document.getToc().getChildren().remove(navItem)){

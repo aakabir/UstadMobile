@@ -43,6 +43,7 @@ dependencies {
     implementation "org.jsoup:jsoup:$version_jsoup"
 
     implementation project(":core")
+    testImplementation project(":lib-database-runtime-jdbc")
     testImplementation project (':lib-database-jdbc')
     implementation project(":lib-database")
     implementation project(":lib-database-runtime")
