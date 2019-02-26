@@ -39,11 +39,11 @@ dependencies {
     implementation "net.lingala.zip4j:zip4j:$version_zip4j"
     implementation "org.json:json:$version_json"
 
-    //jsuop
     implementation "org.jsoup:jsoup:$version_jsoup"
 
     implementation project(":core")
     testImplementation project(":lib-database-runtime-jdbc")
+    implementation project(":core")
     testImplementation project (':lib-database-jdbc')
     implementation project(":lib-database")
     implementation project(":lib-database-runtime")
@@ -62,6 +62,7 @@ dependencies {
     testImplementation "com.github.h-thurow:simple-jndi:$version_simple_jndi"
     testImplementation "org.apache.commons:commons-pool2:$version_apache_commons_pool2"
     testImplementation "org.xerial:sqlite-jdbc:$version_sqlite_jdbc"
+    testImplementation project(":app-javase")
 }
 
 publishing {

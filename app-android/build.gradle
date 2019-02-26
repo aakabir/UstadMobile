@@ -69,6 +69,7 @@ android {
     testOptions {
         unitTests {
             includeAndroidResources = true
+            returnDefaultValues = true
         }
     }
 
@@ -323,7 +324,10 @@ dependencies {
     //Floating action button with support for popup choices
     implementation 'com.github.clans:fab:1.6.4'
 
-    implementation 'de.hdodenhof:circleimageview:2.1.0'
+    //Page indicator
+    implementation 'com.romandanylyk:pageindicatorview:1.0.0@aar'
+
+    implementation 'de.hdodenhof:circleimageview:3.0.0'
 
     //used for learner progress view
     implementation 'com.txusballesteros:FitChart:1.0'
@@ -364,6 +368,11 @@ dependencies {
     androidTestImplementation "com.android.support.test.uiautomator:uiautomator-v18:$version_android_uiautomator"
 
     androidTestImplementation "org.mockito:mockito-android:$version_android_mockito"
+
+    testImplementation "org.mockito:mockito-core:$version_android_mockito"
+
+    testImplementation "org.robolectric:robolectric:$version_android_roboelectric"
+
     androidTestImplementation "com.squareup.okhttp3:mockwebserver:$version_mockwebserver"
 
     //http server
@@ -380,6 +389,7 @@ dependencies {
     //jsuop
     implementation "org.jsoup:jsoup:$version_jsoup"
 
+    testImplementation "com.squareup.okhttp3:okhttp:$version_okhttp"
 }
 
 task sourceJar(type: Jar) {

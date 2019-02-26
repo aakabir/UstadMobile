@@ -289,4 +289,10 @@
     <string name="content_action_page_remove">Remove page</string>
     <string name="content_editor_page_view_hint">Title</string>
     <string name="content_editor_page_delete_failure_message">Sorry you can not delete this page</string>
+    <string name="content_entry_not_found">ContentEntry Not Found</string>
+    <string name="onboarding_get_started_label">Get Started</string>
+    <string name="onboarding_no_internet_headline">No Internet? No problem.</string>
+    <string name="onboarding_no_internet_subheadline">Download educational videos, articles and interactive exercises for later use. </string>
+    <string name="onboarding_offline_sharing">Share offline</string>
+    <string name="onboarding_offline_sharing_subheading">Share content at high speed with any other user nearby.</string>
 </resources>

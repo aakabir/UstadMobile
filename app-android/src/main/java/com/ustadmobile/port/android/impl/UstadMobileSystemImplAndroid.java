@@ -81,6 +81,7 @@ import com.ustadmobile.core.view.ContentEntryView;
 import com.ustadmobile.core.view.ContentPreviewView;
 import com.ustadmobile.core.view.DummyView;
 import com.ustadmobile.core.view.H5PContentView;
+import com.ustadmobile.core.view.OnBoardingView;
 import com.ustadmobile.core.view.Login2View;
 import com.ustadmobile.core.view.Register2View;
 import com.ustadmobile.core.view.ScormPackageView;
@@ -88,9 +89,11 @@ import com.ustadmobile.core.view.XapiPackageView;
 import com.ustadmobile.port.android.generated.MessageIDMap;
 import com.ustadmobile.port.android.impl.http.UmHttpCachePicassoRequestHandler;
 import com.ustadmobile.port.android.netwokmanager.NetworkManagerAndroid;
+import com.ustadmobile.port.android.netwokmanager.NetworkManagerAndroidBle;
 import com.ustadmobile.port.android.netwokmanager.NetworkServiceAndroid;
 import com.ustadmobile.port.android.util.UMAndroidUtil;
 import com.ustadmobile.port.android.view.*;
+import com.ustadmobile.port.sharedse.networkmanager.NetworkManagerBle;
 import com.ustadmobile.port.sharedse.view.*;
 import com.ustadmobile.port.sharedse.impl.UstadMobileSystemImplSE;
 import com.ustadmobile.port.sharedse.networkmanager.NetworkManager;
@@ -157,6 +160,7 @@ public class UstadMobileSystemImplAndroid extends UstadMobileSystemImplSE {
         viewNameToAndroidImplMap.put(ContentEntryView.VIEW_NAME, ContentEntryListActivity.class);
         viewNameToAndroidImplMap.put(ContentEntryDetailView.VIEW_NAME, ContentEntryDetailActivity.class);
         viewNameToAndroidImplMap.put(DummyView.VIEW_NAME, DummyActivity.class);
+        viewNameToAndroidImplMap.put(OnBoardingView.VIEW_NAME, OnBoardingActivity.class);
         viewNameToAndroidImplMap.put(Register2View.VIEW_NAME, Register2Activity.class);
     }
 
@@ -333,6 +337,7 @@ public class UstadMobileSystemImplAndroid extends UstadMobileSystemImplSE {
     protected HashMap<Context, ServiceConnection> networkServiceConnections = new HashMap<>();
 
     protected NetworkManagerAndroid networkManagerAndroid;
+    protected NetworkManagerAndroidBle managerAndroidBle;
 
     /**
      */
@@ -341,6 +346,8 @@ public class UstadMobileSystemImplAndroid extends UstadMobileSystemImplSE {
         appViews = new WeakHashMap<>();
         networkManagerAndroid = new NetworkManagerAndroid();
         networkManagerAndroid.setServiceConnectionMap(networkServiceConnections);
+        managerAndroidBle = new NetworkManagerAndroidBle();
+        managerAndroidBle.setServiceConnectionMap(networkServiceConnections);
     }
 
     /**
@@ -454,7 +461,7 @@ public class UstadMobileSystemImplAndroid extends UstadMobileSystemImplSE {
     }
 
 
-    public void go(String viewName, Hashtable args, Object context) {
+    public void go(String viewName, Hashtable args, Object context, int flags) {
         Class androidImplClass = viewNameToAndroidImplMap.get(viewName);
         Context ctx = (Context)context;
         Bundle argsBundle = UMAndroidUtil.hashtableToBundle(args);
@@ -487,6 +494,7 @@ public class UstadMobileSystemImplAndroid extends UstadMobileSystemImplSE {
             }
         }else {
             Intent startIntent = new Intent(ctx, androidImplClass);
+            startIntent.setFlags(flags);
             if(args != null)
                 startIntent.putExtras(argsBundle);
 
@@ -704,6 +712,11 @@ public class UstadMobileSystemImplAndroid extends UstadMobileSystemImplSE {
     @Override
     public NetworkManager getNetworkManager() {
         return networkManagerAndroid;
+    }
+
+    @Override
+    public NetworkManagerBle getNetworkManagerBle() {
+        return managerAndroidBle;
     }
 
     @Override
