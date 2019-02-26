@@ -794,7 +794,7 @@ public class ContentEditorActivity extends UstadBaseActivity implements ContentE
             toolbar.setUmFormatHelper(umFormatHelper);
             toolbar.inflateMenu(R.menu.menu_content_editor_top_actions,false);
             toolbar.setQuickActionMenuItemClickListener(this);
-            toolbar.setMenuVisible(true);
+            toolbar.setMenuVisible(false);
             toolbar.setNavigationOnClickListener(v -> {
                 if(presenter.isFileNotFound()){
                     finish();
