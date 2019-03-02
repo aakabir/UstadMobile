@@ -278,7 +278,7 @@ UmQuestionWidget.prototype.handleExistingQuestionNode = (element) => {
 /**Handle question choices */
 UmQuestionWidget.prototype.handleQuestionChoice = (element) => {
     $(element).find(".question-add-choice").removeClass("hide-element").addClass("show-element")
-        .html("<button class='float-right add-choice default-margin-top extra-btn'>" +UmQuestionWidget._locale.placeholders.labelForAddChoiceBtn+"</button>");
+        .html("<button class='float-right dont-remove add-choice default-margin-top extra-btn'>" +UmQuestionWidget._locale.placeholders.labelForAddChoiceBtn+"</button>");
     $(element).find(".question-choice-body").before("<label class='um-labels'>"
         +UmQuestionWidget._locale.placeholders.labelForChoiceBodyText+"</label>");
     $(element).find(".question-choice-feedback").before("<label class='um-labels'>"
