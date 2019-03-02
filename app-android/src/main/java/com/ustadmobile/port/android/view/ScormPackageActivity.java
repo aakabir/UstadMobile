@@ -19,7 +19,6 @@ import com.ustadmobile.port.android.netwokmanager.NetworkManagerAndroid;
 import com.ustadmobile.port.android.netwokmanager.NetworkServiceAndroid;
 import com.ustadmobile.port.android.util.UMAndroidUtil;
 
-import org.acra.ACRA;
 
 public class ScormPackageActivity extends UstadBaseActivity implements ScormPackageView {
 
@@ -56,7 +55,6 @@ public class ScormPackageActivity extends UstadBaseActivity implements ScormPack
                 callback.onSuccess(mountedPath);
             }else {
                 Exception mountException= new RuntimeException("Zip mounted as null: corrupt file?");
-                ACRA.getErrorReporter().handleSilentException(mountException);
                 callback.onFailure(mountException);
             }
         }

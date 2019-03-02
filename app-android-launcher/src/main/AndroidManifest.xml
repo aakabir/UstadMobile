@@ -4,6 +4,7 @@
 
 
     <application
+        android:name="com.ustadmobile.port.android.App"
         android:allowBackup="true"
         android:icon="@drawable/ic_launch_green"
         android:roundIcon="@drawable/ic_launch_green"

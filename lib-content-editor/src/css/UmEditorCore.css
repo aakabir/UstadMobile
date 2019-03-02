@@ -153,6 +153,13 @@ select,button :focus :active{
     margin: 10px 0 10px 0 !important;
     max-width: 100%;
 }
+
+.media-video{
+    min-width: 100% !important;
+    max-width: 100% !important;
+    height: auto !important;
+    margin: 10px 0 10px 0 !important;
+}
 .text-center{
     min-width: 100% !important;
 }
@@ -224,10 +231,6 @@ audio::-webkit-media-controls-panel {
 
 .action-delete-inner{
     margin-top: 16px !important;
-}
-
-video {
-    object-fit: cover;
 }
 
 

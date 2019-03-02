@@ -449,7 +449,6 @@ UmContentEditorCore.prototype.checkActivatedControls = () => {
           commandState.command = commandString;
           commandState.status = status === null ? false : status;
           commandStatus.push(commandState);
-          console.log("kileha", commandStatus)
     }
 
     try{
@@ -521,18 +520,12 @@ UmContentEditorCore.prototype.getLastNonProtectedFucasableElement = () =>{
 UmContentEditorCore.insertMediaContent = (source, mimeType) => {
     let mediaContent = null;
     if(mimeType.includes("image")){
-        mediaContent = "<div align=\"center\" class=\"text-center\">" +
-            "<img src=\""+source+"\" class=\"img-fluid\">" +
-            "</div>";
+        mediaContent = "<img src='" +source+"' class='.img-fluid'/>";
     }else if(mimeType.includes("audio")){
         mediaContent = '<audio controls controlsList="nodownload" class="media-audio"><source src="'+source+'" type="'+mimeType+'"></audio>';
 
     }else{
-       mediaContent = "<div align=\"center\" class=\"embed-responsive embed-responsive-16by9\">" +
-            "    <video controls controlsList=\"nodownload\" preload=\"meta\" class=\"embed-responsive-item\">" +
-            "        <source src=\""+source+"\" type=\""+mimeType+"\">" +
-            "    </video>" +
-            "</div>";
+        mediaContent = '<video controls controlsList="nodownload" preload="meta" class="media-video"><source src="'+source+'" type="'+mimeType+'"></video>';
     }
     mediaContent = mediaContent + "<p><br/></p>";
     let currentElement = $(tinymce.activeEditor.selection.getNode());
