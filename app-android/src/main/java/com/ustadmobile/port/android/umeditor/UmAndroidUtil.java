@@ -17,16 +17,16 @@ import android.webkit.MimeTypeMap;
  *
  * <b>Operation flow</b>
  * <p>
- *    Use {@link UmAndroidUriUtil#getMimeType(Context, Uri)} to get mime type of a file
+ *    Use {@link UmAndroidUtil#getMimeType(Context, Uri)} to get mime type of a file
  *
- *    Use {@link UmAndroidUriUtil#getPath(Context, Uri)} to get the actual file absolute path
+ *    Use {@link UmAndroidUtil#getPath(Context, Uri)} to get the actual file absolute path
  * </p>
  *
  * @author kileha3
  *
  */
 
-public class UmAndroidUriUtil {
+public class UmAndroidUtil {
 
     /**
      * Get file path on the device
@@ -163,5 +163,16 @@ public class UmAndroidUriUtil {
                     fileExtension.toLowerCase());
         }
         return mimeType;
+    }
+
+    public static String getCurrentLocale(Context context){
+        String locale =  (Build.VERSION.SDK_INT >= Build.VERSION_CODES.N ?
+                context.getResources().getConfiguration().getLocales().get(0) :
+                context.getResources().getConfiguration().locale).toString();
+        String [] locale_identifier = locale.split("_");
+        if(locale_identifier.length > 0){
+            locale = locale_identifier[0];
+        }
+        return locale;
     }
 }

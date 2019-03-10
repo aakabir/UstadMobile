@@ -253,6 +253,7 @@
     <string name="catalog_language">Catalog Language</string>
     <string name="also_available_in">Also available in</string>
 
+    <!--Content editor -->
     <string name="content_type_multimedia">Multimedia</string>
     <string name="content_type_multiple_choice">Multiple choice</string>
     <string name="content_type_fill_the_blanks">Fill in the blanks</string>
@@ -277,7 +278,7 @@
     <string name="content_media_video">Video</string>
     <string name="content_media_message">What media type would you like to capture?</string>
     <string name="content_media_title">Media type</string>
-    <string name="content_blank_doc_title">Blank page</string>
+    <string name="content_blank_page_title">Blank page</string>
     <string name="content_blank_doc_click_label">Click</string>
     <string name="content_blank_doc_start_label">to start editing.</string>
     <string name="content_option_page">New page</string>
@@ -290,6 +291,8 @@
     <string name="content_editor_page_view_hint">Title</string>
     <string name="content_editor_page_delete_failure_message">Sorry you can not delete this page</string>
     <string name="content_entry_not_found">ContentEntry Not Found</string>
+
+    <!--On boarding screen-->
     <string name="onboarding_get_started_label">Get Started</string>
     <string name="onboarding_no_internet_headline">No Internet? No problem.</string>
     <string name="onboarding_no_internet_subheadline">Download educational videos, articles and interactive exercises for later use. </string>

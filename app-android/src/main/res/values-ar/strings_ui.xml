@@ -1,0 +1,41 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!--Content editor-->
+    <string name="content_type_multimedia">Multimedia</string>
+    <string name="content_type_multiple_choice">متعدد الخيارات</string>
+    <string name="content_type_fill_the_blanks">إملأ الفراغات</string>
+    <string name="content_format_text">نص</string>
+    <string name="content_format_paragraph">فقرة</string>
+    <string name="content_direction_ltr">من اليسار إلى اليمين</string>
+    <string name="content_direction_rtl">من اليمين إلى اليسار</string>
+    <string name="content_font_8">8pt</string>
+    <string name="content_font_10">10pt</string>
+    <string name="content_font_12">12pt</string>
+    <string name="content_font_14">14pt</string>
+    <string name="content_font_18">18pt</string>
+    <string name="content_font_24">24pt</string>
+    <string name="content_font_36">36pt</string>
+    <string name="content_insert_options">ادخل</string>
+    <string name="content_source_camera">من الكاميرا</string>
+    <string name="content_source_device">من الجهاز</string>
+    <string name="content_choose_file">اختر ملف</string>
+    <string name="content_prepare_file">تحضير الملف</string>
+    <string name="content_preview">معاينة</string>
+    <string name="content_media_photo">صورة</string>
+    <string name="content_media_video">فيديو</string>
+    <string name="content_media_message">ما نوع الملف الذي تريد إختياره </string>
+    <string name="content_media_title">نوع الملف</string>
+    <string name="content_blank_page_title">Blank page</string>
+    <string name="content_blank_doc_click_label">انقر</string>
+    <string name="content_blank_doc_start_label">لتبدأ التعديل</string>
+    <string name="content_option_page">New page</string>
+    <string name="content_untitled_page">Untitled page</string>
+    <string name="content_untitled_document">Untitled document</string>
+    <string name="content_add_page">Add page</string>
+    <string name="content_update_page_title">Update page</string>
+    <string name="content_update_document_title">Update document</string>
+    <string name="content_action_page_remove">Remove page</string>
+    <string name="content_editor_page_view_hint">Title</string>
+    <string name="content_editor_page_delete_failure_message">Sorry, you can not delete this page</string>
+    <string name="content_entry_not_found">Content not found</string>
+</resources>

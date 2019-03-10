@@ -849,6 +849,14 @@ UmContentEditorCore.setDefaultLanguage = (locale, isTest = false)=>{
     UmQuestionWidget.loadPlaceholders(locale,isTest);
 };
 
+UmContentEditorCore.prototype.getLocaleCode = (locale) => {
+    locale = locale.split("_");
+    if(locale.length > 0){
+        locale = locale[0];
+    }
+    return locale;
+}
+
 /**
  * Initialize tinymce editor to the document element
  * @param locale Default UMEditor language locale
@@ -858,6 +866,7 @@ UmContentEditorCore.initEditor = (locale = "en", showToolbar = false) => {
     UmQuestionWidget.loadPlaceholders (locale);
     const configs = {
         selector: '#umEditor',
+        language: locale,
         height: $(window).height(),
         menubar: showToolbar,
         statusbar: showToolbar,

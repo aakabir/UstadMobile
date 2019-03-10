@@ -64,7 +64,7 @@ import com.ustadmobile.core.view.ContentEditorView;
 import com.ustadmobile.core.view.ContentPreviewView;
 import com.ustadmobile.lib.util.Base64Coder;
 import com.ustadmobile.port.android.impl.http.AndroidAssetsHandler;
-import com.ustadmobile.port.android.umeditor.UmAndroidUriUtil;
+import com.ustadmobile.port.android.umeditor.UmAndroidUtil;
 import com.ustadmobile.port.android.umeditor.UmEditorActionView;
 import com.ustadmobile.port.android.umeditor.UmEditorAnimatedViewSwitcher;
 import com.ustadmobile.port.android.umeditor.UmEditorPopUpView;
@@ -866,7 +866,7 @@ public class ContentEditorActivity extends UstadBaseActivity implements ContentE
 
         UstadMobileSystemImpl impl = UstadMobileSystemImpl.getInstance();
 
-        blankDocTitle.setText(impl.getString(MessageID.content_blank_doc_title,this));
+        blankDocTitle.setText(impl.getString(MessageID.content_blank_page_title,this));
         bdClickLabel.setText(impl.getString(MessageID.content_blank_doc_click_label,this));
         bdCreateLabel.setText(impl.getString(MessageID.content_blank_doc_start_label,this));
 
@@ -1021,7 +1021,7 @@ public class ContentEditorActivity extends UstadBaseActivity implements ContentE
                    umEditorWebView.dispatchKeyEvent(new KeyEvent(KeyEvent.KEYCODE_C, KeyEvent.KEYCODE_BACK));
                 }
                 handleBackNavigationIcon();
-                startEditing.setVisibility(View.GONE);
+                startEditing.hide();
                 progressDialog.setVisibility(View.GONE);
                 blankDocumentContainer.setVisibility(View.GONE);
                 viewSwitcher.setEditorActivated(presenter.isEditorInitialized());
@@ -1377,7 +1377,7 @@ public class ContentEditorActivity extends UstadBaseActivity implements ContentE
      */
     private void initializeEditor(){
         executeJsFunction(umEditorWebView, EDITOR_METHOD_PREFIX+"initEditor",
-                ContentEditorActivity.this);
+                ContentEditorActivity.this,UmAndroidUtil.getCurrentLocale(this));
     }
 
     /**
@@ -1401,7 +1401,7 @@ public class ContentEditorActivity extends UstadBaseActivity implements ContentE
                     handleQuickActions();
                     toolbar.setMenuVisible(false);
                     viewSwitcher.closeAnimatedView(ANIMATED_SOFT_KEYBOARD_PANEL);
-                    startEditing.setVisibility(View.VISIBLE);
+                    startEditing.show();
                     handleSelectedPage();
                 }else{
                     if(deleteTempDir(new File(umEditorFileHelper.getMountedFileTempDirectoryPath()))){
@@ -1420,13 +1420,13 @@ public class ContentEditorActivity extends UstadBaseActivity implements ContentE
      */
     private void insertMedia(Uri uri, boolean fromCamera) throws IOException {
         progressDialog.setVisibility(View.VISIBLE);
-        String mimeType = UmAndroidUriUtil.getMimeType(this,uri);
+        String mimeType = UmAndroidUtil.getMimeType(this,uri);
         File sourceFile;
         File compressedFile;
         if(fromCamera){
             sourceFile = fileFromCamera;
         }else{
-            sourceFile = new File(Objects.requireNonNull(UmAndroidUriUtil.getPath(this, uri)));
+            sourceFile = new File(Objects.requireNonNull(UmAndroidUtil.getPath(this, uri)));
         }
         if(mimeType.contains("image")){
             compressedFile = new Compressor(this)
@@ -1495,7 +1495,7 @@ public class ContentEditorActivity extends UstadBaseActivity implements ContentE
     public void showNotFoundErrorMessage() {
         umEditorWebView.setVisibility(View.GONE);
         docNotFoundView.setVisibility(View.VISIBLE);
-        startEditing.setVisibility(View.GONE);
+        startEditing.hide();
     }
 
 
@@ -1690,6 +1690,8 @@ public class ContentEditorActivity extends UstadBaseActivity implements ContentE
             }
         });
     }
+
+
 
     @Override
     public void onPageSelected(String pageHref) {
