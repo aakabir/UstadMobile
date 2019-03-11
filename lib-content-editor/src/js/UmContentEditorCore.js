@@ -452,7 +452,10 @@ UmContentEditorCore.prototype.checkActivatedControls = () => {
     }
 
     try{
-        UmContentEditor.onControlsStateChanged(JSON.stringify({action:'onActiveControlCheck',content:btoa(JSON.stringify(commandStatus))}));
+        UmContentEditor.onControlsStateChanged(JSON.stringify({
+            action:'onActiveControlCheck',
+            directionality:'',
+            content:btoa(JSON.stringify(commandStatus))}));
     }catch(e){
         console.log(e);
     }
@@ -818,7 +821,10 @@ UmContentEditorCore.prototype.isElementProtected = (currentNode,isDeleteKey = fa
 UmContentEditorCore.prototype.onProtectedElementCheck = (currentNode) => {
     const isProtected = UmContentEditorCore.prototype.isElementProtected(currentNode);
     try{
-        UmContentEditor.onProtectedElementCheck(JSON.stringify({action:'onProtectedElementCheck',content:btoa(isProtected)}));
+        UmContentEditor.onProtectedElementCheck(JSON.stringify({
+            action:'onProtectedElementCheck',
+            directionality:'',
+            content:btoa(isProtected)}));
     }catch (e) {
         console.log("onContentChanged:",e);
     }
@@ -862,11 +868,13 @@ UmContentEditorCore.prototype.getLocaleCode = (locale) => {
  * @param locale Default UMEditor language locale
  * @param showToolbar Flag to show and hide default tinymce toolbar
  */
-UmContentEditorCore.initEditor = (locale = "en", showToolbar = false) => {
-    UmQuestionWidget.loadPlaceholders (locale);
+UmContentEditorCore.initEditor = (locale = "en",dir = "ltr" ,showToolbar = false) => {
+    const localeFilePostFix = UmContentEditorCore.prototype.getLocaleCode(locale);
+    console.log("locale " + localeFilePostFix);
+    UmQuestionWidget.loadPlaceholders (localeFilePostFix);
     const configs = {
         selector: '#umEditor',
-        language: locale,
+        directionality: dir,
         height: $(window).height(),
         menubar: showToolbar,
         statusbar: showToolbar,
@@ -990,7 +998,7 @@ UmContentEditorCore.initEditor = (locale = "en", showToolbar = false) => {
         const editorContainer = $(document).find("#umEditor");
 
         //set default directionality
-        $(editorContainer).attr("dir",UmQuestionWidget._locale.directionality);
+        $(editorContainer).attr("dir",dir);
 
         //request focus to the editor
         UmContentEditorCore.prototype.requestFocus();
@@ -1017,7 +1025,10 @@ UmContentEditorCore.initEditor = (locale = "en", showToolbar = false) => {
         
         editorContainer.find("p.pg-break").remove();
         try{
-            UmContentEditor.onInitEditor(JSON.stringify({action:'onInitEditor',content:"true"}));
+            UmContentEditor.onInitEditor(JSON.stringify({
+                action:'onInitEditor',
+                directionality:'',
+                content:"true"}));
         }catch (e) {
             console.log("onInitEditor: "+e);
         }
@@ -1045,9 +1056,19 @@ UmContentEditorCore.initEditor = (locale = "en", showToolbar = false) => {
                 setTimeout(() => {UmContentEditorCore.prototype.checkActivatedControls()},averageEventTimeout);
                 const previewContent = JSON.stringify({
                     action:'onSaveContent',
+                    directionality : dir,
                     content:UmQuestionWidget.saveContentEditor(tinyMCE.activeEditor.getContent())
                 });
 
+                //change all fixed element to reflect directionality
+                const editor = $($(document).find("#umEditor")).find(".float-right");
+                if(dir === "rtl"){
+                    editor.removeClass("float-right").addClass("float-left");
+                }else{
+                    editor.removeClass("float-left").addClass("float-right");
+                }
+                //$(document).find("#umEditor").css("padding-left", (dir !== "rtl" ? "16px":"30px"));
+                
                 try{
                     UmContentEditor.onSaveContent(previewContent);
                 }catch (e) {

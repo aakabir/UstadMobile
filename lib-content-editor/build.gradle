@@ -79,8 +79,8 @@ task prepareUmEditorDirectories << {
     copy { from rootPath+"epub/"+epubMetaInf into blankDocPath+epubMetaInf}
     copy { from rootPath+"epub/"+epubOebps into blankDocPath+epubOebps}
     copy { from rootPath+"epub/"+epubMimeType into blankDocPath}
-    copy { from rootPath+"/lib/bootstrap/css/bootstrap.min.css", rootPath+"dist/css/UmEditorCore.min.css" into blankDocCssPath }
-    copy { from rootPath+"/lib/bootstrap/js/bootstrap.min.js", rootPath+"/lib/jquery/jquery3.3.1.min.js",
+    copy { from rootPath+"dist/css/UmEditorCore.min.css" into blankDocCssPath }
+    copy { from rootPath+"/lib/jquery/jquery3.3.1.min.js",
             rootPath+"dist/js/UmContentEditorCore.min.js", rootPath+"dist/js/UmQuestionWidget.min.js" into blankDocJsPath }
 
     File mediaDir = new File(blankDocMediaPath)

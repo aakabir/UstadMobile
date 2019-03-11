@@ -13,7 +13,7 @@ let UmQuestionWidget = function(element) {
 UmQuestionWidget.PAGE_BREAK = '<p style="page-break-before: always" class="pg-break">';
 
 /** Content widget which hold all non question content in the editor */
-UmQuestionWidget.EXTRA_CONTENT_WIDGET = '<div data-um-widget="content" class="um-row col-sm-12 col-md-12 col-lg-12 default-margin-top extra-content"><p></p></div>' +
+UmQuestionWidget.EXTRA_CONTENT_WIDGET = '<div data-um-widget="content" class="um-row default-margin-top extra-content"><p></p></div>' +
 UmQuestionWidget.PAGE_BREAK;
 /** Question id prefix */
 UmQuestionWidget.QUESTION_ID_TAG = "id-question-";
@@ -117,9 +117,8 @@ UmQuestionWidget.saveContentEditor = (content) => {
     $(editorContent).find("label").remove();
     $(editorContent).find("p.pg-break").remove();
     $(editorContent).find("button.add-choice").remove();
-    $(editorContent).find('div.question-choice').addClass("question-choice-pointer").removeClass("default-margin-top");
+    $(editorContent).find('div.question-choice').addClass("um-alert alert-secondary choice-no-margin-top question-choice-pointer").removeClass("default-margin-top");
     $(editorContent).find('div.multi-choice').addClass("default-margin-bottom").removeClass("default-margin-top");
-    $(editorContent).find('div.question-choice').addClass('alert alert-secondary');
     $(editorContent).find('.default-theme').removeClass('no-padding');
     $(editorContent).find('.question-body').addClass("default-margin-bottom no-left-padding");
     $(editorContent).find('.question-answer').addClass("no-padding no-left-padding default-margin-bottom");
@@ -127,7 +126,7 @@ UmQuestionWidget.saveContentEditor = (content) => {
     $(editorContent).find('[data-um-preview="main"]').addClass('preview-main default-margin-top');
     $(editorContent).find('[data-um-preview="alert"]').addClass('preview-alert default-margin-top');
     $(editorContent).find('[data-um-preview="support"]').addClass('preview-support default-margin-top');
-    $(editorContent).find('div.question').removeClass("default-padding-top default-padding-bottom").addClass('card default-padding');
+    $(editorContent).find('div.question').removeClass("default-padding-top default-padding-bottom").addClass('um-card default-padding');
     $(editorContent).find(elementToHideSelector).removeClass("show-element").addClass("hide-element");
     $(editorContent).find(elementToShowSelector).removeClass("hide-element").addClass("show-element");
 
@@ -262,17 +261,17 @@ UmQuestionWidget.prototype.handleNewQuestionNode = (element)=>{
 
 /** Handle existing question node */
 UmQuestionWidget.prototype.handleExistingQuestionNode = (element) => {
-    $(element).find(".question-choice").removeClass("question-choice-pointer selected-choice alert alert-secondary").addClass("default-margin-top");
+    $(element).find(".question-choice").removeClass("question-choice-pointer no-padding choice-no-margin-top selected-choice alert alert-secondary").addClass("default-margin-top");
     $(element).find('[data-um-preview="main"]').removeClass("preview-main default-margin-top");
     $(element).find('[data-um-preview="alert"]').removeClass("preview-alert default-margin-top");
     $(element).find('[data-um-preview="support"]').removeClass("preview-support default-margin-top");
     $(element).find(".default-theme").addClass("no-padding");
     $(element).find(".question-feedback-container").addClass("hide-element").removeClass("show-element");
-    $(element).removeClass("card default-margin-bottom default-padding-top");
+    $(element).removeClass("um-card default-margin-bottom default-padding-top");
     $(element).find(".multi-choice").removeClass("default-margin-top").addClass("default-margin-bottom");
     $(element).find(".question-answer").removeClass("default-margin-bottom");
-    $(element).find("p.pg-break, .question-choice-answer , .question-choice-feedback, .fill-blanks,.select-option , .question-action-holder")
-    .addClass("show-element").removeClass("hide-element");
+    $(element).find("p.pg-break, .question-choice-answer , .question-choice-feedback, .action-delete-inner, .fill-blanks,.select-option , .question-action-holder")
+    .removeClass("hide-element").addClass("show-element");
 };
 
 /**Handle question choices */
