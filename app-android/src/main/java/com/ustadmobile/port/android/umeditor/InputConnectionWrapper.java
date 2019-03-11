@@ -1,7 +1,6 @@
 package com.ustadmobile.port.android.umeditor;
 
 import android.annotation.TargetApi;
-import android.os.Build;
 import android.os.Bundle;
 import android.os.Handler;
 import android.support.annotation.NonNull;

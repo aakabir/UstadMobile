@@ -293,6 +293,9 @@
     <string name="content_entry_not_found">ContentEntry Not Found</string>
     <string name="content_editor_directionality">Directionality</string>
     <string name="content_editor_pages">Pages</string>
+    <string name='content_page_dialog_add'>Add</string>
+    <string name='content_page_dialog_update'>Update</string>
+    <string name='content_page_dialog_cancel'>Cancel</string>
 
     <!--On boarding screen-->
     <string name="onboarding_get_started_label">Get Started</string>

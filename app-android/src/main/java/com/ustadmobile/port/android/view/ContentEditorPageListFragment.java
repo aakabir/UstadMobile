@@ -279,8 +279,9 @@ public class ContentEditorPageListFragment extends UstadDialogFragment
                 getActivity()) : (isNewPage ? impl.getString(MessageID.content_add_page,
                 getActivity()) : impl.getString(MessageID.content_update_page_title, getActivity()));
 
-        String positiveBtnLabel = isNewPage && !isDocument ? impl.getString(MessageID.content_add_page,
-                getActivity()) : impl.getString(MessageID.update, getActivity());
+        String positiveBtnLabel = isNewPage && !isDocument ? impl.getString(
+                MessageID.content_page_dialog_add, getActivity()) :
+                impl.getString(MessageID.content_page_dialog_update, getActivity());
 
         String titleToUpdateFrom = isDocument ? documentTitle:
                 (isNewPage ? impl.getString(MessageID.content_untitled_page,
@@ -316,7 +317,7 @@ public class ContentEditorPageListFragment extends UstadDialogFragment
 
             dialog.dismiss();
         });
-        builder.setNegativeButton(impl.getString(MessageID.cancel,
+        builder.setNegativeButton(impl.getString(MessageID.content_page_dialog_cancel,
                 getActivity()), (dialog, which) -> dialog.dismiss());
         builder.show();
     }
