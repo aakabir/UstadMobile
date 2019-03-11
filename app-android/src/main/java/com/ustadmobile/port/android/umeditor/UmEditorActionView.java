@@ -1,10 +1,12 @@
 package com.ustadmobile.port.android.umeditor;
 
 import android.content.Context;
+import android.content.res.Resources;
 import android.support.annotation.Nullable;
 import android.support.v4.content.ContextCompat;
 import android.support.v7.widget.Toolbar;
 import android.util.AttributeSet;
+import android.util.DisplayMetrics;
 import android.view.MenuItem;
 import android.widget.FrameLayout;
 import android.widget.ImageView;
@@ -44,6 +46,10 @@ public class UmEditorActionView extends Toolbar {
 
     private ContentEditorActivity.UmFormatHelper umFormatHelper;
 
+    private int deviceWidth = 0;
+
+    private static final int DEFAULT_HIGH_RES_DEVICE_WIDTH = 1080;
+
     /**
      * Constructor to be used for Java instantiation.
      * @param context application context
@@ -78,6 +84,7 @@ public class UmEditorActionView extends Toolbar {
      */
     public void setUmFormatHelper(ContentEditorActivity.UmFormatHelper umFormatHelper){
         this.umFormatHelper = umFormatHelper;
+        deviceWidth = Resources.getSystem().getDisplayMetrics().widthPixels;
     }
 
 
@@ -109,6 +116,7 @@ public class UmEditorActionView extends Toolbar {
             MenuItem menuItem = getMenu().getItem(formatList.indexOf(format));
             FrameLayout rootView = (FrameLayout) menuItem.getActionView();
             ImageView formatIcon = rootView.findViewById(R.id.format_icon);
+            setImageSize(formatIcon);
             FrameLayout formatHolder = rootView.findViewById(R.id.icon_holder);
             formatIcon.setImageResource(format.getFormatIcon());
             changeState(formatIcon,formatHolder,format.isActive());
@@ -131,12 +139,27 @@ public class UmEditorActionView extends Toolbar {
             if(menuItem != null){
                 FrameLayout rootView = (FrameLayout) menuItem.getActionView();
                 ImageView formatIcon = rootView.findViewById(R.id.format_icon);
+                setImageSize(formatIcon);
                 FrameLayout formatHolder = rootView.findViewById(R.id.icon_holder);
                 changeState(formatIcon,formatHolder, umFormat.isActive() &&
                         umFormatHelper.isTobeHighlighted(umFormat.getFormatCommand()));
             }
         }
     }
+
+    /**
+     * Set toolbar icon size based on device resolution
+     * @param image Toolbar icon.
+     */
+    private void setImageSize(ImageView image){
+        image.requestLayout();
+        DisplayMetrics metrics = Resources.getSystem().getDisplayMetrics();
+        int dimen = Math.round(deviceWidth < DEFAULT_HIGH_RES_DEVICE_WIDTH ? 18 : 22
+                * (metrics.densityDpi / 160f));
+        image.getLayoutParams().height = dimen;
+        image.getLayoutParams().width = dimen;
+    }
+
 
     /**
      * Update specific menu item

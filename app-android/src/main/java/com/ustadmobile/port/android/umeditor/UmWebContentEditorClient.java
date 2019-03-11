@@ -59,7 +59,7 @@ public class UmWebContentEditorClient extends WebViewClient {
     public WebResourceResponse shouldInterceptRequest(WebView view, WebResourceRequest request) {
         InputStream inputStream;
         String resourceUri = request.getUrl().toString();
-        String mimeType = UmAndroidUtil.getMimeType(context,request.getUrl());
+        String mimeType = UmEditorUtil.getMimeType(context,request.getUrl());
         if(mimeType == null && resourceUri.endsWith(".json")){
             mimeType = "application/json";
         }

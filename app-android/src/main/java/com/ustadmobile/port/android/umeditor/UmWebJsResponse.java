@@ -13,6 +13,8 @@ public class UmWebJsResponse {
 
     private String content;
 
+    private String directionality;
+
     /**
      * Get action command to be executed on android native
      */
@@ -44,4 +46,19 @@ public class UmWebJsResponse {
         this.content = content;
     }
 
+    /**
+     * Get language directionality
+     * @return returns RTL or LTR
+     */
+    public String getDirectionality() {
+        return directionality;
+    }
+
+    /**
+     * Set language directionality
+     * @param directionality TRL or LTR
+     */
+    public void setDirectionality(String directionality) {
+        this.directionality = directionality;
+    }
 }

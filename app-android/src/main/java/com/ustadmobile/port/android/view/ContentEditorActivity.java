@@ -64,7 +64,7 @@ import com.ustadmobile.core.view.ContentEditorView;
 import com.ustadmobile.core.view.ContentPreviewView;
 import com.ustadmobile.lib.util.Base64Coder;
 import com.ustadmobile.port.android.impl.http.AndroidAssetsHandler;
-import com.ustadmobile.port.android.umeditor.UmAndroidUtil;
+import com.ustadmobile.port.android.umeditor.UmEditorUtil;
 import com.ustadmobile.port.android.umeditor.UmEditorActionView;
 import com.ustadmobile.port.android.umeditor.UmEditorAnimatedViewSwitcher;
 import com.ustadmobile.port.android.umeditor.UmEditorPopUpView;
@@ -1031,6 +1031,7 @@ public class ContentEditorActivity extends UstadBaseActivity implements ContentE
                 try{
                     Document indexFile = getLoadedPageContent();
                     Elements contentContainer = indexFile.select("#"+EDITOR_BASE_DIR_NAME);
+                    contentContainer.first().attr("dir",callback.getDirectionality());
                     contentContainer.first().html(content);
                     String utf8Content = URLDecoder.decode(content,"UTF-8");
                     UstadMobileSystemImpl.l(UMLog.DEBUG,700, utf8Content);
@@ -1377,7 +1378,9 @@ public class ContentEditorActivity extends UstadBaseActivity implements ContentE
      */
     private void initializeEditor(){
         executeJsFunction(umEditorWebView, EDITOR_METHOD_PREFIX+"initEditor",
-                ContentEditorActivity.this,UmAndroidUtil.getCurrentLocale(this));
+                ContentEditorActivity.this,
+                UmEditorUtil.getCurrentLocale(this),
+                UmEditorUtil.getDirectionality(this));
     }
 
     /**
@@ -1420,13 +1423,13 @@ public class ContentEditorActivity extends UstadBaseActivity implements ContentE
      */
     private void insertMedia(Uri uri, boolean fromCamera) throws IOException {
         progressDialog.setVisibility(View.VISIBLE);
-        String mimeType = UmAndroidUtil.getMimeType(this,uri);
+        String mimeType = UmEditorUtil.getMimeType(this,uri);
         File sourceFile;
         File compressedFile;
         if(fromCamera){
             sourceFile = fileFromCamera;
         }else{
-            sourceFile = new File(Objects.requireNonNull(UmAndroidUtil.getPath(this, uri)));
+            sourceFile = new File(Objects.requireNonNull(UmEditorUtil.getPath(this, uri)));
         }
         if(mimeType.contains("image")){
             compressedFile = new Compressor(this)
