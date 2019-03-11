@@ -20,8 +20,8 @@ android:layout_height="wrap_content">
         android:layout_gravity="center"
         android:id="@+id/format_icon"
         android:tint="@color/icons"
-        android:layout_width="22dp"
-        android:layout_height="22dp" />
+        android:layout_width="18dp"
+        android:layout_height="18dp" />
 </FrameLayout>
 
 </FrameLayout>

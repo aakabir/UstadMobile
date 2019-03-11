@@ -45,7 +45,7 @@
         android:visible="false"
         app:showAsAction="always"
         android:id="@+id/content_action_direction"
-        android:title=""
+        android:title="@string/content_editor_directionality"
         app:actionLayout="@layout/item_content_formatting_top_view"
         />
 
@@ -53,7 +53,7 @@
         android:visible="false"
         app:showAsAction="always"
         android:id="@+id/content_action_pages"
-        android:title="Pages"
+        android:title="@string/content_editor_pages"
         app:actionLayout="@layout/item_content_formatting_top_view"
         />
 

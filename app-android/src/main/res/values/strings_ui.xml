@@ -291,6 +291,8 @@
     <string name="content_editor_page_view_hint">Title</string>
     <string name="content_editor_page_delete_failure_message">Sorry you can not delete this page</string>
     <string name="content_entry_not_found">ContentEntry Not Found</string>
+    <string name="content_editor_directionality">Directionality</string>
+    <string name="content_editor_pages">Pages</string>
 
     <!--On boarding screen-->
     <string name="onboarding_get_started_label">Get Started</string>
