@@ -2,6 +2,7 @@ package com.ustadmobile.port.android.umeditor;
 import android.content.ContentResolver;
 import android.content.ContentUris;
 import android.content.Context;
+import android.content.res.Configuration;
 import android.database.Cursor;
 import android.net.Uri;
 import android.os.Build;
@@ -9,6 +10,7 @@ import android.os.Environment;
 import android.provider.DocumentsContract;
 import android.provider.MediaStore;
 import android.support.annotation.NonNull;
+import android.view.View;
 import android.webkit.MimeTypeMap;
 
 /**
@@ -17,16 +19,16 @@ import android.webkit.MimeTypeMap;
  *
  * <b>Operation flow</b>
  * <p>
- *    Use {@link UmAndroidUtil#getMimeType(Context, Uri)} to get mime type of a file
+ *    Use {@link UmEditorUtil#getMimeType(Context, Uri)} to get mime type of a file
  *
- *    Use {@link UmAndroidUtil#getPath(Context, Uri)} to get the actual file absolute path
+ *    Use {@link UmEditorUtil#getPath(Context, Uri)} to get the actual file absolute path
  * </p>
  *
  * @author kileha3
  *
  */
 
-public class UmAndroidUtil {
+public class UmEditorUtil {
 
     /**
      * Get file path on the device
@@ -166,13 +168,13 @@ public class UmAndroidUtil {
     }
 
     public static String getCurrentLocale(Context context){
-        String locale =  (Build.VERSION.SDK_INT >= Build.VERSION_CODES.N ?
-                context.getResources().getConfiguration().getLocales().get(0) :
-                context.getResources().getConfiguration().locale).toString();
-        String [] locale_identifier = locale.split("_");
-        if(locale_identifier.length > 0){
-            locale = locale_identifier[0];
-        }
-        return locale;
+       return (Build.VERSION.SDK_INT >= Build.VERSION_CODES.N ?
+               context.getResources().getConfiguration().getLocales().get(0) :
+               context.getResources().getConfiguration().locale).toString();
+    }
+
+    public static String getDirectionality(Context context){
+        Configuration config = context.getResources().getConfiguration();
+        return config.getLayoutDirection() == View.LAYOUT_DIRECTION_RTL ? "rtl":"ltr";
     }
 }
