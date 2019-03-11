@@ -2,11 +2,15 @@ package com.ustadmobile.port.android.umeditor;
 
 import android.content.Context;
 import android.util.AttributeSet;
-import android.util.Log;
 import android.view.inputmethod.EditorInfo;
 import android.view.inputmethod.InputConnection;
 import android.webkit.WebView;
 
+/**
+ * Custom webview which used input connection to handle the content editor keyboard events
+ *
+ * @author kileha3
+ */
 public class UmEditorWebView extends WebView {
 
     private InputConnectionWrapper inputConnectionWrapper;

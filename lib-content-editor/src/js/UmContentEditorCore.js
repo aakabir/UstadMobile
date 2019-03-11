@@ -14,6 +14,10 @@ let UmContentEditorCore = function() {};
     This occurs only on content selection, instead it will be handled on keyup event */
 let eventOcurredAfterSelectionProtectionCheck = false;
 
+let elementProtectionStatusTracker = false;
+
+let sendProtectStatusTimeout;
+
 /**
  * Template location path
  * @type {string} path
@@ -820,15 +824,41 @@ UmContentEditorCore.prototype.isElementProtected = (currentNode,isDeleteKey = fa
 /** Callback to be sent to the native side to help blocking delete/backspace key */
 UmContentEditorCore.prototype.onProtectedElementCheck = (currentNode) => {
     const isProtected = UmContentEditorCore.prototype.isElementProtected(currentNode);
+    console.log("ProtectionValueChange", isProtected +"")
+    if(elementProtectionStatusTracker != isProtected){
+        if(elementProtectionStatusTracker && !isProtected){
+            //set timeout
+            sendProtectStatusTimeout = setTimeout(() => {
+                sendProtectStatusTimeout = null;
+                UmContentEditorCore.prototype.sendProtectionState(isProtected)
+            },averageEventTimeout);
+        }
+
+        if(!elementProtectionStatusTracker && isProtected){
+            //cancel timeout
+            if(sendProtectStatusTimeout !== null){
+                clearTimeout(sendProtectStatusTimeout);
+            }else{
+                UmContentEditorCore.prototype.sendProtectionState(isProtected);
+            }
+        }
+        elementProtectionStatusTracker = isProtected;
+    }else{
+        console.log("onContentChanged:", "Protection status tracker value haven't changed");
+    }
+};
+
+UmContentEditorCore.prototype.sendProtectionState = (state) =>{
+    console.log("timeoutEvent","time out expired")
     try{
         UmContentEditor.onProtectedElementCheck(JSON.stringify({
             action:'onProtectedElementCheck',
             directionality:'',
-            content:btoa(isProtected)}));
+            content:btoa(state)}));
     }catch (e) {
         console.log("onContentChanged:",e);
     }
-};
+}
 
 /**
  * Prevent key event and stop event propagation (Physical keyboard key events handling)

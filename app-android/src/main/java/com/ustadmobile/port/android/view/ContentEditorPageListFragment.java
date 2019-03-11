@@ -279,7 +279,7 @@ public class ContentEditorPageListFragment extends UstadDialogFragment
                 getActivity()) : (isNewPage ? impl.getString(MessageID.content_add_page,
                 getActivity()) : impl.getString(MessageID.content_update_page_title, getActivity()));
 
-        String positiveBtnLabel = isNewPage && !isDocument ? impl.getString(MessageID.add,
+        String positiveBtnLabel = isNewPage && !isDocument ? impl.getString(MessageID.content_add_page,
                 getActivity()) : impl.getString(MessageID.update, getActivity());
 
         String titleToUpdateFrom = isDocument ? documentTitle:

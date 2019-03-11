@@ -153,13 +153,16 @@ public class UmEditorActionView extends Toolbar {
      */
     private void setImageSize(ImageView image){
         image.requestLayout();
-        DisplayMetrics metrics = Resources.getSystem().getDisplayMetrics();
-        int dimen = Math.round(deviceWidth < DEFAULT_HIGH_RES_DEVICE_WIDTH ? 18 : 22
-                * (metrics.densityDpi / 160f));
+        int dimen = dpToPixel(deviceWidth < DEFAULT_HIGH_RES_DEVICE_WIDTH ? 18 : 22);
         image.getLayoutParams().height = dimen;
         image.getLayoutParams().width = dimen;
     }
 
+    private int dpToPixel(float dp){
+        DisplayMetrics metrics = Resources.getSystem().getDisplayMetrics();
+        float px = dp * (metrics.densityDpi / 160f);
+        return Math.round(px);
+    }
 
     /**
      * Update specific menu item
