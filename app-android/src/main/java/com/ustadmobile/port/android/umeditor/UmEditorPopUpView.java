@@ -1,10 +1,10 @@
 package com.ustadmobile.port.android.umeditor;
 
-import android.content.Context;
 import android.graphics.Color;
 import android.graphics.drawable.ColorDrawable;
 import android.os.Build;
 import android.support.annotation.NonNull;
+import android.support.v4.app.FragmentActivity;
 import android.support.v4.content.ContextCompat;
 import android.support.v7.widget.LinearLayoutManager;
 import android.support.v7.widget.ListPopupWindow;
@@ -19,11 +19,15 @@ import android.widget.RelativeLayout;
 import android.widget.TextView;
 
 import com.toughra.ustadmobile.R;
+import com.ustadmobile.core.tincan.Activity;
 
 import java.util.ArrayList;
 import java.util.List;
 
 import static android.content.Context.LAYOUT_INFLATER_SERVICE;
+import static com.ustadmobile.port.android.umeditor.UmEditorUtil.convertPixelsToDp;
+import static com.ustadmobile.port.android.umeditor.UmEditorUtil.getActionBarSize;
+import static com.ustadmobile.port.android.umeditor.UmEditorUtil.getDisplayWidth;
 
 /**
  * Customized PopUpWindow which handle both language directionality and content font size option.
@@ -47,7 +51,7 @@ import static android.content.Context.LAYOUT_INFLATER_SERVICE;
 
 public class UmEditorPopUpView {
 
-    private Context context;
+    private FragmentActivity activity;
 
     private View anchorView;
 
@@ -76,18 +80,18 @@ public class UmEditorPopUpView {
 
     /**
      * Constrictor used to initialize PopUp view.
-     * @param context Application context
+     * @param activity Application activity
      * @param anchor View where popup view will be anchored
      */
-    public UmEditorPopUpView(Context context,View anchor) {
-        this.context = context;
+    public UmEditorPopUpView(FragmentActivity activity,View anchor) {
+        this.activity = activity;
         this.anchorView = anchor;
         initializePopUpWindow();
     }
 
     private void initializePopUpWindow(){
         LayoutInflater layoutInflater =
-                (LayoutInflater) context.getSystemService(LAYOUT_INFLATER_SERVICE);
+                (LayoutInflater) activity.getSystemService(LAYOUT_INFLATER_SERVICE);
         View rootView = layoutInflater.inflate(R.layout.popup_item_container_view,null);
         popupWindow = new PopupWindow(rootView);
         popupWindow.setHeight(ListPopupWindow.WRAP_CONTENT);
@@ -100,7 +104,7 @@ public class UmEditorPopUpView {
 
         RecyclerView recyclerView = rootView.findViewById(R.id.menu_items);
         popUpAdapter = new PopUpAdapter(new ArrayList<>());
-        LinearLayoutManager linearLayoutManager = new LinearLayoutManager(context);
+        LinearLayoutManager linearLayoutManager = new LinearLayoutManager(activity);
         linearLayoutManager.setOrientation(LinearLayoutManager.VERTICAL);
         recyclerView.setLayoutManager(linearLayoutManager);
         recyclerView.setAdapter(popUpAdapter);
@@ -151,9 +155,14 @@ public class UmEditorPopUpView {
         if(!isToolBarAnchored){
             popupWindow.showAtLocation(anchorView,Gravity.BOTTOM,-250,100);
         }else{
-            popupWindow.showAsDropDown(anchorView);
+            int toolbarSize = getActionBarSize(activity);
+            int displayWith = getDisplayWidth(activity);
+            int yOffset = convertPixelsToDp((float) (toolbarSize * 2.9)) * -1;
+            int xOffset = (int) ((0.03 * displayWith) * -1);
+            popupWindow.showAsDropDown(anchorView ,xOffset , yOffset ,Gravity.END);
         }
     }
+
 
 
 
@@ -173,11 +182,11 @@ public class UmEditorPopUpView {
 
         private void changeState(ImageView formatIcon,
                                  RelativeLayout formatHolder, TextView formatTile, boolean isActivated){
-            formatIcon.setColorFilter(ContextCompat.getColor(context,
+            formatIcon.setColorFilter(ContextCompat.getColor(activity,
                     isActivated ? R.color.icons:R.color.text_primary));
-            formatTile.setTextColor(ContextCompat.getColor(context,
+            formatTile.setTextColor(ContextCompat.getColor(activity,
                     isActivated ? R.color.icons:R.color.text_primary));
-            formatHolder.setBackgroundColor(ContextCompat.getColor(context,
+            formatHolder.setBackgroundColor(ContextCompat.getColor(activity,
                     isActivated ? R.color.content_icon_active:R.color.icons));
         }
 

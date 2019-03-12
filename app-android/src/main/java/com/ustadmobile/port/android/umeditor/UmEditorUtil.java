@@ -3,6 +3,7 @@ import android.content.ContentResolver;
 import android.content.ContentUris;
 import android.content.Context;
 import android.content.res.Configuration;
+import android.content.res.Resources;
 import android.database.Cursor;
 import android.net.Uri;
 import android.os.Build;
@@ -10,8 +11,14 @@ import android.os.Environment;
 import android.provider.DocumentsContract;
 import android.provider.MediaStore;
 import android.support.annotation.NonNull;
+import android.support.v4.app.FragmentActivity;
+import android.util.DisplayMetrics;
+import android.util.TypedValue;
+import android.view.Display;
 import android.view.View;
 import android.webkit.MimeTypeMap;
+
+import com.ustadmobile.core.tincan.Activity;
 
 /**
  * Class which handles uri's, it converts uri to normal files
@@ -176,5 +183,32 @@ public class UmEditorUtil {
     public static String getDirectionality(Context context){
         Configuration config = context.getResources().getConfiguration();
         return config.getLayoutDirection() == View.LAYOUT_DIRECTION_RTL ? "rtl":"ltr";
+    }
+
+    public static int getActionBarSize(Context context){
+        TypedValue tv = new TypedValue();
+        if (context.getTheme().resolveAttribute(android.R.attr.actionBarSize, tv, true)) {
+            return TypedValue.complexToDimensionPixelSize(tv.data,
+                    context.getResources().getDisplayMetrics());
+        }
+        return 0;
+    }
+
+    public static int getDisplayWidth(FragmentActivity activity){
+        Display display = activity.getWindowManager().getDefaultDisplay();
+        DisplayMetrics outMetrics = new DisplayMetrics();
+        display.getMetrics(outMetrics);
+        float density = activity.getResources().getDisplayMetrics().density;
+        return Math.round(outMetrics.widthPixels / density);
+    }
+
+    public static int convertDpToPixel(int dp){
+        DisplayMetrics metrics = Resources.getSystem().getDisplayMetrics();
+        return Math.round(dp * ((float)metrics.densityDpi / DisplayMetrics.DENSITY_DEFAULT));
+    }
+
+    public static int convertPixelsToDp(float px){
+        DisplayMetrics metrics = Resources.getSystem().getDisplayMetrics();
+        return Math.round(px / ((float) metrics.densityDpi / DisplayMetrics.DENSITY_DEFAULT));
     }
 }

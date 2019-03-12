@@ -7,6 +7,7 @@ import com.ustadmobile.core.view.OnBoardingView;
 import java.util.Hashtable;
 
 import static com.ustadmobile.core.view.ContentEditorView.CONTENT_ENTRY_FILE_UID;
+import static com.ustadmobile.core.view.OnBoardingView.PREF_TAG;
 
 public class OnBoardingPresenter extends UstadBaseController<OnBoardingView> {
 
@@ -18,6 +19,11 @@ public class OnBoardingPresenter extends UstadBaseController<OnBoardingView> {
     public void onCreate(Hashtable savedState) {
         super.onCreate(savedState);
         view.runOnUiThread(() -> view.setScreenList());
+        boolean wasShown = Boolean.parseBoolean(UstadMobileSystemImpl.getInstance()
+                .getAppPref(PREF_TAG,view.getContext()));
+        if(wasShown){
+            handleGetStarted();
+        }
     }
 
 
@@ -26,9 +32,9 @@ public class OnBoardingPresenter extends UstadBaseController<OnBoardingView> {
         if(args == null){
             args = new Hashtable();
         }
-
+        UstadMobileSystemImpl.getInstance().setAppPref(PREF_TAG,String.valueOf(true)
+                ,view.getContext());
         args.put(CONTENT_ENTRY_FILE_UID,String.valueOf(1));
-
         UstadMobileSystemImpl.getInstance().go(ContentEditorView.VIEW_NAME,args,getContext());
     }
 }

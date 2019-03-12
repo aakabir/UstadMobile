@@ -20,7 +20,7 @@
     <string name="content_source_device">من الجهاز</string>
     <string name="content_choose_file">اختر ملف</string>
     <string name="content_prepare_file">تحضير الملف</string>
-    <string name="content_preview">معاينة</string>
+    <string name="content_preview_title">معاينة</string>
     <string name="content_media_photo">صورة</string>
     <string name="content_media_video">فيديو</string>
     <string name="content_media_message">ما نوع الملف الذي تريد إختياره </string>
@@ -38,9 +38,27 @@
     <string name="content_editor_page_view_hint">عنوان</string>
     <string name="content_editor_page_delete_failure_message">للأسف، لا يمكنك إلغاء هذه الصفحة</string>
     <string name="content_entry_not_found">المحتوى غير موجود</string>
-    <string name="content_editor_directionality">Directionality</string>
-    <string name="content_editor_pages">Pages</string>
     <string name='content_page_dialog_add'>أضف</string>
     <string name='content_page_dialog_update'>جاري التحديث</string>
     <string name='content_page_dialog_cancel'>الغاء</string>
+    <string name="content_editor_directionality">Directionality</string>
+    <string name='content_editor_menu_undo'>Undo</string>
+    <string name='content_editor_menu_redo'>Redo</string>
+    <string name='content_editor_menu_text_formatting'>Text formatting</string>
+    <string name='content_editor_menu_pages'>Pages</string>
+    <string name='content_editor_menu_indent'>Indent</string>
+    <string name='content_editor_menu_outdent'>Outdent</string>
+    <string name='content_editor_menu_unorderd_list'>Unordered List</string>
+    <string name='content_editor_menu_orderd_list'>Ordered List</string>
+    <string name='content_editor_menu_strikesthrough'>Strikethrough</string>
+    <string name='content_editor_menu_underline'>Underline</string>
+    <string name='content_editor_menu_italic'>Italic</string>
+    <string name='content_editor_menu_fontsize'>Font size</string>
+    <string name='content_editor_menu_align_center'>Center</string>
+    <string name='content_editor_menu_align_left'>Left</string>
+    <string name='content_editor_menu_align_right'>Right</string>
+    <string name='content_editor_menu_superscript'>Superscript</string>
+    <string name='content_editor_menu_subscript'>Subscript</string>
+    <string name='content_editor_preview'>Preview</string>
+
 </resources>

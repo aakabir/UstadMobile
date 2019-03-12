@@ -2,59 +2,59 @@
 <menu xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:app="http://schemas.android.com/apk/res-auto">
     <item
-        android:visible="false"
+        android:visible="true"
         app:showAsAction="always"
         android:id="@+id/content_action_undo"
-        android:title=""
-        app:actionLayout="@layout/item_content_formatting_top_view"
+        android:title="@string/content_editor_menu_undo"
+        android:icon="@drawable/ic_undo_white_24dp"
         />
 
     <item
-        android:visible="false"
+        android:visible="true"
         app:showAsAction="always"
         android:id="@+id/content_action_redo"
-        android:title=""
-        app:actionLayout="@layout/item_content_formatting_top_view"
+        android:title="@string/content_editor_menu_redo"
+        android:icon="@drawable/ic_redo_white_24dp"
         />
 
     <item
-        android:visible="false"
+        android:visible="true"
         app:showAsAction="always"
         android:id="@+id/content_action_format"
-        android:title=""
-        app:actionLayout="@layout/item_content_formatting_top_view"
+        android:title="@string/content_editor_menu_text_formatting"
+        android:icon="@drawable/ic_text_format_white_24dp"
         />
 
     <item
-        android:visible="false"
+        android:visible="true"
         app:showAsAction="always"
         android:id="@+id/content_action_insert"
-        android:title=""
-        app:actionLayout="@layout/item_content_formatting_top_view"
+        android:title="@string/content_insert_options"
+        android:icon="@drawable/ic_add_white_24dp"
         />
 
     <item
-        android:visible="false"
-        app:showAsAction="always"
+        android:visible="true"
+        app:showAsAction="ifRoom"
         android:id="@+id/content_action_preview"
-        android:title=""
-        app:actionLayout="@layout/item_content_formatting_top_view"
+        android:title="@string/content_editor_preview"
+        android:icon="@drawable/ic_document_preview"
         />
 
     <item
-        android:visible="false"
-        app:showAsAction="always"
+        app:actionViewClass="android.widget.ImageButton"
+        android:visible="true"
+        app:showAsAction="ifRoom"
+        android:icon="@drawable/ic_format_textdirection_l_to_r_black_24dp"
         android:id="@+id/content_action_direction"
-        android:title="@string/content_editor_directionality"
-        app:actionLayout="@layout/item_content_formatting_top_view"
-        />
+        android:title="@string/content_editor_directionality"/>
 
     <item
-        android:visible="false"
-        app:showAsAction="always"
+        android:visible="true"
+        app:showAsAction="ifRoom|withText"
         android:id="@+id/content_action_pages"
-        android:title="@string/content_editor_pages"
-        app:actionLayout="@layout/item_content_formatting_top_view"
+        android:icon="@drawable/ic_piled_pages"
+        android:title="@string/content_editor_menu_pages"
         />
 
 </menu>

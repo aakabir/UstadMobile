@@ -273,7 +273,7 @@
     <string name="content_source_device">From device</string>
     <string name="content_choose_file">Choose file</string>
     <string name="content_prepare_file">Preparing file...</string>
-    <string name="content_preview">Previewing...</string>
+    <string name="content_preview_title">Previewing...</string>
     <string name="content_media_photo">Photo</string>
     <string name="content_media_video">Video</string>
     <string name="content_media_message">What media type would you like to capture?</string>
@@ -291,11 +291,29 @@
     <string name="content_editor_page_view_hint">Title</string>
     <string name="content_editor_page_delete_failure_message">Sorry you can not delete this page</string>
     <string name="content_entry_not_found">ContentEntry Not Found</string>
-    <string name="content_editor_directionality">Directionality</string>
-    <string name="content_editor_pages">Pages</string>
     <string name='content_page_dialog_add'>Add</string>
     <string name='content_page_dialog_update'>Update</string>
     <string name='content_page_dialog_cancel'>Cancel</string>
+    <string name="content_editor_directionality">Directionality</string>
+    <string name='content_editor_menu_undo'>Undo</string>
+    <string name='content_editor_menu_redo'>Redo</string>
+    <string name='content_editor_menu_text_formatting'>Text formatting</string>
+    <string name='content_editor_menu_pages'>Pages</string>
+    <string name='content_editor_menu_indent'>Indent</string>
+    <string name='content_editor_menu_outdent'>Outdent</string>
+    <string name='content_editor_menu_unorderd_list'>Unordered List</string>
+    <string name='content_editor_menu_orderd_list'>Ordered List</string>
+    <string name='content_editor_menu_strikesthrough'>Strikethrough</string>
+    <string name='content_editor_menu_underline'>Underline</string>
+    <string name='content_editor_menu_italic'>Italic</string>
+    <string name='content_editor_menu_fontsize'>Font size</string>
+    <string name='content_editor_menu_align_center'>Center</string>
+    <string name='content_editor_menu_align_left'>Left</string>
+    <string name='content_editor_menu_align_right'>Right</string>
+    <string name='content_editor_menu_superscript'>Superscript</string>
+    <string name='content_editor_menu_subscript'>Subscript</string>
+    <string name='content_editor_preview'>Preview</string>
+
 
     <!--On boarding screen-->
     <string name="onboarding_get_started_label">Get Started</string>

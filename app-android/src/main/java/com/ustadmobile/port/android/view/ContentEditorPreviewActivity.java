@@ -69,7 +69,7 @@ public class ContentEditorPreviewActivity extends UstadBaseActivity
             toolbar.setTitle("");
         }
         toolbarTitle.setText(UstadMobileSystemImpl.getInstance()
-                .getString(MessageID.content_preview,this));
+                .getString(MessageID.content_preview_title,this));
     }
 
     @Override
