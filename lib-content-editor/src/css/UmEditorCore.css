@@ -60,6 +60,7 @@ select {
     padding: 5px 8px;
     width: inherit;
     border: none;
+    min-width: 100%;
     box-shadow: none;
     font-size: 1em;
     background: transparent none;

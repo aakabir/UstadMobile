@@ -10,6 +10,10 @@
  */
 let UmContentEditorCore = function() {};
 
+let selectedContent = "";
+
+let isDefaultTextHighlighted = false;
+
  /* Tracker to track if the key event was allowed even after passing the condition to be prevented. 
     This occurs only on content selection, instead it will be handled on keyup event */
 let eventOcurredAfterSelectionProtectionCheck = false;
@@ -366,6 +370,19 @@ UmContentEditorCore.selectAll =  () => {
     body.click();
 };
 
+UmContentEditorCore.selectAllInElement = (element) => {
+    /* var range = document.createRange();
+    var selection = window.getSelection();
+    range.selectNodeContents(element);
+    selection.removeAllRanges();
+    selection.addRange(range); */
+
+    const range = rangy.createRange();
+    range.selectNodeContents(element);
+    const sel = rangy.getSelection();
+    sel.setSingleRange(range);
+}
+
 //For espresso test
 UmContentEditorCore.clickEditorToFocus = () =>{
     $($("#umEditor").find("div.question-choice").children().get(0)).click();
@@ -380,7 +397,7 @@ UmContentEditorCore.executeCommand = (command, args) => {
     try{
         tinyMCE.activeEditor.execCommand(command, false,args);
     }catch(e){
-        console.log("executeCommand: "+e);
+        UmContentEditorCore.prototype.logUtil("executeCommand: "+e);
     }
 };
 
@@ -425,10 +442,17 @@ UmContentEditorCore.prototype.getCursorPositionRelativeToTheEditableElementConte
             return range.startOffset + rangeCount;
         }
     }catch (e) {
-        console.log("getCursorPositionRelativeToTheEditableElementContent:",e);
+        UmContentEditorCore.prototype.logUtil("getCursorPositionRelativeToTheEditableElementContent:",e);
     }
     return 0;
 };
+
+
+UmContentEditorCore.prototype.logUtil = (tag , message, debug = true) => {
+    if(debug){
+        console.log(tag, message);
+    }
+}
 
 /**
  * Check tinymce toolbar menu controls state.
@@ -461,7 +485,7 @@ UmContentEditorCore.prototype.checkActivatedControls = () => {
             directionality:'',
             content:btoa(JSON.stringify(commandStatus))}));
     }catch(e){
-        console.log(e);
+        UmContentEditorCore.prototype.logUtil(e);
     }
 };
 
@@ -687,7 +711,7 @@ UmContentEditorCore.prototype.getNextElementMatchingSelector = (currentNode,sele
     }
   }catch(e){
     currentNode = null;
-    console.log("getNextElementMatchingSelector",e);
+    UmContentEditorCore.prototype.logUtil("getNextElementMatchingSelector",e);
   }
   return currentNode;
 };
@@ -774,7 +798,7 @@ UmContentEditorCore.prototype.setCursorToAnyNonProtectedFucusableElement = (elem
        sel.addRange(range);
        element.focus();
    }catch (e) {
-       console.log("setCursorToAnyNonProtectedFucusableElement",e)
+       UmContentEditorCore.prototype.logUtil("setCursorToAnyNonProtectedFucusableElement",e)
    }
 };
 
@@ -824,7 +848,6 @@ UmContentEditorCore.prototype.isElementProtected = (currentNode,isDeleteKey = fa
 /** Callback to be sent to the native side to help blocking delete/backspace key */
 UmContentEditorCore.prototype.onProtectedElementCheck = (currentNode) => {
     const isProtected = UmContentEditorCore.prototype.isElementProtected(currentNode);
-    console.log("ProtectionValueChange", isProtected +"")
     if(elementProtectionStatusTracker != isProtected){
         if(elementProtectionStatusTracker && !isProtected){
             //set timeout
@@ -843,20 +866,18 @@ UmContentEditorCore.prototype.onProtectedElementCheck = (currentNode) => {
             }
         }
         elementProtectionStatusTracker = isProtected;
-    }else{
-        console.log("onContentChanged:", "Protection status tracker value haven't changed");
     }
 };
 
 UmContentEditorCore.prototype.sendProtectionState = (state) =>{
-    console.log("timeoutEvent","time out expired")
+    UmContentEditorCore.prototype.logUtil("timeoutEvent","time out expired")
     try{
         UmContentEditor.onProtectedElementCheck(JSON.stringify({
             action:'onProtectedElementCheck',
             directionality:'',
             content:btoa(state)}));
     }catch (e) {
-        console.log("onContentChanged:",e);
+        UmContentEditorCore.prototype.logUtil("onContentChanged:",e);
     }
 }
 
@@ -869,7 +890,7 @@ UmContentEditorCore.prototype.preventDefaultAndStopPropagation = (event) =>  {
         event.stopImmediatePropagation();
         return false;
     }catch(e){
-        console.log("preventDefaultAndStopPropagation",e);
+        UmContentEditorCore.prototype.logUtil("preventDefaultAndStopPropagation",e);
     }
     return false;
 };
@@ -900,7 +921,7 @@ UmContentEditorCore.prototype.getLocaleCode = (locale) => {
  */
 UmContentEditorCore.initEditor = (locale = "en",dir = "ltr" ,showToolbar = false) => {
     const localeFilePostFix = UmContentEditorCore.prototype.getLocaleCode(locale);
-    console.log("locale " + localeFilePostFix);
+    UmContentEditorCore.prototype.logUtil("locale " + localeFilePostFix);
     UmQuestionWidget.loadPlaceholders (localeFilePostFix);
     const configs = {
         selector: '#umEditor',
@@ -944,19 +965,31 @@ UmContentEditorCore.initEditor = (locale = "en",dir = "ltr" ,showToolbar = false
 
             ed.on('SelectionChange', (e) => {
                 const currentNode = tinymce.activeEditor.selection.getNode();
+                
                 try{
-                    const sel = rangy.getSelection();
-                    const range = sel.rangeCount ? sel.getRangeAt(0) : null;
-                    let selectedContent = "";
-                    if (range) {        
-                        selectedContent = range.toHtml();
+
+                    const defaultPlaceHolder = Object.values(UmQuestionWidget._locale.placeholders)
+                    .indexOf($(currentNode).text()) > -1;
+
+                    if($(currentNode).is("p") && defaultPlaceHolder){
+                        isDefaultTextHighlighted = true;
+                        UmContentEditorCore.selectAllInElement($(currentNode).get(0))
+                    }else{
+                        isDefaultTextHighlighted = false;
+                        const sel = rangy.getSelection();
+                        const range = sel.rangeCount ? sel.getRangeAt(0) : null;
+                        if (range) {        
+                            selectedContent = range.toHtml();
+                        }
+                        this.selectedContent = selectedContent;
+                        UmContentEditorCore.setFocusToNextUnprotectedFocusableElement(currentNode,e);
+                        protectedSelection = $(selectedContent).is(doNotRemoveSelector);
+                        UmContentEditorCore.prototype.onProtectedElementCheck(currentNode);
                     }
-                    this.selectedContent = selectedContent;
-                    UmContentEditorCore.setFocusToNextUnprotectedFocusableElement(currentNode,e);
-                    protectedSelection = $(selectedContent).is(doNotRemoveSelector);
-                    UmContentEditorCore.prototype.onProtectedElementCheck(currentNode);
+
+                
                 }catch (e) {
-                    console.log(e);
+                    UmContentEditorCore.prototype.logUtil(e);
                 }
             });
 
@@ -995,7 +1028,7 @@ UmContentEditorCore.initEditor = (locale = "en",dir = "ltr" ,showToolbar = false
                 }
             });
             ed.on('beforeinput', (e) => {
-                console.log(e);
+                UmContentEditorCore.prototype.logUtil(e);
             });
 
 
@@ -1006,13 +1039,22 @@ UmContentEditorCore.initEditor = (locale = "en",dir = "ltr" ,showToolbar = false
             ed.on('keydown', (e) => {
                 isSoftKeyboard =  e.key === "Unidentified";
                 const currentNode = this.selectedContent.length > 0 ? $("<div/>").append($(this.selectedContent).clone()).get(0):tinymce.activeEditor.selection.getNode();
-                if(!isSoftKeyboard){
-                    e.stopImmediatePropagation();
-                    UmContentEditorCore.checkProtectedElements(currentNode,e.key === "Backspace" || e.key === "Delete",e);
-                    UmContentEditorCore.setFocusToNextUnprotectedFocusableElement(e.target,e);
+                
+                if(isDefaultTextHighlighted){
+                    $(currentNode).text("");
+                    UmContentEditorCore.prototype.logUtil("Default", this.selectedContent,true);
                 }else{
-                    UmContentEditorCore.prototype.onProtectedElementCheck(currentNode);
+
+                    if(!isSoftKeyboard){
+                        e.stopImmediatePropagation();
+                        UmContentEditorCore.checkProtectedElements(currentNode,e.key === "Backspace" || e.key === "Delete",e);
+                        UmContentEditorCore.setFocusToNextUnprotectedFocusableElement(e.target,e);
+                    }else{
+                        UmContentEditorCore.prototype.onProtectedElementCheck(currentNode);
+                    }
                 }
+                
+                
             });
         }
     };
@@ -1060,7 +1102,7 @@ UmContentEditorCore.initEditor = (locale = "en",dir = "ltr" ,showToolbar = false
                 directionality:'',
                 content:"true"}));
         }catch (e) {
-            console.log("onInitEditor: "+e);
+            UmContentEditorCore.prototype.logUtil("onInitEditor: "+e);
         }
 
         try{
@@ -1097,12 +1139,11 @@ UmContentEditorCore.initEditor = (locale = "en",dir = "ltr" ,showToolbar = false
                 }else{
                     editor.removeClass("float-left").addClass("float-right");
                 }
-                //$(document).find("#umEditor").css("padding-left", (dir !== "rtl" ? "16px":"30px"));
                 
                 try{
                     UmContentEditor.onSaveContent(previewContent);
                 }catch (e) {
-                    console.log("onContentChanged:",e);
+                    UmContentEditorCore.prototype.logUtil("onContentChanged:",e);
                 }
 
             });
@@ -1119,7 +1160,7 @@ UmContentEditorCore.initEditor = (locale = "en",dir = "ltr" ,showToolbar = false
             menuStateChangeObserver.observe(document.querySelector('.mce-panel'),menuWatcherFilter);
 
         }catch (e) {
-            console.log("Observers ",e);
+            UmContentEditorCore.prototype.logUtil("Observers ",e);
         }
     });
 
