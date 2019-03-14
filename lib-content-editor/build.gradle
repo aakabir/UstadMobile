@@ -5,18 +5,8 @@ buildscript {
             url 'https://plugins.gradle.org/m2/'
         }
     }
-    dependencies {
-        classpath 'com.eriwen:gradle-js-plugin:2.14.1'
-        classpath 'com.eriwen:gradle-css-plugin:2.14.0'
-    }
 }
 
-import com.eriwen.gradle.css.tasks.MinifyCssTask
-import com.eriwen.gradle.js.tasks.MinifyJsTask
-
-
-apply plugin: "js"
-apply plugin: 'css'
 
 def rootPath = "${rootDir}/lib-content-editor/"
 def rootTemplatePath = rootPath + "templates/"
@@ -32,13 +22,11 @@ def testTimeout = 6000
 task copyResourcesToAndroidAssets << {
     def tinyMce = "lib/tinymce"
     def fonts = "lib/material-icon"
-    def rangy =  "lib/rangy"
     def locale = "locale"
     def templates = "/templates"
 
     copy { from rootTemplatePath into umEditorAssetsPath + templates }
     copy { from rootPath + tinyMce into umEditorAssetsPath +"/"+ tinyMce }
-    copy { from rootPath + rangy into umEditorAssetsPath +"/"+ rangy }
     copy { from rootPath + fonts into umEditorAssetsPath +"/"+fonts }
     copy { from rootPath + locale into umEditorAssetsPath +"/"+locale }
 
@@ -67,21 +55,15 @@ copyResourcesToAndroidAssets.dependsOn(createUmEditorBlankDocumentArchive)
 
 /*Task which creates all directories necessary for preparing a blank document template*/
 task prepareUmEditorDirectories << {
-    def epubMetaInf = "META-INF/"
-    def epubOebps = "OEBPS/"
-    def epubMimeType =  "mimetype"
     def blankDocPath = rootTemplatePath + "umEditorBlankDoc/"
-    def blankDocCssPath = blankDocPath+epubOebps +"css/"
-    def blankDocJsPath = blankDocPath +epubOebps+"js/"
-    def blankDocMediaPath = blankDocPath +epubOebps+"media/"
+    def blankDocCssPath = blankDocPath + "css/"
+    def blankDocJsPath = blankDocPath + "js/"
+    def blankDocMediaPath = blankDocPath + "media/"
 
     copy { from rootTemplatePath+"template_page.html" into blankDocPath }
-    copy { from rootPath+"epub/"+epubMetaInf into blankDocPath+epubMetaInf}
-    copy { from rootPath+"epub/"+epubOebps into blankDocPath+epubOebps}
-    copy { from rootPath+"epub/"+epubMimeType into blankDocPath}
     copy { from rootPath+"dist/css/UmEditorCore.min.css" into blankDocCssPath }
     copy { from rootPath+"/lib/jquery/jquery3.3.1.min.js",
-            rootPath+"dist/js/UmContentEditorCore.min.js", rootPath+"dist/js/UmQuestionWidget.min.js" into blankDocJsPath }
+            rootPath+"dist/js/UmEditorCore.min.js", rootPath+"dist/js/UmWidgetManager.min.js" into blankDocJsPath }
 
     File mediaDir = new File(blankDocMediaPath)
     mediaDir.mkdir()
@@ -92,16 +74,14 @@ createUmEditorBlankDocumentArchive.dependsOn(prepareUmEditorDirectories)
 
 /* Task to minify UmEditor javascript file*/
 new File(rootPath+"src/js").eachFile { def file ->
-    def dynamicTaskName = "taskJsMinify${umJsTaskIndex}"
-
-    task "${dynamicTaskName}"(type: MinifyJsTask) {
-        source = file.absolutePath
-        dest = rootPath + "dist/js/${file.name.replaceFirst(~/\.[^\.]+$/, '')}.min.js"
-        closure {
-            warningLevel = 'QUIET'
-            compilerOptions.languageIn = 'ECMASCRIPT6'
-            compilerOptions.languageOut = 'ECMASCRIPT5_STRICT'
-        }
+    def dynamicTaskName = "taskMinifyJs${umJsTaskIndex}"
+    def jsDistDir = rootPath + "dist/js/"
+    task "${dynamicTaskName}"(type: Exec) {
+        def sourceFile = file.absolutePath
+        def destFile = jsDistDir + "${file.name.replaceFirst(~/\.[^\.]+$/, '')}.min.js"
+        File jsDistFile = new File(jsDistDir)
+        jsDistFile.mkdirs()
+        commandLine 'uglifyjs', sourceFile, '--comments', '--compress', '-o', destFile
     }
     umJsDynamicTasks << dynamicTaskName
     umJsTaskIndex++
@@ -111,11 +91,14 @@ task minifyUmEditorJs(dependsOn: umJsDynamicTasks) << {}
 
 /* Task to minify UmEditor css files*/
 new File(rootPath +"src/css").eachFile { def file ->
-    def dynamicTaskName = "taskCssMinify${umCssTaskIndex}"
-
-    task "${dynamicTaskName}"(type: MinifyCssTask) {
-        source = file.absolutePath
-        dest = rootPath + "dist/css/${file.name.replaceFirst(~/\.[^\.]+$/, '')}.min.css"
+    def dynamicTaskName = "taskMinifyCss${umCssTaskIndex}"
+    def cssDistDir = rootPath + "dist/css/"
+    task "${dynamicTaskName}"(type: Exec) {
+        def sourceFile = file.absolutePath
+        def destFile = cssDistDir  + "${file.name.replaceFirst(~/\.[^\.]+$/, '')}.min.css"
+        File cssDistFile = new File(cssDistDir)
+        cssDistFile.mkdirs()
+        commandLine 'cleancss', '-o', destFile, sourceFile
     }
     umCssDynamicTasks << dynamicTaskName
     umCssTaskIndex++
@@ -137,12 +120,6 @@ task runContentFomattingTests (type: Exec){
     commandLine 'mocha-chrome', testFilePath, '--timeout ',testTimeout
 }
 
-/* Execute keyboard keydown logic tests */
-task runKeyboardKeydownTests (type: Exec){
-    def testFilePath = rootPath + "tests/content-protection.html"
-    commandLine 'mocha-chrome', testFilePath, '--timeout ',testTimeout
-}
-
 
 /* Run all UmEditor Javascript tests */
-task test(dependsOn: [runContentFomattingTests, runContentTemplatesTest, runKeyboardKeydownTests]) << {}
+task test(dependsOn: [runContentFomattingTests, runContentTemplatesTest]) << {}

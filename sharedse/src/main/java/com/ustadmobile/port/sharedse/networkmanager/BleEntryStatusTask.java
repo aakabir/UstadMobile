@@ -9,13 +9,10 @@ import com.ustadmobile.lib.db.entities.EntryStatusResponse;
 import com.ustadmobile.lib.db.entities.NetworkNode;
 
 import java.util.ArrayList;
-import java.util.Calendar;
 import java.util.List;
 
 import static com.ustadmobile.port.sharedse.networkmanager.BleMessageUtil.bleMessageBytesToLong;
 import static com.ustadmobile.port.sharedse.networkmanager.NetworkManagerBle.ENTRY_STATUS_RESPONSE;
-import static com.ustadmobile.port.sharedse.networkmanager.NetworkManagerBle.WIFI_GROUP_CREATION_RESPONSE;
-import static com.ustadmobile.port.sharedse.networkmanager.NetworkManagerBle.WIFI_GROUP_INFO_SEPARATOR;
 
 /**
  * This is an abstract class which is used to implement platform specific BleEntryStatus
@@ -29,32 +26,31 @@ public abstract class BleEntryStatusTask implements Runnable,BleMessageResponseL
     /**
      * Message object which carries list of entry Ids to be checked for availability.
      */
-    public BleMessage message;
+    protected BleMessage message;
 
-    private NetworkNode networkNode;
+    protected NetworkNode networkNode;
 
-    private Object context;
+    protected Object context;
 
     private List<Long> entryUidsToCheck;
 
-    private NetworkManagerBle networkManagerBle;
-
-    private static final int ssidInfoIndex = 0;
-
-    private static final int passphraseInfoIndex = 1;
-
     private BleMessageResponseListener responseListener;
+
+    protected NetworkManagerBle managerBle;
 
     /**
      * Constructor which will be used when creating new instance of a task
      * @param context Application context.
      * @param entryUidsToCheck List of Id's to be checked for availability from a peer device.
      * @param peerToCheck Peer device for those entries to be checked from.
+     *
      */
-    public BleEntryStatusTask(Object context,List<Long> entryUidsToCheck, NetworkNode peerToCheck) {
+    public BleEntryStatusTask(Object context, NetworkManagerBle managerBle, List<Long> entryUidsToCheck,
+                              NetworkNode peerToCheck) {
         this.networkNode = peerToCheck;
         this.context = context;
         this.entryUidsToCheck = entryUidsToCheck;
+        this.managerBle = managerBle;
     }
 
     /**
@@ -64,11 +60,12 @@ public abstract class BleEntryStatusTask implements Runnable,BleMessageResponseL
      * @param peerToSendMessageTo Peer to send message to
      * @param responseListener Message response listener object
      */
-    public BleEntryStatusTask(Object context , BleMessage message, NetworkNode peerToSendMessageTo,
+    public BleEntryStatusTask(Object context , NetworkManagerBle managerBle, BleMessage message, NetworkNode peerToSendMessageTo,
                               BleMessageResponseListener responseListener){
         this.networkNode = peerToSendMessageTo;
         this.context = context;
         this.message = message;
+        this.managerBle = managerBle;
         this.responseListener = responseListener;
     }
 
@@ -86,6 +83,14 @@ public abstract class BleEntryStatusTask implements Runnable,BleMessageResponseL
     }
 
     /**
+     * Set networkManagerBle for testing purpose.
+     * @param managerBle NetworkManagerBle object
+     */
+    void setManagerBle(NetworkManagerBle managerBle){
+        this.managerBle = managerBle;
+    }
+
+    /**
      * Set list of entry uuids , for test purpose
      * @param entryUidsToCheck List of uuids
      */
@@ -99,9 +104,9 @@ public abstract class BleEntryStatusTask implements Runnable,BleMessageResponseL
      * @param response Message received as a response from the server device.
      */
     @Override
-    public void onResponseReceived(String sourceDeviceAddress,BleMessage response) {
+    public void onResponseReceived(String sourceDeviceAddress,BleMessage response, Exception error) {
 
-        byte responseRequestType = response.getRequestType();
+        byte responseRequestType = response != null ? response.getRequestType() : -1;
 
         switch (responseRequestType){
 
@@ -110,50 +115,32 @@ public abstract class BleEntryStatusTask implements Runnable,BleMessageResponseL
                 EntryStatusResponseDao entryStatusResponseDao = umAppDatabase.getEntryStatusResponseDao();
                 NetworkNodeDao networkNodeDao = umAppDatabase.getNetworkNodeDao();
 
-                int networkNodeId = networkNodeDao.findNodeByBluetoothAddress(sourceDeviceAddress).getNodeId();
-                long currentTimeStamp = Calendar.getInstance().getTimeInMillis();
-                List<EntryStatusResponse> entryStatusResponses = new ArrayList<>();
+                long networkNodeId = networkNodeDao.findNodeByBluetoothAddress(sourceDeviceAddress).getNodeId();
+                List<EntryStatusResponse> entryFileStatusResponseList = new ArrayList<>();
                 List<Long> statusCheckResponse = bleMessageBytesToLong(response.getPayload());
 
+                long time = System.currentTimeMillis();
                 for(int entryCounter = 0 ; entryCounter < entryUidsToCheck.size(); entryCounter++){
-                    long entryUuid = entryUidsToCheck.get(entryCounter);
-                    long entryResponse = statusCheckResponse.get(entryCounter);
-                    EntryStatusResponse nodeResponse =
-                            entryStatusResponseDao.findByEntryIdAndNetworkNode(entryUuid,networkNodeId);
-                    EntryStatusResponse statusResponse = new EntryStatusResponse(entryUuid, networkNodeId,
-                            nodeResponse == null ? currentTimeStamp:nodeResponse.getResponseTime()
-                            ,entryResponse, entryResponse != 0);
-                    if(nodeResponse!= null){
-                        statusResponse.setId(statusResponse.getId());
-                    }
-                    entryStatusResponses.add(statusResponse);
+                    long containerUid = entryUidsToCheck.get(entryCounter);
+
+                    entryFileStatusResponseList.add(new EntryStatusResponse(containerUid,time ,
+                            networkNodeId , statusCheckResponse.get(entryCounter) != 0));
 
                 }
-                Long [] rowCount = entryStatusResponseDao.insert(entryStatusResponses);
-                if(rowCount.length == entryStatusResponses.size()){
-                    UstadMobileSystemImpl.l(UMLog.DEBUG,697,
-                            rowCount.length+" responses saved to the db");
+                Long [] rowCount = entryStatusResponseDao.insert(entryFileStatusResponseList);
+                if(rowCount.length == entryFileStatusResponseList.size()){
+                    UstadMobileSystemImpl.l(UMLog.DEBUG,698, rowCount.length
+                            + " response(s) logged from "+ sourceDeviceAddress);
                 }
 
-                break;
-
-            case WIFI_GROUP_CREATION_RESPONSE:
-
-                String [] groupInfo = new String(response.getPayload())
-                        .split(WIFI_GROUP_INFO_SEPARATOR);
-                networkManagerBle.connectToWiFi(groupInfo[ssidInfoIndex],
-                        groupInfo[passphraseInfoIndex]);
+                managerBle.handleLocalAvailabilityResponsesReceived(entryFileStatusResponseList);
                 break;
         }
 
         if(responseListener != null){
-            responseListener.onResponseReceived(sourceDeviceAddress,response);
+            responseListener.onResponseReceived(sourceDeviceAddress, response, error);
         }
 
-    }
-
-    public void setNetworkManagerBle(NetworkManagerBle networkManagerBle){
-        this.networkManagerBle = networkManagerBle;
     }
 
     /**

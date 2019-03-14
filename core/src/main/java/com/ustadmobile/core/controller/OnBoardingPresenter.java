@@ -26,15 +26,14 @@ public class OnBoardingPresenter extends UstadBaseController<OnBoardingView> {
         }
     }
 
-
-    public void handleGetStarted(){
+    public void handleGetStarted() {
         Hashtable args = getArguments();
-        if(args == null){
+        if (args == null) {
             args = new Hashtable();
         }
-        UstadMobileSystemImpl.getInstance().setAppPref(PREF_TAG,String.valueOf(true)
-                ,view.getContext());
-        args.put(CONTENT_ENTRY_FILE_UID,String.valueOf(1));
-        UstadMobileSystemImpl.getInstance().go(ContentEditorView.VIEW_NAME,args,getContext());
+        UstadMobileSystemImpl.getInstance().setAppPref(PREF_TAG, String.valueOf(true)
+                , view.getContext());
+        args.put(CONTENT_ENTRY_FILE_UID, String.valueOf(1));
+        UstadMobileSystemImpl.getInstance().go(ContentEditorView.VIEW_NAME, args, getContext());
     }
 }

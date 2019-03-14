@@ -12,9 +12,9 @@ describe('#ContentTemplates', function() {
 
         describe('givenActiveEditor_whenMultipleChoiceTemplateIsSelected_thenShouldInsertMultipleChoiceNode', function() {
             it('Multi-choice question template node inserted', function() {
-                UmContentEditorCore.insertMultipleChoiceQuestionTemplate();
+                UmEditorCore.insertMultipleChoiceWidget();
                 setTimeout(() => {
-                    const questionList = $('body').find('div[data-um-widget="multi-choice"]');
+                    const questionList = $('.um-editor').find('div[data-um-widget="multi-choice"]');
                     questionList.length.should.equal(1);
                 },TEST_CASE_TIMEOUT);
             });
@@ -22,9 +22,9 @@ describe('#ContentTemplates', function() {
 
         describe('givenActiveEditor_whenFillInTheBlanksTemplateIsSelected_thenShouldInsertFillInTheBlanksNode', function() {
             it('Fill in the blanks question template node inserted', function() {
-                UmContentEditorCore.insertFillInTheBlanksQuestionTemplate();
+                UmEditorCore.insertFillTheBlanksWidget();
                 setTimeout(() =>{
-                    const questionList = $('body').find('div[data-um-widget="fill-the-blanks"]');
+                    const questionList = $('.um-editor').find('div[data-um-widget="fill-the-blanks"]');
                     questionList.length.should.equal(1);
                 },TEST_CASE_TIMEOUT)
             });
@@ -36,25 +36,23 @@ describe('#ContentTemplates', function() {
         describe('givenActiveEditor_whenMediaTypeImageIsSelected_thenShouldInsertImageNode', function() {
             it('Image node inserted', function() {
                 let bannySource = "http://commondatastorage.googleapis.com/gtv-videos-bucket/sample/images/BigBuckBunny.jpg";
-                UmContentEditorCore.insertMediaContent(bannySource,"image/jpg");
+                UmEditorCore.insertMediaContent(bannySource,"image/jpg");
                 setTimeout(() => {
-                    const content = $('body').find('img');
+                    const content = $('.um-editor').find('img');
                     const imageSrc = $(content).attr('src');
-                    const isSourceTheSame = imageSrc === bannySource;
-                    isSourceTheSame.should.equal('true');
+                    bannySource.should.equal(imageSrc);
                 },TEST_CASE_TIMEOUT);
             });
         });
 
         describe('givenActiveEditor_whenMediaTypeAudioIsSelected_thenShouldInsertAudioNode', function() {
             it('Audio node inserted', function() {
-                let bannySource = "http://www.noiseaddicts.com/samples_1w72b820/280.mp3";
-                UmContentEditorCore.insertMediaContent(bannySource,"audio/mp3");
+                let audioSrc = "http://www.noiseaddicts.com/samples_1w72b820/280.mp3";
+                UmEditorCore.insertMediaContent(audioSrc,"audio/mp3");
                 setTimeout(() => {
-                    const content = $('body').find('video.media-audio');
+                    const content = $('.um-editor').find('video.media-audio');
                     const audioUrl = $(content).find('Source:first').attr('src');
-                    const isSourceTheSame = audioUrl === bannySource;
-                    isSourceTheSame.should.equal('true');
+                    audioSrc.should.equal(audioUrl);
                 },TEST_CASE_TIMEOUT);
             });
         });
@@ -63,12 +61,11 @@ describe('#ContentTemplates', function() {
             it('Video node inserted', function() {
 
                 let bannySource = "http://commondatastorage.googleapis.com/gtv-videos-bucket/sample/BigBuckBunny.mp4";
-                UmContentEditorCore.insertMediaContent(bannySource,"video/mp4");
+                UmEditorCore.insertMediaContent(bannySource,"video/mp4");
                 setTimeout(() => {
-                    const content = $('body').find('video.um-media');
+                    const content = $('.um-editor').find('video.um-media');
                     const videoUrl = $(content).find('Source:first').attr('src');
-                    const isSourceTheSame = videoUrl === bannySource;
-                    isSourceTheSame.should.equal('true');
+                    bannySource.should.equal(videoUrl);
                 },TEST_CASE_TIMEOUT);
             });
         });

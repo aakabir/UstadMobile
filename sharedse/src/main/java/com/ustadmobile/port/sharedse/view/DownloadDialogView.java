@@ -1,24 +1,34 @@
 package com.ustadmobile.port.sharedse.view;
 
+import com.ustadmobile.core.impl.UMStorageDir;
 import com.ustadmobile.core.view.UstadView;
 
-/**
- * Created by mike on 3/5/18.
- */
+import java.util.List;
+
 
 public interface DownloadDialogView extends UstadView {
 
     String VIEW_NAME = "DownloadDialog";
 
-    void setAvailableOptions(int options, boolean showChoices);
+    void setBottomButtonsVisible(boolean visible);
 
+    void setBottomButtonPositiveText(String text);
 
-    void setProgressVisible(boolean visible);
+    void setBottomButtonNegativeText(String text);
 
-    void setProgress(float progress);
+    void setDownloadOverWifiOnly(boolean wifiOnly);
 
-    void setProgressStatusText(String statusText);
+    void setStatusText(String statusText, int totalItems, String sizeInfo);
 
-    void setMainText(String downloadSize);
+    void setStackedOptions(int[] optionIds, String[] optionTexts);
 
+    void setStackOptionsVisible(boolean visible);
+
+    void dismissDialog();
+
+    void setWifiOnlyOptionVisible(boolean visible);
+
+    void setCalculatingViewVisible(boolean visible);
+
+    void setUpStorageOptions(List<UMStorageDir> storageOptions);
 }

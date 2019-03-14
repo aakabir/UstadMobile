@@ -1,8 +1,8 @@
 package com.ustadmobile.port.sharedse.networkmanager;
 
-import com.ustadmobile.core.db.dao.ContentEntryDao;
-import com.ustadmobile.core.impl.UmAccountManager;
-import com.ustadmobile.lib.db.entities.ContentEntry;
+import com.google.gson.Gson;
+import com.ustadmobile.core.db.UmAppDatabase;
+import com.ustadmobile.core.db.dao.ContainerDao;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -14,7 +14,6 @@ import static com.ustadmobile.port.sharedse.networkmanager.BleMessageUtil.bleMes
 import static com.ustadmobile.port.sharedse.networkmanager.NetworkManagerBle.ENTRY_STATUS_REQUEST;
 import static com.ustadmobile.port.sharedse.networkmanager.NetworkManagerBle.ENTRY_STATUS_RESPONSE;
 import static com.ustadmobile.port.sharedse.networkmanager.NetworkManagerBle.WIFI_GROUP_CREATION_RESPONSE;
-import static com.ustadmobile.port.sharedse.networkmanager.NetworkManagerBle.WIFI_GROUP_INFO_SEPARATOR;
 import static com.ustadmobile.port.sharedse.networkmanager.NetworkManagerBle.WIFI_GROUP_REQUEST;
 
 /**
@@ -71,19 +70,20 @@ public abstract class BleGattServer implements WiFiDirectGroupListenerBle{
         byte requestType = requestReceived.getRequestType();
         switch (requestType){
             case ENTRY_STATUS_REQUEST:
-                ContentEntryDao contentEntryDao =
-                        UmAccountManager.getRepositoryForActiveAccount(context).getContentEntryDao();
+                ContainerDao containerDao =
+                        UmAppDatabase.getInstance(context).getContainerDao();
                 List<Long> entryStatusResponse = new ArrayList<>();
-                for(long entryUuid: bleMessageBytesToLong(requestReceived.getPayload())){
-                    ContentEntry contentEntry = contentEntryDao.findByEntryId(entryUuid);
-                    entryStatusResponse.add(contentEntry == null ?
-                            0L: contentEntry.getLastModified());
+
+                for(long containerUid: bleMessageBytesToLong(requestReceived.getPayload())){
+
+                    long foundLocalContainerUid =
+                            containerDao.findLocalAvailabilityByUid(containerUid);
+                    entryStatusResponse.add(foundLocalContainerUid != 0 ? 1L: 0L);
                 }
                 return new BleMessage(ENTRY_STATUS_RESPONSE,
                         bleMessageLongToBytes(entryStatusResponse));
 
             case WIFI_GROUP_REQUEST:
-
                 networkManager.handleWiFiDirectGroupChangeRequest(this);
                 networkManager.createWifiDirectGroup();
                 try { mLatch.await(GROUP_CREATION_TIMEOUT, TimeUnit.SECONDS); }
@@ -92,13 +92,14 @@ public abstract class BleGattServer implements WiFiDirectGroupListenerBle{
                     e.printStackTrace();
                 }
                 return new BleMessage(WIFI_GROUP_CREATION_RESPONSE,message.getBytes());
-                default: return null;
+            default: return null;
         }
     }
 
     @Override
     public void groupCreated(WiFiDirectGroupBle group, Exception err) {
-        this.message = group.getSsid() + WIFI_GROUP_INFO_SEPARATOR + group.getPassphrase();
+        group.setEndpoint("http://192.168.49.1:"+ networkManager.getHttpd().getListeningPort()+"/");
+        this.message = new Gson().toJson(group);
         mLatch.countDown();
     }
 

@@ -5,15 +5,15 @@ chai.should();
 describe('#Directionality', function() {
     describe('givenDirectionality_whenChangedToLTR_thenShouldAddDirectionalityToAnode', function() {
         it('Node directionality changed to LTR', function() {
-            const callback = UmContentEditorCore.textDirectionLeftToRight();
-            atob(callback.content).split("-")[formatStatusIndex].should.equal('true');
+            const callback = UmEditorCore.textDirectionLeftToRight();
+            'true'.should.equal(atob(callback.content).split("-")[formatStatusIndex]);
         });
     });
 
     describe('givenDirectionality_whenChangedToRTL_thenShouldAddDirectionalityToAnode', function() {
         it('Node directionality changed to RTL', function() {
-            const callback = UmContentEditorCore.textDirectionRightToLeft();
-            atob(callback.content).split("-")[formatStatusIndex].should.equal('true');
+            const callback = UmEditorCore.textDirectionRightToLeft();
+            'true'.should.equal(atob(callback.content).split("-")[formatStatusIndex]);
         });
     });
 });

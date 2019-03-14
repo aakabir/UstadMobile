@@ -11,61 +11,119 @@
     <script src="lib/rangy/js/rangy-core.js" type="text/javascript"></script>
     <script src="lib/rangy/js/rangy-selectionsaverestore.js" type="text/javascript"></script>
     <script src="lib/tinymce/js/tinymce.min.js" type="text/javascript"></script>
-    <script src="src/js/UmContentEditorCore.js" type="text/javascript"></script>
-    <script src="src/js/UmQuestionWidget.js" type="text/javascript"></script>
+    <script src="src/js/UmEditorCore.js" type="text/javascript"></script>
+    <script src="src/js/UmWidgetManager.js" type="text/javascript"></script>
 
     <script type="text/javascript">
         window.onload = function() {
-            $("#umEditor").css("min-height",$(window).height());
-            UmQuestionWidget.handleWidgetListeners();
-        };
-
-        function reportRangeHtml() {
-            const sel = rangy.getSelection();
-            const range = sel.rangeCount ? sel.getRangeAt(0) : null;
-            if (range) {
-                alert(range.toHtml());
-            }
-        }
-
-    
+            $(".um-editor").css("min-height",$(window).height());
+            UmEditorCore.onInit("sw", "ltr", false);
+        };  
+        
     </script>
 </head>
 <body>
 
-<div id="menus">
-    <button onclick="initializeEditor()">Initialize</button>
-    <button onclick="UmContentEditorCore.insertMultipleChoiceQuestionTemplate()">MultipleChoice</button>
-    <button onclick="UmContentEditorCore.insertFillInTheBlanksQuestionTemplate()">Fill</button>
-    <button onclick="UmContentEditorCore.insertMediaContent('http://commondatastorage.googleapis.com/gtv-videos-bucket/sample/BigBuckBunny.mp4','video/mp4')">Video</button>
-    <button onclick="UmContentEditorCore.insertMediaContent('https://voicebunny.s3.amazonaws.com/assets/sound/home_eng.mp3','audio/mp3')">audio</button>
-    <button onclick="UmContentEditorCore.insertMediaContent('http://www.ccvcri.com/uploads/6/4/9/2/64929695/1053144_orig.jpg','image/jpg')">image</button>
-    <button onclick="reportRangeHtml()">selected</button>
-    <button onclick="UmContentEditorCore.textDirectionRightToLeft()">RTL</button>
-    <button onclick="UmContentEditorCore.textDirectionLeftToRight()">LTR</button>
-    <button onclick="UmContentEditorCore.clickEditorToFocus()">Click</button>
-    <button onclick="addIcon()">Icon</button>
-    <button onclick="getPrevState()">Undo</button>
-</div>
-
 <div class="container-fluid row default-margin-top">
-    <div id="umEditor" class="um-fit-screen" style="margin-top: 50px;">
-       
+
+    <button onclick="UmEditorCore.enableEditingMode()">Start Editing</button>
+    <button onclick="UmEditorCore.disableEditingMode()">Preview Document</button>
+    <button onclick="UmEditorCore.insertMultipleChoiceWidget()">MTCQ</button>
+    <button onclick="UmEditorCore.insertFillTheBlanksWidget()">FITB Widgets</button>
+    <button onclick="UmEditorCore.insertMediaContent('http://commondatastorage.googleapis.com/gtv-videos-bucket/sample/BigBuckBunny.mp4','video/mp4')">Video</button>
+    <button onclick="UmEditorCore.insertMediaContent('https://voicebunny.s3.amazonaws.com/assets/sound/home_eng.mp3','audio/mp3')">audio</button>
+    <button onclick="UmEditorCore.insertMediaContent('http://www.ccvcri.com/uploads/6/4/9/2/64929695/1053144_orig.jpg','image/jpg')">image</button>
+   
+
+    <div class="um-fit-screen um-editor" style="margin-top: 50px;">
+        <div id="id-SP8A9z0tEPjzZ3tC" class="um-row default-margin-top extra-content hide-element" data-um-widget="extra-content"> 
+            <p>&nbsp;</p> 
+           </div> 
+           <div id="id-question-kcosDeYm5uhEfv_x" class="um-row um-fit-screen default-margin-top default-theme question um-card default-padding" data-um-widget="multi-choice" data-um-retry="false"> 
+            <div class="um-row um-fit-screen um-align-end question-action-holder hide-element">
+             <span class="float-right"><em class="material-icons action-delete">delete</em></span> 
+             <span class="float-right"><em class="material-icons action-cut">content_cut</em></span>
+            </div> 
+            <div id="id-_yCZsfUrU0I8T66i" class="question-body  um-fit-screen multi-choice default-theme default-margin-bottom no-left-padding preview-main default-margin-top" data-um-preview="main"> 
+             <p>Placeholder text for the question body</p> 
+            </div> 
+            <div id="undefinedIVOi-ljLyJ2OA8Sj" class="question-choice default-theme um-fit-screen um-alert alert-secondary choice-no-margin-top question-choice-pointer preview-support default-margin-top" data-um-correct="false" data-um-preview="support"> 
+             <div class="choice-action">
+              <span class="float-right"><em class="material-icons action-delete-inner hide-element">delete</em></span>
+             </div> 
+             <div id="id-n-B4DdSHJELss7i1" class="question-choice-body "> 
+              <p>Placeholder text for the choice body</p> 
+             </div> 
+             <div id="id-sAZAejhMflzFL3Il" class="question-choice-feedback  hide-element"> 
+              <p>Feedback placeholder text</p> 
+             </div> 
+             <div id="id-pKXQYTxN17lhm0tU" class="question-choice-answer select-option hide-element">
+              <select class="question-choice-answer-select"> <option value="true">Yes</option> <option selected value="false">No</option> </select>
+             </div> 
+            </div> 
+            <div id="id-4GXxW_rFKY0GU6bH" class="question-feedback-container um-fit-screen default-theme hide-element preview-alert default-margin-top" data-um-preview="alert"> 
+             <div class="um-alert question-feedback-container-text preview-alert default-margin-top" role="alert" data-um-preview="alert">
+              &nbsp;
+             </div> 
+            </div> 
+            <div id="id-MjJicJrfR17BiAd6" class="question-retry-holder um-fit-screen default-theme"> 
+             <div id="id-IMOgdMX3yWUvPE7W" class="question-retry-option select-option default-margin-bottom default-theme hide-element">
+              <select class="question-retry-option-select"> <option value="true">Yes</option> <option selected value="false">No</option> </select>
+             </div> 
+             <div id="id-94sHOURYZ0Og52m8" class="question-retry-btn default-theme default-margin-top hide-element">
+              <button class="float-right qn-retry extra-btn preview-support default-margin-top" data-um-preview="support">Try again</button>
+             </div> 
+            </div> 
+            <div id="id-zZJljxA0IdAW6Qze" class="question-add-choice um-fit-screen default-theme default-padding-top default-margin-bottom hide-element"></div> 
+           </div> 
+           <div class="um-row default-margin-top extra-content hide-element" data-um-widget="extra-content"> 
+            <p>&nbsp;</p> 
+           </div> 
+           <div id="id-question-8DOsaQC8kS-fnxAT" class="um-row um-fit-screen default-margin-top default-theme question um-card default-padding" data-um-widget="fill-the-blanks" data-um-retry="false"> 
+            <div class="um-row um-fit-screen um-align-end question-action-holder hide-element">
+             <span class="float-right"><em class="material-icons action-delete">delete</em></span> 
+             <span class="float-right"><em class="material-icons action-cut">content_cut</em></span>
+            </div> 
+            <div id="id-p3Yps2L8OHBO_QtQ" class="question-body um-fit-screen  default-theme default-margin-bottom no-left-padding preview-main default-margin-top" data-um-preview="main"> 
+             <p>Placeholder text for the question body</p> 
+            </div> 
+            <div id="id-9yZVLTN1ORVBJC92" class="question-answer um-fit-screen default-theme no-padding no-left-padding default-margin-bottom preview-support default-margin-top show-element" data-um-preview="support"> 
+             <div class="um-fit-screen default-theme fill-answer-inputs no-padding"> 
+              <div class="input-group fill-bl-group">
+               <input class="um-fill-answer fill-the-blanks-input" type="text" placeholder="Type answer here"> 
+               <button class="float-right fill-the-blanks-check default-margin-top extra-btn" type="button">Check answer</button>
+              </div> 
+             </div> 
+            </div> 
+            <div class="fill-blanks um-fit-screen  default-theme hide-element"> 
+             <div id="id-HeY9W1U106g79m20" class="question-choice-body "> 
+              <p>Placeholder text for the answer body</p> 
+             </div> 
+             <div id="id-EtkYPpyh_4o6rUhc" class="question-choice-feedback-correct " data-um-edit-only="true"> 
+              <p>Feedback placeholder text for the right choice</p> 
+             </div> 
+             <div id="id-VLBgjad2N8J_N7-f" class="question-choice-feedback-wrong " data-um-edit-only="true"> 
+              <p>Feedback placeholder text for the wrong choice</p> 
+             </div> 
+            </div> 
+            <div id="id-9LAgpjJ_eP_I4RCC" class="question-feedback-container um-fit-screen hide-element default-theme preview-alert default-margin-top" data-um-preview="alert"> 
+             <div class="um-alert question-feedback-container-text preview-alert default-margin-top" role="alert" data-um-preview="alert">
+              &nbsp;
+             </div> 
+            </div> 
+            <div id="id-XxXrnvNcNiZr4fg_" class="question-retry-holder um-fit-screen default-theme"> 
+             <div id="id-gd8T2Ix5OmYwbtE6" class="question-retry-option select-option default-margin-bottom default-theme hide-element">
+              <select class="question-retry-option-select"> <option value="true">Yes</option> <option selected value="false">No</option> </select>
+             </div> 
+             <div id="id-m7fLFTwvYt-Kuj6k" class="question-retry-btn um-fit-screen default-theme default-margin-top hide-element">
+              <button class="float-right qn-retry extra-btn preview-support default-margin-top" data-um-preview="support">Try again</button>
+             </div> 
+            </div> 
+           </div> 
+           <div class="um-row default-margin-top extra-content hide-element" data-um-widget="extra-content"> 
+            <p>&nbsp;</p> 
+           </div>
     </div>
 </div>
-
-<script>
-    function initializeEditor(){
-        UmContentEditorCore.initEditor('en','ltr',false);
-    }
-
-    function getPrevState(){
-            console.log("PrevState",UmContentEditorCore.getEditorPreviousState());
-        }
-
-    function addIcon(){
-        UmContentEditorCore.insertContentRaw("<span><i class='material-icons'>content_cut</i></span>");
-    }
-</script>
 </body>
 </html>

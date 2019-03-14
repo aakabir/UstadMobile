@@ -4,15 +4,15 @@
 
 chai.should();
 describe('#Language locale', function() {
-    beforeEach(function(){
-        this.timeout(2000);
-    });
     describe('givenActiveEditor_whenDefaultLanguageLocaleIsSet_thenAllPlaceholdersShouldBeSetInThatLanguage', function() {
-        UmContentEditorCore.setDefaultLanguage("sw",true);
-        UmContentEditorCore.initEditor();
-        it('Swahili placeholders was set', function() {
-            "Ndio".should.equal(UmQuestionWidget._locale.placeholders.labelForTrueOptionText);
-        });
+        UmEditorCore.onInit("en", "ltr", false, true);
+        UmEditorCore.enableEditingMode();
+        setTimeout(() => {
+            it('English placeholders was set', function() {
+                "Yes".should.equal(UmWidgetManager._locale.placeholders.labelForTrueOptionText);
+            });
+        }, TEST_CASE_TIMEOUT);
+    
     });
     
 

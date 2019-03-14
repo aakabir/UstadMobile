@@ -1,5 +1,7 @@
 package com.ustadmobile.core.db.dao;
 
+import com.ustadmobile.core.db.UmLiveData;
+import com.ustadmobile.core.impl.UmCallback;
 import com.ustadmobile.lib.database.annotation.UmDao;
 import com.ustadmobile.lib.database.annotation.UmInsert;
 import com.ustadmobile.lib.database.annotation.UmOnConflictStrategy;
@@ -15,34 +17,12 @@ import java.util.List;
 @UmDao
 public abstract class EntryStatusResponseDao {
 
-    @UmInsert(onConflict = UmOnConflictStrategy.REPLACE)
-    public abstract Long[] insert(List<EntryStatusResponse> responses);
-
-
-    @UmQuery("SELECT (COUNT(*) > 0) FROM EntryStatusResponse WHERE entryId = :entryId and available = 1 ")
-    public abstract boolean isEntryAvailableLocally(String entryId);
-
-
-    @UmQuery("SELECT * FROM EntryStatusResponse " +
-            " LEFT JOIN NetworkNode ON EntryStatusResponse.responderNodeId = NetworkNode.nodeId " +
-            "WHERE entryId = :entryId AND available = :available ")
-    public abstract List<EntryStatusResponseWithNode> findByEntryIdAndAvailability(String entryId, boolean available);
-
-    @UmQuery("SELECT * FROM EntryStatusResponse WHERE entryid=:entryId AND responderNodeId=:nodeId")
-    public abstract EntryStatusResponse findByEntryIdAndNetworkNode(long entryId, int nodeId);
 
     public static class EntryWithoutRecentResponse {
-        private long contentEntryUid;
+
+        private long containerUid;
 
         private int nodeId;
-
-        public long getContentEntryUid() {
-            return contentEntryUid;
-        }
-
-        public void setContentEntryUid(long contentEntryUid) {
-            this.contentEntryUid = contentEntryUid;
-        }
 
         public int getNodeId() {
             return nodeId;
@@ -51,12 +31,44 @@ public abstract class EntryStatusResponseDao {
         public void setNodeId(int nodeId) {
             this.nodeId = nodeId;
         }
+
+        public long getContainerUid() {
+            return containerUid;
+        }
+
+        public void setContainerUid(long containerUid) {
+            this.containerUid = containerUid;
+        }
     }
 
-    @UmQuery("SELECT ContentEntry.contentEntryUid, NetworkNode.nodeId FROM ContentEntry, NetworkNode " +
-            " WHERE ContentEntry.contentEntryUid IN (:contentUids) " +
+    @UmInsert(onConflict = UmOnConflictStrategy.REPLACE)
+    public abstract Long[] insert(List<EntryStatusResponse> responses);
+
+    @UmInsert(onConflict = UmOnConflictStrategy.REPLACE)
+    public abstract long insert(EntryStatusResponse response);
+
+    @UmQuery("DELETE FROM EntryStatusResponse")
+    public abstract void deleteAll(UmCallback<Void> callback);
+
+    @UmQuery("SELECT * FROM EntryStatusResponse " +
+            " LEFT JOIN NetworkNode ON EntryStatusResponse.erNodeId = NetworkNode.nodeId " +
+            "WHERE erContainerUid = :erContainerUid AND EntryStatusResponse.available = :available ")
+    public abstract List<EntryStatusResponseWithNode> findByContainerUidAndAvailability(long erContainerUid, boolean available);
+
+    @UmQuery("SELECT * FROM EntryStatusResponse WHERE erContainerUid =:erContainerUid AND erNodeId=:erNodeId")
+    public abstract EntryStatusResponse findByContainerUidAndNetworkNode(long erContainerUid, long erNodeId);
+
+    @UmQuery("SELECT * FROM EntryStatusResponse WHERE erContainerUid =:erContainerUid")
+    public abstract EntryStatusResponse findByContainerUid(long erContainerUid);
+
+    @UmQuery("SELECT * FROM EntryStatusResponse WHERE erContainerUid = :erContainerUid")
+    public abstract UmLiveData<List<EntryStatusResponse>> getLiveEntryStatus(long erContainerUid);
+
+    @UmQuery("SELECT Container.containerUid, NetworkNode.nodeId FROM Container, NetworkNode " +
+            " WHERE Container.containerUid IN (:erContainerUids) " +
             " AND NetworkNode.nodeId IN (:nodeIds)  " +
-            " AND NOT EXISTS(Select id FROM EntryStatusResponse WHERE entryId = ContentEntry.contentEntryUid" +
-            " AND responderNodeId = NetworkNode.nodeId) ORDER BY NetworkNode.nodeId")
-    public abstract List<EntryWithoutRecentResponse> findEntriesWithoutRecentResponse(List<Long> contentUids, List<Integer> nodeIds);
+            " AND NOT EXISTS(Select erId FROM EntryStatusResponse WHERE erContainerUid = Container.containerContentEntryUid" +
+            " AND erNodeId = NetworkNode.nodeId AND responseTime > :sinceTime) ORDER BY NetworkNode.nodeId")
+    public abstract List<EntryWithoutRecentResponse> findEntriesWithoutRecentResponse(
+            List<Long> erContainerUids, List<Long> nodeIds, long sinceTime);
 }

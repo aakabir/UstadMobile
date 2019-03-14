@@ -14,12 +14,11 @@ import com.ustadmobile.core.impl.UstadMobileSystemImpl;
 import com.ustadmobile.port.sharedse.networkmanager.BleMessage;
 import com.ustadmobile.port.sharedse.networkmanager.BleMessageResponseListener;
 
+import java.io.IOException;
 import java.util.List;
-import java.util.concurrent.CountDownLatch;
-import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.AtomicBoolean;
 
 import static com.ustadmobile.port.sharedse.networkmanager.NetworkManagerBle.DEFAULT_MTU_SIZE;
-import static com.ustadmobile.port.sharedse.networkmanager.NetworkManagerBle.MAXIMUM_MTU_SIZE;
 import static com.ustadmobile.port.sharedse.networkmanager.NetworkManagerBle.USTADMOBILE_BLE_SERVICE_UUID;
 
 /**
@@ -30,7 +29,7 @@ import static com.ustadmobile.port.sharedse.networkmanager.NetworkManagerBle.UST
  *<p>
  * - When a device is connected to a BLE node, if it  has android version 5 and above
  * it will request for the MTU change and upon receiving a call back on
- * {{@link BleMessageGattClientCallback#onMtuChanged}} it will update MTU and request for
+ * {{@link BleMessageGattClientCallback#onMtuChanged}} it will updateState MTU and request for
  * all available services from the GATT otherwise it will request for available services.
  * This will be achieved by calling {@link BluetoothGatt#discoverServices()}.
  * Once services are found, all characteristics in those services will be listed.
@@ -55,9 +54,7 @@ public class BleMessageGattClientCallback extends  BluetoothGattCallback{
 
     private int packetIteration = 0;
 
-    private int defaultMtuSize = DEFAULT_MTU_SIZE;
-
-    private final CountDownLatch mLatch = new CountDownLatch(1);
+    private final AtomicBoolean serviceDiscoveryRef = new AtomicBoolean(false);
 
 
     /**
@@ -78,17 +75,6 @@ public class BleMessageGattClientCallback extends  BluetoothGattCallback{
     }
 
     /**
-     * Changing Maximum Transfer Unit
-     */
-    @Override
-    public void onMtuChanged(BluetoothGatt gatt, int mtu, int status) {
-        super.onMtuChanged(gatt, mtu, status);
-        //Successfully changed the MTU, update message and notify to start discovering service
-        this.defaultMtuSize = mtu;
-        mLatch.countDown();
-    }
-
-    /**
      * Start discovering GATT services when peer device is connected or disconnects from GATT
      * when connection failed.
      */
@@ -96,32 +82,36 @@ public class BleMessageGattClientCallback extends  BluetoothGattCallback{
     public void onConnectionStateChange(BluetoothGatt gatt, int status, int newState) {
         super.onConnectionStateChange(gatt, status, newState);
 
+        String remoteDeviceAddress = gatt.getDevice().getAddress();
+
         if (status != BluetoothGatt.GATT_SUCCESS) {
             gatt.disconnect();
             UstadMobileSystemImpl.l(UMLog.DEBUG,698,
-                    "Connection failed with error code "+status);
+                    "Connection failed with error code " + status + "from "
+                            + gatt.getDevice().getAddress());
+            if(responseListener != null) {
+                responseListener.onResponseReceived(remoteDeviceAddress, null,
+                        new IOException("BLE onConnectionStateChange not successful." +
+                                "Status = " + status));
+            }
+
             return;
         }
 
         if(newState == BluetoothProfile.STATE_CONNECTED) {
-            /*Check if the device has android version 5 or above and request for the MTU change,
-            MTU change is not supported on lower android version devices*/
-            if(Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP){
-                if(gatt.requestMtu(MAXIMUM_MTU_SIZE)){
-                    try {
-                        mLatch.wait(TimeUnit.SECONDS.toMillis(2));
-                    } catch (InterruptedException e) {
-                        mLatch.countDown();
-                        e.printStackTrace();
-                    }
-                }
+            if(!serviceDiscoveryRef.get()){
+                UstadMobileSystemImpl.l(UMLog.DEBUG,698,
+                        "Discovering services offered by remote device ="
+                                + gatt.getDevice().getAddress());
+                serviceDiscoveryRef.set(true);
+                gatt.discoverServices();
             }
-            gatt.discoverServices();
-
         } else if (newState == BluetoothProfile.STATE_DISCONNECTED) {
             gatt.disconnect();
         }
     }
+
+
 
     /**
      * Enable notification to be sen't back when characteristics are modified
@@ -134,6 +124,9 @@ public class BleMessageGattClientCallback extends  BluetoothGattCallback{
         if(service == null){
             return;
         }
+
+        UstadMobileSystemImpl.l(UMLog.DEBUG,698,
+                "Required Service found on " + gatt.getDevice().getAddress());
         List<BluetoothGattCharacteristic> characteristics = service.getCharacteristics();
 
         BluetoothGattCharacteristic characteristic = characteristics.get(0);
@@ -152,14 +145,20 @@ public class BleMessageGattClientCallback extends  BluetoothGattCallback{
     public void onCharacteristicWrite(BluetoothGatt gatt,
                                       BluetoothGattCharacteristic characteristic, int status) {
         super.onCharacteristicWrite(gatt, characteristic, status);
-        byte[][] packets = messageToSend.getPackets(defaultMtuSize);
+        byte[][] packets = messageToSend.getPackets(DEFAULT_MTU_SIZE);
         if (status == BluetoothGatt.GATT_SUCCESS) {
             if(packetIteration < packets.length){
                 characteristic.setValue(packets[packetIteration]);
                 gatt.writeCharacteristic(characteristic);
                 packetIteration++;
+                UstadMobileSystemImpl.l(UMLog.DEBUG,698,
+                        "Transferring packet #" + packetIteration + " to "
+                                + gatt.getDevice().getAddress());
             }else{
                 packetIteration = 0;
+                UstadMobileSystemImpl.l(UMLog.DEBUG,698,
+                        packets.length + " packet(s) transferred successfully to " +
+                                "the remote device =" + gatt.getDevice().getAddress());
             }
         }
     }
@@ -171,7 +170,6 @@ public class BleMessageGattClientCallback extends  BluetoothGattCallback{
     public void onCharacteristicRead(BluetoothGatt gatt,
                                      BluetoothGattCharacteristic characteristic, int status) {
         super.onCharacteristicRead(gatt, characteristic, status);
-
         readCharacteristics(gatt.getDevice().getAddress(),characteristic);
     }
 
@@ -192,9 +190,9 @@ public class BleMessageGattClientCallback extends  BluetoothGattCallback{
      */
     private void readCharacteristics(String sourceDeviceAddress,
                                      BluetoothGattCharacteristic characteristic){
-        boolean isReceived = receivedMessage.onPackageReceived(characteristic.getValue());
-        if(isReceived){
-            responseListener.onResponseReceived(sourceDeviceAddress,receivedMessage);
+        boolean messageComplete = receivedMessage.onPackageReceived(characteristic.getValue());
+        if(messageComplete){
+            responseListener.onResponseReceived(sourceDeviceAddress, receivedMessage, null);
         }
     }
 
@@ -217,6 +215,7 @@ public class BleMessageGattClientCallback extends  BluetoothGattCallback{
     private boolean matchesServiceUuidString(String serviceIdString) {
         return uuidMatches(serviceIdString, USTADMOBILE_BLE_SERVICE_UUID.toString());
     }
+
 
     private boolean uuidMatches(String uuidString, String... matches) {
         for (String match : matches) {

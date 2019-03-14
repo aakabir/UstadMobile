@@ -40,7 +40,7 @@ import java.io.Serializable;
 public class OpfItem {
     public String href;
 
-    public String mimeType;
+    public String mediaType;
 
     public String properties;
 
@@ -62,12 +62,12 @@ public class OpfItem {
         this.href = href;
     }
 
-    public String getMimeType() {
-        return mimeType;
+    public String getMediaType() {
+        return mediaType;
     }
 
-    public void setMimeType(String mimeType) {
-        this.mimeType = mimeType;
+    public void setMimeType(String mediaType) {
+        this.mediaType = mediaType;
     }
 
     public String getProperties() {

@@ -3,7 +3,9 @@ package com.ustadmobile.port.sharedse.networkmanager;
 
 import com.ustadmobile.core.db.UmAppDatabase;
 import com.ustadmobile.core.db.dao.EntryStatusResponseDao;
+import com.ustadmobile.lib.database.jdbc.DriverConnectionPoolInitializer;
 import com.ustadmobile.lib.db.entities.NetworkNode;
+import com.ustadmobile.sharedse.SharedSeTestConfig;
 import com.ustadmobile.test.core.impl.PlatformTestUtil;
 
 import org.junit.Before;
@@ -25,9 +27,9 @@ import static org.mockito.Mockito.spy;
  */
 public class BleEntryStatusTaskTest {
 
-    private List<Long> entries = Arrays.asList(1056289670L,9076137860L,4590875612L,2912543894L);
+    private List<Long> containerUids = Arrays.asList(1056289670L,9076137860L,4590875612L,2912543894L);
 
-    private List<Long> entriesResponse = Arrays.asList(0L,9076137860000L,0L,2912543894000L);
+    private List<Long> localAvailabilityCheckResponse = Arrays.asList(0L,9076137860000L,0L,2912543894000L);
 
     private BleEntryStatusTask mockedEntryStatusTask;
 
@@ -37,6 +39,8 @@ public class BleEntryStatusTaskTest {
 
     @Before
     public void setUp(){
+        DriverConnectionPoolInitializer.bindDataSource("UmAppDatabase",
+                SharedSeTestConfig.TESTDB_JDBCURL_UMMAPPDATABASE, true);
         Object context =  PlatformTestUtil.getTargetContext();
         UmAppDatabase umAppDatabase = UmAppDatabase.getInstance(context);
         umAppDatabase.clearAllTables();
@@ -50,16 +54,18 @@ public class BleEntryStatusTaskTest {
 
         mockedEntryStatusTask = spy(BleEntryStatusTask.class);
         mockedEntryStatusTask.setContext(context);
-        mockedEntryStatusTask.setEntryUidsToCheck(entries);
+        mockedEntryStatusTask.setManagerBle(spy(NetworkManagerBle.class));
+        mockedEntryStatusTask.setEntryUidsToCheck(containerUids);
     }
     @Test
     public void givenBleMessageWithRequest_whenResponseReceived_thenShouldUpdateEntryStatusResponseInDatabase() {
 
         BleMessage responseMessage = new BleMessage(ENTRY_STATUS_RESPONSE,
-                bleMessageLongToBytes(entriesResponse));
-        mockedEntryStatusTask.onResponseReceived(networkNode.getBluetoothMacAddress(),responseMessage);
+                bleMessageLongToBytes(localAvailabilityCheckResponse));
+        mockedEntryStatusTask.onResponseReceived(networkNode.getBluetoothMacAddress(),responseMessage, null);
 
         assertNotNull("entry check status response will be saved to the database",
-                entryStatusResponseDao.findByEntryIdAndNetworkNode(entries.get(0), networkNode.getNodeId()));
+                entryStatusResponseDao.findByContainerUidAndNetworkNode(containerUids.get(0),
+                        networkNode.getNodeId()));
     }
 }

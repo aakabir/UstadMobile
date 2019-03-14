@@ -1,62 +1,44 @@
 package com.ustadmobile.lib.db.entities;
 
 import com.ustadmobile.lib.database.annotation.UmEntity;
+import com.ustadmobile.lib.database.annotation.UmIndex;
 import com.ustadmobile.lib.database.annotation.UmPrimaryKey;
 
 /**
  * Represents the response from a network node to whether or not a given entry is available locally
  */
-@UmEntity
+@UmEntity(indices = {@UmIndex(name="containerUid_nodeId_unique", unique = true,
+        value = {"erContainerUid", "erNodeId"})})
 public class EntryStatusResponse {
 
     @UmPrimaryKey(autoIncrement = true)
-    private int id;
+    private int erId;
 
-    private long entryId;
-
-    private long entryUpdatedTime;
+    private long erContainerUid;
 
     private long responseTime;
 
-    private int responderNodeId;
+    private long erNodeId;
 
     private boolean available;
 
-    public EntryStatusResponse(long entryId, int responderNodeId, long responseTime, long entryUpdatedTime,
+    public EntryStatusResponse(long erContainerUid, long responseTime, long erNodeId,
                                boolean available) {
-        this.entryId = entryId;
-        this.responderNodeId = responderNodeId;
-        this.entryUpdatedTime = entryUpdatedTime;
+        this.erContainerUid = erContainerUid;
         this.responseTime = responseTime;
+        this.erNodeId = erNodeId;
         this.available = available;
     }
 
-    public EntryStatusResponse() {
 
+    public EntryStatusResponse() { }
+
+    public int getErId() {
+        return erId;
     }
 
-    public int getId() {
-        return id;
-    }
-
-    public void setId(int id) {
-        this.id = id;
-    }
-
-    public long getEntryId() {
-        return entryId;
-    }
-
-    public void setEntryId(long entryId) {
-        this.entryId = entryId;
-    }
-
-    public long getEntryUpdatedTime() {
-        return entryUpdatedTime;
-    }
-
-    public void setEntryUpdatedTime(long entryUpdatedTime) {
-        this.entryUpdatedTime = entryUpdatedTime;
+    public void setErId(int erId) {
+        this.erId = erId;
     }
 
     public long getResponseTime() {
@@ -67,12 +49,12 @@ public class EntryStatusResponse {
         this.responseTime = responseTime;
     }
 
-    public int getResponderNodeId() {
-        return responderNodeId;
+    public long getErNodeId() {
+        return erNodeId;
     }
 
-    public void setResponderNodeId(int responderNodeId) {
-        this.responderNodeId = responderNodeId;
+    public void setErNodeId(long erNodeId) {
+        this.erNodeId = erNodeId;
     }
 
     public boolean isAvailable() {
@@ -81,5 +63,13 @@ public class EntryStatusResponse {
 
     public void setAvailable(boolean available) {
         this.available = available;
+    }
+
+    public long getErContainerUid() {
+        return erContainerUid;
+    }
+
+    public void setErContainerUid(long erContainerUid) {
+        this.erContainerUid = erContainerUid;
     }
 }

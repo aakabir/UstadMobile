@@ -1,6 +1,7 @@
 package com.ustadmobile.lib.db.entities;
 
 import com.ustadmobile.lib.database.annotation.UmEntity;
+import com.ustadmobile.lib.database.annotation.UmIndexField;
 import com.ustadmobile.lib.database.annotation.UmPrimaryKey;
 import com.ustadmobile.lib.database.annotation.UmSyncLastChangedBy;
 import com.ustadmobile.lib.database.annotation.UmSyncLocalChangeSeqNum;
@@ -12,7 +13,10 @@ import static com.ustadmobile.lib.db.entities.ContentEntryFile.TABLE_ID;
 /**
  * Represents a file that contains one or more ContentEntry . This file could be an EPUB, xAPI Zip,
  * etc.
+ *
+ * Deprecated: this is being replaced with Container which support de-duplicating entries
  */
+@Deprecated
 @UmEntity(tableId = TABLE_ID)
 public class ContentEntryFile {
 
@@ -25,6 +29,7 @@ public class ContentEntryFile {
 
     private String md5sum;
 
+    @UmIndexField
     private long lastModified;
 
     private String mimeType;
