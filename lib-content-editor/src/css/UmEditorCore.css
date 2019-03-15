@@ -276,6 +276,16 @@ span.float-right{
     font-size: .8em;
 }
 
+.um-link {
+    color: #1565c0;
+    font-weight: 600 !important;
+    cursor: pointer;
+}
+
+.um-link a{
+    text-decoration: none;
+}
+
 .um-card {
     position: relative;
     display: flex;

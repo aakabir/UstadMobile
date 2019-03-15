@@ -6,23 +6,18 @@ import com.ustadmobile.core.contentformats.epub.nav.EpubNavItem;
 import com.ustadmobile.core.contentformats.epub.opf.OpfDocument;
 import com.ustadmobile.core.contentformats.epub.opf.OpfItem;
 import com.ustadmobile.core.db.UmAppDatabase;
-import com.ustadmobile.core.db.dao.ContentEntryContentEntryFileJoinDao;
-import com.ustadmobile.core.db.dao.ContentEntryDao;
-import com.ustadmobile.core.db.dao.ContentEntryFileDao;
-import com.ustadmobile.core.db.dao.ContentEntryFileStatusDao;
-import com.ustadmobile.core.impl.UMStorageDir;
 import com.ustadmobile.core.impl.UmAccountManager;
 import com.ustadmobile.core.impl.UmCallback;
 import com.ustadmobile.core.impl.UstadMobileSystemImpl;
 import com.ustadmobile.core.util.UMFileUtil;
 import com.ustadmobile.core.util.UMIOUtils;
 import com.ustadmobile.core.view.ContentEditorView;
-import com.ustadmobile.lib.db.entities.ContentEntry;
-import com.ustadmobile.lib.db.entities.ContentEntryContentEntryFileJoin;
-import com.ustadmobile.lib.db.entities.ContentEntryFile;
-import com.ustadmobile.lib.db.entities.ContentEntryFileStatus;
+import com.ustadmobile.lib.db.entities.Container;
+import com.ustadmobile.lib.db.entities.ContainerEntry;
+import com.ustadmobile.lib.db.entities.ContainerEntryFile;
 import com.ustadmobile.port.sharedse.impl.http.EmbeddedHTTPD;
 import com.ustadmobile.port.sharedse.impl.http.FileDirectoryHandler;
+import com.ustadmobile.port.sharedse.util.UmZipUtils;
 
 import org.jsoup.Jsoup;
 import org.jsoup.nodes.Document;
@@ -35,7 +30,6 @@ import org.xmlpull.v1.XmlSerializer;
 import java.io.ByteArrayOutputStream;
 import java.io.File;
 import java.io.FileInputStream;
-import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.nio.charset.StandardCharsets;
@@ -46,14 +40,10 @@ import java.util.Collections;
 import java.util.Date;
 import java.util.List;
 import java.util.Locale;
-import java.util.Objects;
 import java.util.TimeZone;
 import java.util.UUID;
-import java.util.zip.ZipEntry;
-import java.util.zip.ZipInputStream;
-import java.util.zip.ZipOutputStream;
 
-import static com.ustadmobile.core.impl.UstadMobileSystemImpl.SHARED_RESOURCE;
+import static com.ustadmobile.lib.db.entities.ContainerEntryFile.COMPRESSION_NONE;
 
 /**
  * Class which is an actual implementation of {@link UmEditorFileHelperCore}
@@ -62,27 +52,19 @@ import static com.ustadmobile.core.impl.UstadMobileSystemImpl.SHARED_RESOURCE;
  */
 public class UmEditorFileHelper implements UmEditorFileHelperCore {
 
-    private File temporaryBaseDirectory;
-
-    private File contentEntryZipFile;
-
-    private File sourceFile;
-
-    private File mountedFileDir;
+    private File documentDir;
 
     private File mediaDirectory;
 
+    private File documentsRootDir;
+
     private File opfFile;
 
-    private File epubFile;
+    private UmAppDatabase umRepo;
 
-    private UmAppDatabase repository;
-
-    private UmAppDatabase umAppDatabase;
+    private UmAppDatabase umDb;
 
     public static final String MEDIA_DIRECTORY = "media/";
-
-    public static final String OEBPS_DIRECTORY = "OEBPS";
 
     protected Object context;
 
@@ -92,21 +74,17 @@ public class UmEditorFileHelper implements UmEditorFileHelperCore {
 
     private String mountedFileAccessibleUrl = null;
 
-    private ZipFileTaskProgressListener zipTaskListener;
-
     private static final String LOCAL_ADDRESS = "http://127.0.0.1:";
 
     private boolean isTestExecution = false;
 
     private static final String PAGE_PREFIX = "page_";
 
-    private static final String ZIP_FILE_EXTENSION = ".zip";
-
     private static final String DEFAULT_PAGE_MIME_TYPE = "text/html";
 
     private static final int DEFAULT_NAVDOC_DEPTH = 1;
 
-    private long currentLoadedContentEntryFileUid = 0L;
+    private long currentEntryUid = 0L;
 
     private EpubNavItem nextNavItem = null;
 
@@ -115,42 +93,20 @@ public class UmEditorFileHelper implements UmEditorFileHelperCore {
 
     public static final String EDITOR_BASE_DIR_NAME = "umEditor";
 
-    /**
-     * Interface which used to report file zipping progress update
-     */
-    public interface ZipFileTaskProgressListener {
-
-        /**
-         * Invoked when zip task process started
-         */
-        void onTaskStarted();
-        /**
-         * Invoked when there is a progress update during zipping process
-         * @param progress new progress value
-         */
-        void onTaskProgressUpdate(int progress);
-
-        /**
-         * Invoked when zip task process is completed.
-         */
-        void onTaskCompleted();
-    }
-
 
     @Override
     public void  init(Object context){
         this.context = context;
+        UstadMobileSystemImpl.getInstance()
+                .getStorageDirs(context, result -> {
+                    File baseContentDir = new File(result.get(0).getDirURI());
+                    documentsRootDir = new File(baseContentDir,"documents/");
+                    if(!documentsRootDir.exists())documentsRootDir.mkdirs();
+                    isTestExecution = baseContentDir.getAbsolutePath().startsWith("/var/");
+                });
         startWebServer();
-        UMStorageDir[] rootDir =
-                UstadMobileSystemImpl.getInstance().getStorageDirs(SHARED_RESOURCE, context);
-        File baseContentDir = new File(rootDir[0].getDirURI());
-        File tempBaseDir = new File(baseContentDir,"temp/");
-        if(!tempBaseDir.exists())tempBaseDir.mkdirs();
-        temporaryBaseDirectory = tempBaseDir;
-        contentEntryZipFile = new File(baseContentDir,"Umdoc-untitled-"+System.currentTimeMillis()+".zip");
-        isTestExecution = baseContentDir.getAbsolutePath().startsWith("/var/");
-        umAppDatabase = UmAppDatabase.getInstance(context);
-        repository = UmAccountManager.getRepositoryForActiveAccount(context);
+        umDb = UmAppDatabase.getInstance(context);
+        umRepo = UmAccountManager.getRepositoryForActiveAccount(context);
     }
 
     /**
@@ -167,24 +123,19 @@ public class UmEditorFileHelper implements UmEditorFileHelperCore {
         }
     }
 
-    /**
-     * Set zip task file progress listener
-     * @param zipFileTaskProgressListener listener instance
-     */
-    public void setZipTaskProgressListener(ZipFileTaskProgressListener zipFileTaskProgressListener){
-        this.zipTaskListener = zipFileTaskProgressListener;
-    }
 
 
     @Override
-    public void createFile(long contentEntryUid,UmCallback<String> callback) {
-        this.currentLoadedContentEntryFileUid = contentEntryUid;
+    public void createFile(long entryUid, UmCallback<String> callback) {
+        this.currentEntryUid = entryUid;
+        documentDir = new File(documentsRootDir,"Umdoc-untitled-"+System.currentTimeMillis());
+        updateOpfAndMediaDirs();
         new Thread(() -> {
             String filePath;
             if(isTestExecution){
                 filePath = "/com/ustadmobile/port/sharedse/";
             }else{
-                filePath = "/http/"+ EDITOR_BASE_DIR_NAME +"/templates";
+                filePath = "/http/" + EDITOR_BASE_DIR_NAME +"/templates";
             }
             filePath = UMFileUtil.joinPaths(filePath,ContentEditorView.RESOURCE_BLANK_DOCUMENT);
             UstadMobileSystemImpl.getInstance().getAsset(context, filePath,
@@ -192,10 +143,14 @@ public class UmEditorFileHelper implements UmEditorFileHelperCore {
                 @Override
                 public void onSuccess(InputStream result) {
                     try {
-                        if(UMFileUtil.copyFile(result, contentEntryZipFile)){
-                            handleFileInDb(contentEntryUid,callback);
+                        UmZipUtils.unzip(result,documentDir);
+
+                        if(documentDir.exists()){
+                            handleContainerEntryFiles(callback);
+
                         }else{
-                            callback.onFailure(new Throwable("File was not copied"));
+                            callback.onFailure(new Throwable("Files was not copied to the " +
+                                    "intended destination"));
                         }
                     } catch (IOException e) {
                         callback.onFailure(e);
@@ -210,155 +165,63 @@ public class UmEditorFileHelper implements UmEditorFileHelperCore {
         }).start();
     }
 
+
+
     @Override
-    public void mountFile(String filePath,long contentEntryUid, UmCallback<Void> callback) {
-        this.currentLoadedContentEntryFileUid = contentEntryUid;
+    public void mountDocumentDir(String entryPath, UmCallback<Void> callback) {
+        documentDir = new File(entryPath);
+        updateOpfAndMediaDirs();
         new Thread(() -> {
-            sourceFile = new File(filePath);
-            String mountedToPath = sourceFile.getName().replace(ZIP_FILE_EXTENSION,"");
-            mountedFileDir = new File(temporaryBaseDirectory,mountedToPath);
-            contentEntryZipFile = new File(filePath);
-            updateCoreDirectoriesPath();
-            Exception exception = null;
-
-            //check if temp directory exists, if it does use it otherwise mount the file.
-            if(!mountedFileDir.exists()){
-                boolean unZipped = false;
-                try {
-                    unZipped = unZipFile(sourceFile, mountedFileDir);
-                } catch (IOException e) {
-                   exception = e;
-                }finally {
-                    if(unZipped){
-                        updateServerRoute(new File(mountedFileDir,OEBPS_DIRECTORY));
-                    }
-                    if(exception != null){
-                        callback.onFailure(exception);
-                    }else{
-                        callback.onSuccess(null);
-                    }
-                }
-            }else{
-                updateServerRoute(new File(mountedFileDir,OEBPS_DIRECTORY));
-                callback.onSuccess(null);
-            }
-
+            String resourceBaseRouterUrl = EDITOR_BASE_DIR_NAME + "(.)+";
+            embeddedHTTPD.removeRoute(resourceBaseRouterUrl);
+            embeddedHTTPD.addRoute(resourceBaseRouterUrl, FileDirectoryHandler.class, documentDir);
+            mountedFileAccessibleUrl = UMFileUtil.joinPaths(LOCAL_ADDRESS +
+                    embeddedHTTPD.getListeningPort() + "/", EDITOR_BASE_DIR_NAME);
+            callback.onSuccess(null);
         }).start();
+
     }
 
-    /**
-     * Update server remote resource url.
-     * @param pathToMountedFile new path to mounted file.
-     */
-    private void updateServerRoute(File pathToMountedFile) {
-        String resourceBaseDir =
-                UMFileUtil.joinPaths(EDITOR_BASE_DIR_NAME ,OEBPS_DIRECTORY);
-        String resourceBaseRouterUrl = resourceBaseDir+"(.)+";
-        embeddedHTTPD.removeRoute(resourceBaseRouterUrl);
-        embeddedHTTPD.addRoute(resourceBaseRouterUrl, FileDirectoryHandler.class, pathToMountedFile);
-        mountedFileAccessibleUrl = UMFileUtil.joinPaths(LOCAL_ADDRESS +
-                embeddedHTTPD.getListeningPort()+"/", EDITOR_BASE_DIR_NAME,OEBPS_DIRECTORY);
-    }
 
-    /**
-     * Update all directories to reflect document updates
-     */
-    private void updateCoreDirectoriesPath() {
-        epubFile = new File(mountedFileDir,OEBPS_DIRECTORY + File.separator);
-        opfFile = new File(epubFile,"content.opf");
-        mediaDirectory = new File(mountedFileDir,
-                UMFileUtil.joinPaths(OEBPS_DIRECTORY,MEDIA_DIRECTORY));
+    private void updateOpfAndMediaDirs() {
+        opfFile = new File(getDocumentDirPath(),"content.opf");
+        mediaDirectory = new File(getDocumentDirPath(), MEDIA_DIRECTORY);
+        if(!mediaDirectory.exists()){
+            mediaDirectory.mkdirs();
+        }
     }
 
 
     /**
-     * Handle file on database level
-     * @param contentEntryFileUid Uid of the opened content entry
+     * Handle container, containerEntry and ContainerEntryFiles on database level
      * @param callback UmCallback
      */
-    private void handleFileInDb(long contentEntryFileUid,UmCallback<String> callback){
+    private void handleContainerEntryFiles(UmCallback<String> callback){
 
-        long lastModified = System.currentTimeMillis();
-        ContentEntry contentEntry = new ContentEntry();
-        contentEntry.setLastModified(lastModified);
+        Container container = new Container();
+        container.setContainerContentEntryUid(currentEntryUid);
+        container.setLastModified(System.currentTimeMillis());
+        container.setContainerUid(umRepo.getContainerDao().insert(container));
 
-        ContentEntryFile mEntryFile = new ContentEntryFile();
-        mEntryFile.setContentEntryFileUid(contentEntryFileUid);
-        mEntryFile.setFileSize(contentEntryZipFile.length());
+        File [] allDocFiles = documentDir.listFiles();
 
-        ContentEntryDao contentEntryDao = repository.getContentEntryDao();
-        ContentEntryFileDao fileDao = repository.getContentEntryFileDao();
-        ContentEntryFileStatusDao fileStatusDao = umAppDatabase.getContentEntryFileStatusDao();
-        ContentEntryContentEntryFileJoinDao joinDao =
-                repository.getContentEntryContentEntryFileJoinDao();
+        assert allDocFiles != null;
+        for(File file : allDocFiles){
 
-        contentEntryDao.insertAsync(contentEntry, new UmCallback<Long>() {
-            @Override
-            public void onSuccess(Long contentEntryUid) {
-                fileDao.insertAsync(mEntryFile, new UmCallback<Long>() {
-                    @Override
-                    public void onSuccess(Long fileUid) {
+            File fileEntry = new File(documentDir,file.getName());
+            ContainerEntryFile entryFile = new ContainerEntryFile();
+            entryFile.setCefPath(fileEntry.getPath());
+            entryFile.setCeCompressedSize(0);
+            entryFile.setCeTotalSize(fileEntry.getTotalSpace());
+            entryFile.setCompression(COMPRESSION_NONE);
+            entryFile.setCefUid(umDb.getContainerEntryFileDao().insert(entryFile));
 
-                        ContentEntryContentEntryFileJoin entryFileJoin =
-                                new ContentEntryContentEntryFileJoin();
-                        entryFileJoin.setCecefjContentEntryFileUid(contentEntryFileUid);
-                        entryFileJoin.setCecefjContentEntryUid(contentEntryUid);
-
-                        joinDao.insertAsync(entryFileJoin, new UmCallback<Long>() {
-                            @Override
-                            public void onSuccess(Long cecefUid) {
-
-                                ContentEntryFileStatus fileStatus = new ContentEntryFileStatus();
-                                fileStatus.setCefsUid(contentEntryUid.intValue());
-                                fileStatus.setCefsContentEntryFileUid(contentEntryFileUid);
-                                fileStatus.setFilePath(contentEntryZipFile.getAbsolutePath());
-
-                                fileStatusDao.insertAsync(fileStatus, new UmCallback<Long>() {
-                                    @Override
-                                    public void onSuccess(Long result) {
-                                        callback.onSuccess(contentEntryZipFile.getAbsolutePath());
-                                    }
-
-                                    @Override
-                                    public void onFailure(Throwable exception) {
-                                        callback.onFailure(exception);
-                                    }
-                                });
-                            }
-
-                            @Override
-                            public void onFailure(Throwable exception) {
-                                callback.onFailure(exception);
-                            }
-                        });
-                    }
-
-                    @Override
-                    public void onFailure(Throwable exception) {
-                        callback.onFailure(exception);
-                    }
-                });
-            }
-
-            @Override
-            public void onFailure(Throwable exception) {
-                callback.onFailure(exception);
-            }
-        });
+            umDb.getContainerEntryDao().insert(new ContainerEntry(documentDir.getPath(),
+                    container,entryFile));
+        }
+        callback.onSuccess(documentDir.getAbsolutePath());
     }
 
-
-
-    @Override
-    public void updateFile(UmCallback<Boolean> callback) {
-        new Thread(() -> {
-            List<File> fileStructure = new ArrayList<>();
-            getFileStructure(mountedFileDir,fileStructure);
-            zipTaskListener.onTaskStarted();
-            boolean zipped = createZipFiles(fileStructure);
-            callback.onSuccess(zipped);
-        }).start();
-    }
 
 
     @Override
@@ -374,7 +237,7 @@ public class UmEditorFileHelper implements UmEditorFileHelperCore {
                                 && !resource.getName().equals(MEDIA_DIRECTORY)){
                             if(resource.delete()) {
                                 String filename = resource.getName();
-                                if(removeManifestItem(getFileNameWithoutExtension(filename))){
+                                if(removeManifestItem(filename)){
                                     unUsedFileCounter++;
                                 }
                             }
@@ -401,7 +264,7 @@ public class UmEditorFileHelper implements UmEditorFileHelperCore {
                     getEpubNavDocument().getToc().getChildren():new ArrayList<>();
             for(EpubNavItem navItem: navItems){
                 Document index = Jsoup.parse(UMFileUtil.readTextFile(
-                        new File(getEpubFilesDirectoryPath(), navItem.getHref()).getAbsolutePath()));
+                        new File(getDocumentDirPath(), navItem.getHref()).getAbsolutePath()));
                 Element previewContainer = index.select("#" + EDITOR_BASE_DIR_NAME).first();
                 Elements resources = previewContainer.select("img[src],source[src]");
 
@@ -434,111 +297,6 @@ public class UmEditorFileHelper implements UmEditorFileHelperCore {
         return false;
     }
 
-    /**
-     * Map file structure as on temp directory
-     * @param sourceDir Temporary directory to be zipped
-     * @param fileList File structure holder
-     */
-    private void getFileStructure(File sourceDir,List<File> fileList) {
-        File[] files = sourceDir.listFiles();
-        for (File file : files) {
-            fileList.add(file);
-            if (file.isDirectory()) {
-                getFileStructure(file,fileList);
-            }
-        }
-    }
-
-    /**
-     * Create a zipped file from temp directory
-     * @param fileList Files to be added to the zip
-     * @return True if zip file was created successfully
-     */
-    private boolean createZipFiles(List<File> fileList) {
-        int fileCounter = 0;
-        try {
-            FileOutputStream fos = new FileOutputStream(sourceFile);
-            ZipOutputStream zos = new ZipOutputStream(fos);
-            for (File file : fileList) {
-                if (!file.isDirectory()) {
-                    addFileToZip(file, zos);
-                    fileCounter++;
-                    double progress = fileCounter/(double)fileList.size();
-                    zipTaskListener.onTaskProgressUpdate((int) (progress * 100));
-                }
-            }
-            zos.close();
-            fos.close();
-        } catch (IOException e) {
-            e.printStackTrace();
-        }
-        zipTaskListener.onTaskCompleted();
-        return sourceFile.exists();
-    }
-
-    /**
-     * Add new file to the created zip
-     * @param file file to be added to the zip
-     * @param zos zip file output stream
-     * @throws IOException
-     */
-    private void addFileToZip(File file, ZipOutputStream zos) throws IOException {
-        FileInputStream fis = new FileInputStream(file);
-        String zipFilePath = file.getCanonicalPath()
-                .substring(mountedFileDir.getCanonicalPath().length() + 1,
-                        file.getCanonicalPath().length());
-        ZipEntry zipEntry = new ZipEntry(zipFilePath);
-        zos.putNextEntry(zipEntry);
-        byte[] bytes = new byte[1024];
-        int length;
-        while ((length = fis.read(bytes)) >= 0) {
-            zos.write(bytes, 0, length);
-        }
-        zos.closeEntry();
-        fis.close();
-    }
-
-    /**
-     * Unzip zipped file to a specific destination directory.
-     * @param sourceFile Source zipped file
-     * @param destDir Directory where zipped file content will be put.
-     * @throws IOException Exception thrown when something is wrong
-     */
-    private boolean unZipFile(File sourceFile, File destDir) throws IOException {
-        if(!destDir.exists()) destDir.mkdirs();
-
-        ZipInputStream zipIn = new ZipInputStream(new FileInputStream(sourceFile.getAbsoluteFile()));
-        ZipEntry zipEntry = zipIn.getNextEntry();
-
-        while(zipEntry != null){
-
-            String fileName = zipEntry.getName();
-            File fileToCreate = new File(destDir , fileName);
-            fileToCreate.setLastModified(zipEntry.getTime());
-
-            if(!fileToCreate.getParentFile().isDirectory()){
-                if(!fileToCreate.getParentFile().mkdirs()) {
-                    throw new RuntimeException("Could not create directory to extract to: " +
-                            fileToCreate.getParentFile());
-                }
-            }
-            if(!zipEntry.isDirectory()){
-                FileOutputStream fos = new FileOutputStream(fileToCreate);
-                int read;
-                byte[] buffer = new byte[1024];
-                while ((read = zipIn.read(buffer)) > 0) {
-                    fos.write(buffer, 0, read);
-                }
-
-                fos.close();
-            }
-            zipIn.closeEntry();
-            zipEntry = zipIn.getNextEntry();
-        }
-        zipIn.closeEntry();
-        zipIn.close();
-        return Objects.requireNonNull(destDir.listFiles()).length > 0;
-    }
 
 
     @Override
@@ -617,49 +375,12 @@ public class UmEditorFileHelper implements UmEditorFileHelperCore {
     }
 
     @Override
-    public void updateEpubTitle(String title,boolean isNeDocument, UmCallback<Boolean> callback) {
-
-        String titleToChangeTo = title.replaceAll("\\s","");
-
-        String oldFileBasePath = contentEntryZipFile.getAbsolutePath()
-                .replace(contentEntryZipFile.getName(),"");
-
-        titleToChangeTo = (isNeDocument ? titleToChangeTo+"-"+System.currentTimeMillis()
-                :titleToChangeTo);
-
-        File contentEntryNewFile = new File(oldFileBasePath,
-                titleToChangeTo+ ZIP_FILE_EXTENSION);
-        File tempNewFileDir = new File(temporaryBaseDirectory, titleToChangeTo);
-
-        if(contentEntryZipFile.renameTo(contentEntryNewFile)
-                && mountedFileDir.renameTo(tempNewFileDir)){
-
-            contentEntryZipFile = contentEntryNewFile;
-            mountedFileDir = tempNewFileDir;
-
-            umAppDatabase.getContentEntryFileStatusDao().updateContentEntryFilePath(
-                    currentLoadedContentEntryFileUid, contentEntryZipFile.getAbsolutePath(),
-                    new UmCallback<Integer>() {
-                        @Override
-                        public void onSuccess(Integer result) {
-                            if(result != 0){
-                                updateCoreDirectoriesPath();
-                                updateServerRoute(new File(mountedFileDir,OEBPS_DIRECTORY));
-                                if(isNeDocument){
-                                    updateOpfMetadataInfo(title, UUID.randomUUID().toString());
-                                }
-                                callback.onSuccess(updateOpfMetadataInfo(title,null));
-                            }
-                        }
-
-                        @Override
-                        public void onFailure(Throwable exception) {
-                            callback.onFailure(exception);
-                        }
-                    });
-        }else{
-            callback.onSuccess(false);
+    public void updateDocumentTitle(String title, boolean isNeDocument, UmCallback<Boolean> callback) {
+        updateOpfAndMediaDirs();
+        if(isNeDocument){
+            updateOpfMetadataInfo(title, UUID.randomUUID().toString());
         }
+        callback.onSuccess(updateOpfMetadataInfo(title,null));
     }
 
     @Override
@@ -690,9 +411,9 @@ public class UmEditorFileHelper implements UmEditorFileHelperCore {
             }
 
             href = PAGE_PREFIX + nextPageNumber + ".html";
-            InputStream is = new FileInputStream(new File(getMountedFileTempDirectoryPath(),
+            InputStream is = new FileInputStream(new File(documentDir,
                     PAGE_TEMPLATE));
-            created = UMFileUtil.copyFile(is,new File(getEpubFilesDirectoryPath(), href));
+            created = UMFileUtil.copyFile(is,new File(getDocumentDirPath(), href));
             if(created){
                 created = addNavItem(href,title) && addManifestItem(href, DEFAULT_PAGE_MIME_TYPE)
                         && addSpineItem(href, DEFAULT_PAGE_MIME_TYPE);
@@ -713,7 +434,7 @@ public class UmEditorFileHelper implements UmEditorFileHelperCore {
     @Override
     public void removePage(String  href, UmCallback<Boolean> callback) {
         boolean removed = removeNavItem(href) && removeSpineItem(href)
-                && removeManifestItem(getFileNameWithoutExtension(href));
+                && removeManifestItem(href);
         callback.onSuccess(removed);
     }
 
@@ -736,7 +457,7 @@ public class UmEditorFileHelper implements UmEditorFileHelperCore {
     @Override
     public EpubNavDocument getEpubNavDocument(){
         try{
-            FileInputStream docIn = new FileInputStream(new File(getEpubFilesDirectoryPath(),
+            FileInputStream docIn = new FileInputStream(new File(getDocumentDirPath(),
                     getEpubOpfDocument().getNavItem().getHref()));
             EpubNavDocument navDocument = new EpubNavDocument();
             navDocument.load(UstadMobileSystemImpl.getInstance().newPullParser(docIn,
@@ -750,14 +471,6 @@ public class UmEditorFileHelper implements UmEditorFileHelperCore {
         return null;
     }
 
-    /**
-     * Remove file extension
-     * @param fileName full file name i.e with extension
-     * @return file name without extension.
-     */
-    private String getFileNameWithoutExtension(String fileName){
-        return fileName.replaceFirst("[.][^.]+$", "");
-    }
 
     /**
      * Add spine items on  opf file
@@ -769,7 +482,7 @@ public class UmEditorFileHelper implements UmEditorFileHelperCore {
         OpfItem spineItem = new OpfItem();
         spineItem.setHref(href);
         spineItem.setMimeType(mimeType);
-        spineItem.setId(getFileNameWithoutExtension(href));
+        spineItem.setId(href);
         opfDocument.getSpine().add(spineItem);
         ByteArrayOutputStream bout = null;
         boolean metaInfoUpdated = false;
@@ -896,7 +609,7 @@ public class UmEditorFileHelper implements UmEditorFileHelperCore {
         OpfDocument opfDocument = getEpubOpfDocument();
         OpfItem manifestItem = new OpfItem();
         manifestItem.setHref(href);
-        manifestItem.setId(getFileNameWithoutExtension(href));
+        manifestItem.setId(href);
         manifestItem.setMimeType(mimeType);
         opfDocument.getManifestItems().put(manifestItem.getId(),manifestItem);
         ByteArrayOutputStream bout = null;
@@ -980,7 +693,7 @@ public class UmEditorFileHelper implements UmEditorFileHelperCore {
 
     @Override
     public String getSourceFilePath() {
-        return sourceFile.getAbsolutePath();
+        return documentDir.getAbsolutePath();
     }
 
     @Override
@@ -989,8 +702,8 @@ public class UmEditorFileHelper implements UmEditorFileHelperCore {
     }
 
     @Override
-    public String getMountedFileTempDirectoryPath() {
-        return mountedFileDir.getAbsolutePath();
+    public String getDocumentDirPath() {
+        return documentDir.getAbsolutePath();
     }
 
     @Override
@@ -1003,10 +716,6 @@ public class UmEditorFileHelper implements UmEditorFileHelperCore {
         return mountedFileAccessibleUrl;
     }
 
-    @Override
-    public String getEpubFilesDirectoryPath() {
-        return epubFile.getAbsolutePath();
-    }
 
     /**
      * Add base resource request handler
@@ -1021,7 +730,7 @@ public class UmEditorFileHelper implements UmEditorFileHelperCore {
      * @return file object
      */
     private File getNavFile (){
-        return new File(getEpubFilesDirectoryPath(), getEpubOpfDocument().getNavItem().getHref());
+        return new File(getDocumentDirPath(), getEpubOpfDocument().getNavItem().getHref());
     }
 
     /**
@@ -1037,5 +746,14 @@ public class UmEditorFileHelper implements UmEditorFileHelperCore {
             }
         }
         return null;
+    }
+
+    /**
+     * Remove file extension
+     * @param fileName full file name i.e with extension
+     * @return file name without extension.
+     */
+    private String getFileNameWithoutExtension(String fileName){
+        return fileName.replaceFirst("[.][^.]+$", "");
     }
 }

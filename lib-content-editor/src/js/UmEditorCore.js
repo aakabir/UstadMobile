@@ -52,6 +52,15 @@ const shorterEventTimeout = 100;
  */
 const averageEventTimeout = 300;
 
+/**
+ * List of all tinymce formatting commands which will be used by native side.
+ * @type {string[]} list of commands
+ */
+UmEditorCore.formattingCommandList = [
+    'Bold','Underline','Italic','Strikethrough','Superscript','Subscript','JustifyCenter','JustifyLeft',
+    'JustifyRight','JustifyFull', 'Indent','Outdent','JustifyLeft','JustifyCenter', 'JustifyRight',
+    'JustifyFull','InsertUnorderedList','InsertOrderedList','mceDirectionLTR','mceDirectionRTL','FontSize'
+];
 
 
 /** Initialize the editor object to the active page */
@@ -71,9 +80,6 @@ UmEditorCore.onInit  = (locale = "en",dir = "ltr" ,showToolbar = false, testEnv 
     /** Load placeholders based on locale */
     const langCode = UmEditorCore.prototype.getLanguageCodeFromLocale(locale);
     UmWidgetManager.loadPlaceHolderByLanguageCode(langCode, testEnv);
-
-    //add widget listeners
-    setTimeout(() => {UmWidgetManager.handleWidgetListeners();}, averageEventTimeout);
 
     //config tinymce
     editorConfig = {
@@ -109,9 +115,18 @@ UmEditorCore.onInit  = (locale = "en",dir = "ltr" ,showToolbar = false, testEnv 
         editorConfig.toolbar = ['undo redo | bold italic underline strikethrough superscript subscript | alignleft aligncenter alignright alignjustify | bullist numlist outdent indent | fontsizeselect'];
     }
 
+    UmEditor.onInit(JSON.stringify({
+        action:'onInit',
+        directionality: directionality,
+        content:UmEditorCore.base64Encode(true)}
+    ));
+
     //handle section click and initialize editor on it
     $(document).on('click', '.um-editable', () => {
         tinymce.init(editorConfig);
+
+        //add widget listeners
+        UmWidgetManager.handleWidgetListeners();
     });
 };
 
@@ -128,7 +143,7 @@ UmEditorCore.enableEditingMode = () => {
             UmEditor.onEditingModeOn(JSON.stringify({
                 action:'onEditingModeOn',
                 directionality: directionality,
-                content:"true"}
+                content:UmEditorCore.base64Encode("true")}
             ));
         }catch (e) {
             UmEditorCore.prototype.logUtil("onEditingModeOn: "+e);
@@ -243,12 +258,12 @@ UmEditorCore.insertContentRaw = (content) => {
  * @param element target element to focus
  * @param isRoot flag to indicate if target is root element.
   */
- UmEditorCore.prototype.setCursor = (element = null,isRoot) =>{
-    if(isRoot){
-        UmEditorCore.prototype.setCursorPositionToLastEditableElement(element);
-    }else{
-        UmEditorCore.prototype.setCursorToAnyEditableElement(element);
-    }
+UmEditorCore.prototype.setCursor = (element = null,isRoot) =>{
+   if(isRoot){
+       UmEditorCore.prototype.setCursorPositionToLastEditableElement(element);
+   }else{
+       UmEditorCore.prototype.setCursorToAnyEditableElement(element);
+   }
 };
 
 /**
@@ -292,9 +307,34 @@ UmEditorCore.prototype.setCursorToAnyEditableElement = (element) => {
     }
  };
 
- UmEditorCore.prototype.logUtil = (tag , message, debug = true) => {
-    if(debug){
-        console.log(tag, message);
+UmEditorCore.prototype.logUtil = (tag , message, debug = true) => {
+   if(debug){
+       console.log(tag, message);
+   }
+};
+
+/** Insert link on selected text */
+UmEditorCore.insertLink = (linkUrl) =>{
+    const currentNode = tinyMCE.activeEditor.selection.getNode();
+    var highlight = window.getSelection(),  
+    spn = '<span class="um-link"><a href="' + linkUrl + '" target="_blank">' + highlight + '</a></span>',
+    text = $(currentNode).text(),
+    range = highlight.getRangeAt(0),
+    startText = text.substring(0, range.startOffset), 
+    endText = text.substring(range.endOffset, text.length);
+    
+    $(currentNode).html(startText + spn + endText);
+};
+
+/** Remove link associated with the current selection */
+UmEditorCore.removeLink = () =>{
+    const currentNode = tinyMCE.activeEditor.selection.getNode();  
+    if($(currentNode).is("span") || $(currentNode).is("a")){
+        text = $(currentNode).text();
+        $(currentNode).replaceWith(text);
+    }else{
+        text = $(currentNode).find("span").text();
+        $(currentNode).find("span").replaceWith(text);
     }
 };
 
@@ -448,16 +488,6 @@ UmEditorCore.prototype.checkActivatedControls = () => {
         UmEditorCore.prototype.logUtil("checkActivatedControls",e);
     }
 };
-
-/**
- * List of all tinymce formatting commands which will be used by native side.
- * @type {string[]} list of commands
- */
-UmEditorCore.formattingCommandList = [
-    'Bold','Underline','Italic','Strikethrough','Superscript','Subscript','JustifyCenter','JustifyLeft',
-    'JustifyRight','JustifyFull', 'Indent','Outdent','JustifyLeft','JustifyCenter', 'JustifyRight',
-    'JustifyFull','InsertUnorderedList','InsertOrderedList','mceDirectionLTR','mceDirectionRTL','FontSize'
-];
 
 /**
  * Check if a toolbar button is active or not

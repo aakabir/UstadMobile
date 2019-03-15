@@ -56,18 +56,15 @@ copyResourcesToAndroidAssets.dependsOn(createUmEditorBlankDocumentArchive)
 /*Task which creates all directories necessary for preparing a blank document template*/
 task prepareUmEditorDirectories << {
     def blankDocPath = rootTemplatePath + "umEditorBlankDoc/"
-    def blankDocCssPath = blankDocPath + "css/"
-    def blankDocJsPath = blankDocPath + "js/"
-    def blankDocMediaPath = blankDocPath + "media/"
 
-    copy { from rootTemplatePath+"template_page.html" into blankDocPath }
-    copy { from rootPath+"dist/css/UmEditorCore.min.css" into blankDocCssPath }
-    copy { from rootPath+"/lib/jquery/jquery3.3.1.min.js",
-            rootPath+"dist/js/UmEditorCore.min.js", rootPath+"dist/js/UmWidgetManager.min.js" into blankDocJsPath }
-
-    File mediaDir = new File(blankDocMediaPath)
-    mediaDir.mkdir()
-    new File(blankDocMediaPath+"/media-hide.info").text = "media-dir"
+    copy { from rootTemplatePath + "template_page.html",
+            rootPath + "src/epub/container.xml",
+            rootPath + "src/epub/content.opf",
+            rootPath + "src/epub/nav.xhtml",
+            rootPath + "dist/css/UmEditorCore.min.css",
+            rootPath + "/lib/jquery/jquery3.3.1.min.js",
+            rootPath + "dist/js/UmEditorCore.min.js",
+            rootPath + "dist/js/UmWidgetManager.min.js" into blankDocPath }
 }
 createUmEditorBlankDocumentArchive.dependsOn(prepareUmEditorDirectories)
 
@@ -81,7 +78,7 @@ new File(rootPath+"src/js").eachFile { def file ->
         def destFile = jsDistDir + "${file.name.replaceFirst(~/\.[^\.]+$/, '')}.min.js"
         File jsDistFile = new File(jsDistDir)
         jsDistFile.mkdirs()
-        commandLine 'uglifyjs', sourceFile, '--comments', '--compress', '-o', destFile
+        commandLine 'uglifyjs', sourceFile, '--compress', '--comments','--keep-fnames', '-o', destFile
     }
     umJsDynamicTasks << dynamicTaskName
     umJsTaskIndex++

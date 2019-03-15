@@ -50,17 +50,6 @@ public class UmEditorFileHelperTest {
         Object context =  PlatformTestUtil.getTargetContext();
         umEditorFileHelper = new UmEditorFileHelper();
         umEditorFileHelper.init(context);
-        umEditorFileHelper.setZipTaskProgressListener(
-                new UmEditorFileHelper.ZipFileTaskProgressListener() {
-            @Override
-            public void onTaskStarted() { }
-
-            @Override
-            public void onTaskProgressUpdate(int progress) { }
-
-            @Override
-            public void onTaskCompleted() { }
-        });
         UmAppDatabase umAppDatabase = UmAppDatabase.getInstance(context);
         umAppDatabase.clearAllTables();
 
@@ -129,7 +118,7 @@ public class UmEditorFileHelperTest {
 
 
         assertTrue("File was extracted to temporary directory",
-                new File(umEditorFileHelper.getMountedFileTempDirectoryPath()).exists());
+                new File(umEditorFileHelper.getDocumentDirPath()).exists());
 
         assertEquals("File was successfully mounted and can be accessed via HTTP",
                 HttpURLConnection.HTTP_OK, responseCode);
@@ -152,7 +141,7 @@ public class UmEditorFileHelperTest {
             @Override
             public void onSuccess(String result) {
                 //mount newly created file
-                umEditorFileHelper.mountFile(result, contentEntryUid,new UmCallback<Void>() {
+                umEditorFileHelper.mountDocumentDir(result,new UmCallback<Void>() {
                     @Override
                     public void onSuccess(Void result) {
                         //update media directory with temp file
@@ -165,35 +154,22 @@ public class UmEditorFileHelperTest {
                             contentAddRef.set(mediaAdded);
 
                             if(mediaAdded){
-                                umEditorFileHelper.updateFile(new UmCallback<Boolean>() {
-                                    @Override
-                                    public void onSuccess(Boolean result) {
-                                        zipResultRef.set(result);
+                                umEditorFileHelper.mountDocumentDir(
+                                        umEditorFileHelper.getSourceFilePath(),
+                                        new UmCallback<Void>() {
+                                            @Override
+                                            public void onSuccess(Void result) {
+                                                File fileInZip = new File(umEditorFileHelper
+                                                        .getMediaDirectory(), videoFile);
+                                                zipCheckRef.set(fileInZip.exists());
+                                                mLatch.countDown();
+                                            }
 
-                                        umEditorFileHelper.mountFile(
-                                                umEditorFileHelper.getSourceFilePath(),contentEntryUid,
-                                                new UmCallback<Void>() {
-                                                    @Override
-                                                    public void onSuccess(Void result) {
-                                                        File fileInZip = new File(umEditorFileHelper
-                                                                .getMediaDirectory(), videoFile);
-                                                        zipCheckRef.set(fileInZip.exists());
-                                                        mLatch.countDown();
-                                                    }
-
-                                                    @Override
-                                                    public void onFailure(Throwable exception) {
-                                                        exception.printStackTrace();
-                                                    }
-                                                });
-
-                                    }
-
-                                    @Override
-                                    public void onFailure(Throwable exception) {
-                                        exception.printStackTrace();
-                                    }
-                                });
+                                            @Override
+                                            public void onFailure(Throwable exception) {
+                                                exception.printStackTrace();
+                                            }
+                                        });
                             }else{
                                 mLatch.countDown();
                             }
@@ -579,7 +555,7 @@ public class UmEditorFileHelperTest {
         UmCallback<Void> mountFileCallback = new UmCallback<Void>() {
             @Override
             public void onSuccess(Void result) {
-                umEditorFileHelper.updateEpubTitle(pageTitle,true,updateFileCallback);
+                umEditorFileHelper.updateDocumentTitle(pageTitle,true,updateFileCallback);
             }
 
             @Override
@@ -591,7 +567,7 @@ public class UmEditorFileHelperTest {
         UmCallback<String> createFileCallback = new UmCallback<String>() {
             @Override
             public void onSuccess(String result) {
-                umEditorFileHelper.mountFile(result,contentEntryUid,mountFileCallback);
+                umEditorFileHelper.mountDocumentDir(result,mountFileCallback);
 
             }
 
