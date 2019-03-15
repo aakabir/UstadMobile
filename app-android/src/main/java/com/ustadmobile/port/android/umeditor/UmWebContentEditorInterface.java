@@ -25,17 +25,43 @@ public class UmWebContentEditorInterface {
 
     /** Instantiate the interface and set the context */
     public UmWebContentEditorInterface(Activity activity,
-                                       UmWebContentEditorChromeClient.JsLoadingCallback callback) {
+            UmWebContentEditorChromeClient.JsLoadingCallback callback) {
         this.callback = callback;
         this.activity = activity;
     }
 
     /**
-     * Listen for tinymce injection to the webpage
+     * Listen for the window load finish event
+     * @param callbackValue value passed from JS side
+     */
+    @JavascriptInterface
+    public void onWindowLoad(String callbackValue){
+        try{
+            activity.runOnUiThread(() -> callback.onCallbackReceived(callbackValue));
+        }catch (Exception e){
+            e.printStackTrace();
+        }
+    }
+
+    /**
+     * Listen for tinymce initialisation into a webpage
      * @param callbackValue Value passed from the JS side
      */
     @JavascriptInterface
-    public void onInitEditor(String callbackValue){
+    public void onInit(String callbackValue){
+        try{
+            activity.runOnUiThread(() -> callback.onCallbackReceived(callbackValue));
+        }catch (Exception e){
+            e.printStackTrace();
+        }
+    }
+
+    /**
+     * Listen for editor mode change to ON
+     * @param callbackValue Value passed from the JS side
+     */
+    @JavascriptInterface
+    public void onEditingModeOn(String callbackValue){
         try{
             activity.runOnUiThread(() -> callback.onCallbackReceived(callbackValue));
         }catch (Exception e){
@@ -51,38 +77,12 @@ public class UmWebContentEditorInterface {
     @JavascriptInterface
     public void onSaveContent(String callbackValue){
         try{
-            activity.runOnUiThread(() ->
-                    callback.onCallbackReceived(callbackValue));
-        }catch (Exception e){
-            e.printStackTrace();
-        }
-    }
-
-    /**
-     * Listen for text selection on active editor
-     * @param callbackValue Value passed from the JS side
-     */
-    @JavascriptInterface
-    public void onTextSelected(String callbackValue){
-        try{
             activity.runOnUiThread(() -> callback.onCallbackReceived(callbackValue));
         }catch (Exception e){
             e.printStackTrace();
         }
     }
 
-    /**
-     * Listen for activity editor click events
-     * @param callbackValue Value passed from the JS side
-     */
-    @JavascriptInterface
-    public void onClickEvent(String callbackValue){
-        try{
-            activity.runOnUiThread(() -> callback.onCallbackReceived(callbackValue));
-        }catch (Exception e){
-            e.printStackTrace();
-        }
-    }
 
     /**
      * Listen for the active control checks
@@ -103,19 +103,6 @@ public class UmWebContentEditorInterface {
      */
     @JavascriptInterface
     public void onContentCut(String callbackValue) {
-        try{
-            activity.runOnUiThread(() -> callback.onCallbackReceived(callbackValue));
-        }catch (Exception e){
-            e.printStackTrace();
-        }
-    }
-
-    /**
-     * Listen for the protect element selection check
-     * @param callbackValue Value passed from the JS side
-     */
-    @JavascriptInterface
-    public void onProtectedElementCheck(String callbackValue){
         try{
             activity.runOnUiThread(() -> callback.onCallbackReceived(callbackValue));
         }catch (Exception e){

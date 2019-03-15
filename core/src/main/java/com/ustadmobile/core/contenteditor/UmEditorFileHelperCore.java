@@ -18,11 +18,8 @@ import java.util.List;
  *     Use {@link UmEditorFileHelperCore#createFile} to create file if the file doesn't
  *     exists. i.e when new document is created.
  *
- *     Use {@link UmEditorFileHelperCore#mountFile} to mount zipped file
+ *     Use {@link UmEditorFileHelperCore#mountDocumentDir} to mount zipped file
  *     to the temporary directory so that can be edited.
- *
- *     Use {@link UmEditorFileHelperCore#updateFile(UmCallback)} to add/delete
- *     resources from the temporary directory/zip file when editing.
  *
  *     Use {@link UmEditorFileHelperCore#removeUnUsedResources} to remove all
  *     unused files which are inside the zip but not referenced on content file.
@@ -47,20 +44,14 @@ public interface UmEditorFileHelperCore {
     /**
      * Create new file if the file doesn't
      */
-    void createFile(long contentEntryUid,UmCallback<String> callback);
+    void createFile(long entryUid,UmCallback<String> callback);
 
     /**
-     * Unzip zipped file to a temporary directory for editing purpose.
-     * @param filePath local path of the entry file.
+     * Mount the document dit to be accessible on HTTP
      * @param callback ContentEditorFileHelperCallback
-     */
-    void mountFile(String filePath,long contentEntryUid, UmCallback<Void> callback);
+    */
 
-    /**
-     * Update resources to the zipped file and temporary directory when editing
-     * @param callback UmCallback
-     */
-    void updateFile(UmCallback<Boolean> callback);
+    void mountDocumentDir(String entryPath, UmCallback<Void> callback);
 
     /**
      * Remove all unused resources from the zipped file to make sure all files which
@@ -109,7 +100,7 @@ public interface UmEditorFileHelperCore {
      * @param title new title to be set
      * @param newDocument flag to indicate if the document is new or existing one.
      */
-    void updateEpubTitle (String title, boolean newDocument, UmCallback<Boolean> callback);
+    void updateDocumentTitle(String title, boolean newDocument, UmCallback<Boolean> callback);
 
     /**
      * Update manifest item list when new media file is added
@@ -144,10 +135,10 @@ public interface UmEditorFileHelperCore {
     String getResourceAccessibleUrl();
 
     /**
-     * Get file temporary directory path
+     * Get file directory path
      * @return directory path
      */
-    String getMountedFileTempDirectoryPath();
+    String getDocumentDirPath();
 
     /**
      * Get media directory path after unzipping the file.
@@ -161,11 +152,6 @@ public interface UmEditorFileHelperCore {
      */
     String getMountedFileAccessibleUrl();
 
-    /**
-     * Get epub resources directory path.
-     * @return path to epub file resources
-     */
-    String getEpubFilesDirectoryPath();
 
 
 }

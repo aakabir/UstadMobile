@@ -2,14 +2,14 @@ package com.ustadmobile.core.controller;
 
 import com.ustadmobile.core.contentformats.epub.nav.EpubNavItem;
 import com.ustadmobile.core.db.UmAppDatabase;
-import com.ustadmobile.core.db.dao.ContentEntryFileStatusDao;
 import com.ustadmobile.core.generated.locale.MessageID;
+import com.ustadmobile.core.impl.UmAccountManager;
 import com.ustadmobile.core.impl.UmCallback;
 import com.ustadmobile.core.impl.UstadMobileSystemImpl;
 import com.ustadmobile.core.view.ContentEditorView;
-import com.ustadmobile.lib.db.entities.ContentEntryFileStatus;
+import com.ustadmobile.lib.db.entities.Container;
+import com.ustadmobile.lib.db.entities.ContainerEntry;
 
-import java.io.File;
 import java.util.Hashtable;
 import java.util.List;
 
@@ -69,22 +69,18 @@ public class ContentEditorPresenter extends UstadBaseController<ContentEditorVie
         super.onCreate(savedState);
     }
 
-    /**
-     * Check if content entry has a local file associated with it, if yes edit otherwise create new one.
-     */
-    public void handleContentEntryFileStatus(){
-        long contentEntryFileUid = Long.parseLong(String.valueOf(args.get(CONTENT_ENTRY_FILE_UID)));
-        ContentEntryFileStatusDao fileStatusDao =
-                UmAppDatabase.getInstance(context).getContentEntryFileStatusDao();
-        fileStatusDao.findByContentEntryFileUid(contentEntryFileUid,
-                new UmCallback<ContentEntryFileStatus>() {
+    public void handleContainerStatus(){
+        long entryUid = Long.parseLong(String.valueOf(args.get(CONTENT_ENTRY_FILE_UID)));
+        UmAccountManager.getRepositoryForActiveAccount(context)
+                .getContainerDao().getMostRecentContainerForContentEntryAsync(entryUid,
+                new UmCallback<Container>() {
             @Override
-            public void onSuccess(ContentEntryFileStatus result) {
+            public void onSuccess(Container result) {
                 if(result == null){
-                    view.getFileHelper().createFile(contentEntryFileUid,new UmCallback<String>() {
+                    view.getFileHelper().createFile(entryUid, new UmCallback<String>() {
                         @Override
                         public void onSuccess(String result) {
-                            mountFile(result,contentEntryFileUid);
+                            mountDocumentDir(result);
                         }
 
                         @Override
@@ -92,16 +88,12 @@ public class ContentEditorPresenter extends UstadBaseController<ContentEditorVie
                             exception.printStackTrace();
                         }
                     });
-
                 }else{
-                    if(!new File(result.getFilePath()).exists()){
-                        view.runOnUiThread(() -> {
-                            fileNotFound = true;
-                            view.showNotFoundErrorMessage();
-                        });
-                    }else{
-                        mountFile(result.getFilePath(),contentEntryFileUid);
-                    }
+                    new Thread(() -> {
+                        ContainerEntry entry = UmAppDatabase.getInstance(context)
+                                .getContainerEntryDao().findByUid(entryUid);
+                        mountDocumentDir(entry.getCePath());
+                    }).start();
                 }
             }
 
@@ -113,11 +105,11 @@ public class ContentEditorPresenter extends UstadBaseController<ContentEditorVie
     }
 
 
-    private void mountFile(String filePath,long contentEntryUid){
-        view.getFileHelper().mountFile(filePath, contentEntryUid ,new UmCallback<Void>() {
+    private void mountDocumentDir(String entryPath){
+        view.getFileHelper().mountDocumentDir(entryPath, new UmCallback<Void>() {
             @Override
             public void onSuccess(Void result) {
-                if(filePath.length() > 0){
+                if(!entryPath.isEmpty()){
                     List<EpubNavItem> pageList = view.getFileHelper()
                             .getEpubNavDocument().getToc().getChildren();
                     if(pageList == null || pageList.size() == 0){
@@ -128,7 +120,7 @@ public class ContentEditorPresenter extends UstadBaseController<ContentEditorVie
                                 view.getContext());
 
                         //blank document - update document title
-                        view.getFileHelper().updateEpubTitle(documentTitle,
+                        view.getFileHelper().updateDocumentTitle(documentTitle,
                                 true, new UmCallback<Boolean>() {
                                     @Override
                                     public void onSuccess(Boolean result) {
@@ -173,7 +165,6 @@ public class ContentEditorPresenter extends UstadBaseController<ContentEditorVie
             }
         });
     }
-
 
     public void handleFormatTypeClicked(String formatType, String param){
         view.runOnUiThread(() -> {

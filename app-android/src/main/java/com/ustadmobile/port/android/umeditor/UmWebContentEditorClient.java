@@ -17,7 +17,6 @@ import static com.ustadmobile.core.view.ContentEditorView.RESOURCE_JS_TINYMCE;
 import static com.ustadmobile.core.view.ContentEditorView.RESOURCE_JS_USTAD_EDITOR;
 import static com.ustadmobile.core.view.ContentEditorView.RESOURCE_JS_USTAD_WIDGET;
 import static com.ustadmobile.port.sharedse.contenteditor.UmEditorFileHelper.EDITOR_BASE_DIR_NAME;
-import static com.ustadmobile.port.sharedse.contenteditor.UmEditorFileHelper.OEBPS_DIRECTORY;
 
 /**
  * Class which handles HTTP request from WebView and native-to-js client interaction
@@ -82,7 +81,7 @@ public class UmWebContentEditorClient extends WebViewClient {
         String [] parts = requestUri.split("/");
         ArrayList<String> newParts = new ArrayList<>();
         for(int i = 0; i< parts.length;i++){
-            if(i > 3 && !parts[i].equals(OEBPS_DIRECTORY)){
+            if(i > 3){
                 newParts.add(parts[i]);
             }
         }
@@ -126,7 +125,8 @@ public class UmWebContentEditorClient extends WebViewClient {
      * @param params params to be passed to the function
      */
     public static void executeJsFunction(WebView mWeb, String function,
-                                         UmWebContentEditorChromeClient.JsLoadingCallback callback, String ...params){
+                                         UmWebContentEditorChromeClient.JsLoadingCallback callback,
+                                         String ...params){
         StringBuilder mBuilder = new StringBuilder();
         mBuilder.append("javascript:try{");
         mBuilder.append(function);

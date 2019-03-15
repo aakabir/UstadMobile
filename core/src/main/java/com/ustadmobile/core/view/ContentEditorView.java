@@ -49,12 +49,13 @@ public interface ContentEditorView extends UstadView {
     /**
      * List of callback received from JS to control native behavior
      */
-    String ACTION_INIT_EDITOR ="onInitEditor";
+    String ACTION_ENABLE_EDITING ="onEditingModeOn";
     String ACTION_CONTROLS_ACTIVATED ="onActiveControlCheck";
     String ACTION_SAVE_CONTENT ="onSaveContent";
     String ACTION_SELECT_ALL = "selectAll";
     String ACTION_CONTENT_CUT = "onContentCut";
-    String ACTION_CHECK_COMPLETED = "onProtectedElementCheck";
+    String ACTION_EDITOR_INITIALIZED = "onInit";
+    String ACTION_PAGE_LOADED = "onWindowLoad";
 
     /**
      * Question templates insert command tag.
