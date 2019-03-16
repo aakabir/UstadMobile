@@ -120,15 +120,15 @@ UmWidgetManager.handleWidgetListeners = (editMode = false) => {
             }
 
             if($(event.target).hasClass("action-delete")){
-                UmWidgetManager.prototype.onQuestionDeletion(event);
+                UmWidgetManager.prototype.onWidgetDeleted(event);
             }
             
             if($(event.target).hasClass("action-delete-inner")){
-                UmWidgetManager.prototype.onQuestionChoiceDeletion(event);
+                UmWidgetManager.prototype.onWidgetChoiceDeleted(event);
             }
 
             if($(event.target).hasClass("action-cut")){
-                UmWidgetManager.prototype.onQuestionCut(event);
+                UmWidgetManager.prototype.cutWidgetFromEditor(event);
             }
 
             if($(event.target).hasClass("add-choice")){
@@ -136,7 +136,7 @@ UmWidgetManager.handleWidgetListeners = (editMode = false) => {
             }
         }else{
             if($(event.target).hasClass("qn-retry")){
-                UmWidgetManager.prototype.onQuestionRetryButtonClicked(event);
+                UmWidgetManager.prototype.onRetryButtonClicked(event);
             }
             
             if($(event.target).hasClass("fill-the-blanks-check")){
@@ -321,9 +321,9 @@ UmMultipleChoiceWidget.prototype.addChoice = function(event,testEnv = false){
         choice = $(choice).attr("id",UmWidgetManager.EXTRA_CONTENT_ID_TAG+UmWidgetManager.getNextUniqueId());
         UmWidgetManager.prototype.handleNewWidget(choice);
         UmWidgetManager.prototype.handleWidgetChoice(choice);
-        let questionElement = $($(event.target).closest("div .question")).children();
-        questionElement = $(questionElement.get(questionElement.length - 4));
-        questionElement.after(choice);
+        let widgetNode = $($(event.target).closest("div .question")).children();
+        widgetNode = $(widgetNode.get(widgetNode.length - 4));
+        widgetNode.after(choice);
         UmWidgetManager.handleEditableContent(true);
         UmWidgetManager.handleWidgetListeners(true);
         UmEditorCore.requestFocusFromElementWithId(choice);
@@ -338,9 +338,9 @@ UmMultipleChoiceWidget.prototype.addChoice = function(event,testEnv = false){
  */
 UmMultipleChoiceWidget.prototype.onQuestionAnswerChecked = function(event){
     const choiceElement = $(event.target).closest("div .question-choice");
-    const questionElement = $(event.target).closest("div div.question");
+    const widgetNode = $(event.target).closest("div div.question");
 
-    const allChoices = $(questionElement).find("[data-um-correct]");
+    const allChoices = $(widgetNode).find("[data-um-correct]");
     for(let choice in allChoices){
         if(!allChoices.hasOwnProperty(choice))
             continue;
@@ -356,17 +356,17 @@ UmMultipleChoiceWidget.prototype.onQuestionAnswerChecked = function(event){
     }
     const isCorrectChoice = choiceElement.attr("data-um-correct")==='true';
     const feedbackText = $(choiceElement).find(".question-choice-feedback").html();
-    const feedbackContainer = $(questionElement).find(".question-feedback-container");
+    const feedbackContainer = $(widgetNode).find(".question-feedback-container");
     $(feedbackContainer).find(".question-feedback-container-text").html(feedbackText);
     $(feedbackContainer).removeClass("hide-element show-element alert-success alert-danger alert-warning");
     $(feedbackContainer).addClass((isCorrectChoice ? "alert-success":"alert-danger")+ " show-element");
-    const canBeRetried = questionElement.attr("data-um-retry")==='true';
+    const canBeRetried = widgetNode.attr("data-um-retry")==='true';
     if(!isCorrectChoice && canBeRetried){
-        $(questionElement).find(".question-retry-btn").removeClass("hide-element").addClass("show-element");
+        $(widgetNode).find(".question-retry-btn").removeClass("hide-element").addClass("show-element");
     }
 
     if(isCorrectChoice){
-        $(questionElement).find(".question-retry-btn").removeClass("show-element").addClass("hide-element");
+        $(widgetNode).find(".question-retry-btn").removeClass("show-element").addClass("hide-element");
     }
 };
 
@@ -384,13 +384,13 @@ UmWidgetManager.removeSpaces = (value)=>{
  * @param event choice selection event object
  */
 UmFillTheBlanksWidget.prototype.onQuestionAnswerChecked = (event) =>{
-    const questionElement = $(event.target).closest("div div.question");
-    const choiceElement = $(questionElement).find(".fill-blanks");
+    const widgetNode = $(event.target).closest("div div.question");
+    const choiceElement = $(widgetNode).find(".fill-blanks");
     const wrongChoiceText = $(choiceElement).find(".question-choice-feedback-wrong").html();
     const correctChoiceText = $(choiceElement).find(".question-choice-feedback-correct").html();
     let defaultAnswerText = $(choiceElement).find(".question-choice-body").text().toLowerCase();
-    let userAnswerText = $(questionElement).find(".fill-the-blanks-input").val().toLowerCase();
-    const feedbackContainer = $(questionElement).find(".question-feedback-container");
+    let userAnswerText = $(widgetNode).find(".fill-the-blanks-input").val().toLowerCase();
+    const feedbackContainer = $(widgetNode).find(".question-feedback-container");
     userAnswerText = UmWidgetManager.removeSpaces(userAnswerText);
     defaultAnswerText = UmWidgetManager.removeSpaces(defaultAnswerText);
 
@@ -399,13 +399,13 @@ UmFillTheBlanksWidget.prototype.onQuestionAnswerChecked = (event) =>{
     $(feedbackContainer).find(".question-feedback-container-text").html(message);
     $(feedbackContainer).removeClass("hide-element show-element alert-success alert-danger alert-warning alert-info");
     $(feedbackContainer).addClass((isCorrectChoice ? "alert-success":"alert-danger") + " show-element");
-    const canBeRetried = questionElement.attr("data-um-retry")==='true';
+    const canBeRetried = widgetNode.attr("data-um-retry")==='true';
     if((!isCorrectChoice && canBeRetried) || userAnswerText.length <= 0){
-        $(questionElement).find(".question-retry-btn").removeClass("hide-element").addClass("show-element");
+        $(widgetNode).find(".question-retry-btn").removeClass("hide-element").addClass("show-element");
     }
 
     if(isCorrectChoice){
-        $(questionElement).find(".question-retry-btn").removeClass("show-element").addClass("hide-element");
+        $(widgetNode).find(".question-retry-btn").removeClass("show-element").addClass("hide-element");
     }
 };
 
@@ -422,9 +422,9 @@ UmMultipleChoiceWidget.prototype.onChoiceStateChange = (event) => {
  * @param event question retry value change event object
  */
 UmWidgetManager.prototype.onQuestionRetrySelectionChange = (event) => {
-    const questionElement = $(event.target).closest("div div.question");
+    const widgetNode = $(event.target).closest("div div.question");
     const canBeRetried = $(event.target).val() === 'true';
-    $(questionElement).attr("data-um-retry",canBeRetried);
+    $(widgetNode).attr("data-um-retry",canBeRetried);
     $(this.widget).find("br").remove();
 };
 
@@ -432,36 +432,36 @@ UmWidgetManager.prototype.onQuestionRetrySelectionChange = (event) => {
  * Action invoked when question retry button is clicked
  * @param event question answer retry event object
  */
-UmWidgetManager.prototype.onQuestionRetryButtonClicked = (event) => {
-    const questionElement = $(event.target).closest("div.question");
-    $(questionElement).find(".question-choice-pointer").removeClass("selected-choice");
-    $(questionElement).find(".question-feedback-container").removeClass("show-element").addClass("hide-element");
-    $(questionElement).find(".question-retry-btn").removeClass("show-element").addClass("hide-element");
+UmWidgetManager.prototype.onRetryButtonClicked = (event) => {
+    const widgetNode = $(event.target).closest("div.question");
+    $(widgetNode).find(".question-choice-pointer").removeClass("selected-choice");
+    $(widgetNode).find(".question-feedback-container").removeClass("show-element").addClass("hide-element");
+    $(widgetNode).find(".question-retry-btn").removeClass("show-element").addClass("hide-element");
 };
 
 /**
  * Action invoked when question is deleted from the editor
  * @param event question delete event object
  */
-UmWidgetManager.prototype.onQuestionDeletion = (event) => {
+UmWidgetManager.prototype.onWidgetDeleted = (event) => {
     isDeleteOrCutAction = true;
-    const questionElement = $(event.target).closest("div div.question");
-    const extraOrEmptyContent = $(questionElement).next();
+    const widgetNode = $(event.target).closest("div div.question");
+    const extraOrEmptyContent = $(widgetNode).next();
     const innerParagraph = $(extraOrEmptyContent).children().get(0);
     if(UmWidgetManager.removeSpaces($(innerParagraph).text()).length === 0){
         $(extraOrEmptyContent).remove();
     }
-    $(questionElement).remove();
+    $(widgetNode).remove();
     setTimeout(() => {
         isDeleteOrCutAction = false;
     }, averageEventTimeout);
 };
 
 /**
- * Action invoked when question choice is being deleted from the editor
- * @param event question choice delete event object
+ * Action invoked when widget choice is being deleted from the editor
+ * @param event widget choice delete event object
  */
-UmWidgetManager.prototype.onQuestionChoiceDeletion = (event) => {
+UmWidgetManager.prototype.onWidgetChoiceDeleted = (event) => {
     isDeleteOrCutAction = true;
     const questionChoice = $(event.target).closest("div div.question-choice");
     $(questionChoice).remove();
@@ -471,21 +471,21 @@ UmWidgetManager.prototype.onQuestionChoiceDeletion = (event) => {
 };
 
 /**
- * Action invoked when question is cut from the editor
+ * Action invoked when widget is cut from the editor
  * @param event cut event object
  */
-UmWidgetManager.prototype.onQuestionCut = event => {
+UmWidgetManager.prototype.cutWidgetFromEditor = event => {
     isDeleteOrCutAction = true;
-    let questionElement = $(event.target).closest("div div.question");
-    $(questionElement).select();
-    questionElement = questionElement.get(0).outerHTML;
-    UmWidgetManager.prototype.onQuestionDeletion(event);
-    
-
+    let widgetNode = $(event.target).closest("div div.question");
+    $(widgetNode).select();
+    widgetNode = widgetNode.get(0).outerHTML;
+    UmWidgetManager.prototype.onWidgetDeleted(event);
+    $(widgetNode).find("label").remove();
+    $(widgetNode).find(".um-editable").removeClass(".um-editable");
     const clipboardContent = JSON.stringify({
         action:'onContentCut',
         directionality: '',
-        content:UmEditorCore.base64Encode(questionElement)});
+        content:UmEditorCore.base64Encode(widgetNode)});
     setTimeout(() => {
         isDeleteOrCutAction = false;
     }, averageEventTimeout);

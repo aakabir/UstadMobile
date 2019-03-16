@@ -7,7 +7,6 @@ import android.content.ClipData;
 import android.content.ClipboardManager;
 import android.content.Context;
 import android.content.Intent;
-import android.content.pm.PackageManager;
 import android.content.res.Resources;
 import android.content.res.TypedArray;
 import android.graphics.Bitmap;
@@ -46,6 +45,7 @@ import android.view.MenuItem;
 import android.view.View;
 import android.view.ViewGroup;
 import android.webkit.WebSettings;
+import android.webkit.WebView;
 import android.widget.ImageView;
 import android.widget.ProgressBar;
 import android.widget.RelativeLayout;
@@ -68,7 +68,6 @@ import com.ustadmobile.port.android.umeditor.UmEditorActionView;
 import com.ustadmobile.port.android.umeditor.UmEditorAnimatedViewSwitcher;
 import com.ustadmobile.port.android.umeditor.UmEditorPopUpView;
 import com.ustadmobile.port.android.umeditor.UmEditorUtil;
-import com.ustadmobile.port.android.umeditor.UmEditorWebView;
 import com.ustadmobile.port.android.umeditor.UmFormat;
 import com.ustadmobile.port.android.umeditor.UmFormatStateChangeListener;
 import com.ustadmobile.port.android.umeditor.UmGridSpacingItemDecoration;
@@ -127,7 +126,7 @@ public class ContentEditorActivity extends UstadBaseActivity implements ContentE
 
     private UmEditorActionView umEditorActionView;
 
-    private UmEditorWebView umEditorWebView;
+    private WebView mWebView;
 
     private  ContentEditorPageListFragment pageListFragment;
 
@@ -168,17 +167,8 @@ public class ContentEditorActivity extends UstadBaseActivity implements ContentE
         String getLinkText() {
             return linkText;
         }
-
-        public void setLinkText(String linkText) {
-            this.linkText = linkText;
-        }
-
         String getLinkUrl() {
             return linkUrl;
-        }
-
-        public void setLinkUrl(String linkUrl) {
-            this.linkUrl = linkUrl;
         }
     }
 
@@ -371,22 +361,6 @@ public class ContentEditorActivity extends UstadBaseActivity implements ContentE
                 }
             }
             return formats;
-        }
-
-        /**
-         * Get toolbar UmFormat from the list by its ID and type, some
-         * @param formatId Format unique id
-         * @return UmFormat found
-         */
-        UmFormat getFormatById(int formatId) {
-            UmFormat umFormat = null;
-            for(UmFormat format: getFormatListByType(ACTIONS_TOOLBAR_INDEX)){
-                if(format.getFormatId() == formatId){
-                    umFormat = format;
-                    break;
-                }
-            }
-            return umFormat;
         }
 
         /**
@@ -755,7 +729,7 @@ public class ContentEditorActivity extends UstadBaseActivity implements ContentE
         RelativeLayout mInsertMultipleChoice = findViewById(R.id.content_option_multiplechoice);
         RelativeLayout mInsertFillBlanks = findViewById(R.id.content_option_filltheblanks);
         RelativeLayout mInsertLink = findViewById(R.id.content_option_link);
-        umEditorWebView = findViewById(R.id.editor_content);
+        mWebView = findViewById(R.id.editor_content);
         progressDialog = findViewById(R.id.progressBar);
         docNotFoundView = findViewById(R.id.doc_not_found);
         RelativeLayout mFromCamera = findViewById(R.id.multimedia_from_camera);
@@ -766,12 +740,12 @@ public class ContentEditorActivity extends UstadBaseActivity implements ContentE
 
         umFormatHelper = new UmFormatHelper();
         umFormatHelper.setStateChangeListener(this);
-        umEditorWebView.setBackgroundColor(Color.TRANSPARENT);
+        mWebView.setBackgroundColor(Color.TRANSPARENT);
 
 
         viewSwitcher = UmEditorAnimatedViewSwitcher.getInstance()
                         .with(this,this)
-                        .setViews(rootView, umEditorWebView,contentOptionsBottomSheetBehavior,
+                        .setViews(rootView, mWebView,contentOptionsBottomSheetBehavior,
                                 formattingBottomSheetBehavior, mediaSourceBottomSheetBehavior);
         viewSwitcher.closeActivity(false);
 
@@ -844,7 +818,7 @@ public class ContentEditorActivity extends UstadBaseActivity implements ContentE
 
         mInsertLink.setOnClickListener(v -> {
             viewSwitcher.closeAnimatedView(UmEditorAnimatedViewSwitcher.ANIMATED_CONTENT_OPTION_PANEL);
-            executeJsFunction(umEditorWebView, EDITOR_METHOD_PREFIX + "getLinkProperties",
+            executeJsFunction(mWebView, EDITOR_METHOD_PREFIX + "getLinkProperties",
                 ContentEditorActivity.this);});
 
 
@@ -853,14 +827,14 @@ public class ContentEditorActivity extends UstadBaseActivity implements ContentE
         mViewPager.setAdapter(adapter);
         mTabLayout.setupWithViewPager(mViewPager);
 
-        WebSettings webSettings = umEditorWebView.getSettings();
+        WebSettings webSettings = mWebView.getSettings();
         webSettings.setJavaScriptEnabled(true);
         webSettings.setAllowFileAccess(true);
         webSettings.setRenderPriority(WebSettings.RenderPriority.HIGH);
-        umEditorWebView.setWebChromeClient(new UmWebContentEditorChromeClient(this));
-        umEditorWebView.addJavascriptInterface(
+        mWebView.setWebChromeClient(new UmWebContentEditorChromeClient(this));
+        mWebView.addJavascriptInterface(
                 new UmWebContentEditorInterface(this,this),"UmEditor");
-        umEditorWebView.setLayerType(View.LAYER_TYPE_HARDWARE, null);
+        mWebView.setLayerType(View.LAYER_TYPE_HARDWARE, null);
     }
 
 
@@ -1006,7 +980,7 @@ public class ContentEditorActivity extends UstadBaseActivity implements ContentE
                 presenter.setEditorInitialized(Boolean.parseBoolean(content));
                 if(presenter.isEditorInitialized()){
                     handleWebViewMargin();
-                    umEditorWebView.postDelayed(() -> {
+                    mWebView.postDelayed(() -> {
                                 if(!presenter.isOpenPageManagerRequest()){
                                     viewSwitcher.animateView(ANIMATED_SOFT_KEYBOARD_PANEL);
                                 }
@@ -1059,7 +1033,7 @@ public class ContentEditorActivity extends UstadBaseActivity implements ContentE
                 break;
 
             case ACTION_EDITOR_INITIALIZED:
-                executeJsFunction(umEditorWebView, EDITOR_METHOD_PREFIX
+                executeJsFunction(mWebView, EDITOR_METHOD_PREFIX
                                 + "enableEditingMode",this);
                 break;
 
@@ -1080,7 +1054,7 @@ public class ContentEditorActivity extends UstadBaseActivity implements ContentE
                     String text = Objects.requireNonNull(linkText.getText()).toString();
                     String url = Objects.requireNonNull(linkUrl.getText()).toString();
                     if(!text.isEmpty() && !url.isEmpty()){
-                        executeJsFunction(umEditorWebView,
+                        executeJsFunction(mWebView,
                                 EDITOR_METHOD_PREFIX + "insertLink",this ,
                                 url, text, String.valueOf(content.length() > 0));
                     }else{
@@ -1092,7 +1066,7 @@ public class ContentEditorActivity extends UstadBaseActivity implements ContentE
                 break;
 
             case ACTION_PAGE_LOADED:
-                executeJsFunction(umEditorWebView, EDITOR_METHOD_PREFIX + "onCreate",
+                executeJsFunction(mWebView, EDITOR_METHOD_PREFIX + "onCreate",
                         ContentEditorActivity.this, getCurrentLocale(this),
                         getDirectionality(this));
                 break;
@@ -1274,9 +1248,9 @@ public class ContentEditorActivity extends UstadBaseActivity implements ContentE
         //TODO: BRing back back navigation when the flow is done.
         ActionBar actionBar = getSupportActionBar();
         if(actionBar != null){
-            actionBar.setDisplayHomeAsUpEnabled(presenter.isEditorInitialized());
+            actionBar.setDisplayHomeAsUpEnabled(false);
             if(presenter.isEditorInitialized()){
-                toolbar.setNavigationIcon(R.drawable.ic_done_white_24dp);
+                //toolbar.setNavigationIcon(R.drawable.ic_done_white_24dp);
             }
         }
 
@@ -1374,7 +1348,7 @@ public class ContentEditorActivity extends UstadBaseActivity implements ContentE
                     if(result){
                         String source = MEDIA_DIRECTORY + destination.getName();
                         progressDialog.setVisibility(View.GONE);
-                        executeJsFunction(umEditorWebView,
+                        executeJsFunction(mWebView,
                                 EDITOR_METHOD_PREFIX + "insertMediaContent",
                                 ContentEditorActivity.this, source,mimeType);
                     }
@@ -1396,116 +1370,116 @@ public class ContentEditorActivity extends UstadBaseActivity implements ContentE
 
     @Override
     public void showNotFoundErrorMessage() {
-        umEditorWebView.setVisibility(View.GONE);
+        mWebView.setVisibility(View.GONE);
         docNotFoundView.setVisibility(View.VISIBLE);
     }
 
 
     @Override
     public void setContentBold() {
-        executeJsFunction(umEditorWebView,EDITOR_METHOD_PREFIX+
+        executeJsFunction(mWebView,EDITOR_METHOD_PREFIX+
                 "textFormattingBold",this);
     }
 
     @Override
     public void setContentItalic() {
-        executeJsFunction(umEditorWebView,EDITOR_METHOD_PREFIX+
+        executeJsFunction(mWebView,EDITOR_METHOD_PREFIX+
                 "textFormattingItalic",this);
     }
 
     @Override
     public void setContentUnderlined() {
-        executeJsFunction(umEditorWebView,EDITOR_METHOD_PREFIX+
+        executeJsFunction(mWebView,EDITOR_METHOD_PREFIX+
                 "textFormattingUnderline",this);
     }
 
     @Override
     public void setContentStrikeThrough() {
-        executeJsFunction(umEditorWebView,EDITOR_METHOD_PREFIX+
+        executeJsFunction(mWebView,EDITOR_METHOD_PREFIX+
                 "textFormattingStrikeThrough",this);
     }
 
     @Override
     public void setContentFontSize(String fontSize) {
-        executeJsFunction(umEditorWebView,EDITOR_METHOD_PREFIX+
+        executeJsFunction(mWebView,EDITOR_METHOD_PREFIX+
                 "setFontSize",this, fontSize);
     }
 
     @Override
     public void setContentSuperscript() {
-        executeJsFunction(umEditorWebView,EDITOR_METHOD_PREFIX+
+        executeJsFunction(mWebView,EDITOR_METHOD_PREFIX+
                 "textFormattingSuperScript",this);
     }
 
     @Override
     public void setContentSubScript() {
-        executeJsFunction(umEditorWebView,EDITOR_METHOD_PREFIX+
+        executeJsFunction(mWebView,EDITOR_METHOD_PREFIX+
                 "textFormattingSubScript",this);
     }
 
     @Override
     public void setContentJustified() {
-        executeJsFunction(umEditorWebView,EDITOR_METHOD_PREFIX+
+        executeJsFunction(mWebView,EDITOR_METHOD_PREFIX+
                 "paragraphFullJustification",this);
     }
 
     @Override
     public void setContentCenterAlign() {
-        executeJsFunction(umEditorWebView,EDITOR_METHOD_PREFIX+
+        executeJsFunction(mWebView,EDITOR_METHOD_PREFIX+
                 "paragraphCenterJustification",this);
     }
 
     @Override
     public void setContentLeftAlign() {
-        executeJsFunction(umEditorWebView,EDITOR_METHOD_PREFIX+
+        executeJsFunction(mWebView,EDITOR_METHOD_PREFIX+
                 "paragraphLeftJustification",this);
     }
 
     @Override
     public void setContentRightAlign() {
-        executeJsFunction(umEditorWebView,EDITOR_METHOD_PREFIX+
+        executeJsFunction(mWebView,EDITOR_METHOD_PREFIX+
                 "paragraphRightJustification",this);
     }
 
     @Override
     public void setContentOrderedList() {
-        executeJsFunction(umEditorWebView,EDITOR_METHOD_PREFIX+
+        executeJsFunction(mWebView,EDITOR_METHOD_PREFIX+
                 "paragraphOrderedListFormatting",this);
     }
 
     @Override
     public void setContentUnOrderList() {
-        executeJsFunction(umEditorWebView,EDITOR_METHOD_PREFIX+
+        executeJsFunction(mWebView,EDITOR_METHOD_PREFIX+
                 "paragraphUnOrderedListFormatting",this);
     }
 
     @Override
     public void setContentIncreaseIndent() {
-        executeJsFunction(umEditorWebView,EDITOR_METHOD_PREFIX+
+        executeJsFunction(mWebView,EDITOR_METHOD_PREFIX+
                 "paragraphIndent",this);
     }
 
     @Override
     public void setContentDecreaseIndent() {
-        executeJsFunction(umEditorWebView,EDITOR_METHOD_PREFIX+
+        executeJsFunction(mWebView,EDITOR_METHOD_PREFIX+
                 "paragraphOutDent",this);
     }
 
     @Override
     public void setContentRedo() {
-        executeJsFunction(umEditorWebView,EDITOR_METHOD_PREFIX+
+        executeJsFunction(mWebView,EDITOR_METHOD_PREFIX+
                 "editorActionRedo",this);
     }
 
     @Override
     public void setContentUndo() {
-        executeJsFunction(umEditorWebView,EDITOR_METHOD_PREFIX+
+        executeJsFunction(mWebView,EDITOR_METHOD_PREFIX+
                 "editorActionUndo",this);
     }
 
     @Override
     public void setContentTextDirection(String command) {
-        executeJsFunction(umEditorWebView,EDITOR_METHOD_PREFIX+(
+        executeJsFunction(mWebView,EDITOR_METHOD_PREFIX+(
                 command.equals(ACTION_TEXT_DIRECTION_RTL) ? "textDirectionRightToLeft":
                         "textDirectionLeftToRight"),this);
         invalidateOptionsMenu();
@@ -1513,36 +1487,36 @@ public class ContentEditorActivity extends UstadBaseActivity implements ContentE
 
     @Override
     public void insertMultipleChoiceQuestion() {
-        executeJsFunction(umEditorWebView,EDITOR_METHOD_PREFIX+
+        executeJsFunction(mWebView,EDITOR_METHOD_PREFIX+
                 "insertMultipleChoiceWidget", this);
     }
 
     @Override
     public void insertFillTheBlanksQuestion() {
-        executeJsFunction(umEditorWebView,EDITOR_METHOD_PREFIX+
+        executeJsFunction(mWebView,EDITOR_METHOD_PREFIX+
                 "insertFillTheBlanksWidget", this);
     }
 
     @Override
     public void insertContent(String content){
-        executeJsFunction(umEditorWebView, EDITOR_METHOD_PREFIX+"insertContentRaw",
+        executeJsFunction(mWebView, EDITOR_METHOD_PREFIX+"insertContentRaw",
                 this,content);
     }
 
     @Override
     public void selectAllContent() {
-        executeJsFunction(umEditorWebView, EDITOR_METHOD_PREFIX+"selectAll",this);
+        executeJsFunction(mWebView, EDITOR_METHOD_PREFIX+"selectAll",this);
     }
 
     @Override
     public void handleSelectedPage() {
-        umEditorWebView.setWebViewClient(new UmWebContentEditorClient(this, false));
+        mWebView.setWebViewClient(new UmWebContentEditorClient(this, false));
         String urlToLoad = UMFileUtil.joinPaths(umEditorFileHelper.getMountedFileAccessibleUrl(),
                 presenter.getSelectedPageToLoad());
         args.put(ContentEditorView.EDITOR_PREVIEW_PATH, urlToLoad);
-        umEditorWebView.clearCache(true);
-        umEditorWebView.clearHistory();
-        umEditorWebView.loadUrl(urlToLoad);
+        mWebView.clearCache(true);
+        mWebView.clearHistory();
+        mWebView.loadUrl(urlToLoad);
         progressDialog.setVisibility(View.VISIBLE);
     }
 
