@@ -33,7 +33,15 @@
         <!-- This is important! Don't forget to set window background -->
         <item name="android:windowBackground">@color/icons</item>
         <item name="android:popupMenuStyle">@style/PopupMenu</item>
+        <item name="android:windowAnimationStyle">@style/DialogAnimation</item>
     </style>
+
+    <style name="DialogAnimation">
+        <item name="android:windowEnterAnimation">@anim/anim_slide_in_right</item>
+        <item name="android:windowExitAnimation">@anim/anim_slide_out_right</item>
+    </style>
+
+
     <style name="PopupMenu" parent="@android:style/Widget.PopupMenu">
         <item name="android:popupBackground">@android:color/white</item>
     </style>
