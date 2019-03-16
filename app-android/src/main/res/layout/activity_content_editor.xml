@@ -66,16 +66,6 @@
     </RelativeLayout>
 
 
-    <android.support.design.widget.FloatingActionButton
-        android:id="@+id/btn_start_editing"
-        android:visibility="gone"
-        android:layout_width="wrap_content"
-        android:layout_gravity="bottom|end"
-        fab:fab_size="normal"
-        android:src="@drawable/ic_editor_action"
-        android:layout_margin="@dimen/dimen_16dp"
-        android:layout_height="wrap_content" />
-
     <android.support.design.widget.AppBarLayout
         android:visibility="gone"
         android:id="@+id/um_appbar_bottom"

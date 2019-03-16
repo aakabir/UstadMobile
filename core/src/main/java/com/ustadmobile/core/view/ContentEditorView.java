@@ -54,8 +54,9 @@ public interface ContentEditorView extends UstadView {
     String ACTION_SAVE_CONTENT ="onSaveContent";
     String ACTION_SELECT_ALL = "selectAll";
     String ACTION_CONTENT_CUT = "onContentCut";
-    String ACTION_EDITOR_INITIALIZED = "onInit";
+    String ACTION_EDITOR_INITIALIZED = "onCreate";
     String ACTION_PAGE_LOADED = "onWindowLoad";
+    String ACTION_TEXT_HIGHLIGHT = "onLinkPropRequested";
 
     /**
      * Question templates insert command tag.
@@ -67,10 +68,9 @@ public interface ContentEditorView extends UstadView {
      * List of editor core resources.
      */
 
-    String RESOURCE_JS_USTAD_WIDGET = "UmQuestionWidget.js";
-    String RESOURCE_JS_USTAD_EDITOR = "UmContentEditorCore.js";
+    String RESOURCE_JS_USTAD_WIDGET = "UmWidgetManager.js";
+    String RESOURCE_JS_USTAD_EDITOR = "UmContentCore.js";
     String RESOURCE_JS_TINYMCE = "tinymce.min.js";
-    String RESOURCE_JS_RANGY = "rangy-core.js";
     String RESOURCE_BLANK_DOCUMENT = "umEditorBlankDoc.zip";
 
     /**

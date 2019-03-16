@@ -12,7 +12,6 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.util.ArrayList;
 
-import static com.ustadmobile.core.view.ContentEditorView.RESOURCE_JS_RANGY;
 import static com.ustadmobile.core.view.ContentEditorView.RESOURCE_JS_TINYMCE;
 import static com.ustadmobile.core.view.ContentEditorView.RESOURCE_JS_USTAD_EDITOR;
 import static com.ustadmobile.core.view.ContentEditorView.RESOURCE_JS_USTAD_WIDGET;
@@ -112,8 +111,7 @@ public class UmWebContentEditorClient extends WebViewClient {
      */
     private boolean isUmEditorResource(String uri){
         return uri.contains(RESOURCE_JS_TINYMCE)
-                || uri.contains(RESOURCE_JS_USTAD_EDITOR)
-                || uri.contains(RESOURCE_JS_RANGY);
+                || uri.contains(RESOURCE_JS_USTAD_EDITOR);
     }
 
     /**

@@ -23,8 +23,9 @@ import android.support.annotation.Nullable;
 import android.support.annotation.VisibleForTesting;
 import android.support.design.widget.AppBarLayout;
 import android.support.design.widget.BottomSheetBehavior;
-import android.support.design.widget.FloatingActionButton;
+import android.support.design.widget.Snackbar;
 import android.support.design.widget.TabLayout;
+import android.support.design.widget.TextInputEditText;
 import android.support.v4.app.ActivityCompat;
 import android.support.v4.app.Fragment;
 import android.support.v4.app.FragmentManager;
@@ -40,7 +41,6 @@ import android.support.v7.widget.Toolbar;
 import android.util.DisplayMetrics;
 import android.util.TypedValue;
 import android.view.Display;
-import android.view.KeyEvent;
 import android.view.LayoutInflater;
 import android.view.Menu;
 import android.view.MenuItem;
@@ -136,13 +136,13 @@ public class ContentEditorActivity extends UstadBaseActivity implements ContentE
 
     private Toolbar toolbar;
 
-    private FloatingActionButton startEditing;
-
     private Hashtable args = null;
 
     private Uri cameraMedia;
 
     private File fileFromCamera;
+
+    private View rootView;
 
     private static final String PAGE_NAME_TAG = "page_name";
 
@@ -158,6 +158,28 @@ public class ContentEditorActivity extends UstadBaseActivity implements ContentE
 
     private static final String EDITOR_METHOD_PREFIX = "UmEditorCore.";
 
+
+    private class UmLink{
+        private String linkText;
+
+        private String linkUrl;
+
+        public String getLinkText() {
+            return linkText;
+        }
+
+        public void setLinkText(String linkText) {
+            this.linkText = linkText;
+        }
+
+        public String getLinkUrl() {
+            return linkUrl;
+        }
+
+        public void setLinkUrl(String linkUrl) {
+            this.linkUrl = linkUrl;
+        }
+    }
 
     /**
      * Class which represent a format control state
@@ -717,6 +739,7 @@ public class ContentEditorActivity extends UstadBaseActivity implements ContentE
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_content_editor);
+
         BottomSheetBehavior formattingBottomSheetBehavior = BottomSheetBehavior
                 .from(findViewById(R.id.bottom_sheet_container));
         mediaSourceBottomSheetBehavior = BottomSheetBehavior
@@ -729,13 +752,13 @@ public class ContentEditorActivity extends UstadBaseActivity implements ContentE
         RelativeLayout mInsertMultimedia = findViewById(R.id.content_option_multimedia);
         RelativeLayout mInsertMultipleChoice = findViewById(R.id.content_option_multiplechoice);
         RelativeLayout mInsertFillBlanks = findViewById(R.id.content_option_filltheblanks);
+        RelativeLayout mInsertLink = findViewById(R.id.content_option_link);
         umEditorWebView = findViewById(R.id.editor_content);
         progressDialog = findViewById(R.id.progressBar);
-        startEditing = findViewById(R.id.btn_start_editing);
         docNotFoundView = findViewById(R.id.doc_not_found);
         RelativeLayout mFromCamera = findViewById(R.id.multimedia_from_camera);
         RelativeLayout mFromDevice = findViewById(R.id.multimedia_from_device);
-        View rootView = findViewById(R.id.coordinationLayout);
+        rootView = findViewById(R.id.coordinationLayout);
         umBottomToolbarHolder = findViewById(R.id.um_appbar_bottom);
         umEditorActionView = findViewById(R.id.um_toolbar_bottom);
 
@@ -792,8 +815,6 @@ public class ContentEditorActivity extends UstadBaseActivity implements ContentE
             startFileBrowser();
         });
 
-        startEditing.setOnClickListener(v -> startEditingDoc());
-
         mFromCamera.setOnClickListener(v -> {
             viewSwitcher.closeAnimatedView(UmEditorAnimatedViewSwitcher.ANIMATED_MEDIA_TYPE_PANEL);
             if (ContextCompat.checkSelfPermission(getApplicationContext(),
@@ -820,6 +841,10 @@ public class ContentEditorActivity extends UstadBaseActivity implements ContentE
             presenter.handleFormatTypeClicked(CONTENT_INSERT_FILL_THE_BLANKS_QN,null);
             viewSwitcher.closeAnimatedView(ANIMATED_CONTENT_OPTION_PANEL);
         });
+
+        mInsertLink.setOnClickListener(v -> executeJsFunction(
+                umEditorWebView, EDITOR_METHOD_PREFIX + "getLinkProperties",
+                ContentEditorActivity.this));
 
 
         ContentFormattingPagerAdapter adapter =
@@ -986,24 +1011,22 @@ public class ContentEditorActivity extends UstadBaseActivity implements ContentE
         switch (callback.getAction()){
             //on editor initialized
             case ACTION_ENABLE_EDITING:
-                presenter.setEditorInitialized(Boolean.parseBoolean(callback.getContent()));
+                presenter.setEditorInitialized(Boolean.parseBoolean(content));
                 if(presenter.isEditorInitialized()){
                     handleWebViewMargin();
-                    umEditorWebView.postDelayed(() ->
-                            {
+                    umEditorWebView.postDelayed(() -> {
                                 if(!presenter.isOpenPageManagerRequest()){
                                     viewSwitcher.animateView(ANIMATED_SOFT_KEYBOARD_PANEL);
                                 }
                             },
                             MAX_SOFT_KEYBOARD_DELAY);
-                   umEditorWebView.dispatchKeyEvent(new KeyEvent(KeyEvent.KEYCODE_C, KeyEvent.KEYCODE_BACK));
                 }
                 handleBackNavigationIcon();
-                startEditing.hide();
                 progressDialog.setVisibility(View.GONE);
                 viewSwitcher.setEditorActivated(presenter.isEditorInitialized());
                 handleQuickActions();
                 break;
+
             case ACTION_SAVE_CONTENT:
                 Document indexFile = getLoadedPageContent();
                 if(indexFile != null){
@@ -1012,7 +1035,7 @@ public class ContentEditorActivity extends UstadBaseActivity implements ContentE
                     contentContainer.first().html(content);
                     //Update index.html file
                     UMFileUtil.writeToFile(new File(umEditorFileHelper.getDocumentDirPath(),
-                            presenter.getSelectedPageToLoad()),indexFile.html());
+                            presenter.getSelectedPageToLoad()), indexFile.html());
                 }
                 break;
 
@@ -1029,6 +1052,7 @@ public class ContentEditorActivity extends UstadBaseActivity implements ContentE
                 }
 
                 break;
+
             case ACTION_CONTENT_CUT:
                 try{
                     String utf8Content = URLDecoder.decode(content,"UTF-8");
@@ -1041,18 +1065,48 @@ public class ContentEditorActivity extends UstadBaseActivity implements ContentE
                     e.printStackTrace();
                 }
                 break;
+
             case ACTION_EDITOR_INITIALIZED:
                 executeJsFunction(umEditorWebView, EDITOR_METHOD_PREFIX
-                                + "enableEditingMode", ContentEditorActivity.this);
+                                + "enableEditingMode",this);
+                break;
+
+            case ACTION_TEXT_HIGHLIGHT:
+                UmLink umLink = new Gson().fromJson(content,UmLink.class);
+                AlertDialog.Builder builder = new AlertDialog.Builder(this);
+
+                View view = getLayoutInflater().inflate(R.layout.content_link_config_view,
+                        null,false);
+                TextInputEditText linkText = view.findViewById(R.id.linkText);
+                TextInputEditText linkUrl = view.findViewById(R.id.linkUrl);
+                linkText.setText(umLink.getLinkText());
+                linkUrl.setText(umLink.getLinkUrl());
+                builder.setView(view);
+                builder.setNegativeButton(R.string.content_page_dialog_cancel,
+                        (dialog, which) -> dialog.dismiss());
+                builder.setPositiveButton(R.string.content_page_dialog_add, (dialog, which) -> {
+                    String text = Objects.requireNonNull(linkText.getText()).toString();
+                    String url = Objects.requireNonNull(linkUrl.getText()).toString();
+                    if(!text.isEmpty() && !url.isEmpty()){
+                        executeJsFunction(umEditorWebView,
+                                EDITOR_METHOD_PREFIX + "insertLink",this ,
+                                url, text, String.valueOf(content.length() > 0));
+                    }else{
+                        Snackbar.make(rootView,R.string.content_editor_link_error,
+                                Snackbar.LENGTH_LONG).show();
+                    }
+                });
+                builder.show();
                 break;
 
             case ACTION_PAGE_LOADED:
                 executeJsFunction(umEditorWebView,
-                        EDITOR_METHOD_PREFIX + "onInit", this,
+                        EDITOR_METHOD_PREFIX + "onCreate", this,
                         getCurrentLocale(this), getDirectionality(this));
                 break;
         }
     }
+
 
 
 
@@ -1123,15 +1177,8 @@ public class ContentEditorActivity extends UstadBaseActivity implements ContentE
             umEditorFileHelper.removeUnUsedResources(new UmCallback<Integer>() {
                 @Override
                 public void onSuccess(Integer result) {
-                    if((!presenter.isOpenPreviewRequest()
-                            || !presenter.isMultimediaFilePicker())
-                            && presenter.isEditorInitialized()){
+                    if(presenter.isOpenPreviewRequest()){
                         postProcessEditor();
-                    }else{
-                        if(presenter.isEditingModeOn()
-                                && presenter.isEditorInitialized()){
-                            handleUpdateFile();
-                        }
                     }
                 }
 
@@ -1305,11 +1352,9 @@ public class ContentEditorActivity extends UstadBaseActivity implements ContentE
                     invalidateOptionsMenu();
                     handleQuickActions();
                     viewSwitcher.closeAnimatedView(ANIMATED_SOFT_KEYBOARD_PANEL);
-                    startEditing.show();
                     handleSelectedPage();
-                }else{
-                    //if(deleteTempDir(new File(umEditorFileHelper.getDocumentDirPath()))){ }
                 }
+
             }
         });
 
@@ -1398,7 +1443,6 @@ public class ContentEditorActivity extends UstadBaseActivity implements ContentE
     public void showNotFoundErrorMessage() {
         umEditorWebView.setVisibility(View.GONE);
         docNotFoundView.setVisibility(View.VISIBLE);
-        startEditing.hide();
     }
 
 

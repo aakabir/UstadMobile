@@ -2,8 +2,6 @@ package com.ustadmobile.port.android.umeditor;
 
 import android.content.Context;
 import android.util.AttributeSet;
-import android.view.inputmethod.EditorInfo;
-import android.view.inputmethod.InputConnection;
 import android.webkit.WebView;
 
 /**
@@ -13,7 +11,6 @@ import android.webkit.WebView;
  */
 public class UmEditorWebView extends WebView {
 
-    private InputConnectionWrapper inputConnectionWrapper;
 
     public UmEditorWebView(Context context) {
         super(context);
@@ -31,14 +28,4 @@ public class UmEditorWebView extends WebView {
         super(context, attrs, defStyleAttr, defStyleRes);
     }
 
-    @Override
-    public InputConnection onCreateInputConnection(EditorInfo outAttrs) {
-        InputConnection superCon = super.onCreateInputConnection(outAttrs);
-        inputConnectionWrapper = new InputConnectionWrapper(superCon);
-        return superCon != null ? inputConnectionWrapper : null;
-    }
-
-    public InputConnectionWrapper getInputConnectionWrapper() {
-        return inputConnectionWrapper;
-    }
 }

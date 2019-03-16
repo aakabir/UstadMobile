@@ -44,11 +44,11 @@ public class UmWebContentEditorInterface {
     }
 
     /**
-     * Listen for tinymce initialisation into a webpage
+     * Listen for tinymce editor configurations into a webpage
      * @param callbackValue Value passed from the JS side
      */
     @JavascriptInterface
-    public void onInit(String callbackValue){
+    public void onCreate(String callbackValue){
         try{
             activity.runOnUiThread(() -> callback.onCallbackReceived(callbackValue));
         }catch (Exception e){
@@ -103,6 +103,19 @@ public class UmWebContentEditorInterface {
      */
     @JavascriptInterface
     public void onContentCut(String callbackValue) {
+        try{
+            activity.runOnUiThread(() -> callback.onCallbackReceived(callbackValue));
+        }catch (Exception e){
+            e.printStackTrace();
+        }
+    }
+
+    /**
+     * Listen for link property request event
+     * @param callbackValue Value passed from the JS side
+     */
+    @JavascriptInterface
+    public void onLinkPropRequested(String callbackValue) {
         try{
             activity.runOnUiThread(() -> callback.onCallbackReceived(callbackValue));
         }catch (Exception e){

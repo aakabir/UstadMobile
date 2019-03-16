@@ -350,7 +350,7 @@ UmEditorCore.insertLink = (linkUrl, linkText = null, selection = true) =>{
 };
 
 UmEditorCore.prototype.getStyledLink = (link, text) =>{
-    return '<span class="um-link"><a href="' + link + '" target="_blank">' + text + '</a></span>';
+    return '<span class="um-link"><a href="' + link + '" target="_blank">' + text + '</a></span>&nbsp;';
 };
 
 /** Remove link associated with the current selection */

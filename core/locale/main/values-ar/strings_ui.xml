@@ -4,6 +4,7 @@
     <string name="content_type_multimedia">وسائط متعددة (صوت و صورة)</string>
     <string name="content_type_multiple_choice">متعدد الخيارات</string>
     <string name="content_type_fill_the_blanks">إملأ الفراغات</string>
+    <string name="content_type_link">Link</string>
     <string name="content_format_text">نص</string>
     <string name="content_format_paragraph">فقرة</string>
     <string name="content_direction_ltr">من اليسار إلى اليمين</string>
@@ -60,5 +61,8 @@
     <string name='content_editor_menu_superscript'>Superscript</string>
     <string name='content_editor_menu_subscript'>Subscript</string>
     <string name='content_editor_preview'>Preview</string>
+    <string name='content_editor_link_text'>Link text</string>
+    <string name='content_editor_link_url'>Link Url</string>
+    <string name='content_editor_link_error'>Some fields are empty, fill them first.</string>
 
 </resources>
