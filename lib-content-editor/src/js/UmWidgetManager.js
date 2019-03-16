@@ -124,12 +124,19 @@ UmWidgetManager.handleWidgetNode =  (widgetNode , newWidget = false) => {
 
 /**
  * Handle all document editing and previewing events
+ * @param editMode flag to indicate if the editor is in editing mode or not.
  */
 UmWidgetManager.handleWidgetListeners = (editMode = false) => {
     const umBody = $('body');
     umBody.off('click').off('change').off('Paste');
     umBody.on('click', event => {
+        
         if(editMode){
+            
+            if($(event.target).hasClass("um-editable")){
+                tinymce.init(UmEditorCore.editorConfig);
+            }
+
             if($(event.target).hasClass("action-delete")){
                 UmWidgetManager.prototype.onQuestionDeletion(event);
             }
@@ -487,14 +494,17 @@ UmWidgetManager.prototype.onQuestionCut = event => {
     $(questionElement).select();
     questionElement = questionElement.get(0).outerHTML;
     UmWidgetManager.prototype.onQuestionDeletion(event);
+    
 
-    const clipboardContent = JSON.stringify({action:'onContentCut',
-     content:UmEditorCore.base64Encode(questionElement)});
+    const clipboardContent = JSON.stringify({
+        action:'onContentCut',
+        directionality: '',
+        content:UmEditorCore.base64Encode(questionElement)});
     setTimeout(() => {
         isDeleteOrCutAction = false;
     }, averageEventTimeout);
     try{
-        UmContentEditor.onContentCut(clipboardContent);
+        UmEditor.onContentCut(clipboardContent);
     }catch (e) {
         UmEditorCore.prototype.logUtil("onContentCut:",e);
     }

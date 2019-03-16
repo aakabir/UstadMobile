@@ -15,7 +15,7 @@
     <script type="text/javascript">
         window.onload = function() {
             $(".um-editor").css("min-height",$(window).height());
-            UmEditorCore.onInit("sw", "ltr", false);
+            UmEditorCore.onCreate("sw", "ltr", false);
         };  
         
     </script>
@@ -25,11 +25,12 @@
 <div class="container-fluid row default-margin-top">
 
     <button onclick="UmEditorCore.enableEditingMode()">SE</button>
+    <button onclick="UmEditorCore.getLinkProperties()">GHL</button>
     <button onclick="UmEditorCore.disableEditingMode()">PRD</button>
     <button onclick="UmEditorCore.insertMultipleChoiceWidget()">MTCQ</button>
     <button onclick="UmEditorCore.insertFillTheBlanksWidget()">FITB</button>
     <button onclick="UmEditorCore.removeLink()">RML</button>
-    <button onclick="UmEditorCore.insertLink('http://commondatastorage.googleapis.com/gtv-videos-bucket/sample/BigBuckBunny.mp4','video/mp4')">Link</button>
+    <button onclick="UmEditorCore.insertLink('http://commondatastorage.googleapis.com/gtv-videos-bucket/sample/BigBuckBunny.mp4','Sample link')">Link</button>
     <button onclick="UmEditorCore.insertMediaContent('http://commondatastorage.googleapis.com/gtv-videos-bucket/sample/BigBuckBunny.mp4','video/mp4')">Video</button>
     <button onclick="UmEditorCore.insertMediaContent('https://voicebunny.s3.amazonaws.com/assets/sound/home_eng.mp3','audio/mp3')">audio</button>
     <button onclick="UmEditorCore.insertMediaContent('http://www.ccvcri.com/uploads/6/4/9/2/64929695/1053144_orig.jpg','image/jpg')">image</button>

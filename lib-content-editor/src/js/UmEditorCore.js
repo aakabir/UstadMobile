@@ -11,7 +11,7 @@
 let UmEditorCore = function() {};
 
 /**Editor configurations */
-let editorConfig = null;
+UmEditorCore.editorConfig = null;
 
 /** Flag to keep tract of the environment used when running the app */
 let testEnvironment = false;
@@ -63,8 +63,14 @@ UmEditorCore.formattingCommandList = [
 ];
 
 
-/** Initialize the editor object to the active page */
-UmEditorCore.onInit  = (locale = "en",dir = "ltr" ,showToolbar = false, testEnv = false) => {
+/** 
+ * Configure UmEditor ready for editing / preview actions 
+ * @param locale current used locate 
+ * @param dir current used language directionality
+ * @param showToolbar flag to indicate tinymce inline toolbar visibility
+ * @param testEnv flag to indicate environment i.e True Test Environment otherwise Live.
+ * */
+UmEditorCore.onCreate  = (locale = "en",dir = "ltr" ,showToolbar = false, testEnv = false) => {
      testEnvironment = testEnv;
      directionality = dir;
 
@@ -77,12 +83,13 @@ UmEditorCore.onInit  = (locale = "en",dir = "ltr" ,showToolbar = false, testEnv 
         $($.find(".float-left")).removeClass("float-left").addClass("float-right");
     }
 
-    /** Load placeholders based on locale */
+    /** 
+     * Load placeholders based on locale */
     const langCode = UmEditorCore.prototype.getLanguageCodeFromLocale(locale);
     UmWidgetManager.loadPlaceHolderByLanguageCode(langCode, testEnv);
 
     //config tinymce
-    editorConfig = {
+    UmEditorCore.editorConfig = {
         selector: '.um-editable',
         directionality: dir,
         height: $(window).height(),
@@ -112,22 +119,19 @@ UmEditorCore.onInit  = (locale = "en",dir = "ltr" ,showToolbar = false, testEnv 
     };
 
     if(showToolbar){
-        editorConfig.toolbar = ['undo redo | bold italic underline strikethrough superscript subscript | alignleft aligncenter alignright alignjustify | bullist numlist outdent indent | fontsizeselect'];
+        UmEditorCore.editorConfig.toolbar = ['undo redo | bold italic underline strikethrough superscript subscript | alignleft aligncenter alignright alignjustify | bullist numlist outdent indent | fontsizeselect'];
     }
 
-    UmEditor.onInit(JSON.stringify({
-        action:'onInit',
-        directionality: directionality,
-        content:UmEditorCore.base64Encode(true)}
-    ));
-
-    //handle section click and initialize editor on it
-    $(document).on('click', '.um-editable', () => {
-        tinymce.init(editorConfig);
-
-        //add widget listeners
+    try{
         UmWidgetManager.handleWidgetListeners();
-    });
+        UmEditor.onCreate(JSON.stringify({
+            action:'onCreate',
+            directionality: directionality,
+            content:UmEditorCore.base64Encode(true)}
+        ));
+    }catch(e){
+        UmEditorCore.prototype.logUtil("onCreate",e);
+    }
 };
 
 /** Enable editing mode */
@@ -140,18 +144,23 @@ UmEditorCore.enableEditingMode = () => {
     
     setTimeout(() => {
         try{
+            const isEditorInitialized = tinyMCE.activeEditor != null;
+            UmWidgetManager.handleWidgetListeners(isEditorInitialized);
+            
+            if(isEditorInitialized){
+                //register change observers
+                UmEditorCore.prototype.registerObservers();
+            }
+
             UmEditor.onEditingModeOn(JSON.stringify({
                 action:'onEditingModeOn',
                 directionality: directionality,
-                content:UmEditorCore.base64Encode("true")}
+                content:UmEditorCore.base64Encode(isEditorInitialized)}
             ));
         }catch (e) {
             UmEditorCore.prototype.logUtil("onEditingModeOn: "+e);
         }
     }, averageEventTimeout);
-
-    //register change observers
-    UmEditorCore.prototype.registerObservers();
 };
 
 /** Disable editing mode and enable preview mode */
@@ -160,6 +169,7 @@ UmEditorCore.disableEditingMode = () => {
     const previewContent = UmWidgetManager.preparingPreview(editorWrapper.html());
     editorWrapper.html("").html(previewContent);
     UmWidgetManager.handleWidgetListeners(false);
+    
 };
 
 /**
@@ -313,17 +323,34 @@ UmEditorCore.prototype.logUtil = (tag , message, debug = true) => {
    }
 };
 
-/** Insert link on selected text */
-UmEditorCore.insertLink = (linkUrl) =>{
-    const currentNode = tinyMCE.activeEditor.selection.getNode();
-    var highlight = window.getSelection(),  
-    spn = '<span class="um-link"><a href="' + linkUrl + '" target="_blank">' + highlight + '</a></span>',
-    text = $(currentNode).text(),
-    range = highlight.getRangeAt(0),
-    startText = text.substring(0, range.startOffset), 
-    endText = text.substring(range.endOffset, text.length);
-    
-    $(currentNode).html(startText + spn + endText);
+/** 
+ * Insert link on selected text 
+ * @param linkUrl url to be used as a link
+ * @param linkText Text to be used as a link holder
+ * @param selection flag to indicate if link is being inserted after text selection.
+ * */
+UmEditorCore.insertLink = (linkUrl, linkText = null, selection = true) =>{
+    if(selection){
+        const currentNode = tinyMCE.activeEditor.selection.getNode();
+        if($(currentNode).is("a")){
+            $(currentNode).text(linkText);
+            $(currentNode).attr("href", linkUrl);
+        }else{
+            var highlight = window.getSelection(); 
+            text = $(currentNode).text(),
+            range = highlight.getRangeAt(0),
+            startText = text.substring(0, range.startOffset), 
+            endText = text.substring(range.endOffset, text.length);
+            
+            $(currentNode).html(startText + UmEditorCore.prototype.getStyledLink(linkUrl,linkText) + endText);
+        }
+    }else{
+        UmEditorCore.insertContentRaw(UmEditorCore.prototype.getStyledLink(linkUrl, linkText));
+    }
+};
+
+UmEditorCore.prototype.getStyledLink = (link, text) =>{
+    return '<span class="um-link"><a href="' + link + '" target="_blank">' + text + '</a></span>';
 };
 
 /** Remove link associated with the current selection */
@@ -448,7 +475,6 @@ UmEditorCore.prototype.insertWidgetNode = (widgetNode) => {
     $(".um-editor").find("p.pg-break").remove();
 
     UmWidgetManager.handleEditableContent(true);
-    UmWidgetManager.handleWidgetListeners(true);
     UmEditorCore.requestFocusFromElementWithId($(widgetNode).get(0));
     UmEditorCore.prototype.scrollToElement($($(UmWidgetManager.EXTRA_CONTENT_WIDGET).find("p")).get(0))
     
@@ -745,3 +771,32 @@ UmEditorCore.prototype.getNodeDirectionality = () => {
 UmEditorCore.getContent = () => {
     return tinyMCE.activeEditor.getContent();
 };
+
+/**Get highlighted text */
+UmEditorCore.getLinkProperties = ()=>{
+    try{
+        const currentNode = tinyMCE.activeEditor.selection.getNode();
+        let selectedText = "";
+        let selectedLink = "";
+        const highlight = window.getSelection();
+        if((highlight + "").length > 0){
+            selectedText = highlight + "";
+
+        }else{
+            if($(currentNode).is("a")){
+                const aTag = $(currentNode);
+                selectedText = aTag.text();
+                selectedLink = aTag.attr("href");
+            }
+        }
+        const linkObj = {linkText:selectedText,linkUrl:selectedLink};
+        console.log("kileha",linkObj);
+        UmEditor.onLinkPropRequested(JSON.stringify({
+            action:'onLinkPropRequested',
+            directionality: directionality,
+            content:UmEditorCore.base64Encode(JSON.stringify(linkObj))}
+        ));
+    }catch(e){
+        UmEditorCore.prototype.logUtil("SelectionChange",e);
+    }
+}
