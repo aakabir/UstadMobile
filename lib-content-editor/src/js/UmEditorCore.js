@@ -73,6 +73,8 @@ UmEditorCore.formattingCommandList = [
 UmEditorCore.onCreate  = (locale = "en",dir = "ltr" ,showToolbar = false, testEnv = false) => {
      testEnvironment = testEnv;
      directionality = dir;
+     UmEditorCore.prototype.logUtil("onCreate", "locale: " + locale + ", directionality: " + dir);
+
 
     //set default language directionality and its corresponding views
     $($.find(".um-editor")).attr("dir",dir);
@@ -82,11 +84,6 @@ UmEditorCore.onCreate  = (locale = "en",dir = "ltr" ,showToolbar = false, testEn
     }else{
         $($.find(".float-left")).removeClass("float-left").addClass("float-right");
     }
-
-    /** 
-     * Load placeholders based on locale */
-    const langCode = UmEditorCore.prototype.getLanguageCodeFromLocale(locale);
-    UmWidgetManager.loadPlaceHolderByLanguageCode(langCode, testEnv);
 
     //config tinymce
     UmEditorCore.editorConfig = {
@@ -124,15 +121,44 @@ UmEditorCore.onCreate  = (locale = "en",dir = "ltr" ,showToolbar = false, testEn
 
     try{
         UmWidgetManager.handleWidgetListeners();
-        UmEditor.onCreate(JSON.stringify({
-            action:'onCreate',
-            directionality: directionality,
-            content:UmEditorCore.base64Encode(true)}
-        ));
     }catch(e){
         UmEditorCore.prototype.logUtil("onCreate",e);
     }
+    /** 
+     * Load placeholders based on locale */
+    const langCode = UmEditorCore.prototype.getLanguageCodeFromLocale(locale);
+    UmEditorCore.prototype.loadPlaceholderByLocale(langCode, testEnv);
 };
+
+
+/** 
+ * Load placeholders based on current used locale 
+ * @param langCode language code from locale i.e ar_AE, 
+ *                 code will be ar which indicates the language
+ * @param testEnv flag to indicate if the current environment is a test or production env.
+ * */
+UmEditorCore.prototype.loadPlaceholderByLocale = (langCode , testEnv = false) =>{
+    if(UmWidgetManager.prototype.isEmpty(UmWidgetManager._placeholder)){
+        const localeFileUrl = (testEnv ? "/":"") + localeDir + "locale." + langCode+".json";
+        $.ajax({url: localeFileUrl, method: "GET"}).done((data) => {
+            UmWidgetManager._placeholder = data;
+            try{
+                UmEditor.onCreate(JSON.stringify({
+                    action:'onCreate',
+                    directionality: '',
+                    content:UmEditorCore.base64Encode(true)}
+                ));
+            }catch(e){
+                UmEditorCore.prototype.logUtil("loadPlaceHolders",e);
+            }
+          }).fail((xhr) => {
+            UmEditorCore.prototype.logUtil("loadPlaceHolders: " +localeFileUrl,xhr.statusText);
+            if(xhr.status == 404 && langCode !== "en"){
+                UmWidgetManager.loadPlaceholderByLocale("en",testEnv);
+            }
+        });
+    }
+}
 
 /** Enable editing mode */
 UmEditorCore.enableEditingMode = () => {
@@ -319,7 +345,7 @@ UmEditorCore.prototype.setCursorToAnyEditableElement = (element) => {
 
 UmEditorCore.prototype.logUtil = (tag , message, debug = true) => {
    if(debug){
-       console.log(tag, message);
+       console.log("UmEditorCore: " +tag, message);
    }
 };
 
@@ -415,17 +441,20 @@ UmEditorCore.prototype.insertWidgetTemplate = (questionTypeIndex,isTest = false)
     const nextQuestionId = UmWidgetManager.QUESTION_ID_TAG + UmWidgetManager.getNextUniqueId();
     const nextChoiceId = UmWidgetManager.CHOICE_ID_TAG + UmWidgetManager.getNextUniqueId();
     const templateUrl = (isTest ? "/":"") + questionTemplatesDir + questionTemplateList[questionTypeIndex];
-    $.ajax({url: templateUrl, success: (templateHtmlContent) => {
-            let widgetNode = $(templateHtmlContent).attr("id",nextQuestionId);
-            $(widgetNode).find(".question-choice").attr("id",nextChoiceId);
-            widgetNode = $(widgetNode).prop('outerHTML');
-            UmEditorCore.prototype.insertWidgetNode($(widgetNode).get(0));
-        }});
+
+    $.ajax({url: templateUrl, method: "GET"}).done((data) => {
+        let widgetNode = $(data).attr("id",nextQuestionId);
+        $(widgetNode).find(".question-choice").attr("id",nextChoiceId);
+        widgetNode = $(widgetNode).prop('outerHTML');
+        UmEditorCore.prototype.insertWidgetNode($(widgetNode).get(0));
+        }).fail((xhr) => {
+        UmEditorCore.prototype.logUtil("insertWidgetTemplate: " + templateUrl,xhr.statusText);
+    });
 };
 
 /** Process widget node from WidgetManager */
 UmEditorCore.prototype.processWidgetNode = (widgetNode , newWidget) => {
-    if(!$(widgetNode).attr("id")){
+    if(!$(widgetNode).attr("id") && $(widgetNode).attr("data-um-widget") === UmWidgetManager.WIDGET_NAME_EXTRA_CONTENT){
         $(widgetNode).attr("id", UmWidgetManager.EXTRA_CONTENT_ID_TAG + UmWidgetManager.getNextUniqueId())
     }
     
