@@ -84,7 +84,7 @@ public class ContentEditorPreviewActivity extends UstadBaseActivity
 
     @Override
     public void startPreviewing(String baseRequestUri, String indexFile) {
-        contentPreview.setWebViewClient(new UmWebContentEditorClient(this));
+        contentPreview.setWebViewClient(new UmWebContentEditorClient(this, true));
         contentPreview.setWebChromeClient(new UmWebContentEditorChromeClient(this));
         progressDialog.setVisibility(View.VISIBLE);
         contentPreview.loadUrl(indexFile);

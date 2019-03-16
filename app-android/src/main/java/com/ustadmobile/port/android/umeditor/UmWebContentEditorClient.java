@@ -1,6 +1,8 @@
 package com.ustadmobile.port.android.umeditor;
 
 import android.content.Context;
+import android.content.Intent;
+import android.net.Uri;
 import android.webkit.WebResourceRequest;
 import android.webkit.WebResourceResponse;
 import android.webkit.WebView;
@@ -36,6 +38,8 @@ public class UmWebContentEditorClient extends WebViewClient {
 
     private Context context;
 
+    private boolean isPreview = false;
+
     private String [] resourceTag = new String[]{
             "plugin",
             "skin",
@@ -49,8 +53,9 @@ public class UmWebContentEditorClient extends WebViewClient {
     /**
      * @param context application context
      */
-    public UmWebContentEditorClient(Context context){
+    public UmWebContentEditorClient(Context context, boolean isPreview){
         this.context = context;
+        this.isPreview = isPreview;
     }
 
     @Override
@@ -146,5 +151,16 @@ public class UmWebContentEditorClient extends WebViewClient {
         mBuilder.append(")}catch(error){console.error(error.message);}");
         final String call = mBuilder.toString();
         mWeb.evaluateJavascript(call, callback::onCallbackReceived);
+    }
+
+    @Override
+    public boolean shouldOverrideUrlLoading(WebView view, String url) {
+
+        if (url != null && (url.startsWith("http://") || url.startsWith("https://")) && isPreview) {
+            view.getContext().startActivity(new Intent(Intent.ACTION_VIEW, Uri.parse(url)));
+            return true;
+        } else {
+            return super.shouldOverrideUrlLoading(view, url);
+        }
     }
 }

@@ -1581,7 +1581,7 @@ public class ContentEditorActivity extends UstadBaseActivity implements ContentE
 
     @Override
     public void handleSelectedPage() {
-        umEditorWebView.setWebViewClient(new UmWebContentEditorClient(this));
+        umEditorWebView.setWebViewClient(new UmWebContentEditorClient(this, false));
         String urlToLoad = UMFileUtil.joinPaths(umEditorFileHelper.getMountedFileAccessibleUrl(),
                 presenter.getSelectedPageToLoad());
         args.put(ContentEditorView.EDITOR_PREVIEW_PATH, urlToLoad);
