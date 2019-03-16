@@ -26,7 +26,6 @@ import android.support.design.widget.BottomSheetBehavior;
 import android.support.design.widget.Snackbar;
 import android.support.design.widget.TabLayout;
 import android.support.design.widget.TextInputEditText;
-import android.support.v4.app.ActivityCompat;
 import android.support.v4.app.Fragment;
 import android.support.v4.app.FragmentManager;
 import android.support.v4.app.FragmentStatePagerAdapter;
@@ -150,21 +149,23 @@ public class ContentEditorActivity extends UstadBaseActivity implements ContentE
 
     public static final int CAMERA_IMAGE_CAPTURE_REQUEST = 900;
 
-    public static final int CAMERA_PERMISSION_REQUEST = 901;
-
     private static final int FILE_BROWSING_REQUEST = 902;
 
     private UmFormatHelper umFormatHelper;
 
-    private static final String EDITOR_METHOD_PREFIX = "UmEditorCore.";
+    public static final String EDITOR_METHOD_PREFIX = "UmEditorCore.";
 
 
+    /**
+     * Class which represent in content link.
+     */
     private class UmLink{
+
         private String linkText;
 
         private String linkUrl;
 
-        public String getLinkText() {
+        String getLinkText() {
             return linkText;
         }
 
@@ -172,7 +173,7 @@ public class ContentEditorActivity extends UstadBaseActivity implements ContentE
             this.linkText = linkText;
         }
 
-        public String getLinkUrl() {
+        String getLinkUrl() {
             return linkUrl;
         }
 
@@ -180,6 +181,7 @@ public class ContentEditorActivity extends UstadBaseActivity implements ContentE
             this.linkUrl = linkUrl;
         }
     }
+
 
     /**
      * Class which represent a format control state
@@ -812,17 +814,15 @@ public class ContentEditorActivity extends UstadBaseActivity implements ContentE
 
         mFromDevice.setOnClickListener(v -> {
             viewSwitcher.closeAnimatedView(UmEditorAnimatedViewSwitcher.ANIMATED_MEDIA_TYPE_PANEL);
-            startFileBrowser();
+            runAfterGrantingPermission(Manifest.permission.WRITE_EXTERNAL_STORAGE,
+                    this::startFileBrowser,getString(R.string.download_storage_permission_title),
+                    getString(R.string.download_storage_permission_message));
         });
 
         mFromCamera.setOnClickListener(v -> {
             viewSwitcher.closeAnimatedView(UmEditorAnimatedViewSwitcher.ANIMATED_MEDIA_TYPE_PANEL);
-            if (ContextCompat.checkSelfPermission(getApplicationContext(),
-                    Manifest.permission.CAMERA) != PackageManager.PERMISSION_GRANTED) {
-                ActivityCompat.requestPermissions(ContentEditorActivity.this,
-                        new String[]{Manifest.permission.CAMERA}, CAMERA_PERMISSION_REQUEST);
-                return;
-            }
+            runAfterGrantingPermission(Manifest.permission.CAMERA,
+                    this::showMediaTypeDialog,"","");
             showMediaTypeDialog();
         });
 
@@ -842,9 +842,10 @@ public class ContentEditorActivity extends UstadBaseActivity implements ContentE
             viewSwitcher.closeAnimatedView(ANIMATED_CONTENT_OPTION_PANEL);
         });
 
-        mInsertLink.setOnClickListener(v -> executeJsFunction(
-                umEditorWebView, EDITOR_METHOD_PREFIX + "getLinkProperties",
-                ContentEditorActivity.this));
+        mInsertLink.setOnClickListener(v -> {
+            viewSwitcher.closeAnimatedView(UmEditorAnimatedViewSwitcher.ANIMATED_CONTENT_OPTION_PANEL);
+            executeJsFunction(umEditorWebView, EDITOR_METHOD_PREFIX + "getLinkProperties",
+                ContentEditorActivity.this);});
 
 
         ContentFormattingPagerAdapter adapter =
@@ -860,15 +861,6 @@ public class ContentEditorActivity extends UstadBaseActivity implements ContentE
         umEditorWebView.addJavascriptInterface(
                 new UmWebContentEditorInterface(this,this),"UmEditor");
         umEditorWebView.setLayerType(View.LAYER_TYPE_HARDWARE, null);
-
-        new Handler().postDelayed(this::startEditingDoc, TimeUnit.SECONDS.toMillis(3));
-    }
-
-    private void startEditingDoc() {
-
-        if(presenter.isInEditorPreview()){
-            handleSelectedPage();
-        }
     }
 
 
@@ -1100,27 +1092,14 @@ public class ContentEditorActivity extends UstadBaseActivity implements ContentE
                 break;
 
             case ACTION_PAGE_LOADED:
-                executeJsFunction(umEditorWebView,
-                        EDITOR_METHOD_PREFIX + "onCreate", this,
-                        getCurrentLocale(this), getDirectionality(this));
+                executeJsFunction(umEditorWebView, EDITOR_METHOD_PREFIX + "onCreate",
+                        ContentEditorActivity.this, getCurrentLocale(this),
+                        getDirectionality(this));
                 break;
         }
     }
 
 
-
-
-    @Override
-    public void onRequestPermissionsResult(int requestCode, @NonNull String permissions[], @NonNull int[] grantResults) {
-        switch (requestCode) {
-            case CAMERA_PERMISSION_REQUEST:
-                if (grantResults.length > 0
-                        && grantResults[0] == PackageManager.PERMISSION_GRANTED) {
-                    showMediaTypeDialog();
-                }
-                break;
-        }
-    }
 
 
     @Override
@@ -1407,30 +1386,6 @@ public class ContentEditorActivity extends UstadBaseActivity implements ContentE
                 }
             });
         }
-    }
-
-    /**
-     * Delete temporary direction in which zip was mounted
-     * @param dir File directory.
-     * @return true if the directory was deleted successfully otherwise false
-     */
-    private boolean deleteTempDir(File dir) {
-        File[] files = dir.listFiles();
-        boolean success = true;
-        if (files != null) {
-            for (File file : files) {
-                if (file.isDirectory()) {
-                    success &= deleteTempDir(file);
-                }
-                if (!file.delete()) {
-                    success = false;
-                }
-            }
-        }
-        if(dir.exists()){
-            success = dir.delete();
-        }
-        return success;
     }
 
 

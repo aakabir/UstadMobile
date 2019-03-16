@@ -11,6 +11,7 @@ import android.webkit.WebView;
 import android.widget.ProgressBar;
 import android.widget.TextView;
 
+import com.google.gson.Gson;
 import com.toughra.ustadmobile.R;
 import com.ustadmobile.core.controller.ContentPreviewPresenter;
 import com.ustadmobile.core.generated.locale.MessageID;
@@ -18,12 +19,20 @@ import com.ustadmobile.core.impl.UstadMobileSystemImpl;
 import com.ustadmobile.core.view.ContentPreviewView;
 import com.ustadmobile.port.android.umeditor.UmWebContentEditorChromeClient;
 import com.ustadmobile.port.android.umeditor.UmWebContentEditorClient;
+import com.ustadmobile.port.android.umeditor.UmWebContentEditorInterface;
+import com.ustadmobile.port.android.umeditor.UmWebJsResponse;
 import com.ustadmobile.port.android.util.UMAndroidUtil;
+
+import static com.ustadmobile.core.view.ContentEditorView.ACTION_PAGE_LOADED;
+import static com.ustadmobile.port.android.umeditor.UmEditorUtil.getCurrentLocale;
+import static com.ustadmobile.port.android.umeditor.UmEditorUtil.getDirectionality;
+import static com.ustadmobile.port.android.umeditor.UmWebContentEditorClient.executeJsFunction;
+import static com.ustadmobile.port.android.view.ContentEditorActivity.EDITOR_METHOD_PREFIX;
 
 public class ContentEditorPreviewActivity extends UstadBaseActivity
         implements ContentPreviewView, UmWebContentEditorChromeClient.JsLoadingCallback {
 
-    private WebView contentPreview;
+    private WebView mWebView;
 
     private ProgressBar progressDialog;
 
@@ -33,8 +42,8 @@ public class ContentEditorPreviewActivity extends UstadBaseActivity
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_content_preview);
-        contentPreview = findViewById(R.id.preview_content);
-        contentPreview.setBackgroundColor(Color.TRANSPARENT);
+        mWebView = findViewById(R.id.preview_content);
+        mWebView.setBackgroundColor(Color.TRANSPARENT);
         Toolbar toolbar = findViewById(R.id.um_toolbar);
         toolbarTitle = findViewById(R.id.toolbarTitle);
         progressDialog = findViewById(R.id.progressBar);
@@ -44,13 +53,18 @@ public class ContentEditorPreviewActivity extends UstadBaseActivity
 
         toolbarTitle.setVisibility(View.VISIBLE);
 
-        WebSettings webSettings = contentPreview.getSettings();
+        WebSettings webSettings = mWebView.getSettings();
         webSettings.setJavaScriptEnabled(true);
         webSettings.setAllowFileAccess(true);
         webSettings.setRenderPriority(WebSettings.RenderPriority.HIGH);
-        contentPreview.setLayerType(View.LAYER_TYPE_HARDWARE, null);
-        contentPreview.clearCache(true);
-        contentPreview.clearHistory();
+        mWebView.setWebChromeClient(new UmWebContentEditorChromeClient(this));
+        mWebView.addJavascriptInterface(
+                new UmWebContentEditorInterface(this,this),"UmEditor");
+        mWebView.setLayerType(View.LAYER_TYPE_HARDWARE, null);
+        mWebView.clearCache(true);
+        mWebView.clearHistory();
+
+
 
         ContentPreviewPresenter presenter = new ContentPreviewPresenter(this,
                 UMAndroidUtil.bundleToHashtable(getIntent().getExtras()), this);
@@ -84,10 +98,10 @@ public class ContentEditorPreviewActivity extends UstadBaseActivity
 
     @Override
     public void startPreviewing(String baseRequestUri, String indexFile) {
-        contentPreview.setWebViewClient(new UmWebContentEditorClient(this, true));
-        contentPreview.setWebChromeClient(new UmWebContentEditorChromeClient(this));
+        mWebView.setWebViewClient(new UmWebContentEditorClient(this, true));
+        mWebView.setWebChromeClient(new UmWebContentEditorChromeClient(this));
         progressDialog.setVisibility(View.VISIBLE);
-        contentPreview.loadUrl(indexFile);
+        mWebView.loadUrl(indexFile);
     }
 
     @Override
@@ -102,6 +116,13 @@ public class ContentEditorPreviewActivity extends UstadBaseActivity
 
     @Override
     public void onCallbackReceived(String value) {
-
+        if(value.contains("action")){
+            UmWebJsResponse callback = new Gson().fromJson(value,UmWebJsResponse.class);
+            if(callback.getAction().equals(ACTION_PAGE_LOADED)){
+                executeJsFunction(mWebView,
+                        EDITOR_METHOD_PREFIX + "onCreate", this,
+                        getCurrentLocale(this), getDirectionality(this));
+            }
+        }
     }
 }

@@ -316,7 +316,7 @@
     <string name='content_editor_preview'>Preview</string>
     <string name='content_editor_link_text'>Link text</string>
     <string name='content_editor_link_url'>Link Url</string>
-    <string name='content_editor_link_error'>Some fields are empty, fill them first.</string>
+    <string name='content_editor_link_error'>Link text or url can not be empty, try again</string>
 
 
     <!--On boarding screen-->

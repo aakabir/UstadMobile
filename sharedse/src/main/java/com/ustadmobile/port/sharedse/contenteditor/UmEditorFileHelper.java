@@ -265,7 +265,7 @@ public class UmEditorFileHelper implements UmEditorFileHelperCore {
             for(EpubNavItem navItem: navItems){
                 Document index = Jsoup.parse(UMFileUtil.readTextFile(
                         new File(getDocumentDirPath(), navItem.getHref()).getAbsolutePath()));
-                Element previewContainer = index.select("#" + EDITOR_BASE_DIR_NAME).first();
+                Element previewContainer = index.select(".um-editor").first();
                 Elements resources = previewContainer.select("img[src],source[src]");
 
                 if(findResource(resourceName,resources)){
