@@ -1293,8 +1293,9 @@ public class ContentEditorActivity extends UstadBaseActivity implements ContentE
             if(presenter.isOpenPreviewRequest()){
                 presenter.setOpenPreviewRequest(false);
                 presenter.setEditingModeOn(false);
-                args.put(ContentEditorView.EDITOR_REQUEST_URI,
-                        umEditorFileHelper.getResourceAccessibleUrl());
+                ContentEditorPreviewActivity.initPreview(umEditorFileHelper.
+                        getEpubNavDocument().getToc().getChildren(),
+                        presenter.getSelectedPageToLoad());
                 UstadMobileSystemImpl.getInstance().go(ContentPreviewView.VIEW_NAME,
                         args,getApplicationContext());
             }else{
@@ -1513,7 +1514,8 @@ public class ContentEditorActivity extends UstadBaseActivity implements ContentE
         mWebView.setWebViewClient(new UmWebContentEditorClient(this, false));
         String urlToLoad = UMFileUtil.joinPaths(umEditorFileHelper.getMountedFileAccessibleUrl(),
                 presenter.getSelectedPageToLoad());
-        args.put(ContentEditorView.EDITOR_PREVIEW_PATH, urlToLoad);
+        args.put(ContentEditorView.EDITOR_PREVIEW_PATH,
+                umEditorFileHelper.getMountedFileAccessibleUrl());
         mWebView.clearCache(true);
         mWebView.clearHistory();
         mWebView.loadUrl(urlToLoad);

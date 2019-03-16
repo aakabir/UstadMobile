@@ -32,7 +32,6 @@ if (project.file("buildconfig.local.properties").exists()) {
     ext.buildConfigProperties.load(new FileInputStream(project.file("buildconfig.local.properties")))
 }
 
-
 /*
   TODO: Refactor to use another task to trigger these tasks
 
@@ -170,12 +169,12 @@ android {
  * Disable running tests of the vanilla build (this requires multidex, so we use vanillamultidex instead)
  */
 gradle.taskGraph.useFilter { task ->
-    if(task.name.equals("connectedVanillaDebugAndroidTest")
-        || task.name.equals("createVanillaDebugCoverageReport")
-        || task.name.equals("testVanillaDebugUnitTest")
-        || task.name.equals("testVanillaReleaseUnitTest")
-        || task.name.equals("processVanillaDebugAndroidTestManifest")
-        || task.name.equals("transformDexArchiveWithExternalLibsDexMergerForVanillaDebugAndroidTest")) {
+    if (task.name.equals("connectedVanillaDebugAndroidTest")
+            || task.name.equals("createVanillaDebugCoverageReport")
+            || task.name.equals("testVanillaDebugUnitTest")
+            || task.name.equals("testVanillaReleaseUnitTest")
+            || task.name.equals("processVanillaDebugAndroidTestManifest")
+            || task.name.equals("transformDexArchiveWithExternalLibsDexMergerForVanillaDebugAndroidTest")) {
         return false;
     }
 
@@ -384,7 +383,6 @@ dependencies {
     androidTestImplementation "com.squareup.okhttp3:mockwebserver:$version_mockwebserver"
 
     androidTestImplementation "commons-io:commons-io:$version_commons_io"
-
 
     //http server
     implementation "org.nanohttpd:nanohttpd:$version_nanohttpd"

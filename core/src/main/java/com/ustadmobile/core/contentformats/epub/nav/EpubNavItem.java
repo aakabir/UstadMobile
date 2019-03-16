@@ -7,6 +7,7 @@ package com.ustadmobile.core.contentformats.epub.nav;
 
 import com.ustadmobile.core.util.UMFileUtil;
 
+import java.io.Serializable;
 import java.util.List;
 import java.util.Vector;
 
@@ -15,7 +16,7 @@ import java.util.Vector;
  *
  * @author mike
  */
-public class EpubNavItem {
+public class EpubNavItem implements Serializable {
 
     /**
      * The title of this table of contents entry - as per the text found within the &lt;a href tag.

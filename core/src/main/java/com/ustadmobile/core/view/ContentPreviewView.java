@@ -7,6 +7,6 @@ public interface ContentPreviewView extends UstadView {
 
     String VIEW_NAME = "ContentPreview";
 
-    void startPreviewing(String requestUri, String indexPath);
+    void startPreviewing(String requestUri);
 
 }

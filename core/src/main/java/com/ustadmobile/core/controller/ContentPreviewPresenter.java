@@ -17,11 +17,8 @@ public class ContentPreviewPresenter extends UstadBaseController<ContentPreviewV
     @Override
     public void onCreate(Hashtable savedState) {
         super.onCreate(savedState);
-        view.runOnUiThread(() -> {
-            String requestUri = args.get(ContentEditorView.EDITOR_REQUEST_URI).toString();
-            String indexFile = args.get(ContentEditorView.EDITOR_PREVIEW_PATH).toString();
-            view.startPreviewing(requestUri, indexFile);
-        });
+        view.runOnUiThread(() ->
+                view.startPreviewing(args.get(ContentEditorView.EDITOR_PREVIEW_PATH).toString()));
 
     }
 

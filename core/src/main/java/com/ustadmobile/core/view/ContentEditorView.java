@@ -6,9 +6,7 @@ public interface ContentEditorView extends UstadView {
 
     String VIEW_NAME = "ContentEditor";
 
-    String EDITOR_PREVIEW_PATH = "preview_path";
-
-    String EDITOR_REQUEST_URI = "request_uri";
+    String EDITOR_PREVIEW_PATH = "request_uri";
 
     String CONTENT_ENTRY_FILE_UID = "content_entry_file_uid";
 

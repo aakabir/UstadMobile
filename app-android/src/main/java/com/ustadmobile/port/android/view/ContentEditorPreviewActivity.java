@@ -1,40 +1,42 @@
 package com.ustadmobile.port.android.view;
 
-import android.graphics.Color;
+import android.annotation.SuppressLint;
 import android.os.Bundle;
+import android.support.v4.app.Fragment;
+import android.support.v4.app.FragmentManager;
+import android.support.v4.app.FragmentPagerAdapter;
+import android.support.v4.view.ViewPager;
 import android.support.v7.app.ActionBar;
 import android.support.v7.widget.Toolbar;
 import android.view.MenuItem;
 import android.view.View;
-import android.webkit.WebSettings;
-import android.webkit.WebView;
 import android.widget.ProgressBar;
 import android.widget.TextView;
 
-import com.google.gson.Gson;
 import com.toughra.ustadmobile.R;
+import com.ustadmobile.core.contentformats.epub.nav.EpubNavItem;
 import com.ustadmobile.core.controller.ContentPreviewPresenter;
-import com.ustadmobile.core.generated.locale.MessageID;
-import com.ustadmobile.core.impl.UstadMobileSystemImpl;
 import com.ustadmobile.core.view.ContentPreviewView;
-import com.ustadmobile.port.android.umeditor.UmWebContentEditorChromeClient;
-import com.ustadmobile.port.android.umeditor.UmWebContentEditorClient;
-import com.ustadmobile.port.android.umeditor.UmWebContentEditorInterface;
-import com.ustadmobile.port.android.umeditor.UmWebJsResponse;
+import com.ustadmobile.port.android.umeditor.UmEditorViewPager;
 import com.ustadmobile.port.android.util.UMAndroidUtil;
 
-import static com.ustadmobile.core.view.ContentEditorView.ACTION_PAGE_LOADED;
-import static com.ustadmobile.port.android.umeditor.UmEditorUtil.getCurrentLocale;
-import static com.ustadmobile.port.android.umeditor.UmEditorUtil.getDirectionality;
-import static com.ustadmobile.port.android.umeditor.UmWebContentEditorClient.executeJsFunction;
-import static com.ustadmobile.port.android.view.ContentEditorActivity.EDITOR_METHOD_PREFIX;
+import java.util.List;
 
 public class ContentEditorPreviewActivity extends UstadBaseActivity
-        implements ContentPreviewView, UmWebContentEditorChromeClient.JsLoadingCallback {
+        implements ContentPreviewView{
 
-    private WebView mWebView;
+    private UmEditorViewPager mViewPager;
 
-    private ProgressBar progressDialog;
+    private static List<EpubNavItem> pages;
+
+    private static String selectedPage;
+
+    public static void initPreview(List<EpubNavItem> pageList, String currentSelection){
+        selectedPage = currentSelection;
+        pages = pageList;
+    }
+
+    protected ProgressBar progressDialog;
 
     private TextView toolbarTitle;
 
@@ -42,28 +44,13 @@ public class ContentEditorPreviewActivity extends UstadBaseActivity
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_content_preview);
-        mWebView = findViewById(R.id.preview_content);
-        mWebView.setBackgroundColor(Color.TRANSPARENT);
+        mViewPager = findViewById(R.id.previewPager);
         Toolbar toolbar = findViewById(R.id.um_toolbar);
         toolbarTitle = findViewById(R.id.toolbarTitle);
         progressDialog = findViewById(R.id.progressBar);
         setToolbar(toolbar);
-        progressDialog.setMax(100);
-        progressDialog.setProgress(0);
 
         toolbarTitle.setVisibility(View.VISIBLE);
-
-        WebSettings webSettings = mWebView.getSettings();
-        webSettings.setJavaScriptEnabled(true);
-        webSettings.setAllowFileAccess(true);
-        webSettings.setRenderPriority(WebSettings.RenderPriority.HIGH);
-        mWebView.setWebChromeClient(new UmWebContentEditorChromeClient(this));
-        mWebView.addJavascriptInterface(
-                new UmWebContentEditorInterface(this,this),"UmEditor");
-        mWebView.setLayerType(View.LAYER_TYPE_HARDWARE, null);
-        mWebView.clearCache(true);
-        mWebView.clearHistory();
-
 
 
         ContentPreviewPresenter presenter = new ContentPreviewPresenter(this,
@@ -82,8 +69,7 @@ public class ContentEditorPreviewActivity extends UstadBaseActivity
         if(toolbar != null){
             toolbar.setTitle("");
         }
-        toolbarTitle.setText(UstadMobileSystemImpl.getInstance()
-                .getString(MessageID.content_preview_title,this));
+
     }
 
     @Override
@@ -96,33 +82,73 @@ public class ContentEditorPreviewActivity extends UstadBaseActivity
         return true;
     }
 
-    @Override
-    public void startPreviewing(String baseRequestUri, String indexFile) {
-        mWebView.setWebViewClient(new UmWebContentEditorClient(this, true));
-        mWebView.setWebChromeClient(new UmWebContentEditorChromeClient(this));
-        progressDialog.setVisibility(View.VISIBLE);
-        mWebView.loadUrl(indexFile);
-    }
 
     @Override
-    public void onProgressChanged(int newProgress) {
-        progressDialog.setProgress(newProgress);
-    }
+    public void startPreviewing(String requestUri) {
+        PagedPreviewAdapter adapter = new PagedPreviewAdapter(mViewPager,requestUri,
+                getSupportFragmentManager());
+        int pageIndex = getSelectedPageIndex();
+        setToolbarTitle(pageIndex);
+        mViewPager.setAdapter(adapter);
+        mViewPager.setCurrentItem(pageIndex, true);
+        mViewPager.addOnPageChangeListener(new ViewPager.OnPageChangeListener() {
+            @Override
+            public void onPageScrolled(int i, float v, int i1) {
 
-    @Override
-    public void onPageFinishedLoading() {
-        progressDialog.setVisibility(View.GONE);
-    }
-
-    @Override
-    public void onCallbackReceived(String value) {
-        if(value.contains("action")){
-            UmWebJsResponse callback = new Gson().fromJson(value,UmWebJsResponse.class);
-            if(callback.getAction().equals(ACTION_PAGE_LOADED)){
-                executeJsFunction(mWebView,
-                        EDITOR_METHOD_PREFIX + "onCreate", this,
-                        getCurrentLocale(this), getDirectionality(this));
             }
+
+            @Override
+            public void onPageSelected(int position) {
+                setToolbarTitle(position);
+            }
+
+            @Override
+            public void onPageScrollStateChanged(int i) {
+
+            }
+        });
+    }
+
+    @SuppressLint("DefaultLocale")
+    private void setToolbarTitle(int position){
+        toolbarTitle.setText(String.format("%d / %d - %s", position + 1,
+                pages.size(), pages.get(position).getTitle()));
+    }
+
+    private int getSelectedPageIndex(){
+        for(EpubNavItem item : pages){
+            if(item.getHref().equals(selectedPage)){
+                return pages.indexOf(item);
+            }
+        }
+        return 0;
+    }
+
+    private class PagedPreviewAdapter extends FragmentPagerAdapter {
+
+        private UmEditorViewPager umEditorViewPager;
+
+        private String requestBaseUri;
+
+        PagedPreviewAdapter(UmEditorViewPager umEditorViewPager, String requestBaseUri, FragmentManager fm) {
+            super(fm);
+            this.umEditorViewPager = umEditorViewPager;
+            this.requestBaseUri = requestBaseUri;
+        }
+
+        @Override
+        public Fragment getItem(int position) {
+
+            ContentEditorPreviewFragment fragment =
+                    ContentEditorPreviewFragment.newInstance(pages.get(position));
+            fragment.setViewPager(umEditorViewPager);
+            fragment.setRequestBaseUri(requestBaseUri);
+            return fragment;
+        }
+
+        @Override
+        public int getCount() {
+            return pages.size();
         }
     }
 }
