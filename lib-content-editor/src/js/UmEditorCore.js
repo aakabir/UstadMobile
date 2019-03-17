@@ -257,7 +257,7 @@ UmEditorCore.prototype.registerObservers = () => {
 
         const contentChangeObserver = new MutationObserver(() => {
             //Check editor controls state
-            setTimeout(() => {UmEditorCore.prototype.checkActivatedControls()},averageEventTimeout);
+            setTimeout(() => {UmEditorCore.prototype.checkActivatedControls()},shorterEventTimeout);
         
             //generate preview content
             const previewContent = JSON.stringify({
@@ -513,28 +513,30 @@ UmEditorCore.prototype.insertWidgetNode = (widgetNode) => {
  * Check tinymce toolbar menu controls state.
  */
 UmEditorCore.prototype.checkActivatedControls = () => {
-    const commandStatus = [];
-    for(let command in UmEditorCore.formattingCommandList){
-        if(!UmEditorCore.formattingCommandList.hasOwnProperty(command))
-          continue;
-          const commandString = UmEditorCore.formattingCommandList[command];
-          const commandState = {};
-          let status = null;
-          if(commandString === "FontSize"){
-              status = tinyMCE.activeEditor.queryCommandValue(commandString).replace("px","");
-          }else if(commandString ==="mceDirectionLTR"){
-              status = UmEditorCore.prototype.getNodeDirectionality() === "ltr";
-          }else if(commandString ==="mceDirectionRTL"){
-              status = UmEditorCore.prototype.getNodeDirectionality() === "rtl";
-          }else{
-              status = UmEditorCore.prototype.checkCommandState(commandString);
-          }
-          commandState.command = commandString;
-          commandState.status = status === null ? false : status;
-          commandStatus.push(commandState);
-    }
-
+    
     try{
+        const commandStatus = [];
+        for(let command in UmEditorCore.formattingCommandList){
+            if(!UmEditorCore.formattingCommandList.hasOwnProperty(command))
+            continue;
+            const commandString = UmEditorCore.formattingCommandList[command];
+            const commandState = {};
+            let status = null;
+            if(commandString === "FontSize"){
+                status = tinyMCE.activeEditor.queryCommandValue(commandString).replace("px","");
+            }else if(commandString ==="mceDirectionLTR"){
+                status = UmEditorCore.prototype.getNodeDirectionality() === "ltr";
+            }else if(commandString ==="mceDirectionRTL"){
+                status = UmEditorCore.prototype.getNodeDirectionality() === "rtl";
+            }else{
+                status = UmEditorCore.prototype.checkCommandState(commandString);
+            }
+            commandState.command = commandString;
+            commandState.status = status === null ? false : status;
+            commandStatus.push(commandState);
+        }
+
+        
         UmEditor.onControlsStateChanged(JSON.stringify({
             action:'onActiveControlCheck',
             directionality:'',

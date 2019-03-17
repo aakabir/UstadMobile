@@ -132,12 +132,14 @@ UmWidgetManager.handleWidgetListeners = (editMode = false) => {
             }else if($(event.target).hasClass("um-editor")){
                 event.stopPropagation();
                 UmEditorCore.prototype.setCursorToAnyEditableElement(null);
-            }else{
+            }else if($(event.target).is("label")){
                 event.stopPropagation();
                 const focusEl = $($(event.target).closest("[data-um-widget]"))
                 .find(".um-editable:first p:first-of-type");
                 UmEditorCore.prototype.setCursorToAnyEditableElement(focusEl.get(0));
             }
+
+            UmEditorCore.prototype.checkActivatedControls();
 
         }else{
             if($(event.target).hasClass("qn-retry")){
