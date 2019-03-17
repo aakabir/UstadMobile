@@ -1,12 +1,14 @@
 package com.ustadmobile.port.android.umeditor;
 
+import java.io.Serializable;
+
 /**
  * Class which represents the content formatting object, this handles the
  * content styling on the active editor.
  *
  * @author kileha3
  */
-public class UmFormat {
+public class UmFormat implements Serializable {
 
     private int formatIcon;
 

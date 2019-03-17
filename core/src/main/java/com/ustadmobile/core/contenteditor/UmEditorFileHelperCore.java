@@ -15,7 +15,7 @@ import java.util.List;
  * <b>Operational Flow:</b>
  *
  * <p>
- *     Use {@link UmEditorFileHelperCore#createFile} to create file if the file doesn't
+ *     Use {@link UmEditorFileHelperCore#createDocument} to create file if the file doesn't
  *     exists. i.e when new document is created.
  *
  *     Use {@link UmEditorFileHelperCore#mountDocumentDir} to mount zipped file
@@ -44,7 +44,7 @@ public interface UmEditorFileHelperCore {
     /**
      * Create new file if the file doesn't
      */
-    void createFile(long entryUid,UmCallback<String> callback);
+    void createDocument(long entryUid, UmCallback<String> callback);
 
     /**
      * Mount the document dit to be accessible on HTTP

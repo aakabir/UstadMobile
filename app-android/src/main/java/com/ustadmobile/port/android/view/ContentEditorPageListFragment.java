@@ -50,13 +50,13 @@ import ru.dimorinny.floatingtextbutton.FloatingTextButton;
 public class ContentEditorPageListFragment extends UstadDialogFragment
         implements UmOnStartDragListener, ContentEditorPageListView {
 
-    private List<EpubNavItem> pageList;
+    private static List<EpubNavItem> mPages;
 
     private ItemTouchHelper mItemTouchHelper;
 
     private UmPageActionListener pageActionListener;
 
-    private  PageListAdapter mPageListAdapter;
+    private static PageListAdapter adapter;
 
     private ContentEditorPageListPresenter presenter;
 
@@ -64,7 +64,7 @@ public class ContentEditorPageListFragment extends UstadDialogFragment
 
     private String documentTitle = null;
 
-    private String currentHref;
+    private static String selectedPage;
 
     private TextView titleView;
 
@@ -93,7 +93,7 @@ public class ContentEditorPageListFragment extends UstadDialogFragment
         @SuppressLint("ClickableViewAccessibility")
         @Override
         public void onBindViewHolder(@NonNull PageViewHolder holder, int position) {
-            final EpubNavItem pageItem = pageList.get(holder.getAdapterPosition());
+            final EpubNavItem pageItem = mPages.get(holder.getAdapterPosition());
             holder.pageTitle.setText(pageItem.getTitle());
             holder.pageReorderHandle.setOnTouchListener((v, event) -> {
                 if (MotionEventCompat.getActionMasked(event) == MotionEvent.ACTION_DOWN) {
@@ -103,16 +103,16 @@ public class ContentEditorPageListFragment extends UstadDialogFragment
             });
 
             holder.pageTitle.setTextColor(getColor(holder.itemView.getContext(),
-                    pageItem.getHref().equals(currentHref) ? R.color.text_primary:
+                    pageItem.getHref().equals(selectedPage) ? R.color.text_primary:
                             R.color.text_secondary));
             holder.pageOptionHandle.setColorFilter(getColor(holder.itemView.getContext(),
-                    pageItem.getHref().equals(currentHref) ? R.color.text_primary:
+                    pageItem.getHref().equals(selectedPage) ? R.color.text_primary:
                             R.color.text_secondary));
             holder.pageReorderHandle.setColorFilter(getColor(holder.itemView.getContext(),
-                    pageItem.getHref().equals(currentHref) ? R.color.text_primary:
+                    pageItem.getHref().equals(selectedPage) ? R.color.text_primary:
                             R.color.text_secondary));
             holder.itemHolder.setBackgroundColor(getColor(holder.itemView.getContext(),
-                    pageItem.getHref().equals(currentHref) ? R.color.secondary_text_light:
+                    pageItem.getHref().equals(selectedPage) ? R.color.secondary_text_light:
                             R.color.icons));
 
             holder.pageOptionHandle.setOnClickListener(v ->
@@ -141,16 +141,16 @@ public class ContentEditorPageListFragment extends UstadDialogFragment
 
         @Override
         public int getItemCount() {
-            return pageList.size();
+            return mPages.size();
         }
 
         @Override
         public void onPageItemMove(int fromPosition, int toPosition) {
-            EpubNavItem oldItem = pageList.get(fromPosition);
-            pageList.remove(fromPosition);
-            pageList.add(toPosition,oldItem);
+            EpubNavItem oldItem = mPages.get(fromPosition);
+            mPages.remove(fromPosition);
+            mPages.add(toPosition,oldItem);
             notifyItemMoved(fromPosition, toPosition);
-            presenter.handleReOrderPages(pageList);
+            presenter.handleReOrderPages(mPages);
         }
 
         class PageViewHolder extends RecyclerView.ViewHolder{
@@ -180,11 +180,11 @@ public class ContentEditorPageListFragment extends UstadDialogFragment
         }
     }
 
-    public void setPageList(List<EpubNavItem> pageList, String currentHref){
-        this.pageList = pageList;
-        this.currentHref = currentHref;
-        if(mPageListAdapter != null){
-            mPageListAdapter.notifyItemRangeChanged(0,pageList.size());
+    public void setPageList(List<EpubNavItem> pageList, String selectedHref){
+        mPages = pageList;
+        selectedPage = selectedHref;
+        if(adapter != null){
+            adapter.notifyItemRangeChanged(0,pageList.size());
         }
     }
 
@@ -195,7 +195,7 @@ public class ContentEditorPageListFragment extends UstadDialogFragment
     }
 
     @Override
-    public View onCreateView(LayoutInflater inflater, ViewGroup container,
+    public View onCreateView(@NonNull LayoutInflater inflater, ViewGroup container,
                              Bundle savedInstanceState) {
         // Inflate the layout for this fragment
         View rootView = inflater.inflate(R.layout.fragment_content_editor_page_list,
@@ -204,17 +204,16 @@ public class ContentEditorPageListFragment extends UstadDialogFragment
         toolbar.setNavigationIcon(R.drawable.ic_arrow_back_white_24dp);
 
         titleView = rootView.findViewById(R.id.document_title);
-        titleView.setText(documentTitle);
 
         RecyclerView pageListView = rootView.findViewById(R.id.page_list);
         FloatingTextButton btnAddPage = rootView.findViewById(R.id.btn_add_page);
-        mPageListAdapter = new PageListAdapter(this);
+        adapter = new PageListAdapter(this);
         LinearLayoutManager layoutManager = new LinearLayoutManager(getActivity());
         layoutManager.setOrientation(LinearLayoutManager.VERTICAL);
         pageListView.setLayoutManager(layoutManager);
-        pageListView.setAdapter(mPageListAdapter);
+        pageListView.setAdapter(adapter);
 
-        ItemTouchHelper.Callback callback = new UmPageItemTouchCallback(mPageListAdapter);
+        ItemTouchHelper.Callback callback = new UmPageItemTouchCallback(adapter);
         mItemTouchHelper = new ItemTouchHelper(callback);
         mItemTouchHelper.attachToRecyclerView(pageListView);
 
@@ -259,6 +258,15 @@ public class ContentEditorPageListFragment extends UstadDialogFragment
         return rootView;
     }
 
+    private EpubNavItem getCurrentSelectedPage(String selectedHref){
+        for(EpubNavItem navItem: mPages){
+            if(navItem.getHref().equals(selectedHref)){
+                return navItem;
+            }
+        }
+        return mPages.get(0);
+    }
+
     @Override
     public void onStart() {
         super.onStart();
@@ -267,6 +275,10 @@ public class ContentEditorPageListFragment extends UstadDialogFragment
             int width = ViewGroup.LayoutParams.MATCH_PARENT;
             int height = ViewGroup.LayoutParams.MATCH_PARENT;
             dialog.getWindow().setLayout(width, height);
+
+            if(titleView != null){
+                setTitle(getCurrentSelectedPage(selectedPage).getTitle());
+            }
         }
     }
 
@@ -340,15 +352,15 @@ public class ContentEditorPageListFragment extends UstadDialogFragment
 
     @Override
     public void removePage(EpubNavItem page) {
-        if(pageList.size() == 1){
+        if(mPages.size() == 1){
             UstadMobileSystemImpl impl = UstadMobileSystemImpl.getInstance();
             String message = impl.getString(MessageID.content_editor_page_delete_failure_message,
                     getActivity());
             pageActionListener.onDeleteFailure(message);
         }else{
-            int index = pageList.indexOf(page);
-            if(pageList.remove(page)){
-                mPageListAdapter.notifyItemRemoved(index);
+            int index = mPages.indexOf(page);
+            if(mPages.remove(page)){
+                adapter.notifyItemRemoved(index);
                 pageActionListener.onPageRemove(page.getHref());
             }
         }

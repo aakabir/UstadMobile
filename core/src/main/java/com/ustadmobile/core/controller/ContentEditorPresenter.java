@@ -77,7 +77,7 @@ public class ContentEditorPresenter extends UstadBaseController<ContentEditorVie
             @Override
             public void onSuccess(Container result) {
                 if(result == null){
-                    view.getFileHelper().createFile(entryUid, new UmCallback<String>() {
+                    view.getFileHelper().createDocument(entryUid, new UmCallback<String>() {
                         @Override
                         public void onSuccess(String result) {
                             mountDocumentDir(result);

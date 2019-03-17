@@ -7,7 +7,6 @@ import android.content.ClipData;
 import android.content.ClipboardManager;
 import android.content.Context;
 import android.content.Intent;
-import android.content.res.Resources;
 import android.content.res.TypedArray;
 import android.graphics.Bitmap;
 import android.graphics.Color;
@@ -37,7 +36,7 @@ import android.support.v7.widget.GridLayoutManager;
 import android.support.v7.widget.RecyclerView;
 import android.support.v7.widget.Toolbar;
 import android.util.DisplayMetrics;
-import android.util.TypedValue;
+import android.util.Log;
 import android.view.Display;
 import android.view.LayoutInflater;
 import android.view.Menu;
@@ -97,6 +96,10 @@ import java.util.concurrent.TimeUnit;
 
 import id.zelory.compressor.Compressor;
 
+import static android.content.pm.ActivityInfo.SCREEN_ORIENTATION_PORTRAIT;
+import static android.content.pm.ActivityInfo.SCREEN_ORIENTATION_UNSPECIFIED;
+import static android.view.MenuItem.SHOW_AS_ACTION_ALWAYS;
+import static android.view.MenuItem.SHOW_AS_ACTION_IF_ROOM;
 import static com.ustadmobile.port.android.umeditor.UmEditorAnimatedViewSwitcher.ANIMATED_CONTENT_OPTION_PANEL;
 import static com.ustadmobile.port.android.umeditor.UmEditorAnimatedViewSwitcher.ANIMATED_SOFT_KEYBOARD_PANEL;
 import static com.ustadmobile.port.android.umeditor.UmEditorAnimatedViewSwitcher.MAX_SOFT_KEYBOARD_DELAY;
@@ -104,6 +107,7 @@ import static com.ustadmobile.port.android.umeditor.UmEditorUtil.getCurrentLocal
 import static com.ustadmobile.port.android.umeditor.UmEditorUtil.getDirectionality;
 import static com.ustadmobile.port.android.umeditor.UmEditorUtil.getDisplayWidth;
 import static com.ustadmobile.port.android.umeditor.UmWebContentEditorClient.executeJsFunction;
+import static com.ustadmobile.port.android.view.ContentEditorActivity.UmFormatHelper.isTobeHighlighted;
 import static com.ustadmobile.port.sharedse.contenteditor.UmEditorFileHelper.EDITOR_BASE_DIR_NAME;
 import static com.ustadmobile.port.sharedse.contenteditor.UmEditorFileHelper.MEDIA_DIRECTORY;
 
@@ -112,7 +116,7 @@ public class ContentEditorActivity extends UstadBaseActivity implements ContentE
         UmFormatStateChangeListener, UmEditorAnimatedViewSwitcher.OnAnimatedViewsClosedListener,
         UmPageActionListener {
 
-    private static ContentEditorPresenter presenter;
+    private ContentEditorPresenter presenter;
 
     private UmEditorFileHelper umEditorFileHelper;
 
@@ -138,11 +142,15 @@ public class ContentEditorActivity extends UstadBaseActivity implements ContentE
 
     private Uri cameraMedia;
 
+    private UmFormat mFormat;
+
     private File fileFromCamera;
 
     private View rootView;
 
     private static final String PAGE_NAME_TAG = "page_name";
+
+    private static final String DIRECTION_TAG = "directionality";
 
     private ProgressBar progressDialog;
 
@@ -204,7 +212,7 @@ public class ContentEditorActivity extends UstadBaseActivity implements ContentE
     /**
      * Class which handles all formatting from preparing and updating them when necessary.
      */
-    public class UmFormatHelper {
+    public static class UmFormatHelper {
 
         /**
          * Flag to indicate all text formats
@@ -504,7 +512,7 @@ public class ContentEditorActivity extends UstadBaseActivity implements ContentE
          * @param command format command to be checked for validity
          * @return True if valid otherwise False.
          */
-        public boolean isTobeHighlighted(String command){
+        public static boolean isTobeHighlighted(String command){
             return !command.equals(TEXT_FORMAT_TYPE_FONT)
                     && !command.equals(PARAGRAPH_FORMAT_INDENT_DECREASE)
                     && !command.equals(PARAGRAPH_FORMAT_INDENT_INCREASE);
@@ -528,9 +536,8 @@ public class ContentEditorActivity extends UstadBaseActivity implements ContentE
 
         @Override
         public Fragment getItem(int position) {
-            FormattingFragment fragment = new FormattingFragment().newInstance(position);
-            fragment.setUmFormatHelper(umFormatHelper);
-            return fragment;
+            return  FormattingFragment.newInstance(position,
+                    umFormatHelper,presenter);
         }
 
         @Override
@@ -553,12 +560,33 @@ public class ContentEditorActivity extends UstadBaseActivity implements ContentE
 
         private FormatsAdapter adapter;
 
-        private int formattingType;
+        private static final String FORMAT_TYPE = "format_type";
 
-        private UmFormatHelper umFormatHelper;
+        private static ContentEditorPresenter mPresenter;
+
+        private static UmFormatHelper umFormatHelper;
+
+        private List<UmFormat> umFormats;
 
 
-        class FormatsAdapter extends RecyclerView.Adapter<FormatsAdapter.FormatViewHolder>{
+        /**
+         * Create new instance of a content formatting fragment
+         */
+        public static FormattingFragment newInstance(int formatType, UmFormatHelper formatHelper,
+                                                     ContentEditorPresenter presenter) {
+            FormattingFragment fragment = new FormattingFragment();
+            mPresenter = presenter;
+            umFormatHelper = formatHelper;
+            Bundle bundle = new Bundle();
+            bundle.putInt(FORMAT_TYPE,formatType);
+            fragment.setArguments(bundle);
+            return fragment;
+        }
+
+
+
+
+        private class FormatsAdapter extends RecyclerView.Adapter<FormatsAdapter.FormatViewHolder>{
 
             private List<UmFormat> umFormats = new ArrayList<>();
 
@@ -582,7 +610,7 @@ public class ContentEditorActivity extends UstadBaseActivity implements ContentE
                 RelativeLayout mLayout = holder.itemView.findViewById(R.id.format_holder);
                 mIcon.setImageResource(format.getFormatIcon());
                 changeState(mIcon,mLayout,format.isActive());
-                if(!umFormatHelper.isTobeHighlighted(format.getFormatCommand())){
+                if(!isTobeHighlighted(format.getFormatCommand())){
                     changeState(mIcon,mLayout,false);
                 }
                 mLayout.setOnClickListener(v -> {
@@ -590,7 +618,7 @@ public class ContentEditorActivity extends UstadBaseActivity implements ContentE
                         changeState(mIcon,mLayout,true);
                         umFormatHelper.updateOtherJustificationFormatState(format.getFormatCommand());
                         umFormatHelper.updateOtherListFormatState(format.getFormatCommand());
-                        presenter.handleFormatTypeClicked(format.getFormatCommand(),null);
+                        mPresenter.handleFormatTypeClicked(format.getFormatCommand(),null);
                         notifyDataSetChanged();
                     }else{
 
@@ -601,7 +629,7 @@ public class ContentEditorActivity extends UstadBaseActivity implements ContentE
                                                 Objects.requireNonNull(getActivity())),
                                         false);
                         popUpView.showWithListener(menu -> {
-                            presenter.handleFormatTypeClicked(menu.getFormatCommand(),
+                            mPresenter.handleFormatTypeClicked(menu.getFormatCommand(),
                                     String.valueOf(menu.getFormatId()));
                             popUpView.setMenuList(umFormatHelper.getFontList(menu));
                         });
@@ -633,37 +661,22 @@ public class ContentEditorActivity extends UstadBaseActivity implements ContentE
 
         }
 
-        /**
-         * Create new instance of a content formatting fragment
-         */
-        public FormattingFragment newInstance(int formatType) {
-            this.formattingType = formatType;
-            return this;
-        }
-
-        public void setUmFormatHelper(UmFormatHelper umFormatHelper){
-            this.umFormatHelper = umFormatHelper;
-        }
-
-        @Override
-        public void onAttach(Context context) {
-            super.onAttach(context);
-             umFormatHelper.setStateChangeListener(this);
-        }
-
         @Override
         public View onCreateView(@NonNull LayoutInflater inflater, ViewGroup container,
                                  Bundle savedInstanceState) {
             View rootView = inflater.inflate(R.layout.fragment_content_formatting,
                     container, false);
             RecyclerView mRecyclerView = rootView.findViewById(R.id.formats_list);
+            umFormats = umFormatHelper.getFormatListByType(getArguments()
+                    .getInt(FORMAT_TYPE,0));
             adapter = new FormatsAdapter();
-            adapter.setUmFormats(umFormatHelper.getFormatListByType(formattingType));
+            adapter.setUmFormats(umFormats);
+
             int itemWidth = 60;
             GridLayoutManager mLayoutManager = new GridLayoutManager(getContext(),
                     getSpanCount(itemWidth));
             mRecyclerView.addItemDecoration(new UmGridSpacingItemDecoration(getSpanCount(itemWidth)
-                    ,dpToPx(10), true));
+                    ,UmEditorUtil.convertDpToPixel(10), true));
             mRecyclerView.setLayoutManager(mLayoutManager);
             mRecyclerView.setAdapter(adapter);
             return  rootView;
@@ -692,21 +705,6 @@ public class ContentEditorActivity extends UstadBaseActivity implements ContentE
             return Math.round(dpWidth/width);
         }
 
-        /**
-         * Convert density pixel dimension to pixel
-         * @param dp dimension in density pixels
-         * @return Pixel dimension equivalent to the density pixels.
-         */
-        int dpToPx(int dp) {
-            try{
-                Resources r = Objects.requireNonNull(getActivity()).getResources();
-                return Math.round(TypedValue.applyDimension(TypedValue.COMPLEX_UNIT_DIP,
-                        dp, r.getDisplayMetrics()));
-            }catch (NullPointerException e){
-                return dp;
-            }
-        }
-
     }
 
 
@@ -714,6 +712,11 @@ public class ContentEditorActivity extends UstadBaseActivity implements ContentE
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
+
+        boolean isPortrait = getResources().getBoolean(R.bool.orientation_portrait);
+        setRequestedOrientation (isPortrait ? SCREEN_ORIENTATION_PORTRAIT :
+                SCREEN_ORIENTATION_UNSPECIFIED);
+
         setContentView(R.layout.activity_content_editor);
 
         BottomSheetBehavior formattingBottomSheetBehavior = BottomSheetBehavior
@@ -738,8 +741,6 @@ public class ContentEditorActivity extends UstadBaseActivity implements ContentE
         umBottomToolbarHolder = findViewById(R.id.um_appbar_bottom);
         umEditorActionView = findViewById(R.id.um_toolbar_bottom);
 
-        umFormatHelper = new UmFormatHelper();
-        umFormatHelper.setStateChangeListener(this);
         mWebView.setBackgroundColor(Color.TRANSPARENT);
 
 
@@ -752,6 +753,9 @@ public class ContentEditorActivity extends UstadBaseActivity implements ContentE
         ViewPager mViewPager = findViewById(R.id.content_types_viewpager);
         TabLayout mTabLayout = findViewById(R.id.content_types_tabs);
 
+
+        umFormatHelper = new UmFormatHelper();
+        umFormatHelper.setStateChangeListener(this);
 
         umEditorFileHelper = new UmEditorFileHelper();
         umEditorFileHelper.init(this);
@@ -852,6 +856,19 @@ public class ContentEditorActivity extends UstadBaseActivity implements ContentE
     public boolean onCreateOptionsMenu(Menu menu) {
         super.onCreateOptionsMenu(menu);
         getMenuInflater().inflate(R.menu.menu_content_editor_top_actions, menu);
+
+        boolean showPreviewIcon = getResources().getBoolean(R.bool.menu_preview_visible);
+        boolean showDirectionalityIcon = getResources().getBoolean(
+                R.bool.menu_directionality_visible);
+        boolean showPageIcon = getResources().getBoolean(R.bool.menu_pages_visible);
+
+        menu.findItem(R.id.content_action_preview).setShowAsAction(showPreviewIcon ?
+                SHOW_AS_ACTION_ALWAYS : SHOW_AS_ACTION_IF_ROOM);
+        menu.findItem(R.id.content_action_direction).setShowAsAction(showDirectionalityIcon ?
+                SHOW_AS_ACTION_ALWAYS : SHOW_AS_ACTION_IF_ROOM);
+
+        menu.findItem(R.id.content_action_pages).setShowAsAction(showPageIcon ?
+                SHOW_AS_ACTION_ALWAYS : SHOW_AS_ACTION_IF_ROOM);
         return true;
     }
 
@@ -890,7 +907,7 @@ public class ContentEditorActivity extends UstadBaseActivity implements ContentE
             popUpView.showWithListener(format -> {
                 presenter.handleFormatTypeClicked(format.getFormatCommand(),null);
                 popUpView.setMenuList(umFormatHelper.getLanguageDirectionalityList(format));
-                item.setIcon(format.getFormatIcon());
+                this.mFormat = format;
                 invalidateOptionsMenu();
             });
 
@@ -899,9 +916,18 @@ public class ContentEditorActivity extends UstadBaseActivity implements ContentE
     }
 
     @Override
+    public boolean onPrepareOptionsMenu(Menu menu) {
+        if(mFormat != null){
+            menu.findItem(R.id.content_action_direction).setIcon(mFormat.getFormatIcon());
+        }
+        return super.onPrepareOptionsMenu(menu);
+    }
+
+    @Override
     protected void onSaveInstanceState(Bundle outState) {
         super.onSaveInstanceState(outState);
         outState.putString(PAGE_NAME_TAG, presenter.getSelectedPageToLoad());
+        outState.putSerializable(DIRECTION_TAG, mFormat);
     }
 
     @Override
@@ -909,6 +935,7 @@ public class ContentEditorActivity extends UstadBaseActivity implements ContentE
         super.onRestoreInstanceState(savedInstanceState);
         if(presenter != null){
             presenter.setSelectedPageToLoad(savedInstanceState.getString(PAGE_NAME_TAG));
+            mFormat = (UmFormat) savedInstanceState.getSerializable(DIRECTION_TAG);
         }
     }
 
@@ -1085,11 +1112,20 @@ public class ContentEditorActivity extends UstadBaseActivity implements ContentE
     @Override
     protected void onPause() {
         super.onPause();
-        viewSwitcher.closeAnimatedView(ANIMATED_SOFT_KEYBOARD_PANEL);
+        if(viewSwitcher != null){
+            viewSwitcher.closeAnimatedView(ANIMATED_SOFT_KEYBOARD_PANEL);
+        }
+    }
+
+    @Override
+    protected void onRestart() {
+        super.onRestart();
+        Log.d("ActivityLifecycle","onRestart");
     }
 
     @Override
     public void onDestroy() {
+        Log.d("ActivityLifecycle","onDestroy");
         if(umFormatHelper != null){
             umFormatHelper.destroy();
         }
@@ -1669,9 +1705,12 @@ public class ContentEditorActivity extends UstadBaseActivity implements ContentE
         presenter.handleFormatTypeClicked(ACTION_SELECT_ALL,null);
     }
 
-    @VisibleForTesting
     public UmFormatHelper getUmFormatHelper(){
         return umFormatHelper;
+    }
+
+    public ContentEditorPresenter getPresenter(){
+        return presenter;
     }
 
 }

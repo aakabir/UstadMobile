@@ -22,6 +22,9 @@ import com.ustadmobile.port.android.util.UMAndroidUtil;
 
 import java.util.List;
 
+import static android.content.pm.ActivityInfo.SCREEN_ORIENTATION_PORTRAIT;
+import static android.content.pm.ActivityInfo.SCREEN_ORIENTATION_UNSPECIFIED;
+
 public class ContentEditorPreviewActivity extends UstadBaseActivity
         implements ContentPreviewView{
 
@@ -43,6 +46,11 @@ public class ContentEditorPreviewActivity extends UstadBaseActivity
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
+
+        boolean isPortrait = getResources().getBoolean(R.bool.orientation_portrait);
+        setRequestedOrientation (isPortrait ? SCREEN_ORIENTATION_PORTRAIT :
+                SCREEN_ORIENTATION_UNSPECIFIED);
+
         setContentView(R.layout.activity_content_preview);
         mViewPager = findViewById(R.id.previewPager);
         Toolbar toolbar = findViewById(R.id.um_toolbar);

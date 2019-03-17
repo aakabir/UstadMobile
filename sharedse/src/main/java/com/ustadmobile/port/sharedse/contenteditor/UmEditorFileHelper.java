@@ -126,7 +126,7 @@ public class UmEditorFileHelper implements UmEditorFileHelperCore {
 
 
     @Override
-    public void createFile(long entryUid, UmCallback<String> callback) {
+    public void createDocument(long entryUid, UmCallback<String> callback) {
         this.currentEntryUid = entryUid;
         documentDir = new File(documentsRootDir,"Umdoc-untitled-"+System.currentTimeMillis());
         updateOpfAndMediaDirs();

@@ -2,7 +2,6 @@
 <menu xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:app="http://schemas.android.com/apk/res-auto">
     <item
-        android:visible="true"
         app:showAsAction="always"
         android:id="@+id/content_action_undo"
         android:title="@string/content_editor_menu_undo"
@@ -10,7 +9,6 @@
         />
 
     <item
-        android:visible="true"
         app:showAsAction="always"
         android:id="@+id/content_action_redo"
         android:title="@string/content_editor_menu_redo"
@@ -18,7 +16,6 @@
         />
 
     <item
-        android:visible="true"
         app:showAsAction="always"
         android:id="@+id/content_action_format"
         android:title="@string/content_editor_menu_text_formatting"
@@ -26,7 +23,6 @@
         />
 
     <item
-        android:visible="true"
         app:showAsAction="always"
         android:id="@+id/content_action_insert"
         android:title="@string/content_insert_options"
@@ -34,7 +30,6 @@
         />
 
     <item
-        android:visible="true"
         app:showAsAction="always"
         android:id="@+id/content_action_preview"
         android:title="@string/content_editor_preview"
@@ -42,16 +37,14 @@
         />
 
     <item
-        app:actionViewClass="android.widget.ImageButton"
-        android:visible="true"
-        app:showAsAction="ifRoom"
-        android:icon="@drawable/ic_format_textdirection_l_to_r_black_24dp"
+        app:showAsAction="always"
+        android:icon="@drawable/ic_format_textdirection_l_to_r_white_24dp"
         android:id="@+id/content_action_direction"
         android:title="@string/content_editor_directionality"/>
 
     <item
         android:visible="true"
-        app:showAsAction="ifRoom|withText"
+        app:showAsAction="always"
         android:id="@+id/content_action_pages"
         android:icon="@drawable/ic_piled_pages"
         android:title="@string/content_editor_menu_pages"

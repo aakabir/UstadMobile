@@ -81,12 +81,10 @@
             android:label="" />
         <activity
             android:theme="@style/Theme.UstadTheme"
-            android:screenOrientation="portrait"
             android:configChanges="keyboard|keyboardHidden|navigation"
             android:name="com.ustadmobile.port.android.view.ContentEditorActivity" />
         <activity
             android:theme="@style/Theme.UstadTheme"
-            android:screenOrientation="portrait"
             android:configChanges="orientation|keyboardHidden|keyboard|screenSize"
             android:name="com.ustadmobile.port.android.view.ContentEditorPreviewActivity"/>
 
