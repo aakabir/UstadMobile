@@ -107,7 +107,7 @@ public class UmEditorFileHelperTest {
             }
         };
 
-        processBlankDocument(addPageCallback, mLatch);
+        processBlankDocument(addPageCallback);
 
         mLatch.await(MAX_WAITING_TIME, TimeUnit.SECONDS);
 
@@ -149,7 +149,7 @@ public class UmEditorFileHelperTest {
         };
 
 
-        processBlankDocument(addPageCallback,mLatch);
+        processBlankDocument(addPageCallback);
         mLatch.await(MAX_WAITING_TIME, TimeUnit.SECONDS);
 
         assertTrue("Newly created page does exists in the document",
@@ -178,7 +178,7 @@ public class UmEditorFileHelperTest {
             }
         };
 
-        processBlankDocument(addPageCallback,mLatch);
+        processBlankDocument(addPageCallback);
 
         mLatch.await(MAX_WAITING_TIME, TimeUnit.SECONDS);
 
@@ -230,7 +230,7 @@ public class UmEditorFileHelperTest {
             }
         };
 
-        processBlankDocument(addPageCallback, mLatch);
+        processBlankDocument(addPageCallback);
 
         mLatch.await(MAX_WAITING_TIME, TimeUnit.SECONDS);
 
@@ -289,7 +289,7 @@ public class UmEditorFileHelperTest {
             }
         };
 
-        processBlankDocument(addPageCallback, mLatch);
+        processBlankDocument(addPageCallback);
 
         mLatch.await(MAX_WAITING_TIME, TimeUnit.SECONDS);
 
@@ -361,7 +361,7 @@ public class UmEditorFileHelperTest {
             }
         };
 
-        processBlankDocument(addPageCallback, mLatch);
+        processBlankDocument(addPageCallback);
 
         mLatch.await(MAX_WAITING_TIME, TimeUnit.SECONDS);
 
@@ -427,7 +427,7 @@ public class UmEditorFileHelperTest {
             }
         };
 
-        processBlankDocument(addPageCallback , mLatch);
+        processBlankDocument(addPageCallback);
 
         mLatch.await(MAX_WAITING_TIME, TimeUnit.SECONDS);
 
@@ -469,7 +469,7 @@ public class UmEditorFileHelperTest {
             }
         };
 
-        processBlankDocument(addPageCallback, mLatch);
+        processBlankDocument(addPageCallback);
 
         mLatch.await(MAX_WAITING_TIME, TimeUnit.SECONDS);
 
@@ -482,34 +482,12 @@ public class UmEditorFileHelperTest {
     }
 
 
-    private void processBlankDocument(UmCallback<String> addPageCallback, CountDownLatch mLatch){
-
-        UmCallback<Boolean> updateFileCallback = new UmCallback<Boolean>() {
-            @Override
-            public void onSuccess(Boolean result) {
-                if(result){
-                    List<EpubNavItem> pageList =
-                            umEditorFileHelper.getEpubNavDocument().getToc().getChildren();
-                    if(pageList == null || pageList.size() == 0){
-                        umEditorFileHelper.addPage(pageTitle,addPageCallback);
-                    }else{
-                        mLatch.countDown();
-                    }
-                }else{
-                    mLatch.countDown();
-                }
-            }
-
-            @Override
-            public void onFailure(Throwable exception) {
-                exception.printStackTrace();
-            }
-        };
+    private void processBlankDocument(UmCallback<String> addPageCallback){
 
         UmCallback<Void> mountFileCallback = new UmCallback<Void>() {
             @Override
             public void onSuccess(Void result) {
-                umEditorFileHelper.updateDocumentTitle(pageTitle,true,updateFileCallback);
+                umEditorFileHelper.updateDocumentTitle(pageTitle,true,addPageCallback);
             }
 
             @Override

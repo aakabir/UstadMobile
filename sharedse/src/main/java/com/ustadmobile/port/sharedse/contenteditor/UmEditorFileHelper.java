@@ -6,6 +6,7 @@ import com.ustadmobile.core.contentformats.epub.nav.EpubNavItem;
 import com.ustadmobile.core.contentformats.epub.opf.OpfDocument;
 import com.ustadmobile.core.contentformats.epub.opf.OpfItem;
 import com.ustadmobile.core.db.UmAppDatabase;
+import com.ustadmobile.core.generated.locale.MessageID;
 import com.ustadmobile.core.impl.UmAccountManager;
 import com.ustadmobile.core.impl.UmCallback;
 import com.ustadmobile.core.impl.UstadMobileSystemImpl;
@@ -375,12 +376,35 @@ public class UmEditorFileHelper implements UmEditorFileHelperCore {
     }
 
     @Override
-    public void updateDocumentTitle(String title, boolean isNeDocument, UmCallback<Boolean> callback) {
+    public void updateDocumentTitle(String documentTitle, boolean isNeDocument,
+                                    UmCallback<String> callback) {
         updateOpfAndMediaDirs();
         if(isNeDocument){
-            updateOpfMetadataInfo(title, UUID.randomUUID().toString());
+            updateOpfMetadataInfo(documentTitle, UUID.randomUUID().toString());
         }
-        callback.onSuccess(updateOpfMetadataInfo(title,null));
+
+        if(updateOpfMetadataInfo(documentTitle,null)){
+            //add new page
+            if(isNeDocument){
+                String pageTitle = UstadMobileSystemImpl.getInstance()
+                        .getString(MessageID.content_untitled_page, context);
+                addPage(pageTitle, new UmCallback<String>() {
+                    @Override
+                    public void onSuccess(String result) {
+                        callback.onSuccess(result);
+                    }
+
+                    @Override
+                    public void onFailure(Throwable exception) {
+                        callback.onFailure(exception);
+                    }
+                });
+            }else{
+                callback.onSuccess(documentTitle);
+            }
+        }else{
+            callback.onFailure(new Throwable("Failed to update document title"));
+        }
     }
 
     @Override
@@ -689,16 +713,6 @@ public class UmEditorFileHelper implements UmEditorFileHelperCore {
             UMIOUtils.closeQuietly(bout);
         }
         return title == null || getEpubOpfDocument().getTitle().equals(title);
-    }
-
-    @Override
-    public String getSourceFilePath() {
-        return documentDir.getAbsolutePath();
-    }
-
-    @Override
-    public String getResourceAccessibleUrl() {
-        return baseResourceRequestUrl;
     }
 
     @Override

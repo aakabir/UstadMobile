@@ -14,21 +14,41 @@ import com.ustadmobile.port.android.view.ContentEditorPreviewFragment;
  * @author kileha3
  */
 public class UmEditorWebView extends WebView {
+
     private ContentEditorPreviewFragment previewFragment;
 
+    /**
+     * Constructor used when creating new instance with context
+     * @param context Application context
+     */
     public UmEditorWebView(Context context) {
         super(context);
     }
 
+    /**
+     * Constructor used when creating new instance using attrs.
+     * @param context Application context
+     * @param attrs attrs values
+     */
     public UmEditorWebView(Context context, AttributeSet attrs) {
         super(context, attrs);
     }
 
+    /**
+     * Constructor used when creating new instance using attrs and style.
+     * @param context Application context
+     * @param attrs attrs values
+     * @param defStyleAttr defined style res
+     */
     public UmEditorWebView(Context context, AttributeSet attrs, int defStyleAttr) {
         super(context, attrs, defStyleAttr);
     }
 
 
+    /**
+     * Set fragment which hosts a webView
+     * @param webViewFragment ContentEditorPreviewFragment instance
+     */
     public void setFragment(ContentEditorPreviewFragment webViewFragment) {
         this.previewFragment = webViewFragment;
 
@@ -47,7 +67,6 @@ public class UmEditorWebView extends WebView {
             previewFragment.setPagedEnabled(false);
             return true;
         }
-
         return true;
 
 

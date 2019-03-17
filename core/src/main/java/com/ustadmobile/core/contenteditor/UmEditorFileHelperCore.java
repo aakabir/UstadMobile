@@ -97,10 +97,10 @@ public interface UmEditorFileHelperCore {
 
     /**
      * Update an epub title
-     * @param title new title to be set
+     * @param documentTitle new title to be set
      * @param newDocument flag to indicate if the document is new or existing one.
      */
-    void updateDocumentTitle(String title, boolean newDocument, UmCallback<Boolean> callback);
+    void updateDocumentTitle(String documentTitle, boolean newDocument, UmCallback<String> callback);
 
     /**
      * Update manifest item list when new media file is added
@@ -121,18 +121,6 @@ public interface UmEditorFileHelperCore {
      * @return OpfDocument instance
      */
     OpfDocument getEpubOpfDocument();
-
-    /**
-     * Get source file path i.e zipped file
-     * @return file path
-     */
-    String getSourceFilePath();
-
-    /**
-     * Get base tinymce resource request url
-     * @return tinymce localhost address
-     */
-    String getResourceAccessibleUrl();
 
     /**
      * Get file directory path

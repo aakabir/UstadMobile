@@ -806,7 +806,6 @@ public class ContentEditorActivity extends UstadBaseActivity implements ContentE
 
 
         mInsertMultimedia.setOnClickListener(v ->{
-            presenter.setMultimediaFilePicker(true);
             viewSwitcher.animateView(UmEditorAnimatedViewSwitcher.ANIMATED_MEDIA_TYPE_PANEL);
         });
 
@@ -888,7 +887,6 @@ public class ContentEditorActivity extends UstadBaseActivity implements ContentE
 
         }else if(itemId == R.id.content_action_preview){
             presenter.setOpenPreviewRequest(true);
-            presenter.setMultimediaFilePicker(false);
             viewSwitcher.closeActivity(true);
 
         }else if(itemId == R.id.content_action_insert){
@@ -1628,10 +1626,10 @@ public class ContentEditorActivity extends UstadBaseActivity implements ContentE
 
     @Override
     public void onDocumentTitleUpdate(String title) {
-        umEditorFileHelper.updateDocumentTitle(title, false, new UmCallback<Boolean>() {
+        umEditorFileHelper.updateDocumentTitle(title,false, new UmCallback<String>() {
             @Override
-            public void onSuccess(Boolean result) {
-                if(result){
+            public void onSuccess(String result) {
+                if(result != null){
                     pageListFragment.setDocumentTitle(title);
                     runOnUiThread(() -> handleSelectedPage());
                 }
@@ -1705,12 +1703,9 @@ public class ContentEditorActivity extends UstadBaseActivity implements ContentE
         presenter.handleFormatTypeClicked(ACTION_SELECT_ALL,null);
     }
 
+    @VisibleForTesting
     public UmFormatHelper getUmFormatHelper(){
         return umFormatHelper;
-    }
-
-    public ContentEditorPresenter getPresenter(){
-        return presenter;
     }
 
 }

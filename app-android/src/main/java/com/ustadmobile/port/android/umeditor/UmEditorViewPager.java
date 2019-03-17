@@ -6,22 +6,32 @@ import android.util.AttributeSet;
 import android.view.MotionEvent;
 import android.view.View;
 
+/**
+ * Custom view pager which enables webview to be scrolled horizontally
+ */
 public class UmEditorViewPager extends ViewPager {
 
     private boolean pagingEnabled = true;
 
+    /**
+     * Constructor called when creating new instance using context
+     * @param context Application context
+     */
     public UmEditorViewPager(Context context) {
         super(context);
     }
 
+    /**
+     * Constructor used when creating new instance using attrs
+     * @param context Application context
+     * @param attrs attrs values
+     */
     public UmEditorViewPager(Context context, AttributeSet attrs) {
         super(context, attrs);
     }
 
     @Override
     public boolean onTouchEvent(MotionEvent event) {
-
-
         return this.pagingEnabled && super.onTouchEvent(event);
     }
 

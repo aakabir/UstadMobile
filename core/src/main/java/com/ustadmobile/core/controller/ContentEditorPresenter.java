@@ -48,10 +48,6 @@ public class ContentEditorPresenter extends UstadBaseController<ContentEditorVie
 
     private boolean openPreviewRequest = false;
 
-    private boolean isMultimediaFilePicker = false;
-
-    private boolean fileNotFound = false;
-
     private boolean isInEditorPreview = false;
 
     private String selectedPageToLoad = null;
@@ -69,6 +65,11 @@ public class ContentEditorPresenter extends UstadBaseController<ContentEditorVie
         super.onCreate(savedState);
     }
 
+
+    /**
+     * Check container status, if exists pull its files and start editing
+     * them otherwise create new one.
+     */
     public void handleContainerStatus(){
         long entryUid = Long.parseLong(String.valueOf(args.get(CONTENT_ENTRY_FILE_UID)));
         UmAccountManager.getRepositoryForActiveAccount(context)
@@ -110,45 +111,32 @@ public class ContentEditorPresenter extends UstadBaseController<ContentEditorVie
             @Override
             public void onSuccess(Void result) {
                 if(!entryPath.isEmpty()){
+
                     List<EpubNavItem> pageList = view.getFileHelper()
                             .getEpubNavDocument().getToc().getChildren();
+
                     if(pageList == null || pageList.size() == 0){
+
                         UstadMobileSystemImpl impl = UstadMobileSystemImpl.getInstance();
-                        String pageTitle = impl.getString(MessageID.content_untitled_page,
-                                view.getContext());
                         String documentTitle = impl.getString(MessageID.content_untitled_document,
                                 view.getContext());
 
-                        //blank document - update document title
                         view.getFileHelper().updateDocumentTitle(documentTitle,
-                                true, new UmCallback<Boolean>() {
-                                    @Override
-                                    public void onSuccess(Boolean result) {
-                                        if(result){
-                                            //add first page to the blank document
-                                            view.getFileHelper().addPage(pageTitle,
-                                                    new UmCallback<String>() {
-                                                        @Override
-                                                        public void onSuccess(String result) {
-                                                            if(result != null){
-                                                                selectedPageToLoad = result;
-                                                                view.runOnUiThread(() ->
-                                                                        view.handleSelectedPage());
-                                                            }
-                                                        }
-                                                        @Override
-                                                        public void onFailure(Throwable exception) {
-                                                            exception.printStackTrace();
-                                                        }
-                                                    });
-                                        }
-                                    }
+                                true, new UmCallback<String>() {
+                            @Override
+                            public void onSuccess(String result) {
+                                if(result != null){
+                                    selectedPageToLoad = result;
+                                    view.runOnUiThread(() ->
+                                            view.handleSelectedPage());
+                                }
+                            }
 
-                                    @Override
-                                    public void onFailure(Throwable exception) {
-
-                                    }
-                                });
+                            @Override
+                            public void onFailure(Throwable exception) {
+                                exception.printStackTrace();
+                            }
+                        });
                     }else{
                         selectedPageToLoad = view.getFileHelper()
                                 .getEpubNavDocument().getToc().getChild(0).getHref();
@@ -166,6 +154,12 @@ public class ContentEditorPresenter extends UstadBaseController<ContentEditorVie
         });
     }
 
+
+    /**
+     * Handle all formatting action performed on UI
+     * @param formatType Type of the format clicked
+     * @param param parameter needed ie. font size when you want to change text font size
+     */
     public void handleFormatTypeClicked(String formatType, String param){
         view.runOnUiThread(() -> {
             switch (formatType){
@@ -311,38 +305,6 @@ public class ContentEditorPresenter extends UstadBaseController<ContentEditorVie
      */
     public void setOpenPreviewRequest(boolean openPreviewRequest) {
         this.openPreviewRequest = openPreviewRequest;
-    }
-
-    /**
-     * Check if the multimedia picker is opened or not
-     * @return Picker status
-     */
-    public boolean isMultimediaFilePicker() {
-        return isMultimediaFilePicker;
-    }
-
-    /**
-     * Set multimedia picker opened status
-     * @param multimediaFilePicker True if the picker is opened otherwise the picker isn't opened.
-     */
-    public void setMultimediaFilePicker(boolean multimediaFilePicker) {
-        isMultimediaFilePicker = multimediaFilePicker;
-    }
-
-    /**
-     * Check if file does exists on device
-     * @return True if file exists on device otherwise the file has been deleted by the user.
-     */
-    public boolean isFileNotFound() {
-        return fileNotFound;
-    }
-
-    /**
-     * Set file existence's status
-     * @param fileNotFound True if the file is on user device otherwise false.
-     */
-    public void setFileNotFound(boolean fileNotFound) {
-        this.fileNotFound = fileNotFound;
     }
 
     /**
