@@ -12,13 +12,14 @@
         android:padding="@dimen/dimen_16dp"
         android:layout_width="match_parent"
         android:layout_height="wrap_content">
-        <EditText
+        <android.support.design.widget.TextInputEditText
             android:lineSpacingExtra="@dimen/dimen_8dp"
             android:paddingTop="@dimen/dimen_10dp"
             android:textColor="@color/text_secondary"
             android:textSize="@dimen/text_title"
-            android:background="@android:color/white"
             android:id="@+id/title"
+            android:maxLines="2"
+            android:textColorHint="@color/primary"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:inputType="textMultiLine"/>

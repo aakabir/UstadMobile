@@ -116,31 +116,38 @@ UmWidgetManager.handleWidgetListeners = (editMode = false) => {
         if(editMode){
             
             if($(event.target).hasClass("um-editable")){
+                event.stopPropagation();
                 tinymce.init(UmEditorCore.editorConfig);
-            }
-
-            if($(event.target).hasClass("action-delete")){
+            }else if($(event.target).hasClass("action-delete")){
+                event.stopPropagation();
                 UmWidgetManager.prototype.onWidgetDeleted(event);
-            }
-            
-            if($(event.target).hasClass("action-delete-inner")){
+            }else if($(event.target).hasClass("action-delete-inner")){
                 UmWidgetManager.prototype.onWidgetChoiceDeleted(event);
-            }
-
-            if($(event.target).hasClass("action-cut")){
+            }else if($(event.target).hasClass("action-cut")){
+                event.stopPropagation();
                 UmWidgetManager.prototype.cutWidgetFromEditor(event);
+            }else if($(event.target).hasClass("add-choice")){
+                event.stopPropagation();
+                UmMultipleChoiceWidget.prototype.addChoice(event);
+            }else if($(event.target).hasClass("um-editor")){
+                event.stopPropagation();
+                UmEditorCore.prototype.setCursorToAnyEditableElement(null);
+            }else{
+                event.stopPropagation();
+                const focusEl = $($(event.target).closest("[data-um-widget]"))
+                .find(".um-editable:first p:first-of-type");
+                UmEditorCore.prototype.setCursorToAnyEditableElement(focusEl.get(0));
             }
 
-            if($(event.target).hasClass("add-choice")){
-                UmMultipleChoiceWidget.prototype.addChoice(event);
-            }
         }else{
             if($(event.target).hasClass("qn-retry")){
+                event.stopPropagation();
                 UmWidgetManager.prototype.onRetryButtonClicked(event);
             }
             
             if($(event.target).hasClass("fill-the-blanks-check")){
                 if(!UmWidgetManager.isEditingMode){
+                    event.stopPropagation();
                     UmFillTheBlanksWidget.prototype.onQuestionAnswerChecked(event);
                 }
             }
@@ -149,6 +156,7 @@ UmWidgetManager.handleWidgetListeners = (editMode = false) => {
                 || $(event.target).hasClass("question-choice-body")
                 || $($(event.target).parent()).hasClass("question-choice-body")) {
                 if (!UmWidgetManager.isEditingMode) {
+                    event.stopPropagation();
                     UmMultipleChoiceWidget.prototype.onQuestionAnswerChecked(event);
                 }
             }
@@ -159,8 +167,10 @@ UmWidgetManager.handleWidgetListeners = (editMode = false) => {
     umBody.on("change", event => {
         if(editMode){
             if($(event.target).hasClass("question-choice-answer-select")){
+                event.stopPropagation();
                 UmMultipleChoiceWidget.prototype.onChoiceStateChange(event);
             }else if($(event.target).hasClass("question-retry-option-select")){
+                event.stopPropagation();
                 UmWidgetManager.prototype.onQuestionRetrySelectionChange(event);
             }
         }
