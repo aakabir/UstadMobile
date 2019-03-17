@@ -10,13 +10,11 @@ import com.ustadmobile.core.view.EpubContentView;
 import com.ustadmobile.core.view.ContentEntryDetailView;
 import com.ustadmobile.core.view.VideoPlayerView;
 import com.ustadmobile.core.view.WebChunkView;
-import com.ustadmobile.core.view.XapiPackageView;
+import com.ustadmobile.core.view.XapiPackageContentView;
 import com.ustadmobile.lib.db.entities.Container;
 import com.ustadmobile.lib.db.entities.ContentEntryWithContentEntryStatus;
 
 import java.util.Hashtable;
-
-import static com.ustadmobile.core.controller.EpubContentPresenter.ARG_CONTAINERURI;
 
 public class ContentEntryUtil {
 
@@ -58,9 +56,9 @@ public class ContentEntryUtil {
                     Hashtable args = new Hashtable();
                     switch (result.getMimeType()) {
                         case "application/zip":
-
-                            args.put(ARG_CONTAINERURI, String.valueOf(result.getContainerUid()));
-                            impl.go(XapiPackageView.VIEW_NAME, args, context);
+                        case "application/tincan+zip":
+                            args.put(XapiPackageContentView.ARG_CONTAINER_UID, String.valueOf(result.getContainerUid()));
+                            impl.go(XapiPackageContentView.VIEW_NAME, args, context);
                             break;
                         case "video/mp4":
 

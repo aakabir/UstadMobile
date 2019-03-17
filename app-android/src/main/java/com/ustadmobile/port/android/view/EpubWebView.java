@@ -13,9 +13,13 @@ import android.webkit.WebView;
 import android.widget.OverScroller;
 
 /**
- * Created by mike on 11/5/17.
+ * This modified WebView is designed to work with the Javascript and CSS that implement pagination
+ * using CSS columns. It will disable vertical scroll, and ensure that flicks are from column to
+ * column.
+ *
+ * This is not going to be used for children's story EPUBs, but will be reintroduced later to handle
+ * longer content.
  */
-
 public class EpubWebView extends WebView implements GestureDetector.OnGestureListener {
 
     private OverScroller mScroller;
@@ -62,6 +66,7 @@ public class EpubWebView extends WebView implements GestureDetector.OnGestureLis
     private void initScrolling(Context context) {
         mScroller = new OverScroller(context);
         mGestureDetector = new GestureDetectorCompat(context, this);
+
         setVerticalScrollBarEnabled(false);
     }
 
