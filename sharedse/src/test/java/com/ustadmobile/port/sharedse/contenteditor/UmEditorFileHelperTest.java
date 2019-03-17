@@ -57,13 +57,13 @@ public class UmEditorFileHelperTest {
 
 
     @Test
-    public void givenContentEditorFIleHelper_whenCreateFileCalled_thenShouldCreateBlankFile()
+    public void givenContentEditorFileHelper_whenCreateDocumentCalled_thenShouldCreateBlankDocument()
             throws InterruptedException {
 
         CountDownLatch mLatch = new CountDownLatch(1);
         AtomicReference<String> resultRef = new AtomicReference<>();
 
-        umEditorFileHelper.createFile(contentEntryUid,new UmCallback<String>() {
+        umEditorFileHelper.createDocument(contentEntryUid, new UmCallback<String>() {
             @Override
             public void onSuccess(String result) {
                 resultRef.set(result);
@@ -72,7 +72,8 @@ public class UmEditorFileHelperTest {
 
             @Override
             public void onFailure(Throwable exception) {
-
+                resultRef.set(null);
+                mLatch.countDown();
             }
         });
 
@@ -81,13 +82,13 @@ public class UmEditorFileHelperTest {
 
         assertNotNull("Empty file object returned not null", resultRef.get());
 
-        assertTrue("Empty file was created successfully", resultRef.get() != null
-                && resultRef.get().endsWith(".zip") && new File(resultRef.get()).exists());
+        assertTrue("Blank document was created successfully", resultRef.get() != null
+                && new File(resultRef.get()).exists());
 
     }
 
     @Test
-    public void givenContentEditorFileHelper_whenMountFileCalled_thenShouldBeAccessibleOnHttp()
+    public void givenContentEditorFileHelper_whenMountDocumentCalled_thenShouldBeAccessibleOnHttp()
             throws IOException, InterruptedException {
 
         CountDownLatch mLatch = new CountDownLatch(1);
@@ -106,7 +107,7 @@ public class UmEditorFileHelperTest {
             }
         };
 
-        processZippedFile(addPageCallback, mLatch);
+        processBlankDocument(addPageCallback, mLatch);
 
         mLatch.await(MAX_WAITING_TIME, TimeUnit.SECONDS);
 
@@ -127,79 +128,32 @@ public class UmEditorFileHelperTest {
 
 
     @Test
-    public void givenContentAddedToTmpDir_whenTmpDirZipped_thenShouldBeInZip()
+    public void givenContentAddedToDocument_whenEditing_thenShouldBeInTheDocument()
             throws InterruptedException {
 
         CountDownLatch mLatch = new CountDownLatch(1);
+        AtomicReference<String> resultRef = new AtomicReference<>();
 
-        AtomicReference<Boolean> zipResultRef = new AtomicReference<>();
-        AtomicReference<Boolean> zipCheckRef = new AtomicReference<>();
-        AtomicReference<Boolean> contentAddRef = new AtomicReference<>();
 
-        //create new file
-        umEditorFileHelper.createFile(contentEntryUid,new UmCallback<String>() {
+        UmCallback<String> addPageCallback = new UmCallback<String>() {
             @Override
             public void onSuccess(String result) {
-                //mount newly created file
-                umEditorFileHelper.mountDocumentDir(result,new UmCallback<Void>() {
-                    @Override
-                    public void onSuccess(Void result) {
-                        //update media directory with temp file
-                        try{
-                            InputStream fileIn =
-                                    getClass().getResourceAsStream(videoFile);
-                            File dest = new File(umEditorFileHelper.getMediaDirectory(), videoFile);
-                            if(dest.exists())dest.delete();
-                            boolean mediaAdded  = UMFileUtil.copyFile(fileIn, dest);
-                            contentAddRef.set(mediaAdded);
-
-                            if(mediaAdded){
-                                umEditorFileHelper.mountDocumentDir(
-                                        umEditorFileHelper.getSourceFilePath(),
-                                        new UmCallback<Void>() {
-                                            @Override
-                                            public void onSuccess(Void result) {
-                                                File fileInZip = new File(umEditorFileHelper
-                                                        .getMediaDirectory(), videoFile);
-                                                zipCheckRef.set(fileInZip.exists());
-                                                mLatch.countDown();
-                                            }
-
-                                            @Override
-                                            public void onFailure(Throwable exception) {
-                                                exception.printStackTrace();
-                                            }
-                                        });
-                            }else{
-                                mLatch.countDown();
-                            }
-                        } catch (IOException e) {
-                            e.printStackTrace();
-                        }
-
-                    }
-
-                    @Override
-                    public void onFailure(Throwable exception) {
-                        exception.printStackTrace();
-                    }
-                });
+                resultRef.set(result);
+                mLatch.countDown();
             }
 
             @Override
             public void onFailure(Throwable exception) {
                 exception.printStackTrace();
             }
-        });
+        };
 
+
+        processBlankDocument(addPageCallback,mLatch);
         mLatch.await(MAX_WAITING_TIME, TimeUnit.SECONDS);
 
-
-        assertTrue("Temporary directory was updated successfully",contentAddRef.get());
-
-        assertTrue("Temporary directory was zipped successfully",zipResultRef.get());
-
-        assertTrue("Zipped temporary directory has newly added file",zipCheckRef.get());
+        assertTrue("Newly created page does exists in the document",
+                new File(umEditorFileHelper.getDocumentDirPath(),resultRef.get()).exists());
 
     }
 
@@ -224,7 +178,7 @@ public class UmEditorFileHelperTest {
             }
         };
 
-        processZippedFile(addPageCallback,mLatch);
+        processBlankDocument(addPageCallback,mLatch);
 
         mLatch.await(MAX_WAITING_TIME, TimeUnit.SECONDS);
 
@@ -276,7 +230,7 @@ public class UmEditorFileHelperTest {
             }
         };
 
-        processZippedFile(addPageCallback, mLatch);
+        processBlankDocument(addPageCallback, mLatch);
 
         mLatch.await(MAX_WAITING_TIME, TimeUnit.SECONDS);
 
@@ -335,7 +289,7 @@ public class UmEditorFileHelperTest {
             }
         };
 
-        processZippedFile(addPageCallback, mLatch);
+        processBlankDocument(addPageCallback, mLatch);
 
         mLatch.await(MAX_WAITING_TIME, TimeUnit.SECONDS);
 
@@ -407,7 +361,7 @@ public class UmEditorFileHelperTest {
             }
         };
 
-        processZippedFile(addPageCallback, mLatch);
+        processBlankDocument(addPageCallback, mLatch);
 
         mLatch.await(MAX_WAITING_TIME, TimeUnit.SECONDS);
 
@@ -473,7 +427,7 @@ public class UmEditorFileHelperTest {
             }
         };
 
-        processZippedFile(addPageCallback , mLatch);
+        processBlankDocument(addPageCallback , mLatch);
 
         mLatch.await(MAX_WAITING_TIME, TimeUnit.SECONDS);
 
@@ -515,7 +469,7 @@ public class UmEditorFileHelperTest {
             }
         };
 
-        processZippedFile(addPageCallback, mLatch);
+        processBlankDocument(addPageCallback, mLatch);
 
         mLatch.await(MAX_WAITING_TIME, TimeUnit.SECONDS);
 
@@ -528,7 +482,7 @@ public class UmEditorFileHelperTest {
     }
 
 
-    private void processZippedFile(UmCallback<String> addPageCallback, CountDownLatch mLatch){
+    private void processBlankDocument(UmCallback<String> addPageCallback, CountDownLatch mLatch){
 
         UmCallback<Boolean> updateFileCallback = new UmCallback<Boolean>() {
             @Override
@@ -564,7 +518,7 @@ public class UmEditorFileHelperTest {
             }
         };
 
-        UmCallback<String> createFileCallback = new UmCallback<String>() {
+        UmCallback<String> createDocumentCallback = new UmCallback<String>() {
             @Override
             public void onSuccess(String result) {
                 umEditorFileHelper.mountDocumentDir(result,mountFileCallback);
@@ -577,7 +531,7 @@ public class UmEditorFileHelperTest {
             }
         };
 
-        umEditorFileHelper.createFile(contentEntryUid,createFileCallback);
+        umEditorFileHelper.createDocument(contentEntryUid,createDocumentCallback);
     }
 
 }
