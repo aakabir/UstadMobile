@@ -364,6 +364,7 @@ UmEditorCore.insertLink = (linkUrl, linkText = null, selection = true) =>{
         const currentNode = tinyMCE.activeEditor.selection.getNode();
         if($(currentNode).is("a")){
             $(currentNode).text(linkText);
+            linkUrl = UmEditorCore.prototype.formatLinks(linkUrl);
             $(currentNode).attr("href", linkUrl);
         }else{
             var highlight = window.getSelection(); 
@@ -371,13 +372,21 @@ UmEditorCore.insertLink = (linkUrl, linkText = null, selection = true) =>{
             range = highlight.getRangeAt(0),
             startText = text.substring(0, range.startOffset), 
             endText = text.substring(range.endOffset, text.length);
-            
+            linkUrl = UmEditorCore.prototype.formatLinks(linkUrl);
             $(currentNode).html(startText + UmEditorCore.prototype.getStyledLink(linkUrl,linkText) + endText);
         }
     }else{
+        linkUrl = UmEditorCore.prototype.formatLinks(linkUrl);
         UmEditorCore.insertContentRaw(UmEditorCore.prototype.getStyledLink(linkUrl, linkText));
     }
 };
+
+/**
+ * Formal all link to have http or https
+ */
+UmEditorCore.prototype.formatLinks = (link) => {
+    return link.match(/^http([s]?):\/\/.*/) ? link : 'http://' + link;
+}
 
 UmEditorCore.prototype.getStyledLink = (link, text) =>{
     return '<span class="um-link"><a href="' + link + '" target="_blank">' + text + '</a></span>&nbsp;';
@@ -826,7 +835,6 @@ UmEditorCore.getLinkProperties = ()=>{
             }
         }
         const linkObj = {linkText:selectedText,linkUrl:selectedLink};
-        console.log("kileha",linkObj);
         UmEditor.onLinkPropRequested(JSON.stringify({
             action:'onLinkPropRequested',
             directionality: directionality,
