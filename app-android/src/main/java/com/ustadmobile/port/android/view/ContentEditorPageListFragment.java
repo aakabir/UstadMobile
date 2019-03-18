@@ -34,6 +34,7 @@ import com.ustadmobile.core.controller.ContentEditorPageListPresenter;
 import com.ustadmobile.core.generated.locale.MessageID;
 import com.ustadmobile.core.impl.UstadMobileSystemImpl;
 import com.ustadmobile.core.view.ContentEditorPageListView;
+import com.ustadmobile.port.android.umeditor.UmEditorUtil;
 import com.ustadmobile.port.android.umeditor.UmOnStartDragListener;
 import com.ustadmobile.port.android.umeditor.UmPageActionListener;
 import com.ustadmobile.port.android.umeditor.UmPageItemTouchAdapter;
@@ -41,8 +42,11 @@ import com.ustadmobile.port.android.umeditor.UmPageItemTouchCallback;
 import com.ustadmobile.port.android.util.UMAndroidUtil;
 
 import java.util.List;
+import java.util.Objects;
 
 import ru.dimorinny.floatingtextbutton.FloatingTextButton;
+
+import static com.ustadmobile.port.android.umeditor.UmEditorUtil.getDirectionality;
 
 /**
  * A simple {@link Fragment} subclass.
@@ -201,7 +205,9 @@ public class ContentEditorPageListFragment extends UstadDialogFragment
         View rootView = inflater.inflate(R.layout.fragment_content_editor_page_list,
                 container, false);
         Toolbar toolbar = rootView.findViewById(R.id.toolbar);
-        toolbar.setNavigationIcon(R.drawable.ic_arrow_back_white_24dp);
+        toolbar.setNavigationIcon(getDirectionality(
+                Objects.requireNonNull(getActivity())).equals("ltr")
+                ? R.drawable.ic_arrow_back_white_24dp: R.drawable.ic_arrow_forward_white_24dp);
 
         titleView = rootView.findViewById(R.id.document_title);
 

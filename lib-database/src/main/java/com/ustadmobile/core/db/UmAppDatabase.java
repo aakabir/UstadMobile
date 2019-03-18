@@ -13,7 +13,6 @@ import com.ustadmobile.core.db.dao.ContentEntryContentCategoryJoinDao;
 import com.ustadmobile.core.db.dao.ContentEntryContentEntryFileJoinDao;
 import com.ustadmobile.core.db.dao.ContentEntryDao;
 import com.ustadmobile.core.db.dao.ContentEntryFileDao;
-import com.ustadmobile.core.db.dao.ContentEntryFileStatusDao;
 import com.ustadmobile.core.db.dao.ContentEntryParentChildJoinDao;
 import com.ustadmobile.core.db.dao.ContentEntryRelatedEntryJoinDao;
 import com.ustadmobile.core.db.dao.ContentEntryStatusDao;
@@ -661,8 +660,6 @@ public abstract class UmAppDatabase implements UmSyncableDatabase, UmDbWithAuthe
     public abstract ContentEntryRelatedEntryJoinDao getContentEntryRelatedEntryJoinDao();
 
     public abstract SyncStatusDao getSyncStatusDao();
-
-    public abstract ContentEntryFileStatusDao getContentEntryFileStatusDao();
 
     public abstract ContentCategorySchemaDao getContentCategorySchemaDao();
 

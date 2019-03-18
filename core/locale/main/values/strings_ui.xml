@@ -307,6 +307,7 @@
     <string name='content_editor_menu_strikesthrough'>Strikethrough</string>
     <string name='content_editor_menu_underline'>Underline</string>
     <string name='content_editor_menu_italic'>Italic</string>
+    <string name='content_editor_menu_bold'>Bold</string>
     <string name='content_editor_menu_fontsize'>Font size</string>
     <string name='content_editor_menu_align_center'>Center</string>
     <string name='content_editor_menu_align_left'>Left</string>
@@ -317,6 +318,7 @@
     <string name='content_editor_link_text'>Link text</string>
     <string name='content_editor_link_url'>Link Url</string>
     <string name='content_editor_link_error'>Link text or url can not be empty, try again</string>
+    <string name='content_editor_link_insert'>Insert Link</string>
 
 
     <!--On boarding screen-->
