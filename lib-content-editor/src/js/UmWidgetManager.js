@@ -456,7 +456,6 @@ UmWidgetManager.prototype.onRetryButtonClicked = (event) => {
  * @param event question delete event object
  */
 UmWidgetManager.prototype.onWidgetDeleted = (event) => {
-    isDeleteOrCutAction = true;
     const widgetNode = $(event.target).closest("div div.question");
     const extraOrEmptyContent = $(widgetNode).next();
     const innerParagraph = $(extraOrEmptyContent).children().get(0);
@@ -464,9 +463,9 @@ UmWidgetManager.prototype.onWidgetDeleted = (event) => {
         $(extraOrEmptyContent).remove();
     }
     $(widgetNode).remove();
-    setTimeout(() => {
-        isDeleteOrCutAction = false;
-    }, averageEventTimeout);
+    const focusEl = $($.find(".um-editable:last p:last-of-type"));
+    UmEditorCore.prototype.setCursorToAnyEditableElement(focusEl.get(0));
+    UmEditorCore.prototype.scrollToElement(focusEl.get(0));
 };
 
 /**
@@ -474,12 +473,8 @@ UmWidgetManager.prototype.onWidgetDeleted = (event) => {
  * @param event widget choice delete event object
  */
 UmWidgetManager.prototype.onWidgetChoiceDeleted = (event) => {
-    isDeleteOrCutAction = true;
     const questionChoice = $(event.target).closest("div div.question-choice");
     $(questionChoice).remove();
-    setTimeout(() => {
-        isDeleteOrCutAction = false;
-    }, averageEventTimeout);
 };
 
 /**
@@ -487,7 +482,6 @@ UmWidgetManager.prototype.onWidgetChoiceDeleted = (event) => {
  * @param event cut event object
  */
 UmWidgetManager.prototype.cutWidgetFromEditor = event => {
-    isDeleteOrCutAction = true;
     let widgetNode = $(event.target).closest("div div.question");
     $(widgetNode).select();
     widgetNode = widgetNode.get(0).outerHTML;
@@ -497,10 +491,8 @@ UmWidgetManager.prototype.cutWidgetFromEditor = event => {
     const clipboardContent = JSON.stringify({
         action:'onContentCut',
         directionality: '',
-        content:UmEditorCore.base64Encode(widgetNode)});
-    setTimeout(() => {
-        isDeleteOrCutAction = false;
-    }, averageEventTimeout);
+        content:UmEditorCore.base64Encode(widgetNode)}
+        );
     try{
         UmEditor.onContentCut(clipboardContent);
     }catch (e) {

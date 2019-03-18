@@ -112,6 +112,10 @@ UmEditorCore.onCreate  = (locale = "en",dir = "ltr" ,showToolbar = false, testEn
                     UmEditorCore.insertContentRaw(widget);
                 }
             });
+
+            ed.on('Selectionchange', e => {
+              UmEditorCore.prototype.checkActivatedControls();
+            });
         }
     };
 
@@ -505,7 +509,8 @@ UmEditorCore.prototype.insertWidgetNode = (widgetNode) => {
 
     UmWidgetManager.handleEditableContent(true);
     UmEditorCore.requestFocusFromElementWithId($(widgetNode).get(0));
-    UmEditorCore.prototype.scrollToElement($($(UmWidgetManager.EXTRA_CONTENT_WIDGET).find("p")).get(0))
+    const focusEl = $($(widgetNode).find(".um-editable:first p:first-of-type"));
+    UmEditorCore.prototype.scrollToElement(focusEl.get(0));
     
 };
 
@@ -536,7 +541,7 @@ UmEditorCore.prototype.checkActivatedControls = () => {
             commandStatus.push(commandState);
         }
 
-        
+
         UmEditor.onControlsStateChanged(JSON.stringify({
             action:'onActiveControlCheck',
             directionality:'',
@@ -828,6 +833,6 @@ UmEditorCore.getLinkProperties = ()=>{
             content:UmEditorCore.base64Encode(JSON.stringify(linkObj))}
         ));
     }catch(e){
-        UmEditorCore.prototype.logUtil("SelectionChange",e);
+        UmEditorCore.prototype.logUtil("getLinkProperties",e);
     }
 }
