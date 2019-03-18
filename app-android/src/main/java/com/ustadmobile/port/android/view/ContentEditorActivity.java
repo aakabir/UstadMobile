@@ -669,6 +669,8 @@ public class ContentEditorActivity extends UstadBaseActivity implements ContentE
             RecyclerView mRecyclerView = rootView.findViewById(R.id.formats_list);
             umFormats = umFormatHelper.getFormatListByType(getArguments()
                     .getInt(FORMAT_TYPE,0));
+            umFormatHelper.setStateChangeListener(this);
+
             adapter = new FormatsAdapter();
             adapter.setUmFormats(umFormats);
 
