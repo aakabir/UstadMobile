@@ -878,7 +878,7 @@ public class ContentEditorActivity extends UstadBaseActivity implements ContentE
         int itemId = item.getItemId();
 
         if (itemId == R.id.content_action_pages) {
-            presenter.setOpenPageManagerRequest(true);
+            presenter.setPageManagerOpen(true);
             viewSwitcher.closeActivity(false);
 
         }else if(itemId == R.id.content_action_format){
@@ -960,7 +960,7 @@ public class ContentEditorActivity extends UstadBaseActivity implements ContentE
                 handleUpdateFile();
             }
         }else{
-            if(presenter.isOpenPageManagerRequest()){
+            if(presenter.isPageManagerOpen()){
                 FragmentTransaction transaction = getSupportFragmentManager().beginTransaction();
                 transaction.setTransition(FragmentTransaction.TRANSIT_FRAGMENT_OPEN);
                 pageListFragment = new ContentEditorPageListFragment();
@@ -1006,7 +1006,7 @@ public class ContentEditorActivity extends UstadBaseActivity implements ContentE
                 if(presenter.isEditorInitialized()){
                     handleWebViewMargin();
                     mWebView.postDelayed(() -> {
-                                if(!presenter.isOpenPageManagerRequest()){
+                                if(!presenter.isPageManagerOpen()){
                                     viewSwitcher.animateView(ANIMATED_SOFT_KEYBOARD_PANEL);
                                 }
                             },
@@ -1027,6 +1027,7 @@ public class ContentEditorActivity extends UstadBaseActivity implements ContentE
                     //Update index.html file
                     UMFileUtil.writeToFile(new File(umEditorFileHelper.getDocumentDirPath(),
                             presenter.getSelectedPageToLoad()), indexFile.html());
+                    umEditorFileHelper.handleDocumentItemsChange();
                 }
                 break;
 
@@ -1649,7 +1650,7 @@ public class ContentEditorActivity extends UstadBaseActivity implements ContentE
 
     @Override
     public void onPageManagerClosed() {
-        presenter.setOpenPageManagerRequest(false);
+        presenter.setPageManagerOpen(false);
         new Handler().postDelayed(() -> viewSwitcher.animateView(ANIMATED_SOFT_KEYBOARD_PANEL)
                 ,MAX_SOFT_KEYBOARD_DELAY);
     }

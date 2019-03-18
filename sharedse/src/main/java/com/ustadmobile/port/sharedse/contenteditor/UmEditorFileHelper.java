@@ -71,8 +71,6 @@ public class UmEditorFileHelper implements UmEditorFileHelperCore {
 
     private EmbeddedHTTPD embeddedHTTPD;
 
-    private String baseResourceRequestUrl = null;
-
     private String mountedFileAccessibleUrl = null;
 
     private static final String LOCAL_ADDRESS = "http://127.0.0.1:";
@@ -105,20 +103,13 @@ public class UmEditorFileHelper implements UmEditorFileHelperCore {
                     if(!documentsRootDir.exists())documentsRootDir.mkdirs();
                     isTestExecution = baseContentDir.getAbsolutePath().startsWith("/var/");
                 });
-        startWebServer();
         umDb = UmAppDatabase.getInstance(context);
         umRepo = UmAccountManager.getRepositoryForActiveAccount(context);
-    }
 
-    /**
-     * Start HTTPD server
-     */
-    private void startWebServer() {
+        //start webserver
         embeddedHTTPD = new EmbeddedHTTPD(0, this);
         try {
             embeddedHTTPD.start();
-            baseResourceRequestUrl = UMFileUtil.joinPaths(LOCAL_ADDRESS +
-                            embeddedHTTPD.getListeningPort()+"/", assetsDir, EDITOR_BASE_DIR_NAME);
         } catch (IOException e) {
             e.printStackTrace();
         }
@@ -148,7 +139,6 @@ public class UmEditorFileHelper implements UmEditorFileHelperCore {
 
                         if(documentDir.exists()){
                             handleContainerEntryFiles(callback);
-
                         }else{
                             callback.onFailure(new Throwable("Files was not copied to the " +
                                     "intended destination"));
@@ -217,7 +207,7 @@ public class UmEditorFileHelper implements UmEditorFileHelperCore {
             entryFile.setCompression(COMPRESSION_NONE);
             entryFile.setCefUid(umDb.getContainerEntryFileDao().insert(entryFile));
 
-            umDb.getContainerEntryDao().insert(new ContainerEntry(documentDir.getPath(),
+            umDb.getContainerEntryDao().insert(new ContainerEntry(getDocumentDirPath(),
                     container,entryFile));
         }
         callback.onSuccess(documentDir.getAbsolutePath());
@@ -245,9 +235,14 @@ public class UmEditorFileHelper implements UmEditorFileHelperCore {
                         }
                     }
                 }
-                callback.onSuccess(unUsedFileCounter);
+                handleDocumentItemsChange();
+                if(callback != null){
+                    callback.onSuccess(unUsedFileCounter);
+                }
             }catch (NullPointerException e){
-                callback.onFailure(e);
+               if(callback != null){
+                   callback.onFailure(e);
+               }
             }
         }).start();
     }
@@ -330,9 +325,12 @@ public class UmEditorFileHelper implements UmEditorFileHelperCore {
         }finally {
             UMIOUtils.closeQuietly(bout);
         }
+
         if(exception != null){
             callback.onFailure(exception);
         }
+
+        handleDocumentItemsChange();
         boolean updated = getEpubNavDocument().getNavById(page.getHref()) == null
                 && metaInfoUpdated;
         callback.onSuccess(updated);
@@ -367,6 +365,7 @@ public class UmEditorFileHelper implements UmEditorFileHelperCore {
         if(exception != null){
             callback.onFailure(exception);
         }
+        handleDocumentItemsChange();
         callback.onSuccess(metaInfoUpdated);
     }
 
@@ -400,6 +399,7 @@ public class UmEditorFileHelper implements UmEditorFileHelperCore {
                     }
                 });
             }else{
+                handleDocumentItemsChange();
                 callback.onSuccess(documentTitle);
             }
         }else{
@@ -409,6 +409,7 @@ public class UmEditorFileHelper implements UmEditorFileHelperCore {
 
     @Override
     public void updateManifestItems(String filename, String mimeType, UmCallback<Boolean> callback){
+        handleDocumentItemsChange();
         callback.onSuccess(addManifestItem(filename,mimeType));
     }
 
@@ -447,6 +448,7 @@ public class UmEditorFileHelper implements UmEditorFileHelperCore {
             exception = e;
         }finally {
             if(created){
+                handleDocumentItemsChange();
                 callback.onSuccess(href);
             }
             if(exception != null){
@@ -459,6 +461,7 @@ public class UmEditorFileHelper implements UmEditorFileHelperCore {
     public void removePage(String  href, UmCallback<Boolean> callback) {
         boolean removed = removeNavItem(href) && removeSpineItem(href)
                 && removeManifestItem(href);
+        handleDocumentItemsChange();
         callback.onSuccess(removed);
     }
 
@@ -769,5 +772,45 @@ public class UmEditorFileHelper implements UmEditorFileHelperCore {
      */
     private String getFileNameWithoutExtension(String fileName){
         return fileName.replaceFirst("[.][^.]+$", "");
+    }
+
+    @Override
+    public void handleDocumentItemsChange(){
+
+        new Thread(() -> {
+            List<ContainerEntryFile> entryFiles = new ArrayList<>();
+
+            Container container = new Container();
+            container.setContainerContentEntryUid(currentEntryUid);
+            container.setLastModified(System.currentTimeMillis());
+            container.setContainerUid(umRepo.getContainerDao().insert(container));
+
+
+            for(OpfItem opfItem : getEpubOpfDocument().getManifestItems().values()){
+                String filePath;
+                if(opfItem.getMediaType().contains("image") ||
+                        opfItem.getMediaType().contains("video")){
+                    filePath = UMFileUtil.joinPaths(getDocumentDirPath(),opfItem.getHref());
+                }else{
+                    filePath = UMFileUtil.joinPaths(getDocumentDirPath(),
+                            MEDIA_DIRECTORY,opfItem.getHref());
+                }
+
+                ContainerEntryFile entryFile = new ContainerEntryFile();
+                entryFile.setCefPath(filePath);
+                entryFile.setCeCompressedSize(0);
+                entryFile.setCeTotalSize(new File(filePath).getTotalSpace());
+                entryFile.setCompression(COMPRESSION_NONE);
+                entryFile.setCefUid(umDb.getContainerEntryFileDao().insert(entryFile));
+                entryFiles.add(entryFile);
+            }
+
+            for(ContainerEntryFile entryFile : entryFiles){
+                umDb.getContainerEntryDao().insert(
+                        new ContainerEntry(getDocumentDirPath(),container,entryFile));
+
+            }
+        }).start();
+
     }
 }

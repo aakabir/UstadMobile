@@ -61,6 +61,11 @@ public interface UmEditorFileHelperCore {
     void removeUnUsedResources(UmCallback<Integer> callback);
 
     /**
+     * Create latest container based on changes made to the document Items
+     */
+    void handleDocumentItemsChange();
+
+    /**
      * Create new page to the document.
      * @param title Title of the page to be created
      * @param callback UmCallback

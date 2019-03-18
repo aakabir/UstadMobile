@@ -52,7 +52,7 @@ public class ContentEditorPresenter extends UstadBaseController<ContentEditorVie
 
     private String selectedPageToLoad = null;
 
-    private boolean openPageManagerRequest = false;
+    private boolean pageManagerOpen = false;
 
 
     public ContentEditorPresenter(Object context, Hashtable arguments, ContentEditorView view) {
@@ -107,6 +107,24 @@ public class ContentEditorPresenter extends UstadBaseController<ContentEditorVie
 
 
     private void mountDocumentDir(String entryPath){
+
+        UmCallback<String> updateDocumentCallback = new UmCallback<String>() {
+            @Override
+            public void onSuccess(String result) {
+                if(result != null){
+                    selectedPageToLoad = result;
+                    view.runOnUiThread(() ->
+                            view.handleSelectedPage());
+                }
+            }
+
+            @Override
+            public void onFailure(Throwable exception) {
+                exception.printStackTrace();
+            }
+        };
+
+
         view.getFileHelper().mountDocumentDir(entryPath, new UmCallback<Void>() {
             @Override
             public void onSuccess(Void result) {
@@ -121,22 +139,8 @@ public class ContentEditorPresenter extends UstadBaseController<ContentEditorVie
                         String documentTitle = impl.getString(MessageID.content_untitled_document,
                                 view.getContext());
 
-                        view.getFileHelper().updateDocumentTitle(documentTitle,
-                                true, new UmCallback<String>() {
-                            @Override
-                            public void onSuccess(String result) {
-                                if(result != null){
-                                    selectedPageToLoad = result;
-                                    view.runOnUiThread(() ->
-                                            view.handleSelectedPage());
-                                }
-                            }
-
-                            @Override
-                            public void onFailure(Throwable exception) {
-                                exception.printStackTrace();
-                            }
-                        });
+                        view.getFileHelper().updateDocumentTitle(documentTitle, true,
+                                updateDocumentCallback);
                     }else{
                         selectedPageToLoad = view.getFileHelper()
                                 .getEpubNavDocument().getToc().getChild(0).getHref();
@@ -343,15 +347,15 @@ public class ContentEditorPresenter extends UstadBaseController<ContentEditorVie
      * Check if page manager opening was initiated
      * @return true if was iniatiated otherwise it wasn't
      */
-    public boolean isOpenPageManagerRequest() {
-        return openPageManagerRequest;
+    public boolean isPageManagerOpen() {
+        return pageManagerOpen;
     }
 
     /**
-     * Set frag to indicate when page manager open is initiated.
-     * @param openPageManagerRequest
+     * Set frag to indicate when page manager is active.
+     * @param pageManagerOpen flag to indicate if the page manager was opened or not
      */
-    public void setOpenPageManagerRequest(boolean openPageManagerRequest) {
-        this.openPageManagerRequest = openPageManagerRequest;
+    public void setPageManagerOpen(boolean pageManagerOpen) {
+        this.pageManagerOpen = pageManagerOpen;
     }
 }
